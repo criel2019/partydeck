@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>파티덱 - P2P 미니게임</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-dark: #0a0a12;
+  --bg-card: #14142a;
+  --bg-surface: #1c1c3a;
+  --accent: #ff6b35;
+  --accent2: #00e5ff;
+  --accent3: #ff2d78;
+  --gold: #ffd700;
+  --text: #e8e8f0;
+  --text-dim: #7a7a9a;
+  --success: #00e676;
+  --danger: #ff1744;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text);
+}
+
+body {
+  background: 
+    radial-gradient(ellipse at 20% 80%, rgba(255,107,53,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(0,229,255,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(255,45,120,0.04) 0%, transparent 60%),
+    var(--bg-dark);
+}
+
+.screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ===== LOADING ===== */
+#loadingScreen {
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+#loadingScreen .logo-icon { font-size: 64px; animation: float 3s ease-in-out infinite; }
+#loadingScreen .logo-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 48px;
+  background: linear-gradient(135deg, var(--accent), var(--accent3), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.loading-text { color: var(--text-dim); font-size: 14px; }
+.loading-bar { width: 200px; height: 4px; background: var(--bg-surface); border-radius: 2px; overflow: hidden; }
+.loading-bar-inner { width: 0%; height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
+/* ===== MAIN MENU ===== */
+#mainMenu {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.logo-area { text-align: center; margin-bottom: 12px; }
+.logo-icon { font-size: 64px; animation: float 3s ease-in-out infinite; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.logo-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 48px;
+  background: linear-gradient(135deg, var(--accent), var(--accent3), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -2px;
+}
+
+.logo-sub { color: var(--text-dim); font-size: 14px; margin-top: 4px; }
+
+.menu-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius);
+  padding: 20px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.profile-section { display: flex; align-items: center; gap: 14px; }
+
+.avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; flex-shrink: 0; cursor: pointer;
+  transition: transform 0.2s;
+}
+.avatar:active { transform: scale(0.92); }
+
+.profile-info { flex: 1; }
+.profile-name { font-weight: 900; font-size: 18px; }
+.profile-stats { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+
+.input-field {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-surface);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 16px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-field:focus { border-color: var(--accent); }
+.input-field::placeholder { color: var(--text-dim); }
+
+.btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  letter-spacing: 1px;
+  max-width: 380px;
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #ff8f5a);
+  color: white;
+  box-shadow: 0 4px 20px rgba(255,107,53,0.3);
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.btn-accent2 {
+  background: linear-gradient(135deg, var(--accent2), #00b8d4);
+  color: var(--bg-dark);
+  box-shadow: 0 4px 20px rgba(0,229,255,0.3);
+}
+
+.btn-small { padding: 10px 16px; font-size: 14px; width: auto; }
+
+.join-row {
+  display: flex; gap: 8px; width: 100%; max-width: 380px;
+}
+
+/* ===== LOBBY ===== */
+#lobby { padding: 20px; gap: 16px; }
+
+.lobby-header { display: flex; align-items: center; justify-content: space-between; }
+
+.back-btn {
+  background: none; border: none; color: var(--text);
+  font-size: 24px; cursor: pointer; padding: 8px;
+}
+
+.room-code-display {
+  text-align: center; padding: 20px;
+  background: var(--bg-card); border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.room-code-label { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+.room-code {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 40px; letter-spacing: 8px; color: var(--accent2); cursor: pointer;
+}
+.room-code-hint { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+
+.share-btn-row { display: flex; gap: 8px; margin-top: 10px; justify-content: center; }
+.share-btn {
+  padding: 8px 16px; background: var(--bg-surface);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm);
+  color: var(--text); font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+}
+.share-btn:active { transform: scale(0.95); }
+
+.players-section { flex: 1; overflow-y: auto; }
+.players-title { font-size: 14px; color: var(--text-dim); margin-bottom: 10px; font-weight: 700; }
+.player-list { display: flex; flex-direction: column; gap: 8px; }
+
+.player-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.04);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.player-avatar-sm {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.player-name { font-weight: 700; font-size: 15px; flex: 1; }
+.host-badge {
+  background: var(--gold); color: var(--bg-dark);
+  font-size: 10px; font-weight: 900; padding: 3px 8px; border-radius: 20px;
+}
+
+.game-select {
+  padding: 16px; background: var(--bg-card); border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.game-select-title { font-size: 14px; color: var(--text-dim); margin-bottom: 10px; font-weight: 700; }
+.game-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+.game-option {
+  padding: 12px 8px; background: var(--bg-surface);
+  border: 2px solid transparent; border-radius: var(--radius-sm);
+  text-align: center; cursor: pointer; transition: all 0.2s;
+  font-size: 13px; font-weight: 700;
+}
+.game-option:active { transform: scale(0.95); }
+.game-option.selected { border-color: var(--accent); background: rgba(255,107,53,0.15); }
+.game-option .game-emoji { font-size: 28px; display: block; margin-bottom: 4px; }
+.game-option.disabled { opacity: 0.4; pointer-events: none; }
+
+/* ===== POKER TABLE ===== */
+#pokerGame { padding: 12px; gap: 6px; position: relative; overflow: hidden; }
+
+.poker-top-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; background: var(--bg-card); border-radius: var(--radius-sm); z-index: 10;
+}
+.pot-display {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'Black Han Sans', sans-serif; font-size: 20px; color: var(--gold);
+}
+.round-display { font-size: 12px; color: var(--text-dim); font-weight: 700; }
+
+.table-area {
+  flex: 1; position: relative; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; min-height: 0;
+}
+
+.community-cards { display: flex; gap: 6px; margin: 8px 0; justify-content: center; flex-wrap: wrap; }
+
+.card {
+  width: 48px; height: 70px; border-radius: 8px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-weight: 900; font-size: 16px; line-height: 1.2;
+  transition: all 0.3s; position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.card-face { background: white; color: #1a1a2e; border: 2px solid #ddd; }
+.card-face.red { color: #d32f2f; border-color: #ffcdd2; }
+.card-face.black { color: #1a1a2e; border-color: #ccc; }
+
+.card-back {
+  background: linear-gradient(135deg, #1a237e, #283593);
+  border: 2px solid #3949ab;
+}
+
+.card-rank { font-size: 16px; line-height: 1; }
+.card-suit { font-size: 13px; line-height: 1; }
+.card-placeholder { background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.15); }
+
+.opponents-area {
+  display: flex; justify-content: center; gap: 10px;
+  flex-wrap: wrap; width: 100%; padding: 0 4px;
+}
+
+.opponent-slot {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 3px; min-width: 65px;
+}
+
+.opponent-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; position: relative; transition: all 0.3s;
+}
+.opponent-avatar.active-turn {
+  box-shadow: 0 0 0 3px var(--accent), 0 0 20px rgba(255,107,53,0.4);
+  animation: pulse-ring 1.5s ease infinite;
+}
+
+@keyframes pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 3px var(--accent), 0 0 20px rgba(255,107,53,0.4); }
+  50% { box-shadow: 0 0 0 5px var(--accent), 0 0 30px rgba(255,107,53,0.6); }
+}
+
+.opponent-name { font-size: 11px; font-weight: 700; max-width: 65px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+.opponent-chips { font-size: 10px; color: var(--gold); font-weight: 700; }
+.opponent-bet { font-size: 10px; color: var(--accent); font-weight: 700; min-height: 14px; }
+.opponent-cards { display: flex; gap: 2px; }
+.opponent-cards .card { width: 28px; height: 40px; font-size: 9px; }
+.opponent-cards .card .card-rank { font-size: 10px; }
+.opponent-cards .card .card-suit { font-size: 8px; }
+.fold-overlay { opacity: 0.35; }
+
+.my-hand-area {
+  width: 100%; padding: 10px 16px;
+  background: var(--bg-card); border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.my-info-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.my-chips { font-family: 'Black Han Sans', sans-serif; font-size: 18px; color: var(--gold); }
+.my-hand-label { font-size: 12px; color: var(--text-dim); font-weight: 700; }
+
+.my-cards { display: flex; justify-content: center; gap: 10px; margin-bottom: 6px; }
+.my-cards .card { width: 60px; height: 86px; }
+.my-cards .card .card-rank { font-size: 20px; }
+.my-cards .card .card-suit { font-size: 16px; }
+
+.hand-rank-display { text-align: center; font-size: 13px; color: var(--accent2); font-weight: 700; min-height: 18px; }
+
+.action-bar { display: flex; gap: 6px; width: 100%; padding: 0 4px; }
+
+.action-btn {
+  flex: 1; padding: 13px 6px; border: none; border-radius: var(--radius-sm);
+  font-family: 'Black Han Sans', sans-serif; font-size: 14px;
+  cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px;
+}
+.action-btn:active { transform: scale(0.95); }
+.action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.btn-fold { background: var(--bg-surface); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.1); }
+.btn-check { background: var(--bg-surface); color: var(--accent2); border: 1px solid rgba(0,229,255,0.3); }
+.btn-call { background: rgba(0,229,255,0.15); color: var(--accent2); border: 1px solid rgba(0,229,255,0.3); }
+.btn-raise { background: linear-gradient(135deg, var(--accent), #ff8f5a); color: white; }
+.btn-allin { background: linear-gradient(135deg, var(--accent3), #ff6090); color: white; }
+
+.raise-slider-area { display: none; width: 100%; padding: 8px 4px; align-items: center; gap: 8px; }
+.raise-slider-area.visible { display: flex; }
+.raise-slider {
+  flex: 1; -webkit-appearance: none; height: 6px;
+  border-radius: 3px; background: var(--bg-surface); outline: none;
+}
+.raise-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 28px; height: 28px;
+  border-radius: 50%; background: var(--accent); cursor: pointer;
+}
+.raise-amount { font-family: 'Black Han Sans', sans-serif; font-size: 16px; color: var(--accent); min-width: 50px; text-align: right; }
+.raise-confirm {
+  padding: 8px 16px; background: var(--accent); color: white;
+  border: none; border-radius: var(--radius-sm);
+  font-family: 'Black Han Sans', sans-serif; font-size: 14px; cursor: pointer;
+}
+
+/* ===== MAFIA ===== */
+#mafiaGame { padding: 16px; gap: 12px; }
+.mafia-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: var(--bg-card); border-radius: var(--radius-sm);
+}
+.mafia-phase { font-family: 'Black Han Sans', sans-serif; font-size: 20px; }
+.mafia-timer { font-family: 'Black Han Sans', sans-serif; font-size: 24px; color: var(--accent); }
+
+.mafia-role-reveal {
+  text-align: center; padding: 20px;
+  background: var(--bg-card); border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.role-emoji { font-size: 56px; margin-bottom: 6px; }
+.role-name { font-family: 'Black Han Sans', sans-serif; font-size: 26px; margin-bottom: 4px; }
+.role-desc { font-size: 13px; color: var(--text-dim); }
+
+.mafia-players-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; flex: 1; overflow-y: auto; }
+
+.mafia-player-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 14px 10px; background: var(--bg-card); border-radius: var(--radius-sm);
+  border: 2px solid transparent; cursor: pointer; transition: all 0.2s; position: relative;
+}
+.mafia-player-card:active { transform: scale(0.95); }
+.mafia-player-card.selected { border-color: var(--accent3); background: rgba(255,45,120,0.1); }
+.mafia-player-card.dead { opacity: 0.3; pointer-events: none; }
+
+.mafia-action-area {
+  padding: 12px; background: var(--bg-card); border-radius: var(--radius); text-align: center;
+}
+.mafia-message {
+  font-size: 14px; color: var(--text); margin-bottom: 10px;
+  min-height: 40px; display: flex; align-items: center; justify-content: center;
+}
+
+/* ===== RESULT OVERLAY ===== */
+.result-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10,10,18,0.95); z-index: 100;
+  flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px; gap: 16px;
+}
+.result-overlay.active { display: flex; }
+.result-title { font-family: 'Black Han Sans', sans-serif; font-size: 36px; }
+.result-hand { font-size: 18px; color: var(--accent2); font-weight: 700; }
+.result-cards { display: flex; gap: 8px; }
+.result-pot { font-family: 'Black Han Sans', sans-serif; font-size: 24px; color: var(--gold); }
+
+.winner-info {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 16px; background: var(--bg-card); border-radius: var(--radius);
+  width: 100%; max-width: 340px;
+}
+
+/* ===== AD BANNER ===== */
+.ad-banner {
+  width: 100%; max-width: 380px; height: 60px;
+  background: var(--bg-card); border: 1px dashed rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim); font-size: 12px; flex-shrink: 0;
+}
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed; top: 20px; left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.1);
+  padding: 12px 24px; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 700; z-index: 200;
+  transition: transform 0.3s ease; white-space: nowrap;
+  max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--bg-surface); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- LOADING -->
+<div class="screen active" id="loadingScreen">
+  <div class="logo-icon">🎲</div>
+  <div class="logo-title">파티덱</div>
+  <div class="loading-text" id="loadingText">연결 준비 중...</div>
+  <div class="loading-bar"><div class="loading-bar-inner" id="loadingBar"></div></div>
+</div>
+
+<!-- MAIN MENU -->
+<div class="screen" id="mainMenu">
+  <div class="logo-area">
+    <div class="logo-icon">🎲</div>
+    <div class="logo-title">파티덱</div>
+    <div class="logo-sub">서버 없이 즐기는 P2P 미니게임</div>
+  </div>
+
+  <div class="menu-card">
+    <div class="profile-section">
+      <div class="avatar" id="myAvatar" onclick="cycleAvatar()">😎</div>
+      <div class="profile-info">
+        <input class="input-field" id="nameInput" placeholder="닉네임 입력" maxlength="8" style="padding:10px 12px; font-size:15px; font-weight:700;">
+        <div class="profile-stats" id="profileStats">전적 로딩 중...</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="createRoom()">🏠 방 만들기</button>
+
+  <div class="join-row">
+    <input class="input-field" id="joinCodeInput" placeholder="방 코드 입력" maxlength="6" style="text-transform:uppercase; text-align:center; letter-spacing:4px; font-weight:700; flex:1;">
+    <button class="btn btn-accent2 btn-small" onclick="joinRoom()" style="width:auto; padding:14px 20px;">참가</button>
+  </div>
+
+  <div class="ad-banner">📢 광고 영역 (AdSense / AdMob)</div>
+</div>
+
+<!-- LOBBY -->
+<div class="screen" id="lobby">
+  <div class="lobby-header">
+    <button class="back-btn" onclick="leaveLobby()">←</button>
+    <div style="font-family:'Black Han Sans'; font-size:20px;">대기실</div>
+    <div style="width:40px;"></div>
+  </div>
+
+  <div class="room-code-display">
+    <div class="room-code-label">방 코드를 친구에게 공유하세요</div>
+    <div class="room-code" id="roomCodeDisplay" onclick="copyRoomCode()">------</div>
+    <div class="room-code-hint">탭하여 복사</div>
+    <div class="share-btn-row">
+      <button class="share-btn" onclick="copyRoomCode()">📋 코드 복사</button>
+      <button class="share-btn" onclick="shareLink()">🔗 링크 공유</button>
+    </div>
+  </div>
+
+  <div class="players-section">
+    <div class="players-title">플레이어 (<span id="playerCount">0</span>/4)</div>
+    <div class="player-list" id="playerList"></div>
+  </div>
+
+  <div class="game-select" id="gameSelectArea" style="display:none;">
+    <div class="game-select-title">게임 선택 (호스트만 가능)</div>
+    <div class="game-options">
+      <div class="game-option selected" data-game="poker" onclick="selectGame(this)">
+        <span class="game-emoji">🃏</span>포커
+      </div>
+      <div class="game-option" data-game="mafia" onclick="selectGame(this)">
+        <span class="game-emoji">🕵️</span>마피아
+      </div>
+      <div class="game-option disabled" data-game="sutda">
+        <span class="game-emoji">🎴</span>섯다<br><span style="font-size:10px;color:var(--text-dim)">준비중</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="startGameBtn" style="display:none;" onclick="startGame()">🎮 게임 시작</button>
+
+  <div id="waitingMsg" style="text-align:center; color:var(--text-dim); font-size:14px; padding:10px;">
+    <div class="spinner"></div>
+    <div style="margin-top:8px;">호스트가 게임을 시작하길 대기 중...</div>
+  </div>
+</div>
+
+<!-- POKER -->
+<div class="screen" id="pokerGame">
+  <div class="poker-top-bar">
+    <div class="pot-display">💰 <span id="potAmount">0</span></div>
+    <div class="round-display" id="roundDisplay">프리플랍</div>
+    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">✕</button>
+  </div>
+  <div class="opponents-area" id="opponentsArea"></div>
+  <div class="table-area">
+    <div class="community-cards" id="communityCards"></div>
+  </div>
+  <div class="my-hand-area">
+    <div class="my-info-row">
+      <div class="my-chips" id="myChipsDisplay">💰 1000</div>
+      <div class="my-hand-label">내 패</div>
+    </div>
+    <div class="my-cards" id="myCardsDisplay"></div>
+    <div class="hand-rank-display" id="handRankDisplay"></div>
+  </div>
+  <div class="raise-slider-area" id="raiseSliderArea">
+    <input type="range" class="raise-slider" id="raiseSlider" min="0" max="1000" value="100">
+    <div class="raise-amount" id="raiseAmountDisplay">100</div>
+    <button class="raise-confirm" onclick="confirmRaise()">확인</button>
+  </div>
+  <div class="action-bar" id="actionBar">
+    <button class="action-btn btn-fold" onclick="pokerAction('fold')">폴드</button>
+    <button class="action-btn btn-check" id="checkCallBtn" onclick="pokerAction('check')">체크</button>
+    <button class="action-btn btn-raise" onclick="showRaiseSlider()">레이즈</button>
+    <button class="action-btn btn-allin" onclick="pokerAction('allin')">올인</button>
+  </div>
+</div>
+
+<!-- MAFIA -->
+<div class="screen" id="mafiaGame">
+  <div class="mafia-header">
+    <button class="back-btn" style="font-size:18px;" onclick="leaveGame()">✕</button>
+    <div class="mafia-phase" id="mafiaPhase">🌙 밤</div>
+    <div class="mafia-timer" id="mafiaTimer">30</div>
+  </div>
+  <div class="mafia-role-reveal" id="mafiaRoleReveal">
+    <div class="role-emoji" id="roleEmoji">🕵️</div>
+    <div class="role-name" id="roleName">마피아</div>
+    <div class="role-desc" id="roleDesc">밤에 한 명을 제거할 수 있습니다</div>
+  </div>
+  <div class="mafia-players-grid" id="mafiaPlayersGrid"></div>
+  <div class="mafia-action-area">
+    <div class="mafia-message" id="mafiaMessage">대상을 선택하세요</div>
+    <button class="btn btn-primary" id="mafiaActionBtn" onclick="mafiaConfirmAction()">확인</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-title" id="resultTitle">🏆 승리!</div>
+  <div class="winner-info">
+    <div id="winnerName" style="font-size:20px;font-weight:900;"></div>
+    <div class="result-cards" id="resultCards"></div>
+    <div class="result-hand" id="resultHand"></div>
+    <div class="result-pot" id="resultPot"></div>
+  </div>
+  <button class="btn btn-primary" onclick="closeResult()" style="max-width:280px;">다음 라운드</button>
+</div>
+
+<!-- PeerJS loaded dynamically -->
+<script>
+// ===== LOAD PEERJS DYNAMICALLY =====
+function loadPeerJS() {
+  return new Promise((resolve, reject) => {
+    if(window.Peer) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+    s.onload = resolve;
+    s.onerror = () => {
+      // Fallback CDN
+      const s2 = document.createElement('script');
+      s2.src = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
+      s2.onload = resolve;
+      s2.onerror = reject;
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s);
+  });
+}
+
+// ===== CONSTANTS & STATE =====
+const AVATARS = ['😎','🤠','👻','🦊','🐱','🐼','🦁','🐸','🎃','🤖','👽','🦄'];
+const SUITS = ['♠','♥','♦','♣'];
+const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+const PLAYER_COLORS = [
+  'linear-gradient(135deg, #ff6b35, #ff8f5a)',
+  'linear-gradient(135deg, #00e5ff, #00b8d4)',
+  'linear-gradient(135deg, #ff2d78, #ff6090)',
+  'linear-gradient(135deg, #ffd700, #ffab00)'
+];
+
+let state = {
+  myId: '', myName: '', myAvatar: '😎', avatarIdx: 0,
+  isHost: false, roomCode: '',
+  peer: null, connections: {}, players: [],
+  selectedGame: 'poker',
+  poker: null, mafia: null,
+  _pokerView: null, _mafiaView: null,
+};
+
+// ===== INIT =====
+async function init() {
+  const bar = document.getElementById('loadingBar');
+  const txt = document.getElementById('loadingText');
+  
+  bar.style.width = '30%';
+  txt.textContent = 'PeerJS 라이브러리 로딩 중...';
+  
+  try {
+    await loadPeerJS();
+    bar.style.width = '80%';
+    txt.textContent = '프로필 로딩 중...';
+    loadProfile();
+    
+    // Check URL for room code
+    const params = new URLSearchParams(location.search);
+    const code = params.get('room');
+    if(code) {
+      document.getElementById('joinCodeInput').value = code;
+    }
+    
+    bar.style.width = '100%';
+    txt.textContent = '완료!';
+    
+    setTimeout(() => {
+      showScreen('mainMenu');
+    }, 400);
+    
+  } catch(e) {
+    txt.textContent = '❌ PeerJS 로드 실패. 새로고침 해주세요.';
+    console.error('Failed to load PeerJS:', e);
+  }
+}
+
+// ===== UTILS =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function genCode() {
+  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let r = '';
+  for(let i = 0; i < 5; i++) r += c[Math.floor(Math.random() * c.length)];
+  return r;
+}
+
+// ===== PROFILE =====
+function loadProfile() {
+  const s = localStorage.getItem('pd_profile');
+  if(s) {
+    const p = JSON.parse(s);
+    state.myName = p.name || '';
+    state.myAvatar = p.avatar || '😎';
+    state.avatarIdx = Math.max(0, AVATARS.indexOf(state.myAvatar));
+  }
+  document.getElementById('nameInput').value = state.myName;
+  document.getElementById('myAvatar').textContent = state.myAvatar;
+  updateStats();
+}
+
+function saveProfile() {
+  state.myName = document.getElementById('nameInput').value.trim() || '플레이어';
+  state.myAvatar = AVATARS[state.avatarIdx];
+  localStorage.setItem('pd_profile', JSON.stringify({ name: state.myName, avatar: state.myAvatar }));
+}
+
+function updateStats() {
+  const s = JSON.parse(localStorage.getItem('pd_stats') || '{"w":0,"g":0}');
+  const r = s.g > 0 ? Math.round((s.w / s.g) * 100) : 0;
+  document.getElementById('profileStats').textContent = `${s.g}전 ${s.w}승 (${r}%)`;
+}
+
+function recordGame(won) {
+  const s = JSON.parse(localStorage.getItem('pd_stats') || '{"w":0,"g":0}');
+  s.g++;
+  if(won) s.w++;
+  localStorage.setItem('pd_stats', JSON.stringify(s));
+  updateStats();
+}
+
+function cycleAvatar() {
+  state.avatarIdx = (state.avatarIdx + 1) % AVATARS.length;
+  state.myAvatar = AVATARS[state.avatarIdx];
+  document.getElementById('myAvatar').textContent = state.myAvatar;
+  saveProfile();
+}
+
+// ===== PEER CONNECTION =====
+function initPeer(id) {
+  return new Promise((resolve, reject) => {
+    const peer = new Peer(id, {
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+        ]
+      }
+    });
+    
+    const timeout = setTimeout(() => {
+      reject(new Error('Connection timeout'));
+    }, 15000);
+    
+    peer.on('open', (myId) => {
+      clearTimeout(timeout);
+      state.myId = myId;
+      state.peer = peer;
+      console.log('Peer connected:', myId);
+      resolve(peer);
+    });
+    
+    peer.on('error', (err) => {
+      clearTimeout(timeout);
+      console.error('Peer error:', err);
+      if(err.type === 'unavailable-id') showToast('이미 사용 중인 코드입니다');
+      else if(err.type === 'peer-unavailable') showToast('방을 찾을 수 없습니다');
+      else showToast('연결 오류: ' + err.type);
+      reject(err);
+    });
+    
+    peer.on('disconnected', () => {
+      console.log('Peer disconnected, reconnecting...');
+      if(!peer.destroyed) peer.reconnect();
+    });
+  });
+}
+
+function broadcast(data, exclude) {
+  const msg = JSON.stringify(data);
+  Object.entries(state.connections).forEach(([pid, conn]) => {
+    if(pid !== exclude && conn.open) conn.send(msg);
+  });
+}
+
+function sendTo(peerId, data) {
+  const conn = state.connections[peerId];
+  if(conn?.open) conn.send(JSON.stringify(data));
+}
+
+function handleMessage(peerId, raw) {
+  const msg = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  
+  const handlers = {
+    'player-info': () => handlePlayerJoin(peerId, msg),
+    'player-list': () => { state.players = msg.players; updateLobbyUI(); },
+    'game-start': () => handleGameStart(msg),
+    'poker-state': () => { showScreen('pokerGame'); renderPokerView(msg); },
+    'poker-action': () => { if(state.isHost) processPokerAction(peerId, msg.action, msg.amount); },
+    'poker-result': () => handlePokerResult(msg),
+    'mafia-state': () => { showScreen('mafiaGame'); state._mafiaView = msg; renderMafiaView(); },
+    'mafia-action': () => { if(state.isHost) processMafiaAction(peerId, msg.role, msg.targetId); },
+    'mafia-result': () => handleMafiaResult(msg),
+    'player-left': () => {
+      state.players = state.players.filter(p => p.id !== msg.playerId);
+      updateLobbyUI();
+      showToast(msg.name + ' 퇴장');
+    },
+    'room-full': () => showToast('방이 가득 찼습니다'),
+  };
+  
+  if(handlers[msg.type]) handlers[msg.type]();
+}
+
+// ===== ROOM =====
+async function createRoom() {
+  saveProfile();
+  state.roomCode = genCode();
+  state.isHost = true;
+  
+  try {
+    showToast('방 생성 중...');
+    await initPeer('pd-' + state.roomCode);
+    
+    state.players = [{
+      id: state.myId, name: state.myName, avatar: state.myAvatar, isHost: true
+    }];
+    
+    state.peer.on('connection', (conn) => {
+      conn.on('open', () => {
+        state.connections[conn.peer] = conn;
+        conn.on('data', (d) => handleMessage(conn.peer, d));
+        conn.on('close', () => {
+          const p = state.players.find(pp => pp.id === conn.peer);
+          delete state.connections[conn.peer];
+          state.players = state.players.filter(pp => pp.id !== conn.peer);
+          broadcast({ type: 'player-list', players: state.players });
+          updateLobbyUI();
+          if(p) showToast(p.name + ' 퇴장');
+        });
+      });
+    });
+    
+    document.getElementById('roomCodeDisplay').textContent = state.roomCode;
+    document.getElementById('gameSelectArea').style.display = 'block';
+    document.getElementById('startGameBtn').style.display = 'none';
+    document.getElementById('waitingMsg').style.display = 'none';
+    showScreen('lobby');
+    updateLobbyUI();
+    showToast('방이 만들어졌습니다!');
+    
+  } catch(e) { console.error(e); }
+}
+
+async function joinRoom() {
+  saveProfile();
+  const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  if(!code || code.length < 4) { showToast('방 코드를 입력하세요'); return; }
+  
+  state.roomCode = code;
+  state.isHost = false;
+  
+  try {
+    showToast('방 연결 중...');
+    await initPeer('pd-' + code + '-' + Date.now().toString(36));
+    
+    const conn = state.peer.connect('pd-' + code, { reliable: true });
+    
+    conn.on('open', () => {
+      state.connections[conn.peer] = conn;
+      conn.send(JSON.stringify({
+        type: 'player-info', name: state.myName, avatar: state.myAvatar, id: state.myId
+      }));
+      conn.on('data', (d) => handleMessage(conn.peer, d));
+      conn.on('close', () => {
+        showToast('호스트와 연결이 끊어졌습니다');
+        leaveLobby();
+      });
+    });
+    
+    conn.on('error', (err) => {
+      showToast('연결 실패: ' + err);
+    });
+    
+    state.peer.on('connection', (inConn) => {
+      inConn.on('open', () => {
+        state.connections[inConn.peer] = inConn;
+        inConn.on('data', (d) => handleMessage(inConn.peer, d));
+      });
+    });
+    
+    document.getElementById('roomCodeDisplay').textContent = code;
+    document.getElementById('gameSelectArea').style.display = 'none';
+    document.getElementById('startGameBtn').style.display = 'none';
+    document.getElementById('waitingMsg').style.display = 'block';
+    showScreen('lobby');
+    
+  } catch(e) { console.error(e); }
+}
+
+function handlePlayerJoin(peerId, msg) {
+  if(!state.isHost) return;
+  if(state.players.length >= 4) {
+    sendTo(peerId, { type: 'room-full' });
+    return;
+  }
+  state.players.push({ id: peerId, name: msg.name, avatar: msg.avatar, isHost: false });
+  broadcast({ type: 'player-list', players: state.players });
+  updateLobbyUI();
+  showToast(msg.name + ' 참가!');
+}
+
+function leaveLobby() {
+  if(state.peer) { state.peer.destroy(); state.peer = null; }
+  state.connections = {};
+  state.players = [];
+  state.poker = null;
+  state.mafia = null;
+  showScreen('mainMenu');
+}
+
+function leaveGame() { leaveLobby(); }
+
+function copyRoomCode() {
+  const url = location.origin + location.pathname + '?room=' + state.roomCode;
+  navigator.clipboard?.writeText(state.roomCode).then(() => showToast('코드 복사됨: ' + state.roomCode));
+}
+
+function shareLink() {
+  const url = location.origin + location.pathname + '?room=' + state.roomCode;
+  if(navigator.share) {
+    navigator.share({ title: '파티덱', text: '파티덱 게임에 참가하세요! 코드: ' + state.roomCode, url: url });
+  } else {
+    navigator.clipboard?.writeText(url).then(() => showToast('링크가 복사되었습니다'));
+  }
+}
+
+function updateLobbyUI() {
+  const list = document.getElementById('playerList');
+  list.innerHTML = state.players.map((p, i) => `
+    <div class="player-item">
+      <div class="player-avatar-sm" style="background:${PLAYER_COLORS[i % 4]};">${p.avatar}</div>
+      <div class="player-name">${p.name}</div>
+      ${p.isHost ? '<span class="host-badge">HOST</span>' : ''}
+      ${p.id === state.myId ? '<span style="font-size:11px;color:var(--accent2);">나</span>' : ''}
+    </div>
+  `).join('');
+  document.getElementById('playerCount').textContent = state.players.length;
+  if(state.isHost) {
+    document.getElementById('startGameBtn').style.display = state.players.length >= 2 ? 'block' : 'none';
+  }
+}
+
+function selectGame(el) {
+  if(el.classList.contains('disabled')) return;
+  document.querySelectorAll('.game-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  state.selectedGame = el.dataset.game;
+}
+
+// ===== GAME START =====
+function startGame() {
+  if(!state.isHost || state.players.length < 2) { showToast('최소 2명 필요'); return; }
+  if(state.selectedGame === 'poker') startPoker();
+  else if(state.selectedGame === 'mafia') startMafia();
+}
+
+function handleGameStart(msg) {
+  if(msg.game === 'poker') { showScreen('pokerGame'); renderPokerView(msg.state); }
+  else if(msg.game === 'mafia') { showScreen('mafiaGame'); state._mafiaView = msg.state; renderMafiaView(); }
+}
+
+// =======================================
+// ===== POKER ENGINE (Host-side) =====
+// =======================================
+function createDeck() {
+  const deck = [];
+  for(const s of SUITS) for(const r of RANKS) deck.push({ rank: r, suit: s });
+  for(let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
+function startPoker() {
+  const deck = createDeck();
+  const n = state.players.length;
+  const prevChips = state.poker?.players;
+  
+  const ps = {
+    deck, deckIdx: 0,
+    players: state.players.map((p, i) => ({
+      id: p.id, name: p.name, avatar: p.avatar,
+      cards: [], chips: prevChips ? (prevChips.find(pp => pp.id === p.id)?.chips || 1000) : 1000,
+      bet: 0, totalBet: 0, folded: false, allIn: false, seatIdx: i, acted: false,
+    })),
+    community: [], pot: 0, currentBet: 0, minRaise: 20,
+    phase: 'preflop', turnIdx: 0,
+    dealerIdx: state.poker ? (state.poker.dealerIdx + 1) % n : 0,
+    sb: 10, bb: 20,
+  };
+  
+  // Deal
+  for(let i = 0; i < n; i++) ps.players[i].cards = [deck[ps.deckIdx++], deck[ps.deckIdx++]];
+  
+  // Blinds
+  const sbI = (ps.dealerIdx + 1) % n;
+  const bbI = (ps.dealerIdx + 2) % n;
+  
+  const sbAmt = Math.min(ps.sb, ps.players[sbI].chips);
+  ps.players[sbI].bet = sbAmt;
+  ps.players[sbI].totalBet = sbAmt;
+  ps.players[sbI].chips -= sbAmt;
+  
+  const bbAmt = Math.min(ps.bb, ps.players[bbI].chips);
+  ps.players[bbI].bet = bbAmt;
+  ps.players[bbI].totalBet = bbAmt;
+  ps.players[bbI].chips -= bbAmt;
+  
+  ps.pot = sbAmt + bbAmt;
+  ps.currentBet = bbAmt;
+  ps.minRaise = ps.bb;
+  ps.turnIdx = (bbI + 1) % n;
+  
+  // Skip folded/allin for turnIdx
+  ps.turnIdx = findNextActive(ps, ps.turnIdx);
+  
+  state.poker = ps;
+  broadcastPokerState();
+  showScreen('pokerGame');
+}
+
+function findNextActive(ps, from) {
+  let idx = from;
+  for(let i = 0; i < ps.players.length; i++) {
+    const p = ps.players[idx];
+    if(!p.folded && !p.allIn && p.chips > 0) return idx;
+    idx = (idx + 1) % ps.players.length;
+  }
+  return from;
+}
+
+function broadcastPokerState() {
+  const ps = state.poker;
+  ps.players.forEach(p => {
+    const view = {
+      type: 'poker-state',
+      players: ps.players.map(pp => ({
+        id: pp.id, name: pp.name, avatar: pp.avatar,
+        chips: pp.chips, bet: pp.bet, totalBet: pp.totalBet,
+        folded: pp.folded, allIn: pp.allIn, seatIdx: pp.seatIdx,
+        cards: pp.id === p.id ? pp.cards : (ps.phase === 'showdown' && !pp.folded ? pp.cards : null)
+      })),
+      community: ps.community, pot: ps.pot, currentBet: ps.currentBet,
+      minRaise: ps.minRaise, phase: ps.phase, turnIdx: ps.turnIdx,
+    };
+    if(p.id === state.myId) renderPokerView(view);
+    else sendTo(p.id, view);
+  });
+}
+
+function renderPokerView(ps) {
+  state._pokerView = ps;
+  const me = ps.players.find(p => p.id === state.myId);
+  const isMyTurn = ps.players[ps.turnIdx]?.id === state.myId && ps.phase !== 'showdown';
+  
+  // Opponents
+  const opArea = document.getElementById('opponentsArea');
+  const ops = ps.players.filter(p => p.id !== state.myId);
+  opArea.innerHTML = ops.map((p, i) => {
+    const isTurn = ps.players[ps.turnIdx]?.id === p.id && ps.phase !== 'showdown';
+    return `<div class="opponent-slot ${p.folded ? 'fold-overlay' : ''}">
+      <div class="opponent-avatar ${isTurn ? 'active-turn' : ''}" style="background:${PLAYER_COLORS[ps.players.findIndex(pp=>pp.id===p.id) % 4]};">${p.avatar}</div>
+      <div class="opponent-name">${p.name}</div>
+      <div class="opponent-chips">💰${p.chips}</div>
+      <div class="opponent-bet">${p.bet > 0 ? '🔸' + p.bet : (p.folded ? '폴드' : '')}</div>
+      <div class="opponent-cards">${p.cards ? p.cards.map(c => cardHTML(c)).join('') : '<div class="card card-back"></div><div class="card card-back"></div>'}</div>
+    </div>`;
+  }).join('');
+  
+  // Community
+  const cc = document.getElementById('communityCards');
+  let cHTML = '';
+  for(let i = 0; i < 5; i++) {
+    cHTML += i < ps.community.length ? cardHTML(ps.community[i]) : '<div class="card card-placeholder"></div>';
+  }
+  cc.innerHTML = cHTML;
+  
+  // My cards
+  const mc = document.getElementById('myCardsDisplay');
+  mc.innerHTML = me?.cards ? me.cards.map(c => cardHTML(c)).join('') : '<div class="card card-back"></div><div class="card card-back"></div>';
+  
+  document.getElementById('myChipsDisplay').textContent = '💰 ' + (me?.chips || 0);
+  document.getElementById('potAmount').textContent = ps.pot;
+  
+  const phaseNames = { preflop:'프리플랍', flop:'플랍', turn:'턴', river:'리버', showdown:'쇼다운' };
+  document.getElementById('roundDisplay').textContent = phaseNames[ps.phase] || ps.phase;
+  
+  // Hand rank
+  if(me?.cards && ps.community.length > 0) {
+    document.getElementById('handRankDisplay').textContent = evaluateHandName([...me.cards, ...ps.community]);
+  } else {
+    document.getElementById('handRankDisplay').textContent = '';
+  }
+  
+  // Actions
+  const btns = document.getElementById('actionBar').querySelectorAll('.action-btn');
+  const ccb = document.getElementById('checkCallBtn');
+  
+  if(!isMyTurn || me?.folded || me?.allIn) {
+    btns.forEach(b => b.disabled = true);
+  } else {
+    btns.forEach(b => b.disabled = false);
+    const toCall = ps.currentBet - (me?.bet || 0);
+    if(toCall > 0) {
+      ccb.textContent = `콜 ${Math.min(toCall, me.chips)}`;
+      ccb.className = 'action-btn btn-call';
+      ccb.onclick = () => pokerAction('call');
+    } else {
+      ccb.textContent = '체크';
+      ccb.className = 'action-btn btn-check';
+      ccb.onclick = () => pokerAction('check');
+    }
+    const slider = document.getElementById('raiseSlider');
+    const minR = ps.currentBet + ps.minRaise;
+    slider.min = minR;
+    slider.max = me.chips + me.bet;
+    slider.value = minR;
+    document.getElementById('raiseAmountDisplay').textContent = minR;
+  }
+}
+
+function cardHTML(c) {
+  if(!c) return '<div class="card card-back"></div>';
+  const red = c.suit === '♥' || c.suit === '♦';
+  return `<div class="card card-face ${red ? 'red' : 'black'}"><span class="card-rank">${c.rank}</span><span class="card-suit">${c.suit}</span></div>`;
+}
+
+function pokerAction(action) {
+  document.getElementById('raiseSliderArea').classList.remove('visible');
+  if(state.isHost) processPokerAction(state.myId, action);
+  else {
+    const host = Object.values(state.connections)[0];
+    if(host?.open) host.send(JSON.stringify({ type: 'poker-action', action }));
+  }
+}
+
+function showRaiseSlider() { document.getElementById('raiseSliderArea').classList.toggle('visible'); }
+
+document.getElementById('raiseSlider').addEventListener('input', e => {
+  document.getElementById('raiseAmountDisplay').textContent = e.target.value;
+});
+
+function confirmRaise() {
+  const amt = parseInt(document.getElementById('raiseSlider').value);
+  document.getElementById('raiseSliderArea').classList.remove('visible');
+  if(state.isHost) processPokerAction(state.myId, 'raise', amt);
+  else {
+    const host = Object.values(state.connections)[0];
+    if(host?.open) host.send(JSON.stringify({ type: 'poker-action', action: 'raise', amount: amt }));
+  }
+}
+
+function processPokerAction(playerId, action, amount) {
+  const ps = state.poker;
+  if(!ps || ps.phase === 'showdown') return;
+  
+  const pIdx = ps.players.findIndex(p => p.id === playerId);
+  if(pIdx !== ps.turnIdx) return;
+  
+  const player = ps.players[pIdx];
+  if(player.folded || player.allIn) return;
+  
+  const toCall = ps.currentBet - player.bet;
+  
+  switch(action) {
+    case 'fold': player.folded = true; break;
+    case 'check': if(toCall > 0) return; break;
+    case 'call': {
+      const a = Math.min(toCall, player.chips);
+      player.chips -= a; player.bet += a; player.totalBet += a; ps.pot += a;
+      if(player.chips === 0) player.allIn = true;
+      break;
+    }
+    case 'raise': {
+      const total = amount || (ps.currentBet + ps.minRaise);
+      const a = total - player.bet;
+      if(a > player.chips) return;
+      player.chips -= a; player.bet += a; player.totalBet += a; ps.pot += a;
+      ps.minRaise = total - ps.currentBet; ps.currentBet = player.bet;
+      if(player.chips === 0) player.allIn = true;
+      // Reset acted flags for others (they need to respond to raise)
+      ps.players.forEach((p, i) => { if(i !== pIdx && !p.folded && !p.allIn) p.acted = false; });
+      break;
+    }
+    case 'allin': {
+      const a = player.chips;
+      player.bet += a; player.totalBet += a; ps.pot += a; player.chips = 0; player.allIn = true;
+      if(player.bet > ps.currentBet) {
+        ps.minRaise = player.bet - ps.currentBet; ps.currentBet = player.bet;
+        ps.players.forEach((p, i) => { if(i !== pIdx && !p.folded && !p.allIn) p.acted = false; });
+      }
+      break;
+    }
+  }
+  
+  player.acted = true;
+  
+  // Only one left?
+  const active = ps.players.filter(p => !p.folded);
+  if(active.length === 1) { endPokerHand(active[0]); return; }
+  
+  // Check if betting round complete
+  const canAct = ps.players.filter(p => !p.folded && !p.allIn);
+  const allActed = canAct.every(p => p.acted && p.bet === ps.currentBet);
+  
+  if(canAct.length === 0 || allActed) {
+    advancePokerPhase();
+    return;
+  }
+  
+  // Next player
+  ps.turnIdx = findNextActive(ps, (ps.turnIdx + 1) % ps.players.length);
+  broadcastPokerState();
+}
+
+function advancePokerPhase() {
+  const ps = state.poker;
+  
+  ps.players.forEach(p => { p.bet = 0; p.acted = false; });
+  ps.currentBet = 0;
+  ps.turnIdx = findNextActive(ps, (ps.dealerIdx + 1) % ps.players.length);
+  
+  switch(ps.phase) {
+    case 'preflop':
+      ps.phase = 'flop';
+      ps.deckIdx++;
+      ps.community.push(ps.deck[ps.deckIdx++], ps.deck[ps.deckIdx++], ps.deck[ps.deckIdx++]);
+      break;
+    case 'flop':
+      ps.phase = 'turn';
+      ps.deckIdx++;
+      ps.community.push(ps.deck[ps.deckIdx++]);
+      break;
+    case 'turn':
+      ps.phase = 'river';
+      ps.deckIdx++;
+      ps.community.push(ps.deck[ps.deckIdx++]);
+      break;
+    case 'river':
+      ps.phase = 'showdown';
+      resolveShowdown();
+      return;
+  }
+  
+  const canAct = ps.players.filter(p => !p.folded && !p.allIn);
+  if(canAct.length <= 1) {
+    broadcastPokerState();
+    setTimeout(() => advancePokerPhase(), 800);
+    return;
+  }
+  
+  broadcastPokerState();
+}
+
+function resolveShowdown() {
+  const ps = state.poker;
+  const active = ps.players.filter(p => !p.folded);
+  
+  let best = -1, winner = null;
+  active.forEach(p => {
+    const s = evaluateHand([...p.cards, ...ps.community]);
+    p._score = s;
+    p._handName = evaluateHandName([...p.cards, ...ps.community]);
+    if(s > best) { best = s; winner = p; }
+  });
+  
+  if(winner) endPokerHand(winner);
+}
+
+function endPokerHand(winner) {
+  const ps = state.poker;
+  winner.chips += ps.pot;
+  
+  const result = {
+    type: 'poker-result',
+    winnerId: winner.id, winnerName: winner.name, winnerAvatar: winner.avatar,
+    winnerCards: winner.cards, handName: winner._handName || '최후의 1인', pot: ps.pot,
+  };
+  
+  ps.phase = 'showdown';
+  broadcastPokerState();
+  setTimeout(() => { broadcast(result); handlePokerResult(result); }, 1200);
+}
+
+function handlePokerResult(msg) {
+  const won = msg.winnerId === state.myId;
+  recordGame(won);
+  
+  document.getElementById('resultTitle').textContent = won ? '🏆 승리!' : '😢 패배...';
+  document.getElementById('resultTitle').style.color = won ? 'var(--gold)' : 'var(--text-dim)';
+  document.getElementById('winnerName').textContent = msg.winnerName + ' ' + msg.winnerAvatar;
+  document.getElementById('resultHand').textContent = msg.handName;
+  document.getElementById('resultPot').textContent = '💰 ' + msg.pot;
+  document.getElementById('resultCards').innerHTML = msg.winnerCards ? msg.winnerCards.map(c => cardHTML(c)).join('') : '';
+  document.getElementById('resultOverlay').classList.add('active');
+}
+
+function closeResult() {
+  document.getElementById('resultOverlay').classList.remove('active');
+  if(state.isHost) setTimeout(() => startPoker(), 300);
+}
+
+// ===== HAND EVALUATION =====
+function cardValue(r) {
+  return {'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14}[r]||0;
+}
+
+function evaluateHand(cards) {
+  if(!cards || cards.length < 5) return 0;
+  let best = 0;
+  for(const combo of getCombos(cards, 5)) {
+    const s = scoreHand(combo);
+    if(s > best) best = s;
+  }
+  return best;
+}
+
+function evaluateHandName(cards) {
+  if(!cards || cards.length < 5) return '';
+  let best = 0, bestH = null;
+  for(const combo of getCombos(cards, 5)) {
+    const s = scoreHand(combo);
+    if(s > best) { best = s; bestH = combo; }
+  }
+  const cat = Math.floor(best / 1000000);
+  return ['','하이카드','원페어','투페어','쓰리카드','스트레이트','플러시','풀하우스','포카드','스트레이트 플러시','로얄 플러시'][cat] || '';
+}
+
+function scoreHand(hand) {
+  const vals = hand.map(c => cardValue(c.rank)).sort((a,b) => b - a);
+  const suits = hand.map(c => c.suit);
+  const isFlush = suits.every(s => s === suits[0]);
+  const unique = [...new Set(vals)].sort((a,b) => b - a);
+  let isStraight = false;
+  
+  if(unique.length === 5) {
+    if(unique[0] - unique[4] === 4) isStraight = true;
+    if(unique[0] === 14 && unique[1] === 5) isStraight = true;
+  }
+  
+  const counts = {};
+  vals.forEach(v => counts[v] = (counts[v]||0)+1);
+  const groups = Object.entries(counts).sort((a,b) => b[1]-a[1] || parseInt(b[0])-parseInt(a[0]));
+  const pattern = groups.map(g => g[1]).join('');
+  
+  let cat = 1;
+  if(isStraight && isFlush && vals[0] === 14) cat = 10; // Royal
+  else if(isStraight && isFlush) cat = 9;
+  else if(pattern === '41') cat = 8;
+  else if(pattern === '32') cat = 7;
+  else if(isFlush) cat = 6;
+  else if(isStraight) cat = 5;
+  else if(pattern === '311') cat = 4;
+  else if(pattern === '221') cat = 3;
+  else if(pattern === '2111') cat = 2;
+  
+  let sub = 0;
+  groups.forEach((g, i) => sub += parseInt(g[0]) * Math.pow(15, 4-i));
+  return cat * 1000000 + sub;
+}
+
+function getCombos(arr, k) {
+  if(k === 0) return [[]];
+  if(!arr.length) return [];
+  const [first, ...rest] = arr;
+  return [...getCombos(rest, k-1).map(c => [first,...c]), ...getCombos(rest, k)];
+}
+
+// ============================
+// ===== MAFIA ENGINE =====
+// ============================
+let mafiaTimer;
+
+function startMafia() {
+  const roles = [];
+  const n = state.players.length;
+  roles.push('mafia');
+  if(n >= 4) roles.push('doctor');
+  if(n >= 3) roles.push('police');
+  while(roles.length < n) roles.push('citizen');
+  for(let i = roles.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [roles[i],roles[j]] = [roles[j],roles[i]]; }
+  
+  state.mafia = {
+    players: state.players.map((p,i) => ({
+      id: p.id, name: p.name, avatar: p.avatar, role: roles[i], alive: true
+    })),
+    phase: 'night', round: 1, nightAction: {}, votes: {}, timer: 20, message: '',
+  };
+  
+  broadcastMafiaState();
+  showScreen('mafiaGame');
+  startMafiaTimerFn();
+}
+
+function startMafiaTimerFn() {
+  clearInterval(mafiaTimer);
+  const ms = state.mafia;
+  ms.timer = ms.phase === 'night' ? 20 : ms.phase === 'day-vote' ? 30 : 45;
+  
+  mafiaTimer = setInterval(() => {
+    ms.timer--;
+    if(document.getElementById('mafiaTimer')) document.getElementById('mafiaTimer').textContent = ms.timer;
+    if(ms.timer <= 0) {
+      clearInterval(mafiaTimer);
+      if(state.isHost) advanceMafiaPhase();
+    }
+  }, 1000);
+}
+
+function broadcastMafiaState() {
+  const ms = state.mafia;
+  const roleInfo = { mafia:{e:'🔪',n:'마피아',d:'밤에 한 명을 제거하세요'}, doctor:{e:'💊',n:'의사',d:'밤에 한 명을 살릴 수 있습니다'}, police:{e:'🔍',n:'경찰',d:'밤에 한 명의 정체를 확인합니다'}, citizen:{e:'👤',n:'시민',d:'마피아를 찾아 투표하세요'} };
+  
+  ms.players.forEach(p => {
+    const view = {
+      type: 'mafia-state',
+      players: ms.players.map(pp => ({
+        id: pp.id, name: pp.name, avatar: pp.avatar, alive: pp.alive,
+        role: pp.id === p.id ? pp.role : (ms.phase === 'result' ? pp.role : null),
+      })),
+      phase: ms.phase, round: ms.round, timer: ms.timer,
+      myRole: p.role, message: ms.message,
+    };
+    if(p.id === state.myId) { state._mafiaView = view; renderMafiaView(); }
+    else sendTo(p.id, view);
+  });
+}
+
+function renderMafiaView() {
+  const v = state._mafiaView;
+  if(!v) return;
+  
+  const phaseLabels = { night:'🌙 밤', 'day-discuss':'☀️ 토론', 'day-vote':'🗳️ 투표', result:'📋 결과' };
+  document.getElementById('mafiaPhase').textContent = phaseLabels[v.phase] || v.phase;
+  document.getElementById('mafiaTimer').textContent = v.timer;
+  
+  const ri = { mafia:{e:'🔪',n:'마피아',d:'밤에 한 명을 제거하세요'}, doctor:{e:'💊',n:'의사',d:'밤에 한 명을 살릴 수 있습니다'}, police:{e:'🔍',n:'경찰',d:'밤에 한 명의 정체를 확인합니다'}, citizen:{e:'👤',n:'시민',d:'마피아를 찾아 투표하세요'} };
+  const r = ri[v.myRole] || ri.citizen;
+  document.getElementById('roleEmoji').textContent = r.e;
+  document.getElementById('roleName').textContent = r.n;
+  document.getElementById('roleDesc').textContent = r.d;
+  
+  const grid = document.getElementById('mafiaPlayersGrid');
+  grid.innerHTML = v.players.filter(p => p.id !== state.myId).map((p, i) => `
+    <div class="mafia-player-card ${!p.alive ? 'dead' : ''}" data-pid="${p.id}" onclick="selectMafiaTarget('${p.id}')">
+      <div class="player-avatar-sm" style="background:${PLAYER_COLORS[v.players.findIndex(pp=>pp.id===p.id) % 4]};">${p.avatar}</div>
+      <div style="font-size:14px;font-weight:700;">${p.name}</div>
+      ${!p.alive ? '<div style="font-size:24px;">💀</div>' : ''}
+      ${p.role && v.phase === 'result' ? '<div style="font-size:11px;color:var(--accent2);">' + (ri[p.role]?.n||'') + '</div>' : ''}
+    </div>
+  `).join('');
+  
+  const isNight = v.phase === 'night';
+  const isVote = v.phase === 'day-vote';
+  let msg = '';
+  if(isNight) {
+    if(v.myRole === 'mafia') msg = '🔪 제거할 대상을 선택하세요';
+    else if(v.myRole === 'doctor') msg = '💊 살릴 대상을 선택하세요';
+    else if(v.myRole === 'police') msg = '🔍 조사할 대상을 선택하세요';
+    else msg = '🌙 밤입니다... 기다리세요';
+  } else if(v.phase === 'day-discuss') {
+    msg = v.message || '☀️ 토론하세요! 의심되는 사람은?';
+  } else if(isVote) {
+    msg = '🗳️ 추방할 사람에게 투표하세요';
+  } else {
+    msg = v.message || '';
+  }
+  
+  document.getElementById('mafiaMessage').textContent = msg;
+  const canAct = (isNight && v.myRole !== 'citizen') || isVote;
+  document.getElementById('mafiaActionBtn').style.display = canAct ? 'block' : 'none';
+}
+
+let selectedMafiaTarget = null;
+function selectMafiaTarget(pid) {
+  selectedMafiaTarget = pid;
+  document.querySelectorAll('.mafia-player-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`.mafia-player-card[data-pid="${pid}"]`)?.classList.add('selected');
+}
+
+function mafiaConfirmAction() {
+  if(!selectedMafiaTarget) { showToast('대상을 선택하세요'); return; }
+  const v = state._mafiaView;
+  if(state.isHost) processMafiaAction(state.myId, v.myRole, selectedMafiaTarget);
+  else {
+    const host = Object.values(state.connections)[0];
+    if(host?.open) host.send(JSON.stringify({ type:'mafia-action', role: v.myRole, targetId: selectedMafiaTarget }));
+  }
+  showToast('선택 완료!');
+  document.getElementById('mafiaActionBtn').style.display = 'none';
+  selectedMafiaTarget = null;
+}
+
+function processMafiaAction(playerId, role, targetId) {
+  const ms = state.mafia;
+  if(ms.phase === 'night') {
+    ms.nightAction[role] = targetId;
+    const need = ms.players.filter(p => p.alive && p.role !== 'citizen').length;
+    if(Object.keys(ms.nightAction).length >= need) resolveNight();
+  } else if(ms.phase === 'day-vote') {
+    ms.votes[playerId] = targetId;
+    const alive = ms.players.filter(p => p.alive).length;
+    if(Object.keys(ms.votes).length >= alive) resolveVote();
+  }
+}
+
+function resolveNight() {
+  const ms = state.mafia;
+  const killed = ms.nightAction['mafia'];
+  const saved = ms.nightAction['doctor'];
+  
+  if(killed && killed !== saved) {
+    const v = ms.players.find(p => p.id === killed);
+    if(v) { v.alive = false; ms.message = `💀 ${v.name}님이 밤에 살해당했습니다`; }
+  } else if(killed === saved) {
+    ms.message = '🏥 의사가 환자를 살렸습니다!';
+  } else {
+    ms.message = '☀️ 평화로운 밤이었습니다';
+  }
+  
+  // Police result
+  const policeTarget = ms.nightAction['police'];
+  if(policeTarget) {
+    const cop = ms.players.find(p => p.role === 'police' && p.alive);
+    const target = ms.players.find(p => p.id === policeTarget);
+    if(cop && target) {
+      const isMafia = target.role === 'mafia';
+      showToast(cop.id === state.myId ? `${target.name}은(는) ${isMafia ? '🔪 마피아!' : '✅ 선량한 시민'}` : '');
+      if(cop.id !== state.myId) {
+        sendTo(cop.id, {
+          type: 'mafia-state',
+          players: ms.players.map(p => ({ ...p, role: p.id === cop.id ? p.role : null })),
+          phase: 'night', message: `${target.name}은(는) ${isMafia ? '🔪 마피아!' : '✅ 선량한 시민'}`,
+          myRole: 'police', round: ms.round, timer: 3,
+        });
+      }
+    }
+  }
+  
+  ms.nightAction = {};
+  if(checkMafiaWin()) return;
+  ms.phase = 'day-discuss';
+  ms.votes = {};
+  broadcastMafiaState();
+  startMafiaTimerFn();
+}
+
+function resolveVote() {
+  const ms = state.mafia;
+  const counts = {};
+  Object.values(ms.votes).forEach(v => counts[v] = (counts[v]||0)+1);
+  
+  let max = 0, expelled = null;
+  Object.entries(counts).forEach(([pid, c]) => { if(c > max) { max = c; expelled = pid; } });
+  
+  if(expelled) {
+    const p = ms.players.find(pp => pp.id === expelled);
+    if(p) {
+      p.alive = false;
+      ms.message = `🗳️ ${p.name}님이 추방! 정체: ${p.role === 'mafia' ? '🔪 마피아!' : '👤 시민...'}`;
+    }
+  }
+  
+  if(checkMafiaWin()) return;
+  ms.phase = 'night'; ms.round++; ms.votes = {};
+  broadcastMafiaState();
+  startMafiaTimerFn();
+}
+
+function checkMafiaWin() {
+  const ms = state.mafia;
+  const alive = ms.players.filter(p => p.alive);
+  const mafiaAlive = alive.filter(p => p.role === 'mafia').length;
+  const civAlive = alive.filter(p => p.role !== 'mafia').length;
+  
+  if(mafiaAlive === 0) {
+    ms.phase = 'result'; ms.message = '🎉 시민 팀 승리!';
+    finish('citizen');
+    return true;
+  }
+  if(mafiaAlive >= civAlive) {
+    ms.phase = 'result'; ms.message = '🔪 마피아 승리!';
+    finish('mafia');
+    return true;
+  }
+  return false;
+  
+  function finish(winner) {
+    clearInterval(mafiaTimer);
+    broadcastMafiaState();
+    const r = { type:'mafia-result', winner, message: ms.message };
+    broadcast(r);
+    handleMafiaResult(r);
+  }
+}
+
+function handleMafiaResult(msg) {
+  clearInterval(mafiaTimer);
+  const myRole = state._mafiaView?.myRole;
+  const won = (msg.winner === 'mafia' && myRole === 'mafia') || (msg.winner === 'citizen' && myRole !== 'mafia');
+  recordGame(won);
+  
+  setTimeout(() => {
+    document.getElementById('resultTitle').textContent = won ? '🏆 승리!' : '😢 패배...';
+    document.getElementById('resultTitle').style.color = won ? 'var(--gold)' : 'var(--text-dim)';
+    document.getElementById('winnerName').textContent = msg.message;
+    document.getElementById('resultHand').textContent = '';
+    document.getElementById('resultPot').textContent = '';
+    document.getElementById('resultCards').innerHTML = '';
+    document.getElementById('resultOverlay').classList.add('active');
+  }, 1500);
+}
+
+function advanceMafiaPhase() {
+  const ms = state.mafia;
+  if(ms.phase === 'night') resolveNight();
+  else if(ms.phase === 'day-discuss') { ms.phase = 'day-vote'; broadcastMafiaState(); startMafiaTimerFn(); }
+  else if(ms.phase === 'day-vote') resolveVote();
+}
+
+// ===== EVENTS =====
+document.getElementById('nameInput').addEventListener('change', saveProfile);
+document.getElementById('nameInput').addEventListener('blur', saveProfile);
+
+// ===== START =====
+init();
+</script>
+</body>
+</html>

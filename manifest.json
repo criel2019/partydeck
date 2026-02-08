@@ -1,0 +1,17 @@
+{
+  "name": "파티덱 - P2P 미니게임",
+  "short_name": "파티덱",
+  "description": "서버 없이 즐기는 P2P 미니게임 플랫폼",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a12",
+  "theme_color": "#0a0a12",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
