@@ -1,0 +1,553 @@
+<!-- QUICK DRAW GAME -->
+<div class="screen" id="quickDrawGame">
+  <div class="qd-header">
+    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">✕</button>
+    <div class="qd-title">🤠 서부 총잡이</div>
+    <div class="qd-round">라운드 <span id="qdRoundNum">1</span></div>
+  </div>
+
+  <div class="qd-main-area">
+    <div class="qd-tap-zone" id="qdTapZone" onclick="qdTap()">
+      <div class="qd-status-text" id="qdStatusText">준비...</div>
+      <div class="qd-reaction-time" id="qdReactionTime"></div>
+    </div>
+  </div>
+
+  <div class="qd-rankings">
+    <div class="qd-rankings-title">순위</div>
+    <div class="qd-rankings-list" id="qdRankingsList"></div>
+  </div>
+
+  <button class="btn btn-primary qd-restart-btn" id="qdRestartBtn" style="display:none;" onclick="restartQuickDraw()">다시 하기</button>
+</div>
+
+<!-- ================== -->
+/* QUICK DRAW CSS */
+#quickDrawGame {
+  padding: 16px;
+  gap: 16px;
+  background: linear-gradient(180deg, #1a0f0a 0%, #3d2817 100%);
+}
+
+.qd-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(20,20,42,0.7);
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(4px);
+}
+
+.qd-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: #ff9800;
+}
+
+.qd-round {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+.qd-main-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.qd-tap-zone {
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.qd-tap-zone.waiting {
+  background: radial-gradient(circle, #2a2a3a, #1a1a2a);
+  border: 4px solid rgba(255,255,255,0.1);
+}
+
+.qd-tap-zone.countdown {
+  background: radial-gradient(circle, #4a3a2a, #2a1a1a);
+  border: 4px solid rgba(255,152,0,0.3);
+  animation: qd-pulse-countdown 1s ease-in-out infinite;
+}
+
+.qd-tap-zone.fire {
+  background: radial-gradient(circle, #ff4444, #cc0000);
+  border: 4px solid #ffaa00;
+  box-shadow: 0 0 50px rgba(255,68,68,0.8), 0 8px 32px rgba(0,0,0,0.5);
+  animation: qd-fire-pulse 0.5s ease-in-out infinite;
+}
+
+.qd-tap-zone.cheated {
+  background: radial-gradient(circle, #666, #333);
+  border: 4px solid #999;
+}
+
+.qd-tap-zone.done {
+  background: radial-gradient(circle, #2a4a2a, #1a2a1a);
+  border: 4px solid rgba(0,255,100,0.3);
+}
+
+@keyframes qd-pulse-countdown {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes qd-fire-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 50px rgba(255,68,68,0.8), 0 8px 32px rgba(0,0,0,0.5); }
+  50% { transform: scale(1.05); box-shadow: 0 0 80px rgba(255,68,68,1), 0 8px 40px rgba(0,0,0,0.6); }
+}
+
+.qd-status-text {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 42px;
+  color: var(--text);
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  margin-bottom: 12px;
+}
+
+.qd-tap-zone.fire .qd-status-text {
+  font-size: 56px;
+  color: #fff;
+  animation: qd-fire-text 0.3s ease-in-out infinite;
+}
+
+@keyframes qd-fire-text {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.qd-reaction-time {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 32px;
+  color: var(--accent2);
+  text-align: center;
+  min-height: 40px;
+}
+
+.qd-rankings {
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.06);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.qd-rankings-title {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.qd-rankings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.qd-ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.04);
+  animation: slideIn 0.3s ease;
+}
+
+.qd-ranking-item.winner {
+  border-color: var(--gold);
+  background: rgba(255,215,0,0.1);
+}
+
+.qd-ranking-rank {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: var(--text-dim);
+  min-width: 28px;
+  text-align: center;
+}
+
+.qd-ranking-item.winner .qd-ranking-rank {
+  color: var(--gold);
+}
+
+.qd-ranking-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.qd-ranking-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.qd-ranking-time {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  color: var(--accent2);
+}
+
+.qd-ranking-item.cheated .qd-ranking-time {
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.qd-restart-btn {
+  max-width: 280px;
+  align-self: center;
+}
+
+<!-- ================== -->
+// ===== QUICK DRAW ENGINE =====
+
+let qdState = {
+  phase: 'waiting', // waiting, countdown, fire, result
+  startTime: 0,
+  results: {}, // {playerId: {time: ms, cheated: bool, name: str, avatar: str}}
+  roundNum: 1,
+  countdownTimeout: null,
+  fireTimeout: null,
+};
+
+function startQuickDraw() {
+  if(!state.isHost) return;
+
+  qdState = {
+    phase: 'waiting',
+    startTime: 0,
+    results: {},
+    roundNum: state.quickdraw?.roundNum || 1,
+    countdownTimeout: null,
+    fireTimeout: null,
+  };
+
+  state.quickdraw = qdState;
+
+  broadcast({ type: 'game-start', game: 'quickdraw', state: qdState });
+  showScreen('quickDrawGame');
+  renderQuickDrawView(qdState);
+
+  // 3초 대기 후 카운트다운 시작
+  setTimeout(() => {
+    qdState.phase = 'countdown';
+    broadcastQDState();
+
+    // 랜덤 2~6초 후 발사 신호
+    const delay = 2000 + Math.random() * 4000;
+    qdState.countdownTimeout = setTimeout(() => {
+      qdState.phase = 'fire';
+      qdState.startTime = Date.now();
+      broadcastQDState();
+
+      // 진동 효과 (호스트)
+      if(navigator.vibrate) navigator.vibrate(200);
+
+      // 5초 후 자동 결과 처리
+      qdState.fireTimeout = setTimeout(() => {
+        resolveQD();
+      }, 5000);
+    }, delay);
+  }, 3000);
+}
+
+function broadcastQDState() {
+  const msg = {
+    type: 'qd-state',
+    phase: qdState.phase,
+    startTime: qdState.startTime,
+    results: qdState.results,
+    roundNum: qdState.roundNum,
+  };
+
+  broadcast(msg);
+  renderQuickDrawView(msg);
+}
+
+function renderQuickDrawView(qd) {
+  if(!qd) return;
+
+  const zone = document.getElementById('qdTapZone');
+  const statusText = document.getElementById('qdStatusText');
+  const reactionTime = document.getElementById('qdReactionTime');
+  const roundNum = document.getElementById('qdRoundNum');
+
+  roundNum.textContent = qd.roundNum;
+
+  // 상태별 UI 업데이트
+  zone.className = 'qd-tap-zone ' + qd.phase;
+
+  switch(qd.phase) {
+    case 'waiting':
+      statusText.textContent = '준비...';
+      reactionTime.textContent = '';
+      break;
+
+    case 'countdown':
+      statusText.textContent = '⏳';
+      reactionTime.textContent = '';
+      break;
+
+    case 'fire':
+      statusText.textContent = '발사!';
+      reactionTime.textContent = '';
+
+      // 진동 효과
+      if(navigator.vibrate) navigator.vibrate(200);
+      break;
+
+    case 'result':
+      statusText.textContent = '결과';
+
+      // 내 반응시간 표시
+      const myResult = qd.results[state.myId];
+      if(myResult) {
+        if(myResult.cheated) {
+          reactionTime.textContent = '실격!';
+          reactionTime.style.color = 'var(--danger)';
+        } else {
+          reactionTime.textContent = (myResult.time / 1000).toFixed(3) + '초';
+          reactionTime.style.color = 'var(--accent2)';
+        }
+      } else {
+        reactionTime.textContent = '미응답';
+        reactionTime.style.color = 'var(--text-dim)';
+      }
+
+      // 다시 하기 버튼 (호스트만)
+      document.getElementById('qdRestartBtn').style.display = state.isHost ? 'block' : 'none';
+      break;
+  }
+
+  // 순위 표시
+  renderQDRankings(qd);
+}
+
+function renderQDRankings(qd) {
+  const list = document.getElementById('qdRankingsList');
+
+  if(qd.phase !== 'result' || Object.keys(qd.results).length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:13px;padding:20px;">대기 중...</div>';
+    return;
+  }
+
+  // 결과 정렬: 실격자는 맨 뒤, 나머지는 시간순
+  const sorted = Object.entries(qd.results)
+    .map(([id, r]) => ({ id, ...r }))
+    .sort((a, b) => {
+      if(a.cheated && !b.cheated) return 1;
+      if(!a.cheated && b.cheated) return -1;
+      if(a.cheated && b.cheated) return 0;
+      return a.time - b.time;
+    });
+
+  list.innerHTML = sorted.map((r, i) => {
+    const rank = r.cheated ? '❌' : (i + 1) + '위';
+    const timeStr = r.cheated ? '너무 빨라요!' : (r.time / 1000).toFixed(3) + '초';
+    const isWinner = !r.cheated && i === 0;
+    const playerIdx = state.players.findIndex(p => p.id === r.id);
+
+    return `
+      <div class="qd-ranking-item ${isWinner ? 'winner' : ''}">
+        <div class="qd-ranking-rank">${rank}</div>
+        <div class="qd-ranking-avatar" style="background:${PLAYER_COLORS[playerIdx % PLAYER_COLORS.length]};">${r.avatar}</div>
+        <div class="qd-ranking-name">${r.name}</div>
+        <div class="qd-ranking-time ${r.cheated ? 'cheated' : ''}">${timeStr}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function qdTap() {
+  const qd = qdState;
+  const now = Date.now();
+
+  // 이미 결과가 있으면 무시
+  if(qd.results[state.myId]) return;
+
+  if(qd.phase === 'waiting') {
+    // 너무 빠름
+    return;
+  } else if(qd.phase === 'countdown') {
+    // 부정행위
+    sendQDAction({ cheated: true, time: 0 });
+
+    // 즉시 UI 업데이트
+    qdState.results[state.myId] = {
+      cheated: true,
+      time: 0,
+      name: state.myName,
+      avatar: state.myAvatar,
+    };
+
+    const zone = document.getElementById('qdTapZone');
+    const statusText = document.getElementById('qdStatusText');
+    zone.className = 'qd-tap-zone cheated';
+    statusText.textContent = '너무 빨라요!\n실격!';
+    statusText.style.fontSize = '32px';
+
+  } else if(qd.phase === 'fire') {
+    // 정상 반응
+    const reactionTime = now - qd.startTime;
+    sendQDAction({ cheated: false, time: reactionTime });
+
+    // 즉시 UI 업데이트
+    qdState.results[state.myId] = {
+      cheated: false,
+      time: reactionTime,
+      name: state.myName,
+      avatar: state.myAvatar,
+    };
+
+    const zone = document.getElementById('qdTapZone');
+    const statusText = document.getElementById('qdStatusText');
+    const reactionTimeEl = document.getElementById('qdReactionTime');
+    zone.className = 'qd-tap-zone done';
+    statusText.textContent = '완료!';
+    reactionTimeEl.textContent = (reactionTime / 1000).toFixed(3) + '초';
+  }
+}
+
+function sendQDAction(action) {
+  const msg = {
+    type: 'qd-action',
+    playerId: state.myId,
+    name: state.myName,
+    avatar: state.myAvatar,
+    cheated: action.cheated,
+    time: action.time,
+  };
+
+  if(state.isHost) {
+    processQDAction(msg);
+  } else {
+    const host = Object.values(state.connections)[0];
+    if(host?.open) host.send(JSON.stringify(msg));
+  }
+}
+
+function processQDAction(msg) {
+  if(!state.isHost) return;
+
+  qdState.results[msg.playerId] = {
+    cheated: msg.cheated,
+    time: msg.time,
+    name: msg.name,
+    avatar: msg.avatar,
+  };
+
+  // 모든 플레이어가 응답했는지 확인
+  if(Object.keys(qdState.results).length >= state.players.length) {
+    // 모두 응답 완료
+    clearTimeout(qdState.fireTimeout);
+    resolveQD();
+  }
+}
+
+function resolveQD() {
+  if(!state.isHost) return;
+
+  qdState.phase = 'result';
+
+  // 승자 결정
+  const valid = Object.entries(qdState.results)
+    .filter(([id, r]) => !r.cheated)
+    .sort((a, b) => a[1].time - b[1].time);
+
+  let winnerId = null;
+  let winnerName = '';
+  if(valid.length > 0) {
+    winnerId = valid[0][0];
+    winnerName = valid[0][1].name;
+  }
+
+  const result = {
+    type: 'qd-result',
+    winnerId,
+    winnerName,
+    results: qdState.results,
+    roundNum: qdState.roundNum,
+  };
+
+  broadcast(result);
+  handleQDResult(result);
+}
+
+function handleQDResult(msg) {
+  qdState.phase = 'result';
+  qdState.results = msg.results;
+  qdState.roundNum = msg.roundNum;
+
+  renderQuickDrawView(qdState);
+
+  // 승리/패배 기록
+  const won = msg.winnerId === state.myId;
+  if(msg.winnerId) {
+    recordGame(won);
+  }
+
+  // 토스트 메시지
+  if(msg.winnerId === state.myId) {
+    showToast('🏆 승리!');
+  } else if(msg.winnerId) {
+    showToast(`${msg.winnerName} 승리!`);
+  }
+}
+
+function restartQuickDraw() {
+  if(!state.isHost) return;
+
+  qdState.roundNum++;
+  startQuickDraw();
+}
+
+// handleMessage 핸들러 추가
+// 기존 handleMessage 함수의 handlers 객체에 추가:
+/*
+'qd-state': () => {
+  if(msg.phase === 'fire' && navigator.vibrate) navigator.vibrate(200);
+  qdState.phase = msg.phase;
+  qdState.startTime = msg.startTime;
+  qdState.results = msg.results;
+  qdState.roundNum = msg.roundNum;
+  renderQuickDrawView(qdState);
+},
+'qd-action': () => {
+  if(state.isHost) processQDAction(msg);
+},
+'qd-result': () => handleQDResult(msg),
+*/
+
+// handleGameStart 함수에 추가:
+/*
+else if(msg.game === 'quickdraw') {
+  showScreen('quickDrawGame');
+  qdState = msg.state;
+  renderQuickDrawView(qdState);
+}
+*/

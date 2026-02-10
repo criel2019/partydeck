@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>파티덱 게임 목업</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&family=Crimson+Text:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --felt-green: #0a4d2e;
+            --felt-dark: #052818;
+            --card-red: #3d1a1a;
+            --gold: #d4af37;
+            --gold-dim: #8b7930;
+            --desert-sky: #ff8c42;
+            --desert-sand: #5c3a21;
+            --steel-dark: #1a1d23;
+            --steel-light: #2d3139;
+            --danger-red: #d42f2f;
+            --success-green: #2d8a4d;
+            --text-light: #f5f5dc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: var(--steel-dark);
+            color: var(--text-light);
+            max-width: 430px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            background: linear-gradient(180deg, #000 0%, #1a1a1a 100%);
+            border-bottom: 3px solid var(--gold);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 16px 8px;
+            background: transparent;
+            border: none;
+            color: #888;
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-right: 1px solid #333;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tab-btn:last-child {
+            border-right: none;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+            color: var(--gold);
+            text-shadow: 0 0 12px var(--gold);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* === E-CARD GAME === */
+        .ecard-container {
+            background:
+                repeating-linear-gradient(
+                    0deg,
+                    var(--felt-green) 0px,
+                    var(--felt-dark) 2px,
+                    var(--felt-green) 4px
+                ),
+                radial-gradient(circle at 30% 40%, rgba(255,255,255,0.05) 0%, transparent 60%);
+            min-height: calc(100vh - 60px);
+            padding: 24px;
+            position: relative;
+        }
+
+        .ecard-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" /></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.03"/></svg>');
+            pointer-events: none;
+        }
+
+        .card-hand {
+            position: relative;
+            height: 320px;
+            margin-bottom: 32px;
+        }
+
+        .playing-card {
+            position: absolute;
+            width: 100px;
+            height: 150px;
+            background: linear-gradient(145deg, var(--card-red) 0%, #2a1010 100%);
+            border: 3px solid var(--gold);
+            border-radius: 8px;
+            box-shadow:
+                0 8px 24px rgba(0,0,0,0.6),
+                inset 0 2px 4px rgba(212,175,55,0.3);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: bottom center;
+        }
+
+        .playing-card:hover {
+            transform: translateY(-40px) scale(1.05);
+            z-index: 10;
+            box-shadow:
+                0 16px 48px rgba(212,175,55,0.4),
+                inset 0 2px 4px rgba(212,175,55,0.5);
+        }
+
+        .playing-card.king {
+            background: linear-gradient(145deg, #4a1a1a 0%, var(--card-red) 100%);
+        }
+
+        .card-content {
+            padding: 12px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .card-title {
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 28px;
+            color: var(--gold);
+            text-shadow:
+                2px 2px 4px rgba(0,0,0,0.8),
+                0 0 12px rgba(212,175,55,0.5);
+            margin-bottom: 8px;
+        }
+
+        .card-content.noble .card-title {
+            color: #c0c0c0;
+            text-shadow:
+                2px 2px 4px rgba(0,0,0,0.8),
+                0 0 8px rgba(192,192,192,0.3);
+        }
+
+        .card-icon {
+            font-size: 48px;
+            margin-top: 8px;
+        }
+
+        /* Card Back */
+        .card-back {
+            background: linear-gradient(145deg, #5a1a1a 0%, var(--card-red) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            width: 140px;
+            height: 200px;
+            margin: 80px auto 40px;
+        }
+
+        .card-back::before {
+            content: '';
+            position: absolute;
+            width: 120%;
+            height: 120%;
+            background: repeating-conic-gradient(
+                from 0deg at 50% 50%,
+                var(--gold-dim) 0deg,
+                transparent 8deg,
+                var(--gold-dim) 16deg
+            );
+            opacity: 0.15;
+            animation: rotatePattern 20s linear infinite;
+        }
+
+        @keyframes rotatePattern {
+            to { transform: rotate(360deg); }
+        }
+
+        .card-emblem {
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 72px;
+            color: var(--gold);
+            text-shadow:
+                0 0 20px rgba(212,175,55,0.8),
+                4px 4px 8px rgba(0,0,0,0.9);
+            z-index: 1;
+            position: relative;
+        }
+
+        .card-emblem::before {
+            content: '★';
+            position: absolute;
+            font-size: 120px;
+            color: var(--gold-dim);
+            opacity: 0.2;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .game-btn {
+            padding: 16px 32px;
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .game-btn.primary {
+            background: linear-gradient(145deg, var(--success-green) 0%, #1f5d35 100%);
+            color: white;
+            border: 2px solid #3da869;
+        }
+
+        .game-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(45,138,77,0.5);
+        }
+
+        .game-btn.secondary {
+            background: linear-gradient(145deg, #4a4a4a 0%, #2a2a2a 100%);
+            color: #ccc;
+            border: 2px solid #666;
+        }
+
+        .game-btn.secondary:hover {
+            background: linear-gradient(145deg, #5a5a5a 0%, #3a3a3a 100%);
+        }
+
+        /* === QUICK DRAW GAME === */
+        .quickdraw-container {
+            background: linear-gradient(180deg,
+                #ff8c42 0%,
+                #d97032 30%,
+                #8b5a3c 60%,
+                var(--desert-sand) 100%
+            );
+            min-height: calc(100vh - 60px);
+            padding: 40px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quickdraw-container::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent 0px,
+                rgba(0,0,0,0.1) 1px,
+                transparent 2px,
+                transparent 60px
+            );
+            pointer-events: none;
+        }
+
+        .target-area {
+            width: 280px;
+            height: 280px;
+            margin: 60px auto 40px;
+            position: relative;
+            animation: targetPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes targetPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .crosshair {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            border: 4px solid rgba(0,0,0,0.8);
+            border-radius: 50%;
+            background: radial-gradient(
+                circle,
+                rgba(255,255,255,0.9) 0%,
+                rgba(255,255,255,0.7) 20%,
+                rgba(200,50,50,0.3) 50%,
+                transparent 70%
+            );
+            box-shadow:
+                inset 0 0 40px rgba(0,0,0,0.3),
+                0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .crosshair::before,
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(0,0,0,0.7);
+        }
+
+        .crosshair::before {
+            width: 2px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .crosshair::after {
+            height: 2px;
+            width: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .crosshair-center {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: var(--danger-red);
+            border: 3px solid #000;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px rgba(212,47,47,0.8);
+        }
+
+        .status-text {
+            text-align: center;
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 64px;
+            margin: 32px 0;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
+            animation: statusFlicker 0.5s ease infinite;
+        }
+
+        .status-text.ready {
+            color: #fff;
+        }
+
+        .status-text.fire {
+            color: var(--danger-red);
+            font-size: 80px;
+            text-shadow:
+                4px 4px 8px rgba(0,0,0,0.8),
+                0 0 24px rgba(212,47,47,0.9);
+        }
+
+        @keyframes statusFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+
+        .reaction-time {
+            text-align: center;
+            font-size: 48px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
+            margin: 24px 0;
+        }
+
+        .leaderboard {
+            background: rgba(0,0,0,0.6);
+            border: 3px solid #000;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 24px 0;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+        }
+
+        .leaderboard-item {
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(255,255,255,0.1);
+            border-left: 4px solid var(--gold);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .leaderboard-item.winner {
+            background: rgba(212,175,55,0.2);
+            border-left-color: var(--gold);
+            border-left-width: 6px;
+        }
+
+        .alert-message {
+            background: linear-gradient(145deg, #8a1a1a 0%, var(--danger-red) 100%);
+            border: 3px solid #ff4444;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 24px;
+            text-align: center;
+            font-weight: 900;
+            font-size: 18px;
+            box-shadow:
+                0 8px 24px rgba(212,47,47,0.6),
+                inset 0 2px 4px rgba(255,255,255,0.2);
+            animation: alertPulse 1s ease infinite;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        /* === RUSSIAN ROULETTE === */
+        .roulette-container {
+            background:
+                linear-gradient(180deg, var(--steel-light) 0%, var(--steel-dark) 100%);
+            min-height: calc(100vh - 60px);
+            padding: 32px 24px;
+            position: relative;
+        }
+
+        .roulette-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent 0px,
+                    rgba(255,255,255,0.02) 1px,
+                    transparent 2px,
+                    transparent 40px
+                ),
+                repeating-linear-gradient(
+                    90deg,
+                    transparent 0px,
+                    rgba(255,255,255,0.02) 1px,
+                    transparent 2px,
+                    transparent 40px
+                );
+            pointer-events: none;
+        }
+
+        .settings-bar {
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 32px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .cylinder {
+            width: 240px;
+            height: 240px;
+            margin: 40px auto;
+            position: relative;
+            animation: cylinderSpin 3s ease-in-out infinite;
+        }
+
+        @keyframes cylinderSpin {
+            0% { transform: rotate(0deg); }
+            30% { transform: rotate(1080deg); }
+            100% { transform: rotate(1080deg); }
+        }
+
+        .cylinder-disc {
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 50% 50%, #3a4149 0%, var(--steel-light) 50%, #1a1d23 100%);
+            border: 6px solid #4a4d55;
+            border-radius: 50%;
+            position: relative;
+            box-shadow:
+                inset 0 8px 24px rgba(0,0,0,0.6),
+                0 12px 40px rgba(0,0,0,0.8);
+        }
+
+        .cylinder-disc::before {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #2a2d35 0%, #1a1d23 100%);
+            border: 3px solid #5a5d65;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+        }
+
+        .chamber {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background: radial-gradient(circle, #2a2d35 0%, #1a1d23 100%);
+            border: 3px solid #4a4d55;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.9);
+        }
+
+        .chamber:nth-child(1) { transform: translate(-50%, -50%) translateY(-80px); }
+        .chamber:nth-child(2) { transform: translate(-50%, -50%) rotate(60deg) translateY(-80px); }
+        .chamber:nth-child(3) { transform: translate(-50%, -50%) rotate(120deg) translateY(-80px); }
+        .chamber:nth-child(4) { transform: translate(-50%, -50%) rotate(180deg) translateY(-80px); }
+        .chamber:nth-child(5) { transform: translate(-50%, -50%) rotate(240deg) translateY(-80px); }
+        .chamber:nth-child(6) { transform: translate(-50%, -50%) rotate(300deg) translateY(-80px); }
+
+        .chamber.loaded::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--danger-red);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 12px rgba(212,47,47,0.9);
+        }
+
+        .spin-btn {
+            background: linear-gradient(145deg, #3a4149 0%, var(--steel-light) 100%);
+            color: var(--text-light);
+            padding: 16px 40px;
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 18px;
+            border: 3px solid #5a5d65;
+            border-radius: 8px;
+            cursor: pointer;
+            display: block;
+            margin: 24px auto;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+        }
+
+        .spin-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.7);
+        }
+
+        .trigger-btn {
+            background: linear-gradient(145deg, #8a1a1a 0%, var(--danger-red) 100%);
+            color: white;
+            padding: 24px 48px;
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 28px;
+            border: 4px solid #ff4444;
+            border-radius: 12px;
+            cursor: pointer;
+            display: block;
+            margin: 32px auto;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow:
+                0 8px 32px rgba(212,47,47,0.7),
+                inset 0 2px 4px rgba(255,255,255,0.2);
+        }
+
+        .trigger-btn:hover {
+            transform: scale(1.05);
+            box-shadow:
+                0 12px 48px rgba(212,47,47,0.9),
+                inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+
+        .result-text {
+            text-align: center;
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 72px;
+            margin: 24px 0;
+            text-shadow: 4px 4px 12px rgba(0,0,0,0.9);
+            animation: resultAppear 0.5s ease;
+        }
+
+        @keyframes resultAppear {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .result-text.dead {
+            color: var(--danger-red);
+            text-shadow:
+                4px 4px 12px rgba(0,0,0,0.9),
+                0 0 32px rgba(212,47,47,1);
+        }
+
+        .result-text.alive {
+            color: var(--success-green);
+            text-shadow:
+                4px 4px 12px rgba(0,0,0,0.9),
+                0 0 32px rgba(45,138,77,1);
+        }
+
+        .survivors-list {
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #444;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 32px;
+        }
+
+        .survivor-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+
+        .survivor-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--gold-dim) 0%, var(--gold) 100%);
+            border: 3px solid var(--gold);
+            border-radius: 50%;
+            margin-right: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .survivor-item.eliminated .survivor-avatar {
+            background: linear-gradient(135deg, #666 0%, #444 100%);
+            border-color: #888;
+            opacity: 0.5;
+            position: relative;
+        }
+
+        .survivor-item.eliminated .survivor-avatar::after {
+            content: '✕';
+            position: absolute;
+            font-size: 36px;
+            color: var(--danger-red);
+            font-weight: 900;
+        }
+
+        .survivor-name {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .survivor-item.eliminated .survivor-name {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab(0)">E카드</button>
+        <button class="tab-btn" onclick="switchTab(1)">서부 총잡이</button>
+        <button class="tab-btn" onclick="switchTab(2)">러시안 룰렛</button>
+    </div>
+
+    <!-- E-Card Game -->
+    <div class="tab-content active">
+        <div class="ecard-container">
+            <div class="card-hand">
+                <div class="playing-card king" style="left: 0; transform: rotate(-20deg);">
+                    <div class="card-content">
+                        <div class="card-title">왕</div>
+                        <div class="card-icon">👑</div>
+                    </div>
+                </div>
+                <div class="playing-card" style="left: 60px; transform: rotate(-10deg);">
+                    <div class="card-content noble">
+                        <div class="card-title">귀족</div>
+                        <div class="card-icon">🎩</div>
+                    </div>
+                </div>
+                <div class="playing-card" style="left: 120px; transform: rotate(0deg);">
+                    <div class="card-content noble">
+                        <div class="card-title">귀족</div>
+                        <div class="card-icon">🎩</div>
+                    </div>
+                </div>
+                <div class="playing-card" style="left: 180px; transform: rotate(10deg);">
+                    <div class="card-content noble">
+                        <div class="card-title">귀족</div>
+                        <div class="card-icon">🎩</div>
+                    </div>
+                </div>
+                <div class="playing-card" style="left: 240px; transform: rotate(20deg);">
+                    <div class="card-content noble">
+                        <div class="card-title">귀족</div>
+                        <div class="card-icon">🎩</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="game-btn primary">제물</button>
+                <button class="game-btn secondary">취소</button>
+                <button class="game-btn secondary">포기</button>
+                <button class="game-btn secondary">패스</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Draw Game -->
+    <div class="tab-content">
+        <div class="quickdraw-container">
+            <div class="target-area">
+                <div class="crosshair">
+                    <div class="crosshair-center"></div>
+                </div>
+            </div>
+
+            <div class="status-text fire">발사!</div>
+
+            <div class="reaction-time">0.342초</div>
+
+            <div class="leaderboard">
+                <div class="leaderboard-item winner">
+                    1위: 0.234초 - 철수
+                </div>
+                <div class="leaderboard-item" style="border-left-color: #c0c0c0;">
+                    2위: 0.342초 - 나
+                </div>
+                <div class="leaderboard-item" style="border-left-color: #cd7f32;">
+                    3위: 0.567초 - 민지
+                </div>
+            </div>
+
+            <div class="alert-message">
+                부정행위! 신호 전에 터치했습니다
+            </div>
+        </div>
+    </div>
+
+    <!-- Russian Roulette Game -->
+    <div class="tab-content">
+        <div class="roulette-container">
+            <div class="settings-bar">
+                총알: 1발 / 실린더: 6칸
+            </div>
+
+            <div class="cylinder">
+                <div class="cylinder-disc">
+                    <div class="chamber"></div>
+                    <div class="chamber"></div>
+                    <div class="chamber loaded"></div>
+                    <div class="chamber"></div>
+                    <div class="chamber"></div>
+                    <div class="chamber"></div>
+                </div>
+            </div>
+
+            <button class="spin-btn">실린더 돌리기 ⟳</button>
+            <button class="trigger-btn">방아쇠 당기기</button>
+
+            <div class="result-text alive">살았다!</div>
+
+            <div class="survivors-list">
+                <div class="survivor-item">
+                    <div class="survivor-avatar">철</div>
+                    <div class="survivor-name">철수</div>
+                </div>
+                <div class="survivor-item">
+                    <div class="survivor-avatar">나</div>
+                    <div class="survivor-name">나</div>
+                </div>
+                <div class="survivor-item eliminated">
+                    <div class="survivor-avatar">민</div>
+                    <div class="survivor-name">민지</div>
+                </div>
+                <div class="survivor-item eliminated">
+                    <div class="survivor-avatar">영</div>
+                    <div class="survivor-name">영희</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(index) {
+            // Update tab buttons
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+
+            // Update tab content
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+        }
+
+        // Add hover effect to cards
+        document.querySelectorAll('.playing-card').forEach(card => {
+            card.addEventListener('click', function() {
+                this.style.transform = this.style.transform.includes('translateY')
+                    ? this.style.transform.replace(/translateY\([^)]+\)/, '').trim()
+                    : this.style.transform + ' translateY(-40px)';
+            });
+        });
+    </script>
+</body>
+</html>

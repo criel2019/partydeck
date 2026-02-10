@@ -1,0 +1,1199 @@
+<!-- ============================== -->
+<!-- YAHTZEE GAME -->
+<!-- ============================== -->
+<div class="screen" id="yahtzeeGame">
+  <div class="yahtzee-header">
+    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">✕</button>
+    <div class="yahtzee-turn-info">
+      <div class="yahtzee-turn-text" id="yahTurnText">턴 1/13</div>
+      <div class="yahtzee-current-player" id="yahCurrentPlayer">플레이어 차례</div>
+    </div>
+    <div class="yahtzee-rolls-left" id="yahRollsLeft">3 left</div>
+  </div>
+
+  <div class="yahtzee-players-bar" id="yahtzeePlayersBar">
+    <!-- Player avatars will be inserted here -->
+  </div>
+
+  <div class="yahtzee-dice-area">
+    <div class="yahtzee-dice-container" id="yahtzeeDiceContainer">
+      <div class="yahtzee-die" data-idx="0" onclick="yahToggleHold(0)">
+        <div class="yahtzee-die-inner">
+          <div class="yahtzee-die-face" id="yahdice0">
+            <span class="pip"></span>
+          </div>
+        </div>
+      </div>
+      <div class="yahtzee-die" data-idx="1" onclick="yahToggleHold(1)">
+        <div class="yahtzee-die-inner">
+          <div class="yahtzee-die-face" id="yahdice1">
+            <span class="pip"></span>
+          </div>
+        </div>
+      </div>
+      <div class="yahtzee-die" data-idx="2" onclick="yahToggleHold(2)">
+        <div class="yahtzee-die-inner">
+          <div class="yahtzee-die-face" id="yahdice2">
+            <span class="pip"></span>
+          </div>
+        </div>
+      </div>
+      <div class="yahtzee-die" data-idx="3" onclick="yahToggleHold(3)">
+        <div class="yahtzee-die-inner">
+          <div class="yahtzee-die-face" id="yahdice3">
+            <span class="pip"></span>
+          </div>
+        </div>
+      </div>
+      <div class="yahtzee-die" data-idx="4" onclick="yahToggleHold(4)">
+        <div class="yahtzee-die-inner">
+          <div class="yahtzee-die-face" id="yahdice4">
+            <span class="pip"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="yahtzee-roll-hint">탭하여 주사위 잠금/해제</div>
+    <button class="btn btn-primary yahtzee-roll-btn" id="yahtzeeRollBtn" onclick="yahRoll()">🎲 주사위 굴리기</button>
+  </div>
+
+  <div class="yahtzee-scorecard-area">
+    <div class="yahtzee-scorecard-title">점수표</div>
+    <div class="yahtzee-scorecard" id="yahtzeeScorecard">
+      <table class="yahtzee-score-table">
+        <thead>
+          <tr>
+            <th>카테고리</th>
+            <th>점수</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Upper Section -->
+          <tr class="yahtzee-score-row" data-cat="ones">
+            <td class="yahtzee-cat-name">1s (Ones)</td>
+            <td class="yahtzee-cat-score" id="yahcat-ones">-</td>
+          </tr>
+          <tr class="yahtzee-score-row" data-cat="twos">
+            <td class="yahtzee-cat-name">2s (Twos)</td>
+            <td class="yahtzee-cat-score" id="yahcat-twos">-</td>
+          </tr>
+          <tr class="yahtzee-score-row" data-cat="threes">
+            <td class="yahtzee-cat-name">3s (Threes)</td>
+            <td class="yahtzee-cat-score" id="yahcat-threes">-</td>
+          </tr>
+          <tr class="yahtzee-score-row" data-cat="fours">
+            <td class="yahtzee-cat-name">4s (Fours)</td>
+            <td class="yahtzee-cat-score" id="yahcat-fours">-</td>
+          </tr>
+          <tr class="yahtzee-score-row" data-cat="fives">
+            <td class="yahtzee-cat-name">5s (Fives)</td>
+            <td class="yahtzee-cat-score" id="yahcat-fives">-</td>
+          </tr>
+          <tr class="yahtzee-score-row" data-cat="sixes">
+            <td class="yahtzee-cat-name">6s (Sixes)</td>
+            <td class="yahtzee-cat-score" id="yahcat-sixes">-</td>
+          </tr>
+          <tr class="yahtzee-subtotal-row">
+            <td><strong>상단 합계</strong></td>
+            <td id="yahcat-upper-subtotal">0</td>
+          </tr>
+          <tr class="yahtzee-bonus-row">
+            <td><strong>보너스 (63+ 시)</strong></td>
+            <td id="yahcat-bonus">0</td>
+          </tr>
+          <tr class="yahtzee-divider-row">
+            <td colspan="2"></td>
+          </tr>
+          <!-- Lower Section -->
+          <tr class="yahtzee-score-row" data-cat="three-kind">
+            <td class="yahtzee-cat-name">3 of a Kind</td>
+            <td class="yahtzee-cat-score" id="yahcat-three-kind">-</td>
+          </tr>
+          <tr class="yahtzee-score-row" data-cat="four-kind">
+            <td class="yahtzee-cat-name">4 of a Kind</td>
+            <td class="yahtzee-cat-score" id="yahcat-four-kind">-</td>
+          </tr>
+          <tr class="yahtzee-score-row" data-cat="full-house">
+            <td class="yahtzee-cat-name">Full House (25점)</td>
+            <td class="yahtzee-cat-score" id="yahcat-full-house">-</td>
+          </tr>
+          <tr class="yahtzee-score-row" data-cat="small-straight">
+            <td class="yahtzee-cat-name">Small Straight (30점)</td>
+            <td class="yahtzee-cat-score" id="yahcat-small-straight">-</td>
+          </tr>
+          <tr class="yahtzee-score-row" data-cat="large-straight">
+            <td class="yahtzee-cat-name">Large Straight (40점)</td>
+            <td class="yahtzee-cat-score" id="yahcat-large-straight">-</td>
+          </tr>
+          <tr class="yahtzee-score-row" data-cat="yahtzee">
+            <td class="yahtzee-cat-name">Yahtzee! (50점)</td>
+            <td class="yahtzee-cat-score" id="yahcat-yahtzee">-</td>
+          </tr>
+          <tr class="yahtzee-score-row" data-cat="chance">
+            <td class="yahtzee-cat-name">Chance</td>
+            <td class="yahtzee-cat-score" id="yahcat-chance">-</td>
+          </tr>
+          <tr class="yahtzee-total-row">
+            <td><strong>총점</strong></td>
+            <td id="yahcat-total"><strong>0</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <button class="btn yahtzee-score-btn" id="yahtzeeScoreBtn" onclick="yahScore()" style="display:none;">✅ 점수 확정</button>
+  </div>
+
+  <div class="yahtzee-game-over" id="yahtzeeGameOver" style="display:none;">
+    <div class="yahtzee-final-scores">
+      <div class="yahtzee-final-title">🏆 게임 종료!</div>
+      <div class="yahtzee-rankings" id="yahtzeeRankings">
+        <!-- Rankings will be inserted here -->
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="closeYahtzeeGame()" style="max-width:280px;">대기실로</button>
+  </div>
+</div>
+
+<!-- ============================== -->
+<!-- YAHTZEE CSS -->
+<!-- ============================== -->
+<style>
+/* Yahtzee Game Styles */
+#yahtzeeGame {
+  padding: 10px;
+  gap: 8px;
+  background: linear-gradient(135deg, #5d4037, #6d4c41, #795548);
+  overflow-y: auto;
+}
+
+.yahtzee-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  z-index: 10;
+}
+
+.yahtzee-turn-info {
+  text-align: center;
+  flex: 1;
+}
+
+.yahtzee-turn-text {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.yahtzee-current-player {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.yahtzee-rolls-left {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: var(--accent2);
+  min-width: 60px;
+  text-align: right;
+}
+
+.yahtzee-players-bar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+
+.yahtzee-player-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  min-width: 55px;
+}
+
+.yahtzee-player-mini.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(255,107,53,0.3);
+}
+
+.yahtzee-player-mini-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.yahtzee-player-mini-name {
+  font-size: 10px;
+  font-weight: 700;
+  max-width: 55px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yahtzee-player-mini-score {
+  font-size: 11px;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* Dice Area */
+.yahtzee-dice-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  background: rgba(10,10,18,0.4);
+  border-radius: var(--radius);
+  border: 2px solid rgba(255,255,255,0.1);
+}
+
+.yahtzee-dice-container {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.yahtzee-die {
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  perspective: 1000px;
+}
+
+.yahtzee-die-inner {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s;
+}
+
+.yahtzee-die.held .yahtzee-die-inner {
+  transform: scale(0.92);
+}
+
+.yahtzee-die-face {
+  width: 100%;
+  height: 100%;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  display: grid;
+  grid-template-areas:
+    "a . c"
+    "e g f"
+    "d . b";
+  padding: 6px;
+  border: 3px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.yahtzee-die.held .yahtzee-die-face {
+  border-color: #2196F3;
+  box-shadow: 0 0 0 2px #2196F3, 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.yahtzee-die.rolling .yahtzee-die-inner {
+  animation: bounce 0.5s ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-15px) rotate(90deg); }
+  50% { transform: translateY(0) rotate(180deg); }
+  75% { transform: translateY(-10px) rotate(270deg); }
+}
+
+.pip {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #1a1a2e;
+}
+
+.yahtzee-die-face[data-value="1"] .pip:nth-child(1) { grid-area: g; }
+
+.yahtzee-die-face[data-value="2"] .pip:nth-child(1) { grid-area: a; }
+.yahtzee-die-face[data-value="2"] .pip:nth-child(2) { grid-area: b; }
+
+.yahtzee-die-face[data-value="3"] .pip:nth-child(1) { grid-area: a; }
+.yahtzee-die-face[data-value="3"] .pip:nth-child(2) { grid-area: g; }
+.yahtzee-die-face[data-value="3"] .pip:nth-child(3) { grid-area: b; }
+
+.yahtzee-die-face[data-value="4"] .pip:nth-child(1) { grid-area: a; }
+.yahtzee-die-face[data-value="4"] .pip:nth-child(2) { grid-area: c; }
+.yahtzee-die-face[data-value="4"] .pip:nth-child(3) { grid-area: d; }
+.yahtzee-die-face[data-value="4"] .pip:nth-child(4) { grid-area: b; }
+
+.yahtzee-die-face[data-value="5"] .pip:nth-child(1) { grid-area: a; }
+.yahtzee-die-face[data-value="5"] .pip:nth-child(2) { grid-area: c; }
+.yahtzee-die-face[data-value="5"] .pip:nth-child(3) { grid-area: g; }
+.yahtzee-die-face[data-value="5"] .pip:nth-child(4) { grid-area: d; }
+.yahtzee-die-face[data-value="5"] .pip:nth-child(5) { grid-area: b; }
+
+.yahtzee-die-face[data-value="6"] .pip:nth-child(1) { grid-area: a; }
+.yahtzee-die-face[data-value="6"] .pip:nth-child(2) { grid-area: c; }
+.yahtzee-die-face[data-value="6"] .pip:nth-child(3) { grid-area: e; }
+.yahtzee-die-face[data-value="6"] .pip:nth-child(4) { grid-area: f; }
+.yahtzee-die-face[data-value="6"] .pip:nth-child(5) { grid-area: d; }
+.yahtzee-die-face[data-value="6"] .pip:nth-child(6) { grid-area: b; }
+
+.yahtzee-roll-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.yahtzee-roll-btn {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  max-width: 240px;
+}
+
+.yahtzee-roll-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Scorecard */
+.yahtzee-scorecard-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.06);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.yahtzee-scorecard-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  text-align: center;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.yahtzee-score-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.yahtzee-score-table th {
+  background: var(--bg-surface);
+  padding: 8px;
+  text-align: left;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(255,255,255,0.1);
+}
+
+.yahtzee-score-table th:last-child {
+  text-align: center;
+  width: 70px;
+}
+
+.yahtzee-score-row {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.yahtzee-score-row:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.yahtzee-score-row.filled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.yahtzee-score-row.selected {
+  background: rgba(255,152,0,0.2);
+  border-left: 3px solid #FF9800;
+}
+
+.yahtzee-score-row.preview {
+  background: rgba(33,150,243,0.15);
+}
+
+.yahtzee-score-row td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.yahtzee-cat-name {
+  font-weight: 600;
+}
+
+.yahtzee-cat-score {
+  text-align: center;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.yahtzee-score-row.preview .yahtzee-cat-score {
+  color: var(--accent2);
+}
+
+.yahtzee-score-row.filled .yahtzee-cat-score {
+  color: var(--text-dim);
+}
+
+.yahtzee-subtotal-row,
+.yahtzee-bonus-row,
+.yahtzee-total-row {
+  background: rgba(255,255,255,0.04);
+  font-weight: 700;
+}
+
+.yahtzee-subtotal-row td,
+.yahtzee-bonus-row td,
+.yahtzee-total-row td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  text-align: left;
+}
+
+.yahtzee-subtotal-row td:last-child,
+.yahtzee-bonus-row td:last-child,
+.yahtzee-total-row td:last-child {
+  text-align: center;
+  color: var(--gold);
+  font-family: 'Black Han Sans', sans-serif;
+}
+
+.yahtzee-divider-row {
+  height: 8px;
+  background: transparent;
+}
+
+.yahtzee-divider-row td {
+  border: none;
+}
+
+.yahtzee-score-btn {
+  background: linear-gradient(135deg, #FF9800, #F57C00);
+  color: white;
+  max-width: 240px;
+  margin: 0 auto;
+}
+
+/* Game Over */
+.yahtzee-game-over {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10,10,18,0.95);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 16px;
+}
+
+.yahtzee-final-scores {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  width: 100%;
+  max-width: 340px;
+}
+
+.yahtzee-final-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 32px;
+  text-align: center;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, var(--gold), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.yahtzee-rankings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.yahtzee-rank-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid transparent;
+}
+
+.yahtzee-rank-item.first {
+  border-left-color: var(--gold);
+  background: rgba(255,215,0,0.08);
+}
+
+.yahtzee-rank-item.second {
+  border-left-color: #C0C0C0;
+}
+
+.yahtzee-rank-item.third {
+  border-left-color: #CD7F32;
+}
+
+.yahtzee-rank-number {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: var(--text-dim);
+  min-width: 25px;
+}
+
+.yahtzee-rank-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.yahtzee-rank-info {
+  flex: 1;
+}
+
+.yahtzee-rank-name {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.yahtzee-rank-score {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: var(--gold);
+}
+</style>
+
+<!-- ============================== -->
+<!-- YAHTZEE ENGINE (JAVASCRIPT) -->
+<!-- ============================== -->
+<script>
+// ===== YAHTZEE ENGINE =====
+
+let yahState = {
+  players: [], // {id, name, avatar, scores: {ones:null, twos:null, ...}, total: 0}
+  turnIdx: 0,
+  dice: [1, 1, 1, 1, 1],
+  held: [false, false, false, false, false],
+  rollsLeft: 3,
+  turnNum: 1,
+  maxTurns: 13,
+  selectedCategory: null,
+  phase: 'rolling', // 'rolling', 'scoring', 'gameover'
+};
+
+const YAHTZEE_CATEGORIES = [
+  'ones', 'twos', 'threes', 'fours', 'fives', 'sixes',
+  'three-kind', 'four-kind', 'full-house', 'small-straight',
+  'large-straight', 'yahtzee', 'chance'
+];
+
+function startYahtzee() {
+  if(!state.isHost || state.players.length < 2) {
+    showToast('최소 2명 필요');
+    return;
+  }
+
+  // Initialize Yahtzee state
+  yahState = {
+    players: state.players.map(p => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      scores: {
+        ones: null, twos: null, threes: null, fours: null, fives: null, sixes: null,
+        'three-kind': null, 'four-kind': null, 'full-house': null,
+        'small-straight': null, 'large-straight': null, yahtzee: null, chance: null
+      },
+      total: 0
+    })),
+    turnIdx: 0,
+    dice: [1, 1, 1, 1, 1],
+    held: [false, false, false, false, false],
+    rollsLeft: 3,
+    turnNum: 1,
+    maxTurns: 13,
+    selectedCategory: null,
+    phase: 'rolling'
+  };
+
+  // First roll for the first player
+  yahRollDice();
+
+  broadcastYahtzeeState();
+  showScreen('yahtzeeGame');
+  broadcast({ type: 'game-start', game: 'yahtzee', state: createYahtzeeView() });
+}
+
+function yahRollDice() {
+  if(yahState.rollsLeft <= 0) return;
+
+  yahState.dice = yahState.dice.map((val, idx) =>
+    yahState.held[idx] ? val : Math.floor(Math.random() * 6) + 1
+  );
+
+  yahState.rollsLeft--;
+  yahState.phase = 'rolling';
+  yahState.selectedCategory = null;
+}
+
+function yahRoll() {
+  if(!state.isHost) {
+    // Send action to host
+    const host = Object.values(state.connections)[0];
+    if(host?.open) {
+      host.send(JSON.stringify({ type: 'yah-action', action: 'roll' }));
+    }
+    return;
+  }
+
+  // Check if it's this player's turn
+  if(yahState.players[yahState.turnIdx].id !== state.myId) {
+    showToast('당신의 차례가 아닙니다');
+    return;
+  }
+
+  if(yahState.rollsLeft <= 0) {
+    showToast('더 이상 굴릴 수 없습니다');
+    return;
+  }
+
+  yahRollDice();
+  broadcastYahtzeeState();
+}
+
+function yahToggleHold(idx) {
+  if(!state.isHost) {
+    // Send action to host
+    const host = Object.values(state.connections)[0];
+    if(host?.open) {
+      host.send(JSON.stringify({ type: 'yah-action', action: 'hold', index: idx }));
+    }
+    return;
+  }
+
+  // Check if it's this player's turn
+  if(yahState.players[yahState.turnIdx].id !== state.myId) {
+    return;
+  }
+
+  if(yahState.rollsLeft === 3) {
+    showToast('먼저 주사위를 굴리세요');
+    return;
+  }
+
+  yahState.held[idx] = !yahState.held[idx];
+  broadcastYahtzeeState();
+}
+
+function yahSelectCategory(cat) {
+  if(!state.isHost) {
+    // Send action to host
+    const host = Object.values(state.connections)[0];
+    if(host?.open) {
+      host.send(JSON.stringify({ type: 'yah-action', action: 'select', category: cat }));
+    }
+    return;
+  }
+
+  // Check if it's this player's turn
+  if(yahState.players[yahState.turnIdx].id !== state.myId) {
+    return;
+  }
+
+  const player = yahState.players[yahState.turnIdx];
+  if(player.scores[cat] !== null) {
+    showToast('이미 기록된 카테고리입니다');
+    return;
+  }
+
+  yahState.selectedCategory = cat;
+  yahState.phase = 'scoring';
+  broadcastYahtzeeState();
+}
+
+function yahScore() {
+  if(!state.isHost) {
+    // Send action to host
+    const host = Object.values(state.connections)[0];
+    if(host?.open) {
+      host.send(JSON.stringify({ type: 'yah-action', action: 'score' }));
+    }
+    return;
+  }
+
+  // Check if it's this player's turn
+  if(yahState.players[yahState.turnIdx].id !== state.myId) {
+    return;
+  }
+
+  if(!yahState.selectedCategory) {
+    showToast('카테고리를 선택하세요');
+    return;
+  }
+
+  const player = yahState.players[yahState.turnIdx];
+  const score = calcYahtzeeScore(yahState.dice, yahState.selectedCategory);
+  player.scores[yahState.selectedCategory] = score;
+
+  // Calculate total
+  player.total = calculatePlayerTotal(player);
+
+  // Check if all players finished all turns
+  const allFinished = yahState.players.every(p =>
+    YAHTZEE_CATEGORIES.every(cat => p.scores[cat] !== null)
+  );
+
+  if(allFinished) {
+    yahState.phase = 'gameover';
+    broadcastYahtzeeState();
+    handleYahtzeeGameOver();
+    return;
+  }
+
+  // Next turn
+  yahState.turnIdx = (yahState.turnIdx + 1) % yahState.players.length;
+
+  // Check if we completed a round
+  if(yahState.turnIdx === 0) {
+    yahState.turnNum++;
+  }
+
+  // Reset for next player
+  yahState.dice = [1, 1, 1, 1, 1];
+  yahState.held = [false, false, false, false, false];
+  yahState.rollsLeft = 3;
+  yahState.selectedCategory = null;
+  yahState.phase = 'rolling';
+
+  // Auto-roll for next player
+  yahRollDice();
+
+  broadcastYahtzeeState();
+}
+
+function calculatePlayerTotal(player) {
+  let total = 0;
+
+  // Upper section
+  const upperCats = ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'];
+  let upperSum = 0;
+  upperCats.forEach(cat => {
+    if(player.scores[cat] !== null) {
+      upperSum += player.scores[cat];
+    }
+  });
+
+  // Upper bonus
+  let bonus = 0;
+  if(upperSum >= 63) {
+    bonus = 35;
+  }
+
+  total = upperSum + bonus;
+
+  // Lower section
+  const lowerCats = ['three-kind', 'four-kind', 'full-house', 'small-straight', 'large-straight', 'yahtzee', 'chance'];
+  lowerCats.forEach(cat => {
+    if(player.scores[cat] !== null) {
+      total += player.scores[cat];
+    }
+  });
+
+  return total;
+}
+
+function calcYahtzeeScore(dice, category) {
+  const counts = {};
+  dice.forEach(d => counts[d] = (counts[d] || 0) + 1);
+  const sorted = [...dice].sort((a, b) => a - b);
+  const sum = dice.reduce((a, b) => a + b, 0);
+
+  switch(category) {
+    case 'ones': return dice.filter(d => d === 1).length * 1;
+    case 'twos': return dice.filter(d => d === 2).length * 2;
+    case 'threes': return dice.filter(d => d === 3).length * 3;
+    case 'fours': return dice.filter(d => d === 4).length * 4;
+    case 'fives': return dice.filter(d => d === 5).length * 5;
+    case 'sixes': return dice.filter(d => d === 6).length * 6;
+
+    case 'three-kind':
+      return Object.values(counts).some(c => c >= 3) ? sum : 0;
+
+    case 'four-kind':
+      return Object.values(counts).some(c => c >= 4) ? sum : 0;
+
+    case 'full-house': {
+      const vals = Object.values(counts).sort((a, b) => b - a);
+      return (vals[0] === 3 && vals[1] === 2) ? 25 : 0;
+    }
+
+    case 'small-straight': {
+      const unique = [...new Set(sorted)];
+      const patterns = [[1,2,3,4], [2,3,4,5], [3,4,5,6]];
+      return patterns.some(p => p.every(n => unique.includes(n))) ? 30 : 0;
+    }
+
+    case 'large-straight': {
+      const str1 = [1,2,3,4,5];
+      const str2 = [2,3,4,5,6];
+      return (JSON.stringify(sorted) === JSON.stringify(str1) ||
+              JSON.stringify(sorted) === JSON.stringify(str2)) ? 40 : 0;
+    }
+
+    case 'yahtzee':
+      return Object.values(counts).some(c => c === 5) ? 50 : 0;
+
+    case 'chance':
+      return sum;
+
+    default:
+      return 0;
+  }
+}
+
+function calcPossibleScores(dice) {
+  const possible = {};
+  YAHTZEE_CATEGORIES.forEach(cat => {
+    possible[cat] = calcYahtzeeScore(dice, cat);
+  });
+  return possible;
+}
+
+function broadcastYahtzeeState() {
+  const view = createYahtzeeView();
+  broadcast({ type: 'yah-state', state: view });
+  renderYahtzeeView(view);
+}
+
+function createYahtzeeView() {
+  return {
+    players: yahState.players.map(p => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      scores: p.scores,
+      total: p.total
+    })),
+    turnIdx: yahState.turnIdx,
+    dice: yahState.dice,
+    held: yahState.held,
+    rollsLeft: yahState.rollsLeft,
+    turnNum: yahState.turnNum,
+    maxTurns: yahState.maxTurns,
+    selectedCategory: yahState.selectedCategory,
+    phase: yahState.phase
+  };
+}
+
+function renderYahtzeeView(view) {
+  // Update turn info
+  document.getElementById('yahTurnText').textContent = `턴 ${view.turnNum}/${view.maxTurns}`;
+  const currentPlayer = view.players[view.turnIdx];
+  document.getElementById('yahCurrentPlayer').textContent =
+    currentPlayer.id === state.myId ? '내 차례!' : currentPlayer.name + '의 차례';
+  document.getElementById('yahRollsLeft').textContent = view.rollsLeft + ' left';
+
+  // Update players bar
+  const playersBar = document.getElementById('yahtzeePlayersBar');
+  playersBar.innerHTML = view.players.map((p, idx) => `
+    <div class="yahtzee-player-mini ${idx === view.turnIdx ? 'active' : ''}">
+      <div class="yahtzee-player-mini-avatar" style="background:${PLAYER_COLORS[idx % PLAYER_COLORS.length]};">
+        ${p.avatar}
+      </div>
+      <div class="yahtzee-player-mini-name">${p.name}</div>
+      <div class="yahtzee-player-mini-score">${p.total}</div>
+    </div>
+  `).join('');
+
+  // Update dice
+  view.dice.forEach((val, idx) => {
+    const die = document.querySelector(`.yahtzee-die[data-idx="${idx}"]`);
+    const face = document.getElementById(`yahdice${idx}`);
+
+    if(die.classList.contains('held') !== view.held[idx]) {
+      if(view.held[idx]) die.classList.add('held');
+      else die.classList.remove('held');
+    }
+
+    face.setAttribute('data-value', val);
+    face.innerHTML = Array(val).fill('<span class="pip"></span>').join('');
+
+    // Add rolling animation
+    die.classList.remove('rolling');
+    setTimeout(() => die.classList.add('rolling'), 10);
+    setTimeout(() => die.classList.remove('rolling'), 500);
+  });
+
+  // Update roll button
+  const rollBtn = document.getElementById('yahtzeeRollBtn');
+  const isMyTurn = currentPlayer.id === state.myId;
+  rollBtn.disabled = !isMyTurn || view.rollsLeft <= 0 || view.phase === 'gameover';
+
+  // Update scorecard
+  const myPlayer = view.players.find(p => p.id === state.myId);
+  if(myPlayer) {
+    const possible = calcPossibleScores(view.dice);
+
+    // Upper section
+    ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'].forEach(cat => {
+      const cell = document.getElementById(`yahcat-${cat}`);
+      const row = document.querySelector(`.yahtzee-score-row[data-cat="${cat}"]`);
+
+      if(myPlayer.scores[cat] !== null) {
+        cell.textContent = myPlayer.scores[cat];
+        row.classList.add('filled');
+        row.classList.remove('preview', 'selected');
+        row.onclick = null;
+      } else if(isMyTurn && view.rollsLeft < 3) {
+        cell.textContent = possible[cat];
+        row.classList.add('preview');
+        row.classList.remove('filled');
+        if(view.selectedCategory === cat) {
+          row.classList.add('selected');
+        } else {
+          row.classList.remove('selected');
+        }
+        row.onclick = () => yahSelectCategory(cat);
+      } else {
+        cell.textContent = '-';
+        row.classList.remove('preview', 'filled', 'selected');
+        row.onclick = null;
+      }
+    });
+
+    // Calculate upper subtotal and bonus
+    const upperCats = ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'];
+    let upperSum = 0;
+    upperCats.forEach(cat => {
+      if(myPlayer.scores[cat] !== null) {
+        upperSum += myPlayer.scores[cat];
+      }
+    });
+    document.getElementById('yahcat-upper-subtotal').textContent = upperSum;
+
+    const bonus = upperSum >= 63 ? 35 : 0;
+    document.getElementById('yahcat-bonus').textContent = bonus;
+
+    // Lower section
+    ['three-kind', 'four-kind', 'full-house', 'small-straight', 'large-straight', 'yahtzee', 'chance'].forEach(cat => {
+      const cell = document.getElementById(`yahcat-${cat}`);
+      const row = document.querySelector(`.yahtzee-score-row[data-cat="${cat}"]`);
+
+      if(myPlayer.scores[cat] !== null) {
+        cell.textContent = myPlayer.scores[cat];
+        row.classList.add('filled');
+        row.classList.remove('preview', 'selected');
+        row.onclick = null;
+      } else if(isMyTurn && view.rollsLeft < 3) {
+        cell.textContent = possible[cat];
+        row.classList.add('preview');
+        row.classList.remove('filled');
+        if(view.selectedCategory === cat) {
+          row.classList.add('selected');
+        } else {
+          row.classList.remove('selected');
+        }
+        row.onclick = () => yahSelectCategory(cat);
+      } else {
+        cell.textContent = '-';
+        row.classList.remove('preview', 'filled', 'selected');
+        row.onclick = null;
+      }
+    });
+
+    // Total
+    document.getElementById('yahcat-total').textContent = myPlayer.total;
+  }
+
+  // Score button
+  const scoreBtn = document.getElementById('yahtzeeScoreBtn');
+  scoreBtn.style.display = (isMyTurn && view.selectedCategory && view.phase === 'scoring') ? 'block' : 'none';
+
+  // Game over screen
+  if(view.phase === 'gameover') {
+    showYahtzeeGameOver(view);
+  }
+}
+
+function showYahtzeeGameOver(view) {
+  const gameOverDiv = document.getElementById('yahtzeeGameOver');
+  const rankings = document.getElementById('yahtzeeRankings');
+
+  // Sort players by total score
+  const sorted = [...view.players].sort((a, b) => b.total - a.total);
+
+  rankings.innerHTML = sorted.map((p, idx) => {
+    const rank = idx + 1;
+    const rankClass = rank === 1 ? 'first' : rank === 2 ? 'second' : rank === 3 ? 'third' : '';
+    const pIdx = view.players.findIndex(pp => pp.id === p.id);
+
+    return `
+      <div class="yahtzee-rank-item ${rankClass}">
+        <div class="yahtzee-rank-number">${rank}위</div>
+        <div class="yahtzee-rank-avatar" style="background:${PLAYER_COLORS[pIdx % PLAYER_COLORS.length]};">
+          ${p.avatar}
+        </div>
+        <div class="yahtzee-rank-info">
+          <div class="yahtzee-rank-name">${p.name}${p.id === state.myId ? ' (나)' : ''}</div>
+        </div>
+        <div class="yahtzee-rank-score">${p.total}점</div>
+      </div>
+    `;
+  }).join('');
+
+  gameOverDiv.style.display = 'flex';
+
+  // Record game result
+  const winner = sorted[0];
+  const won = winner.id === state.myId;
+  recordGame(won);
+}
+
+function handleYahtzeeGameOver() {
+  const view = createYahtzeeView();
+  broadcast({ type: 'yah-state', state: view });
+  showYahtzeeGameOver(view);
+}
+
+function closeYahtzeeGame() {
+  document.getElementById('yahtzeeGameOver').style.display = 'none';
+  if(state.isHost) {
+    // Go back to lobby
+    showScreen('lobby');
+  } else {
+    leaveLobby();
+  }
+}
+
+// Handle messages from other players
+function handleYahtzeeMessage(msg) {
+  if(msg.type === 'yah-state') {
+    renderYahtzeeView(msg.state);
+  } else if(msg.type === 'yah-action' && state.isHost) {
+    // Process action from client
+    const playerId = Object.keys(state.connections).find(
+      id => state.connections[id].peer === msg.peerId
+    );
+
+    if(!playerId) return;
+
+    // Check if it's this player's turn
+    if(yahState.players[yahState.turnIdx].id !== playerId) {
+      return;
+    }
+
+    if(msg.action === 'roll') {
+      if(yahState.rollsLeft > 0) {
+        yahRollDice();
+        broadcastYahtzeeState();
+      }
+    } else if(msg.action === 'hold') {
+      if(yahState.rollsLeft < 3) {
+        yahState.held[msg.index] = !yahState.held[msg.index];
+        broadcastYahtzeeState();
+      }
+    } else if(msg.action === 'select') {
+      const player = yahState.players[yahState.turnIdx];
+      if(player.scores[msg.category] === null) {
+        yahState.selectedCategory = msg.category;
+        yahState.phase = 'scoring';
+        broadcastYahtzeeState();
+      }
+    } else if(msg.action === 'score') {
+      if(yahState.selectedCategory) {
+        const player = yahState.players[yahState.turnIdx];
+        const score = calcYahtzeeScore(yahState.dice, yahState.selectedCategory);
+        player.scores[yahState.selectedCategory] = score;
+        player.total = calculatePlayerTotal(player);
+
+        // Check if game is over
+        const allFinished = yahState.players.every(p =>
+          YAHTZEE_CATEGORIES.every(cat => p.scores[cat] !== null)
+        );
+
+        if(allFinished) {
+          yahState.phase = 'gameover';
+          broadcastYahtzeeState();
+          handleYahtzeeGameOver();
+          return;
+        }
+
+        // Next turn
+        yahState.turnIdx = (yahState.turnIdx + 1) % yahState.players.length;
+        if(yahState.turnIdx === 0) {
+          yahState.turnNum++;
+        }
+
+        yahState.dice = [1, 1, 1, 1, 1];
+        yahState.held = [false, false, false, false, false];
+        yahState.rollsLeft = 3;
+        yahState.selectedCategory = null;
+        yahState.phase = 'rolling';
+
+        yahRollDice();
+        broadcastYahtzeeState();
+      }
+    }
+  }
+}
+
+// Extend handleMessage to include Yahtzee messages
+(function() {
+  const originalHandleMessage = window.handleMessage;
+  window.handleMessage = function(peerId, raw) {
+    const msg = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+    if(msg.type === 'yah-state' || msg.type === 'yah-action') {
+      msg.peerId = peerId;
+      handleYahtzeeMessage(msg);
+    } else {
+      originalHandleMessage(peerId, raw);
+    }
+  };
+})();
+
+// Extend handleGameStart to include Yahtzee
+(function() {
+  const originalHandleGameStart = window.handleGameStart;
+  window.handleGameStart = function(msg) {
+    if(msg.game === 'yahtzee') {
+      showScreen('yahtzeeGame');
+      renderYahtzeeView(msg.state);
+    } else {
+      originalHandleGameStart(msg);
+    }
+  };
+})();
+
+</script>

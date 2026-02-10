@@ -1,0 +1,1609 @@
+================================================================================
+섹션 1: HTML
+================================================================================
+<!-- SUTDA GAME -->
+<div class="screen" id="sutdaGame">
+  <!-- 상단 바 -->
+  <div class="sutda-top-bar">
+    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">&#10005;</button>
+    <div class="sutda-title-area">
+      <span class="sutda-title-text">장땡 섯다</span>
+      <span class="sutda-pot-badge" id="sutdaPotBadge">0</span>
+    </div>
+    <div class="sutda-my-balance" id="sutdaMyBalance">0</div>
+  </div>
+
+  <!-- 상대방 영역 -->
+  <div class="sutda-opponents" id="sutdaOpponents"></div>
+
+  <!-- 테이블 중앙 -->
+  <div class="sutda-table">
+    <div class="sutda-table-felt">
+      <div class="sutda-pot-center">
+        <div class="sutda-pot-label">판돈</div>
+        <div class="sutda-pot-amount" id="sutdaPotAmount">0</div>
+      </div>
+      <div class="sutda-turn-indicator" id="sutdaTurnIndicator"></div>
+    </div>
+  </div>
+
+  <!-- 내 패 영역 -->
+  <div class="sutda-my-area">
+    <div class="sutda-my-info">
+      <div class="sutda-my-name" id="sutdaMyName">나</div>
+      <div class="sutda-my-chips" id="sutdaMyChips">0</div>
+    </div>
+    <div class="sutda-my-cards" id="sutdaMyCards"></div>
+    <div class="sutda-my-rank" id="sutdaMyRank"></div>
+  </div>
+
+  <!-- 세륙 선택 패널 -->
+  <div class="sutda-seryuk-panel" id="sutdaSeryukPanel" style="display:none;">
+    <div class="sutda-seryuk-title">세륙 (6+4) 선택</div>
+    <div class="sutda-seryuk-desc">밀기: 10끗으로 계산 | 깽판: 패 재분배</div>
+    <div class="sutda-seryuk-buttons">
+      <button class="sutda-seryuk-btn sutda-seryuk-push" onclick="sutdaSeryukChoice('push')">
+        <span class="sutda-seryuk-icon">&#x1F4AA;</span>
+        <span>밀기</span>
+        <span class="sutda-seryuk-sub">10끗</span>
+      </button>
+      <button class="sutda-seryuk-btn sutda-seryuk-chaos" onclick="sutdaSeryukChoice('chaos')">
+        <span class="sutda-seryuk-icon">&#x1F300;</span>
+        <span>깽판</span>
+        <span class="sutda-seryuk-sub">패 재분배</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 배팅 버튼 -->
+  <div class="sutda-action-bar" id="sutdaActionBar">
+    <button class="sutda-bet-btn sutda-bet-10k" onclick="sutdaBet('raise',10000)" id="sutdaBtn10k">+1만</button>
+    <button class="sutda-bet-btn sutda-bet-50k" onclick="sutdaBet('raise',50000)" id="sutdaBtn50k">+5만</button>
+    <button class="sutda-bet-btn sutda-bet-100k" onclick="sutdaBet('raise',100000)" id="sutdaBtn100k">+10만</button>
+    <button class="sutda-bet-btn sutda-bet-call" onclick="sutdaBet('call',0)" id="sutdaBtnCall">콜</button>
+    <button class="sutda-bet-btn sutda-bet-die" onclick="sutdaBet('die',0)" id="sutdaBtnDie">다이</button>
+    <button class="sutda-bet-btn sutda-bet-allin" onclick="sutdaBet('allin',0)" id="sutdaBtnAllin">올인</button>
+  </div>
+
+  <!-- 결과 오버레이 -->
+  <div class="sutda-result-overlay" id="sutdaResultOverlay">
+    <div class="sutda-result-box">
+      <div class="sutda-result-title" id="sutdaResultTitle">승리!</div>
+      <div class="sutda-result-winner" id="sutdaResultWinner"></div>
+      <div class="sutda-result-rank" id="sutdaResultRank"></div>
+      <div class="sutda-result-cards" id="sutdaResultCards"></div>
+      <div class="sutda-result-pot" id="sutdaResultPot"></div>
+      <div class="sutda-result-all-hands" id="sutdaResultAllHands"></div>
+      <button class="btn btn-primary" onclick="closeSutdaResult()" style="margin-top:16px;">확인</button>
+    </div>
+  </div>
+</div>
+
+
+================================================================================
+섹션 2: CSS
+================================================================================
+/* SUTDA CSS */
+
+/* ===== 섯다 전체 레이아웃 ===== */
+#sutdaGame {
+  padding: 10px 12px;
+  gap: 6px;
+  background:
+    radial-gradient(ellipse at 40% 60%, rgba(34,120,60,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 60% 40%, rgba(180,140,40,0.08) 0%, transparent 50%),
+    linear-gradient(180deg, #0a0f0a 0%, #0d1a0d 40%, #0a0a12 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ===== 상단 바 ===== */
+.sutda-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(20,20,42,0.9);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,215,0,0.15);
+  z-index: 10;
+}
+
+.sutda-title-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sutda-title-text {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sutda-pot-badge {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  color: var(--gold);
+  background: rgba(255,215,0,0.1);
+  padding: 2px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,215,0,0.3);
+}
+
+.sutda-my-balance {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  color: var(--accent2);
+}
+
+/* ===== 상대방 영역 ===== */
+.sutda-opponents {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 4px 0;
+  min-height: 90px;
+}
+
+.sutda-opp-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 60px;
+  max-width: 80px;
+  position: relative;
+}
+
+.sutda-opp-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.sutda-opp-avatar.active-turn {
+  box-shadow: 0 0 0 3px var(--gold), 0 0 20px rgba(255,215,0,0.5);
+  animation: sutda-pulse 1.5s ease infinite;
+}
+
+@keyframes sutda-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--gold), 0 0 20px rgba(255,215,0,0.4); }
+  50% { box-shadow: 0 0 0 5px var(--gold), 0 0 30px rgba(255,215,0,0.7); }
+}
+
+.sutda-opp-name {
+  font-size: 10px;
+  font-weight: 700;
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.sutda-opp-chips {
+  font-size: 9px;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.sutda-opp-status {
+  font-size: 9px;
+  font-weight: 700;
+  min-height: 14px;
+}
+
+.sutda-opp-status.die { color: var(--danger); }
+.sutda-opp-status.call { color: var(--success); }
+.sutda-opp-status.waiting { color: var(--text-dim); }
+.sutda-opp-status.bet { color: var(--accent); }
+
+.sutda-opp-cards {
+  display: flex;
+  gap: 2px;
+}
+
+.sutda-opp-slot.died {
+  opacity: 0.3;
+}
+
+/* ===== 테이블 중앙 ===== */
+.sutda-table {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.sutda-table-felt {
+  width: 100%;
+  max-width: 340px;
+  padding: 20px;
+  background:
+    radial-gradient(ellipse at center, rgba(34,120,60,0.3) 0%, rgba(20,80,40,0.15) 60%, transparent 100%),
+    linear-gradient(135deg, #1a3a1a, #0d260d);
+  border-radius: 60px;
+  border: 3px solid rgba(255,215,0,0.2);
+  box-shadow:
+    inset 0 2px 20px rgba(0,0,0,0.4),
+    0 4px 30px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.sutda-pot-center {
+  text-align: center;
+}
+
+.sutda-pot-label {
+  font-size: 11px;
+  color: rgba(255,215,0,0.6);
+  font-weight: 700;
+}
+
+.sutda-pot-amount {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 28px;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(255,215,0,0.3);
+}
+
+.sutda-turn-indicator {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 700;
+  min-height: 20px;
+}
+
+/* ===== 화투패 CSS ===== */
+.hwatu-card {
+  width: 42px;
+  height: 62px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  transition: all 0.3s;
+  overflow: hidden;
+}
+
+.hwatu-card-big {
+  width: 72px;
+  height: 108px;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+
+/* 카드 앞면 - 광 */
+.hwatu-card.gwang {
+  background: linear-gradient(180deg, #fff8e1 0%, #ffe082 30%, #fff8e1 100%);
+  border: 2px solid #ffd54f;
+}
+
+.hwatu-card.gwang::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ff1744, #d50000);
+  box-shadow: 0 0 6px rgba(255,23,68,0.6);
+}
+
+.hwatu-card-big.gwang::before {
+  width: 20px;
+  height: 20px;
+  top: 6px;
+  right: 6px;
+  box-shadow: 0 0 10px rgba(255,23,68,0.7);
+}
+
+/* 카드 앞면 - 비광 */
+.hwatu-card.normal {
+  background: linear-gradient(180deg, #f5f5f5 0%, #e0e0e0 100%);
+  border: 2px solid #90a4ae;
+}
+
+.hwatu-card.normal::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #546e7a;
+}
+
+.hwatu-card-big.normal::before {
+  width: 14px;
+  height: 14px;
+  top: 6px;
+  right: 6px;
+}
+
+/* 카드 숫자 */
+.hwatu-num {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px;
+  line-height: 1;
+  z-index: 1;
+}
+
+.hwatu-card-big .hwatu-num {
+  font-size: 36px;
+}
+
+.hwatu-card.gwang .hwatu-num {
+  color: #bf360c;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.hwatu-card.normal .hwatu-num {
+  color: #263238;
+}
+
+/* 카드 월 표시 */
+.hwatu-month {
+  font-size: 8px;
+  font-weight: 700;
+  z-index: 1;
+  opacity: 0.6;
+}
+
+.hwatu-card-big .hwatu-month {
+  font-size: 11px;
+}
+
+.hwatu-card.gwang .hwatu-month { color: #bf360c; }
+.hwatu-card.normal .hwatu-month { color: #455a64; }
+
+/* 광 글자 */
+.hwatu-gwang-text {
+  position: absolute;
+  bottom: 3px;
+  font-size: 7px;
+  font-weight: 900;
+  color: #d50000;
+  letter-spacing: -0.5px;
+}
+
+.hwatu-card-big .hwatu-gwang-text {
+  bottom: 6px;
+  font-size: 11px;
+}
+
+/* 카드 전통 문양 배경 */
+.hwatu-card::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.hwatu-card-big::after {
+  inset: 5px;
+  border-radius: 6px;
+}
+
+/* 카드 뒷면 */
+.hwatu-card.back {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #b71c1c 0px,
+      #b71c1c 4px,
+      #c62828 4px,
+      #c62828 8px
+    );
+  border: 2px solid #e53935;
+}
+
+.hwatu-card.back::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.hwatu-card.back::after {
+  inset: 2px;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.hwatu-card-big.back::before {
+  width: 32px;
+  height: 32px;
+}
+
+/* 1월 광 특수 문양 (송학) */
+.hwatu-card.m1.gwang {
+  background: linear-gradient(180deg, #fff8e1 0%, #ffecb3 50%, #fff3e0 100%);
+}
+
+/* 3월 광 특수 문양 (사쿠라) */
+.hwatu-card.m3.gwang {
+  background: linear-gradient(180deg, #fce4ec 0%, #f8bbd0 50%, #fce4ec 100%);
+}
+
+/* 8월 광 특수 문양 (공산) */
+.hwatu-card.m8.gwang {
+  background: linear-gradient(180deg, #e8eaf6 0%, #c5cae9 50%, #e8eaf6 100%);
+}
+
+/* ===== 내 패 영역 ===== */
+.sutda-my-area {
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(20,20,42,0.9);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,215,0,0.1);
+}
+
+.sutda-my-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.sutda-my-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.sutda-my-chips {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  color: var(--gold);
+}
+
+.sutda-my-cards {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.sutda-my-rank {
+  text-align: center;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: #ff1744;
+  min-height: 26px;
+  text-shadow: 0 0 10px rgba(255,23,68,0.4);
+}
+
+/* ===== 세륙 패널 ===== */
+.sutda-seryuk-panel {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10,10,18,0.92);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+.sutda-seryuk-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 28px;
+  color: var(--gold);
+}
+
+.sutda-seryuk-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.sutda-seryuk-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.sutda-seryuk-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 32px;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sutda-seryuk-btn:active { transform: scale(0.95); }
+
+.sutda-seryuk-push {
+  background: linear-gradient(135deg, #1b5e20, #2e7d32);
+  color: #a5d6a7;
+  border-color: #4caf50;
+}
+
+.sutda-seryuk-chaos {
+  background: linear-gradient(135deg, #b71c1c, #c62828);
+  color: #ef9a9a;
+  border-color: #f44336;
+}
+
+.sutda-seryuk-icon {
+  font-size: 36px;
+}
+
+.sutda-seryuk-sub {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* ===== 배팅 버튼 바 ===== */
+.sutda-action-bar {
+  display: flex;
+  gap: 5px;
+  width: 100%;
+  padding: 0 4px;
+  flex-wrap: wrap;
+}
+
+.sutda-bet-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 4px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.3px;
+}
+
+.sutda-bet-btn:active { transform: scale(0.95); }
+.sutda-bet-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.sutda-bet-10k {
+  background: linear-gradient(135deg, #1565c0, #1976d2);
+  color: white;
+}
+
+.sutda-bet-50k {
+  background: linear-gradient(135deg, #1565c0, #42a5f5);
+  color: white;
+}
+
+.sutda-bet-100k {
+  background: linear-gradient(135deg, #0d47a1, #1565c0);
+  color: white;
+}
+
+.sutda-bet-call {
+  background: linear-gradient(135deg, #2e7d32, #43a047);
+  color: white;
+}
+
+.sutda-bet-die {
+  background: linear-gradient(135deg, #4e342e, #6d4c41);
+  color: #bcaaa4;
+}
+
+.sutda-bet-allin {
+  background: linear-gradient(135deg, #c62828, #e53935);
+  color: white;
+}
+
+/* ===== 결과 오버레이 ===== */
+.sutda-result-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10,10,18,0.95);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.sutda-result-overlay.active {
+  display: flex;
+}
+
+.sutda-result-box {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,215,0,0.2);
+  padding: 24px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.sutda-result-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.sutda-result-winner {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.sutda-result-rank {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 24px;
+  color: #ff1744;
+  margin-bottom: 12px;
+}
+
+.sutda-result-cards {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sutda-result-pot {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+
+.sutda-result-all-hands {
+  text-align: left;
+  font-size: 13px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 12px;
+}
+
+.sutda-result-hand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.sutda-result-hand-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.sutda-result-hand-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.sutda-result-hand-rank {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 13px;
+  color: #ff1744;
+}
+
+.sutda-result-hand-cards {
+  display: flex;
+  gap: 3px;
+}
+
+.sutda-result-hand-cards .hwatu-card {
+  width: 28px;
+  height: 42px;
+}
+
+.sutda-result-hand-cards .hwatu-num {
+  font-size: 14px;
+}
+
+.sutda-result-hand-cards .hwatu-month {
+  font-size: 6px;
+}
+
+.sutda-result-hand-cards .hwatu-gwang-text {
+  font-size: 5px;
+  bottom: 1px;
+}
+
+.sutda-result-hand-row.winner-row {
+  background: rgba(255,215,0,0.08);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.sutda-result-hand-row.died-row {
+  opacity: 0.4;
+}
+
+
+================================================================================
+섹션 3: JS
+================================================================================
+// ===== SUTDA ENGINE =====
+
+// --- 화투패 정의 ---
+const HWATU_DECK = [];
+(function buildHwatuDeck() {
+  for (let i = 1; i <= 10; i++) {
+    const isGwangMonth = [1, 3, 8].includes(i);
+    // 광 또는 첫번째 패
+    HWATU_DECK.push({ num: i, gwang: isGwangMonth, id: i + 'g' });
+    // 비광 또는 두번째 패
+    HWATU_DECK.push({ num: i, gwang: false, id: i + 'n' });
+  }
+})();
+
+// 광 이름
+const GWANG_NAMES = { 1: '송학', 3: '사쿠라', 8: '공산' };
+
+// --- 호스트 상태 ---
+let sutdaHost = null;
+
+// --- 클라이언트 뷰 ---
+let sutdaView = null;
+
+// =========================
+// 족보 판정 함수 (핵심!)
+// =========================
+function getSutdaRank(card1, card2) {
+  const n1 = card1.num, n2 = card2.num;
+  const g1 = card1.gwang, g2 = card2.gwang;
+
+  // === 광땡 체크 (최상위) ===
+  // 38광땡: 3광 + 8광
+  if ((n1 === 3 && g1 && n2 === 8 && g2) || (n1 === 8 && g1 && n2 === 3 && g2)) {
+    return { rank: 100, name: '38광땡', tier: 'gwangttaeng' };
+  }
+  // 18광땡: 1광 + 8광
+  if ((n1 === 1 && g1 && n2 === 8 && g2) || (n1 === 8 && g1 && n2 === 1 && g2)) {
+    return { rank: 99, name: '18광땡', tier: 'gwangttaeng' };
+  }
+  // 13광땡: 1광 + 3광
+  if ((n1 === 1 && g1 && n2 === 3 && g2) || (n1 === 3 && g1 && n2 === 1 && g2)) {
+    return { rank: 98, name: '13광땡', tier: 'gwangttaeng' };
+  }
+
+  // === 땡 (같은 숫자 2장) ===
+  if (n1 === n2) {
+    const ttRank = 80 + n1; // 1땡=81, ... 10땡(장땡)=90
+    const ttName = n1 === 10 ? '장땡' : n1 + '땡';
+    return { rank: ttRank, name: ttName, tier: 'ttaeng' };
+  }
+
+  // === 특수패 체크 ===
+  // 암행어사 (4+7): 13광땡, 18광땡만 잡음
+  if ((n1 === 4 && n2 === 7) || (n1 === 7 && n2 === 4)) {
+    return { rank: 75, name: '암행어사', tier: 'special', special: '47' };
+  }
+  // 땡잡이 (3+7): 모든 땡을 잡음, 일반패에겐 짐
+  if ((n1 === 3 && n2 === 7) || (n1 === 7 && n2 === 3)) {
+    return { rank: 74, name: '땡잡이', tier: 'special', special: '37' };
+  }
+  // 세륙 (6+4): 특수 기능
+  if ((n1 === 6 && n2 === 4) || (n1 === 4 && n2 === 6)) {
+    return { rank: 73, name: '세륙', tier: 'special', special: '64' };
+  }
+
+  // === 끗 (두 수의 합의 일의 자리) ===
+  const kkut = (n1 + n2) % 10;
+  const mult = n1 * n2; // 같은 끗일 때 곱으로 비교
+
+  if (kkut === 9) {
+    return { rank: 60, name: '갑오', tier: 'kkut', kkut: 9, mult: mult };
+  }
+  if (kkut === 0) {
+    return { rank: 50, name: '망통', tier: 'kkut', kkut: 0, mult: mult };
+  }
+  // 1끗~8끗
+  return { rank: 50 + kkut, name: kkut + '끗', tier: 'kkut', kkut: kkut, mult: mult };
+}
+
+// =========================
+// 대결 판정 함수
+// =========================
+function sutdaCompare(r1, r2) {
+  // 38광땡은 무적 (암행어사도 못 잡음)
+  if (r1.rank === 100) return 1;
+  if (r2.rank === 100) return -1;
+
+  // 암행어사: 13광땡(98), 18광땡(99)만 잡음
+  if (r1.special === '47' && (r2.rank === 99 || r2.rank === 98)) return 1;
+  if (r2.special === '47' && (r1.rank === 99 || r1.rank === 98)) return -1;
+
+  // 암행어사 vs 일반패: 암행어사는 일반 끗수로 계산 (4+7=1끗)
+  // 이미 rank가 75로 설정되어 있으므로, 특수 잡기 실패 시 끗수로 재계산
+  if (r1.special === '47' && r2.rank < 98) {
+    const r1asKkut = { rank: 51, name: '1끗', tier: 'kkut', kkut: 1, mult: 28 };
+    return sutdaCompare(r1asKkut, r2);
+  }
+  if (r2.special === '47' && r1.rank < 98) {
+    const r2asKkut = { rank: 51, name: '1끗', tier: 'kkut', kkut: 1, mult: 28 };
+    return sutdaCompare(r1, r2asKkut);
+  }
+
+  // 땡잡이: 모든 땡(rank 81~90)을 잡음
+  if (r1.special === '37' && r2.tier === 'ttaeng') return 1;
+  if (r2.special === '37' && r1.tier === 'ttaeng') return -1;
+
+  // 땡잡이 vs 일반패: 땡잡이는 일반 끗수로 계산 (3+7=0끗=망통)
+  if (r1.special === '37' && r2.tier !== 'ttaeng') {
+    const r1asKkut = { rank: 50, name: '망통', tier: 'kkut', kkut: 0, mult: 21 };
+    return sutdaCompare(r1asKkut, r2);
+  }
+  if (r2.special === '37' && r1.tier !== 'ttaeng') {
+    const r2asKkut = { rank: 50, name: '망통', tier: 'kkut', kkut: 0, mult: 21 };
+    return sutdaCompare(r1, r2asKkut);
+  }
+
+  // 세륙은 선택 후 rank가 변환됨 (밀기=10끗, 깽판=재분배)
+  // 여기선 이미 변환된 상태로 들어옴
+
+  // 같은 끗일 때: 곱으로 비교 (무승부 없음)
+  if (r1.rank === r2.rank && r1.tier === 'kkut' && r2.tier === 'kkut') {
+    if (r1.mult !== r2.mult) return r1.mult > r2.mult ? 1 : -1;
+    // 극히 드물게 곱도 같으면 (불가능하지만 안전장치)
+    return 0;
+  }
+
+  // 일반 rank 비교
+  return r1.rank > r2.rank ? 1 : r1.rank < r2.rank ? -1 : 0;
+}
+
+// =========================
+// 화투패 HTML 렌더링
+// =========================
+function hwatuCardHTML(card, big) {
+  if (!card) {
+    const cls = big ? 'hwatu-card hwatu-card-big back' : 'hwatu-card back';
+    return '<div class="' + cls + '"></div>';
+  }
+  const sizeClass = big ? 'hwatu-card hwatu-card-big' : 'hwatu-card';
+  const typeClass = card.gwang ? 'gwang' : 'normal';
+  const monthClass = 'm' + card.num;
+  const gwangText = card.gwang ? '<span class="hwatu-gwang-text">' + (GWANG_NAMES[card.num] || '광') + '</span>' : '';
+  const monthLabel = card.num + '월';
+  return '<div class="' + sizeClass + ' ' + typeClass + ' ' + monthClass + '">' +
+    '<span class="hwatu-num">' + card.num + '</span>' +
+    '<span class="hwatu-month">' + monthLabel + '</span>' +
+    gwangText +
+    '</div>';
+}
+
+// =========================
+// 덱 셔플
+// =========================
+function shuffleHwatu() {
+  const deck = HWATU_DECK.map(c => ({ num: c.num, gwang: c.gwang, id: c.id }));
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
+// =========================
+// 게임 시작 (호스트)
+// =========================
+function startSutda() {
+  if (!state.isHost) return;
+  if (state.players.length < 2 || state.players.length > 6) {
+    showToast('섯다는 2~6인 플레이입니다');
+    return;
+  }
+
+  const deck = shuffleHwatu();
+  let deckIdx = 0;
+
+  const prevHost = sutdaHost;
+  const n = state.players.length;
+
+  sutdaHost = {
+    deck: deck,
+    players: state.players.map((p, i) => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      cards: [deck[deckIdx++], deck[deckIdx++]],
+      chips: prevHost ? (prevHost.players.find(pp => pp.id === p.id)?.chips || 500000) : 500000,
+      bet: 0,
+      totalBet: 0,
+      died: false,
+      allIn: false,
+      seatIdx: i,
+      acted: false,
+      rank: null,
+      seryukChoice: null, // 'push' or 'chaos' or null
+    })),
+    pot: 0,
+    currentBet: 0,
+    phase: 'betting', // betting, seryuk_choice, showdown
+    turnIdx: 0,
+    dealerIdx: prevHost ? (prevHost.dealerIdx + 1) % n : 0,
+    baseBet: 10000, // 기본 판돈
+    roundNum: prevHost ? (prevHost.roundNum || 0) + 1 : 1,
+    bettingRound: 0,
+    lastRaiser: -1,
+    seryukPlayerId: null,
+    seryukCanChaos: false,
+  };
+
+  // 기본 판돈 차감
+  sutdaHost.players.forEach(p => {
+    const ante = Math.min(sutdaHost.baseBet, p.chips);
+    p.chips -= ante;
+    p.totalBet += ante;
+    sutdaHost.pot += ante;
+  });
+
+  // 족보 계산
+  sutdaHost.players.forEach(p => {
+    p.rank = getSutdaRank(p.cards[0], p.cards[1]);
+  });
+
+  // 세륙 체크 - 세륙을 가진 플레이어가 있는지
+  const seryukPlayer = sutdaHost.players.find(p => p.rank.special === '64');
+  if (seryukPlayer) {
+    // 세륙 플레이어가 있으면, 나중에 콜을 먼저 받았을 때 선택
+    sutdaHost.seryukPlayerId = seryukPlayer.id;
+    // 9땡 이하인 상대가 있어야 깽판 가능
+    const others = sutdaHost.players.filter(p => p.id !== seryukPlayer.id);
+    sutdaHost.seryukCanChaos = others.some(p => p.rank.rank <= 89);
+  }
+
+  // 딜러 다음 사람부터 시작
+  sutdaHost.turnIdx = (sutdaHost.dealerIdx + 1) % n;
+  // 턴 플레이어 찾기
+  sutdaHost.turnIdx = findNextSutdaActive(sutdaHost, sutdaHost.turnIdx);
+
+  broadcastSutdaState();
+
+  // 호스트 자신도 게임 화면 표시
+  showScreen('sutdaGame');
+
+  // 다른 플레이어에게 game-start 전송
+  state.players.forEach(p => {
+    if (p.id !== state.myId) {
+      sendTo(p.id, {
+        type: 'game-start',
+        game: 'sutda',
+        state: buildSutdaView(p.id),
+      });
+    }
+  });
+}
+
+// =========================
+// 다음 활성 플레이어 찾기
+// =========================
+function findNextSutdaActive(gs, from) {
+  let idx = from;
+  for (let i = 0; i < gs.players.length; i++) {
+    const p = gs.players[idx];
+    if (!p.died && !p.allIn) return idx;
+    idx = (idx + 1) % gs.players.length;
+  }
+  return from;
+}
+
+// =========================
+// 뷰 빌드 (각 플레이어별)
+// =========================
+function buildSutdaView(forPlayerId) {
+  const gs = sutdaHost;
+  const isShowdown = gs.phase === 'showdown';
+
+  return {
+    type: 'sutda-state',
+    players: gs.players.map(p => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      chips: p.chips,
+      bet: p.bet,
+      totalBet: p.totalBet,
+      died: p.died,
+      allIn: p.allIn,
+      seatIdx: p.seatIdx,
+      // 자기 패만 보임, showdown이면 전원 공개 (죽은 사람도)
+      cards: (p.id === forPlayerId || isShowdown) ? p.cards : null,
+      rank: (p.id === forPlayerId || isShowdown) ? p.rank : null,
+      seryukChoice: p.seryukChoice,
+    })),
+    pot: gs.pot,
+    currentBet: gs.currentBet,
+    phase: gs.phase,
+    turnIdx: gs.turnIdx,
+    dealerIdx: gs.dealerIdx,
+    roundNum: gs.roundNum,
+    baseBet: gs.baseBet,
+    seryukPlayerId: gs.seryukPlayerId,
+    seryukCanChaos: gs.seryukCanChaos,
+  };
+}
+
+// =========================
+// 상태 브로드캐스트
+// =========================
+function broadcastSutdaState() {
+  const gs = sutdaHost;
+  gs.players.forEach(p => {
+    const view = buildSutdaView(p.id);
+    if (p.id === state.myId) {
+      sutdaView = view;
+      renderSutdaView(view);
+    } else {
+      sendTo(p.id, view);
+    }
+  });
+}
+
+// =========================
+// 뷰 렌더링 (클라이언트)
+// =========================
+function renderSutdaView(vs) {
+  sutdaView = vs;
+  showScreen('sutdaGame');
+
+  const me = vs.players.find(p => p.id === state.myId);
+  const isMyTurn = vs.players[vs.turnIdx]?.id === state.myId && vs.phase === 'betting' && !me?.died;
+
+  // 상단
+  document.getElementById('sutdaPotBadge').textContent = formatChips(vs.pot);
+  document.getElementById('sutdaMyBalance').textContent = formatChips(me?.chips || 0);
+
+  // 판돈
+  document.getElementById('sutdaPotAmount').textContent = formatChips(vs.pot);
+
+  // 턴 표시
+  const turnPlayer = vs.players[vs.turnIdx];
+  if (vs.phase === 'betting' && turnPlayer && !turnPlayer.died) {
+    document.getElementById('sutdaTurnIndicator').textContent =
+      turnPlayer.id === state.myId ? '내 차례' : turnPlayer.name + '의 차례';
+  } else if (vs.phase === 'seryuk_choice') {
+    document.getElementById('sutdaTurnIndicator').textContent = '세륙 선택 중...';
+  } else if (vs.phase === 'showdown') {
+    document.getElementById('sutdaTurnIndicator').textContent = '결과 공개!';
+  } else {
+    document.getElementById('sutdaTurnIndicator').textContent = '';
+  }
+
+  // 상대방
+  const oppArea = document.getElementById('sutdaOpponents');
+  const ops = vs.players.filter(p => p.id !== state.myId);
+  oppArea.innerHTML = ops.map(p => {
+    const isTurn = vs.players[vs.turnIdx]?.id === p.id && vs.phase === 'betting';
+    const pIdx = vs.players.findIndex(pp => pp.id === p.id);
+    let statusText = '';
+    let statusClass = 'waiting';
+    if (p.died) { statusText = '다이'; statusClass = 'die'; }
+    else if (p.allIn) { statusText = '올인'; statusClass = 'bet'; }
+    else if (p.bet > 0) { statusText = formatChips(p.bet); statusClass = 'bet'; }
+
+    const cardsHTML = p.cards
+      ? p.cards.map(c => hwatuCardHTML(c, false)).join('')
+      : hwatuCardHTML(null, false) + hwatuCardHTML(null, false);
+
+    return '<div class="sutda-opp-slot' + (p.died ? ' died' : '') + '">' +
+      '<div class="sutda-opp-avatar' + (isTurn ? ' active-turn' : '') + '" style="background:' + PLAYER_COLORS[pIdx % PLAYER_COLORS.length] + ';">' + p.avatar + '</div>' +
+      '<div class="sutda-opp-name">' + p.name + '</div>' +
+      '<div class="sutda-opp-chips">' + formatChips(p.chips) + '</div>' +
+      '<div class="sutda-opp-status ' + statusClass + '">' + statusText + '</div>' +
+      '<div class="sutda-opp-cards">' + cardsHTML + '</div>' +
+      (p.rank && vs.phase === 'showdown' ? '<div style="font-size:11px;color:#ff1744;font-weight:700;margin-top:2px;">' + p.rank.name + '</div>' : '') +
+      '</div>';
+  }).join('');
+
+  // 내 패
+  const myCardsEl = document.getElementById('sutdaMyCards');
+  if (me?.cards) {
+    myCardsEl.innerHTML = me.cards.map(c => hwatuCardHTML(c, true)).join('');
+  } else {
+    myCardsEl.innerHTML = hwatuCardHTML(null, true) + hwatuCardHTML(null, true);
+  }
+
+  // 내 칩
+  document.getElementById('sutdaMyChips').textContent = formatChips(me?.chips || 0);
+  document.getElementById('sutdaMyName').textContent = me?.name || '나';
+
+  // 족보 표시
+  const rankEl = document.getElementById('sutdaMyRank');
+  if (me?.rank) {
+    rankEl.textContent = me.rank.name;
+  } else {
+    rankEl.textContent = '';
+  }
+
+  // 세륙 패널
+  const seryukPanel = document.getElementById('sutdaSeryukPanel');
+  if (vs.phase === 'seryuk_choice' && vs.seryukPlayerId === state.myId) {
+    seryukPanel.style.display = 'flex';
+  } else {
+    seryukPanel.style.display = 'none';
+  }
+
+  // 배팅 버튼
+  const actionBar = document.getElementById('sutdaActionBar');
+  const allBtns = actionBar.querySelectorAll('.sutda-bet-btn');
+
+  if (isMyTurn && vs.phase === 'betting') {
+    allBtns.forEach(b => b.disabled = false);
+
+    // 콜 금액 계산
+    const toCall = vs.currentBet - (me?.bet || 0);
+    const callBtn = document.getElementById('sutdaBtnCall');
+    if (toCall > 0) {
+      callBtn.textContent = '콜 ' + formatChips(toCall);
+    } else {
+      callBtn.textContent = '콜';
+    }
+
+    // 칩이 부족하면 레이즈 비활성화
+    if (me && me.chips <= 0) {
+      document.getElementById('sutdaBtn10k').disabled = true;
+      document.getElementById('sutdaBtn50k').disabled = true;
+      document.getElementById('sutdaBtn100k').disabled = true;
+    }
+    if (me && me.chips < 10000) document.getElementById('sutdaBtn10k').disabled = true;
+    if (me && me.chips < 50000) document.getElementById('sutdaBtn50k').disabled = true;
+    if (me && me.chips < 100000) document.getElementById('sutdaBtn100k').disabled = true;
+  } else {
+    allBtns.forEach(b => b.disabled = true);
+  }
+}
+
+// =========================
+// 칩 포맷
+// =========================
+function formatChips(n) {
+  if (n >= 10000) {
+    const man = Math.floor(n / 10000);
+    const rest = n % 10000;
+    if (rest === 0) return man + '만';
+    return man + '만' + rest.toLocaleString();
+  }
+  return n.toLocaleString();
+}
+
+// =========================
+// 배팅 액션 (클라이언트)
+// =========================
+function sutdaBet(action, amount) {
+  if (state.isHost) {
+    processSutdaAction(state.myId, action, amount);
+  } else {
+    const hostConn = Object.values(state.connections)[0];
+    if (hostConn?.open) {
+      hostConn.send(JSON.stringify({
+        type: 'sutda-bet',
+        action: action,
+        amount: amount,
+      }));
+    }
+  }
+}
+
+// =========================
+// 세륙 선택 (클라이언트)
+// =========================
+function sutdaSeryukChoice(choice) {
+  document.getElementById('sutdaSeryukPanel').style.display = 'none';
+  if (state.isHost) {
+    processSutdaSeryuk(state.myId, choice);
+  } else {
+    const hostConn = Object.values(state.connections)[0];
+    if (hostConn?.open) {
+      hostConn.send(JSON.stringify({
+        type: 'sutda-seryuk',
+        choice: choice,
+      }));
+    }
+  }
+}
+
+// =========================
+// 배팅 처리 (호스트)
+// =========================
+function processSutdaAction(playerId, action, amount) {
+  const gs = sutdaHost;
+  if (!gs || gs.phase !== 'betting') return;
+
+  const pIdx = gs.players.findIndex(p => p.id === playerId);
+  if (pIdx !== gs.turnIdx) return;
+
+  const player = gs.players[pIdx];
+  if (player.died || player.allIn) return;
+
+  const toCall = gs.currentBet - player.bet;
+
+  switch (action) {
+    case 'die':
+      player.died = true;
+      break;
+
+    case 'call': {
+      const a = Math.min(toCall, player.chips);
+      player.chips -= a;
+      player.bet += a;
+      player.totalBet += a;
+      gs.pot += a;
+      if (player.chips === 0) player.allIn = true;
+      break;
+    }
+
+    case 'raise': {
+      // 먼저 콜 금액 + 추가 레이즈
+      const raiseTotal = toCall + (amount || 10000);
+      const a = Math.min(raiseTotal, player.chips);
+      player.chips -= a;
+      player.bet += a;
+      player.totalBet += a;
+      gs.pot += a;
+      if (player.bet > gs.currentBet) {
+        gs.currentBet = player.bet;
+        gs.lastRaiser = pIdx;
+      }
+      if (player.chips === 0) player.allIn = true;
+      // 다른 사람들 acted 리셋
+      gs.players.forEach((p, i) => {
+        if (i !== pIdx && !p.died && !p.allIn) p.acted = false;
+      });
+      break;
+    }
+
+    case 'allin': {
+      const a = player.chips;
+      player.bet += a;
+      player.totalBet += a;
+      gs.pot += a;
+      player.chips = 0;
+      player.allIn = true;
+      if (player.bet > gs.currentBet) {
+        gs.currentBet = player.bet;
+        gs.lastRaiser = pIdx;
+        gs.players.forEach((p, i) => {
+          if (i !== pIdx && !p.died && !p.allIn) p.acted = false;
+        });
+      }
+      break;
+    }
+  }
+
+  player.acted = true;
+
+  // 살아있는 플레이어 수 체크
+  const alive = gs.players.filter(p => !p.died);
+  if (alive.length === 1) {
+    // 혼자 남으면 즉시 승리
+    endSutdaRound(alive[0]);
+    return;
+  }
+
+  // 세륙 체크: 세륙 플레이어가 살아있고, 콜을 받았을 때 (첫 번째 배팅 라운드 종료 시)
+  // 세륙 선택은 모든 사람이 한 번씩 배팅을 마친 후 트리거
+  const canAct = gs.players.filter(p => !p.died && !p.allIn);
+  const allActed = canAct.every(p => p.acted && p.bet >= gs.currentBet);
+
+  if (canAct.length === 0 || allActed) {
+    // 세륙 플레이어가 있고, 아직 선택을 안 했으면
+    const seryukP = gs.players.find(p => p.id === gs.seryukPlayerId && !p.died);
+    if (seryukP && seryukP.seryukChoice === null && gs.phase === 'betting') {
+      gs.phase = 'seryuk_choice';
+      broadcastSutdaState();
+      return;
+    }
+
+    // 쇼다운
+    resolveSutdaShowdown();
+    return;
+  }
+
+  // 다음 턴
+  gs.turnIdx = findNextSutdaActive(gs, (gs.turnIdx + 1) % gs.players.length);
+  broadcastSutdaState();
+}
+
+// =========================
+// 세륙 처리 (호스트)
+// =========================
+function processSutdaSeryuk(playerId, choice) {
+  const gs = sutdaHost;
+  if (!gs || gs.phase !== 'seryuk_choice') return;
+  if (playerId !== gs.seryukPlayerId) return;
+
+  const seryukP = gs.players.find(p => p.id === playerId);
+  if (!seryukP) return;
+
+  seryukP.seryukChoice = choice;
+
+  if (choice === 'push') {
+    // 밀기: 세륙을 망통(0끗) 대신 갑오(9끗) 급으로 취급? 아니, 10끗으로 계산
+    // 끗수에서 10끗은 0끗이지만, 여기서는 특별히 "밀기"로 갑오(9끗)와 동급 또는 그 위로 계산
+    // 규칙상 "10끗" = 합 10의 일의 자리 = 0이지만, 밀기는 "갑오(9끗) 바로 아래"로 적용하는 것이 일반적
+    // 더 정확히는: 밀기 = 갑오(9끗)와 동일한 등급으로 "세륙밀기"
+    seryukP.rank = { rank: 59, name: '세륙밀기', tier: 'kkut', kkut: 10, mult: 24, special: null };
+    gs.phase = 'betting';
+    // 배팅 계속 (추가 라운드 없이 바로 showdown)
+    resolveSutdaShowdown();
+  } else if (choice === 'chaos') {
+    // 깽판: 9땡 이하인 경우만 가능
+    // 살아있는 유저 전원 패 재분배
+    const alive = gs.players.filter(p => !p.died);
+    // 9땡 이상이면 깽판 불가 (38광땡, 18광땡, 13광땡, 장땡)
+    const hasHighHand = alive.some(p => p.id !== playerId && p.rank.rank >= 90);
+    if (hasHighHand) {
+      // 깽판 실패 - 밀기로 강제 전환
+      seryukP.rank = { rank: 59, name: '세륙밀기', tier: 'kkut', kkut: 10, mult: 24, special: null };
+      showToast('상대에게 장땡 이상이 있어 깽판 실패!');
+    } else {
+      // 패 재분배
+      const newDeck = shuffleHwatu();
+      let newIdx = 0;
+      alive.forEach(p => {
+        p.cards = [newDeck[newIdx++], newDeck[newIdx++]];
+        p.rank = getSutdaRank(p.cards[0], p.cards[1]);
+        p.seryukChoice = null;
+      });
+      // 세륙 상태 리셋
+      gs.seryukPlayerId = null;
+      // 새로운 패에서 세륙이 또 나올 수 있음
+      const newSeryuk = alive.find(p => p.rank.special === '64');
+      if (newSeryuk) {
+        gs.seryukPlayerId = newSeryuk.id;
+        gs.seryukCanChaos = alive.some(p => p.id !== newSeryuk.id && p.rank.rank <= 89);
+        // 다시 세륙 선택
+        gs.phase = 'seryuk_choice';
+        broadcastSutdaState();
+        return;
+      }
+    }
+    gs.phase = 'betting';
+    resolveSutdaShowdown();
+  }
+}
+
+// =========================
+// 쇼다운 (결과 판정)
+// =========================
+function resolveSutdaShowdown() {
+  const gs = sutdaHost;
+  gs.phase = 'showdown';
+
+  const alive = gs.players.filter(p => !p.died);
+
+  if (alive.length === 0) return;
+  if (alive.length === 1) {
+    endSutdaRound(alive[0]);
+    return;
+  }
+
+  // 가장 강한 패 찾기
+  let bestPlayer = alive[0];
+  for (let i = 1; i < alive.length; i++) {
+    const cmp = sutdaCompare(alive[i].rank, bestPlayer.rank);
+    if (cmp > 0) bestPlayer = alive[i];
+  }
+
+  endSutdaRound(bestPlayer);
+}
+
+// =========================
+// 라운드 종료
+// =========================
+function endSutdaRound(winner) {
+  const gs = sutdaHost;
+  winner.chips += gs.pot;
+  gs.phase = 'showdown';
+
+  // 먼저 showdown 뷰를 브로드캐스트
+  broadcastSutdaState();
+
+  // 결과 메시지 전송
+  const result = {
+    type: 'sutda-result',
+    winnerId: winner.id,
+    winnerName: winner.name,
+    winnerAvatar: winner.avatar,
+    winnerCards: winner.cards,
+    winnerRank: winner.rank,
+    pot: gs.pot,
+    allHands: gs.players.map(p => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      cards: p.cards,
+      rank: p.rank,
+      died: p.died,
+      seatIdx: p.seatIdx,
+    })),
+  };
+
+  setTimeout(() => {
+    broadcast(result);
+    handleSutdaResult(result);
+  }, 1200);
+}
+
+// =========================
+// 결과 표시 (클라이언트)
+// =========================
+function handleSutdaResult(msg) {
+  const won = msg.winnerId === state.myId;
+  recordGame(won);
+
+  const overlay = document.getElementById('sutdaResultOverlay');
+  document.getElementById('sutdaResultTitle').textContent = won ? '승리!' : '패배...';
+  document.getElementById('sutdaResultTitle').style.color = won ? 'var(--gold)' : 'var(--text-dim)';
+  document.getElementById('sutdaResultWinner').textContent = msg.winnerName + ' ' + msg.winnerAvatar;
+  document.getElementById('sutdaResultRank').textContent = msg.winnerRank ? msg.winnerRank.name : '';
+  document.getElementById('sutdaResultCards').innerHTML = msg.winnerCards
+    ? msg.winnerCards.map(c => hwatuCardHTML(c, true)).join('')
+    : '';
+  document.getElementById('sutdaResultPot').textContent = formatChips(msg.pot);
+
+  // 전체 결과 표시
+  const allEl = document.getElementById('sutdaResultAllHands');
+  allEl.innerHTML = msg.allHands.map(h => {
+    const isWinner = h.id === msg.winnerId;
+    const isDied = h.died;
+    const rowClass = 'sutda-result-hand-row' + (isWinner ? ' winner-row' : '') + (isDied ? ' died-row' : '');
+    const pIdx = h.seatIdx;
+    return '<div class="' + rowClass + '">' +
+      '<div class="sutda-result-hand-avatar" style="background:' + PLAYER_COLORS[pIdx % PLAYER_COLORS.length] + ';">' + h.avatar + '</div>' +
+      '<div class="sutda-result-hand-name">' + h.name + (isWinner ? ' (승)' : '') + (isDied ? ' (다이)' : '') + '</div>' +
+      '<div class="sutda-result-hand-rank">' + (h.rank ? h.rank.name : '-') + '</div>' +
+      '<div class="sutda-result-hand-cards">' + (h.cards ? h.cards.map(c => hwatuCardHTML(c, false)).join('') : '') + '</div>' +
+      '</div>';
+  }).join('');
+
+  overlay.classList.add('active');
+}
+
+// =========================
+// 결과 닫기
+// =========================
+function closeSutdaResult() {
+  document.getElementById('sutdaResultOverlay').classList.remove('active');
+  if (state.isHost) {
+    // 다음 라운드 시작
+    setTimeout(() => startSutda(), 500);
+  }
+}
+
+
+// =========================
+// handleMessage 확장 - 섯다 관련
+// =========================
+// 아래 핸들러들을 기존 handleMessage의 handlers 객체에 추가:
+//
+//   'sutda-state': () => { showScreen('sutdaGame'); renderSutdaView(msg); },
+//   'sutda-bet': () => { if(state.isHost) processSutdaAction(peerId, msg.action, msg.amount); },
+//   'sutda-seryuk': () => { if(state.isHost) processSutdaSeryuk(peerId, msg.choice); },
+//   'sutda-result': () => handleSutdaResult(msg),
+//
+
+// =========================
+// handleGameStart 확장 - 섯다 관련
+// =========================
+// 기존 handleGameStart에서 sutda 분기를 다음으로 교체:
+//
+//   else if(msg.game === 'sutda') {
+//     showScreen('sutdaGame');
+//     renderSutdaView(msg.state);
+//   }
+//
+
+// =========================
+// startSutda stub 교체
+// =========================
+// 기존 game stubs 영역의 startSutda 함수를 위의 완전한 구현으로 교체:
+// function startSutda() { showToast('섯다 준비 중...'); /* TODO */ }
+// ->  위 startSutda() 함수로 대체
+
+
+================================================================================
+통합 가이드
+================================================================================
+
+## index.html에 통합하는 방법:
+
+### 1. HTML 삽입 위치
+<!-- TRUTH GAME --> 블록 앞 또는 뒤에 <!-- SUTDA GAME --> 블록을 삽입합니다.
+예: </div> (mafiaGame 닫기 태그) 와 <!-- TRUTH GAME --> 사이에 삽입.
+
+### 2. CSS 삽입 위치
+/* TRUTH GAME CSS */ 주석 앞에 /* SUTDA CSS */ 블록을 삽입합니다.
+
+### 3. JS 삽입 위치
+기존 game stubs 영역의 startSutda 함수를 완전한 구현으로 교체합니다:
+- function startSutda() { showToast('섯다 준비 중...'); /* TODO */ }
+  -> 전체 SUTDA ENGINE 코드로 교체
+
+### 4. handleMessage 수정
+handlers 객체에 다음 4개 항목 추가:
+```
+'sutda-state': () => { showScreen('sutdaGame'); renderSutdaView(msg); },
+'sutda-bet': () => { if(state.isHost) processSutdaAction(peerId, msg.action, msg.amount); },
+'sutda-seryuk': () => { if(state.isHost) processSutdaSeryuk(peerId, msg.choice); },
+'sutda-result': () => handleSutdaResult(msg),
+```
+
+### 5. handleGameStart 수정
+기존:
+```
+else if(msg.game === 'sutda') { showToast('섯다 시작!'); }
+```
+변경:
+```
+else if(msg.game === 'sutda') { showScreen('sutdaGame'); renderSutdaView(msg.state); }
+```
+
+### 6. P2P 메시지 타입
+- `sutda-state`: 게임 상태 동기화 (호스트 -> 클라이언트)
+- `sutda-bet`: 배팅 액션 (클라이언트 -> 호스트)
+- `sutda-seryuk`: 세륙 선택 (클라이언트 -> 호스트)
+- `sutda-result`: 라운드 결과 (호스트 -> 전체)
+
+### 7. 족보 순서 정리
+| 순위 | 이름 | rank 값 | 조건 |
+|------|------|---------|------|
+| 1 | 38광땡 | 100 | 3광 + 8광 |
+| 2 | 18광땡 | 99 | 1광 + 8광 |
+| 3 | 13광땡 | 98 | 1광 + 3광 |
+| 4 | 장땡 | 90 | 10 + 10 |
+| 5 | 9땡 | 89 | 9 + 9 |
+| ... | ... | ... | ... |
+| 14 | 1땡 | 81 | 1 + 1 |
+| 15 | 암행어사 | 75* | 4 + 7 (*13/18광땡만 잡음) |
+| 16 | 땡잡이 | 74* | 3 + 7 (*땡만 잡음) |
+| 17 | 세륙 | 73* | 6 + 4 (*밀기/깽판 선택) |
+| 18 | 갑오 | 60 | 합 9 |
+| 19 | 8끗 | 58 | 합의 일의 자리가 8 |
+| ... | ... | ... | ... |
+| 26 | 1끗 | 51 | 합의 일의 자리가 1 |
+| 27 | 망통 | 50 | 합의 일의 자리가 0 |
+
+### 8. 특수 룰 구현 상세
+- **암행어사**: sutdaCompare에서 상대가 13광땡/18광땡이면 승리, 아니면 1끗으로 계산
+- **땡잡이**: 상대가 땡(81~90)이면 승리, 아니면 망통으로 계산
+- **세륙 밀기**: rank 59 (갑오 바로 아래)로 계산
+- **세륙 깽판**: 살아있는 전원 패 재분배, 장땡(90) 이상이 있으면 실패
+- **같은 끗**: 두 수의 곱으로 비교 (mult 값)

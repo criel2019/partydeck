@@ -1,0 +1,2593 @@
+=== CSS ===
+
+/* ===== MAFIA FULL VERSION ===== */
+#mafiaGame {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 30% 80%, rgba(139,0,0,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 20%, rgba(26,31,58,0.08) 0%, transparent 50%),
+    var(--bg-dark);
+}
+
+/* --- Top Bar --- */
+.mf-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(20,20,42,0.98) 0%, rgba(20,20,42,0.85) 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+  z-index: 20;
+}
+.mf-topbar-left { display: flex; align-items: center; gap: 10px; }
+.mf-back-btn {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+}
+.mf-phase-badge {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+.mf-phase-badge.day {
+  background: linear-gradient(135deg, rgba(255,200,50,0.2), rgba(255,150,30,0.1));
+  color: #ffd700;
+  border: 1px solid rgba(255,215,0,0.3);
+}
+.mf-phase-badge.night {
+  background: linear-gradient(135deg, rgba(70,90,160,0.25), rgba(40,50,100,0.15));
+  color: #87a6d9;
+  border: 1px solid rgba(135,166,217,0.3);
+}
+.mf-phase-badge.vote {
+  background: linear-gradient(135deg, rgba(255,45,120,0.2), rgba(200,30,80,0.1));
+  color: #ff6b9d;
+  border: 1px solid rgba(255,45,120,0.3);
+}
+.mf-phase-badge.result {
+  background: linear-gradient(135deg, rgba(0,230,118,0.2), rgba(0,180,90,0.1));
+  color: #69f0ae;
+  border: 1px solid rgba(0,230,118,0.3);
+}
+.mf-timer-box {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 12px;
+  background: rgba(255,107,53,0.15);
+  border: 1px solid rgba(255,107,53,0.3);
+  border-radius: 20px;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: var(--accent);
+}
+.mf-timer-box.urgent {
+  animation: mf-timer-pulse 0.5s ease-in-out infinite;
+  color: #ff1744;
+  border-color: rgba(255,23,68,0.5);
+  background: rgba(255,23,68,0.15);
+}
+@keyframes mf-timer-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.mf-day-counter {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 2px 0;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* --- Role Banner --- */
+.mf-role-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin: 8px 14px 4px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+.mf-role-banner.team-mafia {
+  background: linear-gradient(135deg, rgba(139,0,0,0.25), rgba(80,0,0,0.15));
+  border: 1px solid rgba(139,0,0,0.4);
+}
+.mf-role-banner.team-citizen {
+  background: linear-gradient(135deg, rgba(0,150,255,0.15), rgba(0,100,200,0.08));
+  border: 1px solid rgba(0,150,255,0.25);
+}
+.mf-role-emoji { font-size: 36px; flex-shrink: 0; }
+.mf-role-info { flex: 1; min-width: 0; }
+.mf-role-name {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+.mf-role-name.mafia-color { color: #ff4444; }
+.mf-role-name.citizen-color { color: #4fc3f7; }
+.mf-role-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Scrollable Content --- */
+.mf-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* --- Player Grid --- */
+.mf-player-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.mf-player-grid.three-col { grid-template-columns: repeat(3, 1fr); }
+
+.mf-player-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 6px 8px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.mf-player-card:active { transform: scale(0.96); }
+.mf-player-card.selectable:hover { border-color: rgba(255,255,255,0.15); }
+.mf-player-card.selected {
+  border-color: var(--accent3);
+  background: rgba(255,45,120,0.12);
+  box-shadow: 0 0 12px rgba(255,45,120,0.2);
+}
+.mf-player-card.selected-snipe {
+  border-color: #ff1744;
+  background: rgba(255,23,68,0.15);
+  box-shadow: 0 0 16px rgba(255,23,68,0.3);
+}
+.mf-player-card.dead {
+  opacity: 0.3;
+  pointer-events: none;
+  filter: grayscale(0.6);
+}
+.mf-player-card.dead .mf-dead-overlay {
+  display: flex;
+}
+.mf-player-card.voted-on {
+  border-color: rgba(255,107,53,0.5);
+}
+.mf-player-card.is-me {
+  border-color: rgba(0,229,255,0.3);
+}
+
+.mf-dead-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  z-index: 5;
+  border-radius: var(--radius-sm);
+}
+.mf-player-avatar {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.08);
+}
+.mf-player-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mf-player-role-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+.mf-player-role-tag.mafia-tag {
+  background: rgba(255,0,0,0.2);
+  color: #ff6b6b;
+}
+.mf-player-role-tag.citizen-tag {
+  background: rgba(0,150,255,0.15);
+  color: #64b5f6;
+}
+
+.mf-vote-count-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 22px; height: 22px;
+  background: linear-gradient(135deg, #e03131, #c92a2a);
+  border: 2px solid var(--bg-dark);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: white;
+  z-index: 10;
+  animation: mf-badge-pop 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes mf-badge-pop {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.mf-host-crown {
+  position: absolute;
+  top: -6px;
+  left: -4px;
+  font-size: 16px;
+  z-index: 10;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
+}
+.mf-lover-heart {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 14px;
+  z-index: 10;
+  animation: mf-heart-beat 1.5s ease-in-out infinite;
+}
+@keyframes mf-heart-beat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+.mf-soldier-shield {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  font-size: 12px;
+  z-index: 10;
+}
+.mf-snipe-used-badge {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  font-size: 10px;
+  z-index: 10;
+  opacity: 0.5;
+}
+
+/* --- Night Action Panel --- */
+.mf-night-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.mf-night-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  color: #87a6d9;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.mf-night-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.mf-night-waiting {
+  text-align: center;
+  padding: 24px 0;
+}
+.mf-night-waiting-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+  animation: mf-moon-float 3s ease-in-out infinite;
+}
+@keyframes mf-moon-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.mf-night-waiting-text {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+/* --- Chat Panel (Mafia / Spy) --- */
+.mf-chat-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid rgba(139,0,0,0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 180px;
+}
+.mf-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(139,0,0,0.15);
+  border-bottom: 1px solid rgba(139,0,0,0.2);
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff6b6b;
+}
+.mf-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 60px;
+  max-height: 100px;
+  -webkit-overflow-scrolling: touch;
+}
+.mf-chat-msg {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.mf-chat-msg .sender {
+  font-weight: 700;
+  color: #ff8a80;
+}
+.mf-chat-msg .text {
+  color: var(--text);
+}
+.mf-chat-input-row {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(0,0,0,0.2);
+  border-top: 1px solid rgba(139,0,0,0.15);
+}
+.mf-chat-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Noto Sans KR', sans-serif;
+  outline: none;
+}
+.mf-chat-input::placeholder { color: var(--text-dim); }
+.mf-chat-send-btn {
+  padding: 8px 14px;
+  background: rgba(139,0,0,0.4);
+  border: 1px solid rgba(139,0,0,0.5);
+  border-radius: 8px;
+  color: #ff8a80;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.mf-chat-send-btn:active { transform: scale(0.95); }
+
+/* --- Action Buttons Area --- */
+.mf-action-area {
+  padding: 10px 14px 14px;
+  background: linear-gradient(0deg, rgba(20,20,42,0.98) 0%, rgba(20,20,42,0.7) 100%);
+  border-top: 1px solid rgba(255,255,255,0.04);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 20;
+}
+.mf-message-box {
+  font-size: 13px;
+  color: var(--text);
+  text-align: center;
+  padding: 6px;
+  line-height: 1.5;
+  min-height: 24px;
+}
+.mf-btn-row {
+  display: flex;
+  gap: 8px;
+}
+.mf-action-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 900;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  text-align: center;
+}
+.mf-action-btn:active { transform: scale(0.96); }
+.mf-action-btn.primary {
+  background: linear-gradient(135deg, var(--accent), #e55a2b);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255,107,53,0.3);
+}
+.mf-action-btn.primary:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.mf-action-btn.secondary {
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.mf-action-btn.danger {
+  background: linear-gradient(135deg, #d32f2f, #b71c1c);
+  color: white;
+  box-shadow: 0 4px 12px rgba(211,47,47,0.3);
+}
+.mf-action-btn.snipe {
+  background: linear-gradient(135deg, #ff1744, #d50000);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255,23,68,0.3);
+  font-size: 13px;
+}
+.mf-action-btn.snipe:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+.mf-action-btn.extend {
+  background: rgba(255,215,0,0.15);
+  color: var(--gold);
+  border: 1px solid rgba(255,215,0,0.3);
+  font-size: 13px;
+}
+
+/* --- Vote Status Panel --- */
+.mf-vote-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.mf-vote-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.mf-vote-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mf-vote-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mf-vote-bar-name {
+  font-size: 12px;
+  color: var(--text);
+  width: 52px;
+  font-weight: 600;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mf-vote-bar-track {
+  flex: 1;
+  height: 20px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.mf-vote-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #e55a2b);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  color: white;
+  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  min-width: 0;
+}
+.mf-skip-count {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* --- Events / Announcements --- */
+.mf-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mf-event-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  animation: mf-event-in 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes mf-event-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.mf-event-item.death {
+  background: linear-gradient(135deg, rgba(139,0,0,0.25), rgba(80,0,0,0.15));
+  border: 1px solid rgba(139,0,0,0.4);
+  color: #ff6b6b;
+}
+.mf-event-item.safe {
+  background: linear-gradient(135deg, rgba(0,200,100,0.15), rgba(0,150,80,0.08));
+  border: 1px solid rgba(0,200,100,0.3);
+  color: #69f0ae;
+}
+.mf-event-item.info {
+  background: linear-gradient(135deg, rgba(51,154,240,0.15), rgba(24,100,171,0.08));
+  border: 1px solid rgba(51,154,240,0.3);
+  color: #64b5f6;
+}
+.mf-event-item.snipe {
+  background: linear-gradient(135deg, rgba(255,23,68,0.2), rgba(200,0,50,0.12));
+  border: 1px solid rgba(255,23,68,0.5);
+  color: #ff5252;
+  animation: mf-event-in 0.5s cubic-bezier(0.4,0,0.2,1), mf-shake 0.4s ease-in-out 0.5s;
+}
+@keyframes mf-shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+.mf-event-item.vote-result {
+  background: linear-gradient(135deg, rgba(255,45,120,0.15), rgba(200,30,80,0.08));
+  border: 1px solid rgba(255,45,120,0.3);
+  color: #ff6b9d;
+}
+.mf-event-item.immunity {
+  background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(200,170,0,0.08));
+  border: 1px solid rgba(255,215,0,0.3);
+  color: #ffd740;
+}
+.mf-event-icon { font-size: 18px; flex-shrink: 0; }
+
+/* --- Result Screen Overlay --- */
+.mf-result-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  gap: 16px;
+  padding: 24px;
+  animation: mf-result-fade 0.8s ease-out;
+}
+@keyframes mf-result-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.mf-result-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 36px;
+  text-align: center;
+}
+.mf-result-title.win { color: var(--gold); }
+.mf-result-title.lose { color: var(--text-dim); }
+.mf-result-subtitle {
+  font-size: 16px;
+  color: var(--text);
+  text-align: center;
+}
+.mf-result-roles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.mf-result-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  font-size: 11px;
+}
+.mf-result-player.dead-result { opacity: 0.5; }
+.mf-result-player-avatar {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.mf-result-player-name {
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--text);
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mf-result-player-role {
+  font-size: 10px;
+  font-weight: 700;
+}
+.mf-result-player-role.mafia-text { color: #ff6b6b; }
+.mf-result-player-role.citizen-text { color: #64b5f6; }
+
+.mf-result-close-btn {
+  padding: 12px 40px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+/* --- Spy Info Panel --- */
+.mf-spy-info {
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  border: 1px solid rgba(128,0,128,0.3);
+}
+.mf-spy-info-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ce93d8;
+  margin-bottom: 6px;
+}
+.mf-spy-dead-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.mf-spy-dead-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(128,0,128,0.15);
+  color: #e1bee7;
+}
+
+/* --- Undertaker Info --- */
+.mf-undertaker-result {
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  border: 1px solid rgba(100,100,100,0.3);
+}
+.mf-undertaker-result-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #90a4ae;
+  margin-bottom: 4px;
+}
+
+/* --- Night overlay tint --- */
+.mf-night-tint {
+  position: absolute;
+  inset: 0;
+  background: rgba(10,12,30,0.4);
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.5s;
+}
+.mf-night-tint.hidden { opacity: 0; }
+
+/* --- Misc --- */
+.mf-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 4px 0;
+}
+.mf-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+/* Night mode background shift */
+#mafiaGame.night-mode {
+  background:
+    radial-gradient(ellipse at 30% 80%, rgba(26,31,58,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 20%, rgba(40,50,120,0.08) 0%, transparent 50%),
+    linear-gradient(180deg, #080818 0%, #0a0a16 100%);
+}
+
+/* Lover reveal */
+.mf-lover-reveal {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px;
+  border: 1px solid rgba(255,105,180,0.3);
+  text-align: center;
+}
+.mf-lover-reveal-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: #ff69b4;
+  margin-bottom: 8px;
+}
+.mf-lover-reveal-text {
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* --- Spectator bar for dead players --- */
+.mf-spectator-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(100,100,100,0.15);
+  border: 1px solid rgba(100,100,100,0.2);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* Scroll styling */
+.mf-content::-webkit-scrollbar { width: 4px; }
+.mf-content::-webkit-scrollbar-track { background: transparent; }
+.mf-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.mf-chat-messages::-webkit-scrollbar { width: 3px; }
+.mf-chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+
+=== HTML ===
+
+<!-- MAFIA FULL VERSION -->
+<div class="screen" id="mafiaGame">
+  <!-- Top Bar -->
+  <div class="mf-topbar">
+    <div class="mf-topbar-left">
+      <button class="mf-back-btn" onclick="mfLeaveGame()">✕</button>
+      <div class="mf-phase-badge day" id="mfPhaseBadge">
+        <span id="mfPhaseIcon">☀️</span>
+        <span id="mfPhaseText">낮</span>
+      </div>
+    </div>
+    <div class="mf-day-counter" id="mfDayCounter">1일차</div>
+    <div class="mf-timer-box" id="mfTimerBox">
+      <span>⏱</span>
+      <span id="mfTimer">180</span>
+    </div>
+  </div>
+
+  <!-- Role Banner -->
+  <div class="mf-role-banner team-citizen" id="mfRoleBanner">
+    <div class="mf-role-emoji" id="mfRoleEmoji">👤</div>
+    <div class="mf-role-info">
+      <div class="mf-role-name citizen-color" id="mfRoleName">시민</div>
+      <div class="mf-role-desc" id="mfRoleDesc">마피아를 찾아 투표하세요</div>
+    </div>
+  </div>
+
+  <!-- Main Scrollable Content -->
+  <div class="mf-content" id="mfContent">
+    <!-- Dynamic content injected by JS:
+         - Player grid
+         - Night action panel
+         - Chat panel (mafia/spy)
+         - Vote status panel
+         - Events list
+         - Spectator mode
+         - Lover reveal
+         etc.
+    -->
+  </div>
+
+  <!-- Bottom Action Area -->
+  <div class="mf-action-area" id="mfActionArea">
+    <div class="mf-message-box" id="mfMessageBox"></div>
+    <div class="mf-btn-row" id="mfBtnRow">
+      <!-- Buttons injected dynamically -->
+    </div>
+  </div>
+
+  <!-- Result Overlay (hidden by default) -->
+  <div class="mf-result-overlay" id="mfResultOverlay" style="display:none;">
+    <div class="mf-result-title" id="mfResultTitle"></div>
+    <div class="mf-result-subtitle" id="mfResultSubtitle"></div>
+    <div class="mf-result-roles" id="mfResultRoles"></div>
+    <button class="mf-result-close-btn" onclick="mfCloseResult()">로비로 돌아가기</button>
+  </div>
+</div>
+
+
+=== JS ===
+
+// ====================================================================
+// ===== MAFIA FULL VERSION ENGINE ====================================
+// ====================================================================
+
+/*
+ * Replaces the basic startMafia() with a complete 11-role implementation.
+ *
+ * ROLES:
+ *  마피아팀: mafia (x2), spy
+ *  시민팀:   police, doctor, reporter, undertaker, detective,
+ *            senator, soldier, lover (x2), baeksu (unemployed), citizen
+ *
+ * Architecture:
+ *  - Host-authoritative: all game state lives on host
+ *  - Host sends each player a personalized "view" object
+ *  - Clients render purely from their view
+ *  - Night actions collected from all players, resolved simultaneously on host
+ *
+ * Message types used:
+ *  Host -> Client:  { type: 'mf-state', ...viewData }
+ *  Host -> Client:  { type: 'mf-result', winner, message }
+ *  Client -> Host:  { type: 'mf-action', action, targetId, extra }
+ *  Client -> Host:  { type: 'mf-vote', targetId }
+ *  Client -> Host:  { type: 'mf-chat', text }
+ *  Client -> Host:  { type: 'mf-extend' }
+ *  Client -> Host:  { type: 'mf-skip-vote' }
+ */
+
+// ========================= CONSTANTS =========================
+
+const MF_ROLES = {
+  mafia:      { emoji: '🔪', name: '마피아',   team: 'mafia',   desc: '밤에 팀원과 상의하여 1명을 제거하세요' },
+  spy:        { emoji: '🕵️', name: '스파이',   team: 'mafia',   desc: '밤마다 마피아를 1명 찾을 수 있습니다' },
+  police:     { emoji: '🔍', name: '경찰',     team: 'citizen', desc: '밤마다 1명이 마피아인지 조사합니다' },
+  doctor:     { emoji: '💊', name: '의사',     team: 'citizen', desc: '밤마다 1명을 치료하여 마피아 공격을 막습니다' },
+  reporter:   { emoji: '📰', name: '기자',     team: 'citizen', desc: '밤마다 1명이 스파이인지 조사합니다' },
+  undertaker: { emoji: '⚰️', name: '장의사',   team: 'citizen', desc: '밤에 죽은 시체가 마피아인지 시민인지 확인합니다' },
+  detective:  { emoji: '🔎', name: '탐정',     team: 'citizen', desc: '시민이 죽으면 그 시민을 죽인 마피아를 알 수 있습니다' },
+  senator:    { emoji: '🏛️', name: '국회의원', team: 'citizen', desc: '투표로 처형당하지 않습니다' },
+  soldier:    { emoji: '🛡️', name: '군인',     team: 'citizen', desc: '마피아 일반 공격을 1회 막을 수 있습니다 (저격은 즉사)' },
+  lover:      { emoji: '💕', name: '연인',     team: 'citizen', desc: '서로 연인이 누구인지 알고 시작합니다' },
+  baeksu:     { emoji: '😴', name: '백수',     team: 'citizen', desc: '4번째 사망 시, 첫 사망자의 직업을 이어받습니다' },
+  citizen:    { emoji: '👤', name: '시민',     team: 'citizen', desc: '마피아를 찾아 투표하세요' },
+};
+
+const MF_PHASE_LABELS = {
+  'role-reveal': { icon: '🎭', text: '역할 배분', cls: 'night' },
+  'night':       { icon: '🌙', text: '밤',       cls: 'night' },
+  'day-announce': { icon: '☀️', text: '아침 발표', cls: 'day' },
+  'day-discuss':  { icon: '☀️', text: '토론',     cls: 'day' },
+  'day-vote':     { icon: '🗳️', text: '투표',     cls: 'vote' },
+  'vote-result':  { icon: '⚖️', text: '처형 결과', cls: 'vote' },
+  'result':       { icon: '🏆', text: '게임 종료', cls: 'result' },
+};
+
+const MF_NIGHT_DURATION = 30;
+const MF_DISCUSS_DURATION = 180;
+const MF_VOTE_DURATION = 30;
+const MF_ANNOUNCE_DURATION = 8;
+const MF_REVEAL_DURATION = 8;
+const MF_VOTE_RESULT_DURATION = 6;
+
+// ========================= HOST STATE =========================
+
+let mfState = null;    // host-only full state
+let mfView = null;     // local player's current view
+let mfTimer = null;    // interval id
+let mfSelectedTarget = null;
+let mfUseSnipe = false;
+
+// ========================= ROLE ASSIGNMENT ====================
+
+function mfAssignRoles(playerCount) {
+  // Role distribution based on player count
+  const roles = [];
+
+  if (playerCount <= 5) {
+    // Minimum: 1 mafia, doctor, police, citizens
+    roles.push('mafia', 'doctor', 'police');
+    while (roles.length < playerCount) roles.push('citizen');
+  } else if (playerCount <= 7) {
+    // 6-7 players: 2 mafia, doctor, police, citizens
+    roles.push('mafia', 'mafia', 'doctor', 'police');
+    while (roles.length < playerCount) roles.push('citizen');
+  } else if (playerCount <= 9) {
+    // 8-9 players: 2 mafia, spy, doctor, police, reporter, citizens
+    roles.push('mafia', 'mafia', 'spy', 'doctor', 'police', 'reporter');
+    while (roles.length < playerCount) roles.push('citizen');
+  } else if (playerCount <= 10) {
+    // 10 players: core + senator, soldier
+    roles.push('mafia', 'mafia', 'spy', 'doctor', 'police', 'reporter',
+               'senator', 'soldier');
+    while (roles.length < playerCount) roles.push('citizen');
+  } else {
+    // 11+ players: full role set
+    roles.push('mafia', 'mafia', 'spy',
+               'police', 'doctor', 'reporter', 'undertaker', 'detective',
+               'senator', 'soldier');
+    // Add lovers if 11+
+    if (playerCount >= 11) {
+      roles.push('lover', 'lover');
+    }
+    // Add baeksu if 13+
+    if (playerCount >= 13) {
+      roles.push('baeksu');
+    }
+    // Fill remainder with citizens
+    while (roles.length < playerCount) roles.push('citizen');
+  }
+
+  // Shuffle
+  for (let i = roles.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [roles[i], roles[j]] = [roles[j], roles[i]];
+  }
+  return roles;
+}
+
+// ========================= START GAME =========================
+
+function startMafia() {
+  if (!state.isHost) return;
+  const n = state.players.length;
+  if (n < 4) {
+    showToast('마피아는 최소 4명이 필요합니다');
+    return;
+  }
+
+  const roles = mfAssignRoles(n);
+
+  // Find lover partner IDs
+  const loverIndices = [];
+  roles.forEach((r, i) => { if (r === 'lover') loverIndices.push(i); });
+
+  mfState = {
+    phase: 'role-reveal',
+    round: 1,
+    players: state.players.map((p, i) => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      isHost: p.isHost || false,
+      role: roles[i],             // original assigned role
+      activeRole: roles[i],       // can change for baeksu
+      alive: true,
+      lives: roles[i] === 'soldier' ? 2 : 1,
+      snipesLeft: roles[i] === 'mafia' ? 1 : 0,
+      // Spy tracking
+      spyFoundMafia: false,
+      // Baeksu tracking
+      baeksuInherited: false,
+      // Senator immunity revealed
+      senatorRevealed: false,
+      // Lover partner
+      loverPartnerId: null,
+    })),
+    // Night action collection
+    nightActions: {},
+    // Who killed whom (for detective tracking)
+    killLog: [],     // { victimId, killerId, method:'kill'|'snipe', round }
+    // Death order for baeksu mechanic
+    deathOrder: [],  // ordered list of player IDs who died
+    // Mafia team chat
+    chatMessages: [], // { sender, senderName, text, round }
+    // Spy's discovered info
+    spyKnownRoles: {},  // { deadPlayerId: roleLabel }
+    // Votes
+    votes: {},          // { voterId: targetId | 'skip' }
+    // Extension tracking
+    extensionUsed: {},  // { playerId: true } per day
+    extensionAdded: false,
+    // Timer
+    timer: MF_REVEAL_DURATION,
+    // Announcement messages for day phase
+    announcements: [],
+    // For 6-player rule: first night doctor-only scan
+    sixPlayerFirstNight: (n === 6),
+  };
+
+  // Assign lover partners
+  if (loverIndices.length === 2) {
+    const p0 = mfState.players[loverIndices[0]];
+    const p1 = mfState.players[loverIndices[1]];
+    p0.loverPartnerId = p1.id;
+    p1.loverPartnerId = p0.id;
+  }
+
+  mfBroadcastState();
+  showScreen('mafiaGame');
+  mfStartTimer();
+}
+
+// ========================= TIMER ==============================
+
+function mfStartTimer() {
+  clearInterval(mfTimer);
+  mfTimer = setInterval(() => {
+    if (!mfState) return;
+    mfState.timer--;
+
+    // Update local display
+    const timerEl = document.getElementById('mfTimer');
+    if (timerEl) timerEl.textContent = mfState.timer;
+
+    if (mfState.timer <= 0) {
+      clearInterval(mfTimer);
+      if (state.isHost) mfAdvancePhase();
+    }
+  }, 1000);
+}
+
+function mfSetPhaseTimer(duration) {
+  mfState.timer = duration;
+  mfStartTimer();
+}
+
+// ========================= PHASE ADVANCEMENT ==================
+
+function mfAdvancePhase() {
+  if (!state.isHost || !mfState) return;
+
+  const phase = mfState.phase;
+
+  if (phase === 'role-reveal') {
+    // Move to first night
+    mfState.phase = 'night';
+    mfState.nightActions = {};
+    mfSetPhaseTimer(MF_NIGHT_DURATION);
+
+    // For 6-player variant: first night only doctor scans
+    // (handled in night action validation)
+  }
+  else if (phase === 'night') {
+    mfResolveNight();
+  }
+  else if (phase === 'day-announce') {
+    mfState.phase = 'day-discuss';
+    mfState.votes = {};
+    mfState.extensionUsed = {};
+    mfState.extensionAdded = false;
+    mfSetPhaseTimer(MF_DISCUSS_DURATION);
+  }
+  else if (phase === 'day-discuss') {
+    mfState.phase = 'day-vote';
+    mfState.votes = {};
+    mfSetPhaseTimer(MF_VOTE_DURATION);
+  }
+  else if (phase === 'day-vote') {
+    mfResolveVote();
+  }
+  else if (phase === 'vote-result') {
+    // Check win condition
+    if (mfCheckWin()) return;
+    // Go to night
+    mfState.phase = 'night';
+    mfState.round++;
+    mfState.nightActions = {};
+    mfState.announcements = [];
+    mfSetPhaseTimer(MF_NIGHT_DURATION);
+  }
+
+  mfBroadcastState();
+}
+
+// ========================= NIGHT RESOLUTION ===================
+
+function mfResolveNight() {
+  const ms = mfState;
+  const actions = ms.nightActions;
+  const announcements = [];
+
+  // --- Collect mafia team actions ---
+  // Find mafia kill action (only 1 mafia acts per night for kill/snipe)
+  let killTargetId = null;
+  let killerId = null;
+  let isSnipe = false;
+
+  // Iterate mafia actions
+  const mafiaPlayers = ms.players.filter(p => p.activeRole === 'mafia' && p.alive);
+  for (const mp of mafiaPlayers) {
+    const act = actions[mp.id];
+    if (act && act.action === 'kill') {
+      killTargetId = act.targetId;
+      killerId = mp.id;
+      isSnipe = false;
+      break;
+    }
+    if (act && act.action === 'snipe') {
+      killTargetId = act.targetId;
+      killerId = mp.id;
+      isSnipe = true;
+      break;
+    }
+  }
+
+  // --- Doctor heal target ---
+  const doctorPlayer = ms.players.find(p => p.activeRole === 'doctor' && p.alive);
+  let healTargetId = null;
+  if (doctorPlayer && actions[doctorPlayer.id]) {
+    healTargetId = actions[doctorPlayer.id].targetId;
+  }
+
+  // --- Detective tracking target ---
+  const detectivePlayer = ms.players.find(p => p.activeRole === 'detective' && p.alive);
+  let detectiveTargetId = null;
+  if (detectivePlayer && actions[detectivePlayer.id]) {
+    detectiveTargetId = actions[detectivePlayer.id].targetId;
+  }
+
+  // --- Police investigation ---
+  const policePlayer = ms.players.find(p => p.activeRole === 'police' && p.alive);
+  let policeTargetId = null;
+  let policeResult = null;
+  if (policePlayer && actions[policePlayer.id]) {
+    policeTargetId = actions[policePlayer.id].targetId;
+    const target = ms.players.find(p => p.id === policeTargetId);
+    if (target) {
+      const isMafia = (target.activeRole === 'mafia');
+      policeResult = { targetId: policeTargetId, targetName: target.name, isMafia };
+    }
+  }
+
+  // --- Reporter investigation (looking for spy) ---
+  const reporterPlayer = ms.players.find(p => p.activeRole === 'reporter' && p.alive);
+  let reporterTargetId = null;
+  let reporterResult = null;
+  if (reporterPlayer && actions[reporterPlayer.id]) {
+    reporterTargetId = actions[reporterPlayer.id].targetId;
+    const target = ms.players.find(p => p.id === reporterTargetId);
+    if (target) {
+      const isSpy = (target.activeRole === 'spy');
+      reporterResult = { targetId: reporterTargetId, targetName: target.name, isSpy };
+    }
+  }
+
+  // --- Spy investigation (looking for mafia) ---
+  const spyPlayer = ms.players.find(p => p.activeRole === 'spy' && p.alive);
+  let spyTargetId = null;
+  let spyResult = null;
+  if (spyPlayer && actions[spyPlayer.id]) {
+    spyTargetId = actions[spyPlayer.id].targetId;
+    const target = ms.players.find(p => p.id === spyTargetId);
+    if (target) {
+      const isMafia = (target.activeRole === 'mafia');
+      if (isMafia) {
+        spyPlayer.spyFoundMafia = true;
+      }
+      spyResult = { targetId: spyTargetId, targetName: target.name, isMafia };
+    }
+  }
+
+  // --- Undertaker target (check corpse from last night/vote death) ---
+  const undertakerPlayer = ms.players.find(p => p.activeRole === 'undertaker' && p.alive);
+  let undertakerTargetId = null;
+  let undertakerResult = null;
+  if (undertakerPlayer && actions[undertakerPlayer.id]) {
+    undertakerTargetId = actions[undertakerPlayer.id].targetId;
+    const target = ms.players.find(p => p.id === undertakerTargetId);
+    if (target && !target.alive) {
+      // Spy shows as citizen
+      const showTeam = (target.activeRole === 'mafia') ? '마피아' : '시민';
+      undertakerResult = { targetId: undertakerTargetId, targetName: target.name, team: showTeam };
+    }
+  }
+
+  // =========================
+  // RESOLVE KILL
+  // =========================
+  let killedPlayer = null;
+  let killBlocked = false;
+  let deathMessage = '';
+
+  if (killTargetId) {
+    const victim = ms.players.find(p => p.id === killTargetId);
+    if (victim && victim.alive) {
+      if (isSnipe) {
+        // Snipe bypasses doctor, soldier, detective
+        victim.alive = false;
+        victim.lives = 0;
+        killedPlayer = victim;
+        deathMessage = 'snipe';
+
+        // Deduct snipe from killer
+        const killer = ms.players.find(p => p.id === killerId);
+        if (killer) killer.snipesLeft = Math.max(0, killer.snipesLeft - 1);
+
+        // Log kill
+        ms.killLog.push({ victimId: victim.id, killerId, method: 'snipe', round: ms.round });
+        ms.deathOrder.push(victim.id);
+
+        announcements.push({
+          type: 'snipe',
+          icon: '🎯',
+          text: `${victim.name}님이 저격당했습니다!`
+        });
+      } else {
+        // Normal kill - check doctor heal and soldier
+        if (healTargetId === killTargetId) {
+          // Doctor saved
+          killBlocked = true;
+          announcements.push({
+            type: 'safe',
+            icon: '🌙',
+            text: '밤에 아무 일도 일어나지 않았습니다.'
+          });
+        } else if (victim.activeRole === 'soldier' && victim.lives > 1) {
+          // Soldier survives
+          victim.lives--;
+          killBlocked = true;
+          announcements.push({
+            type: 'safe',
+            icon: '🌙',
+            text: '밤에 아무 일도 일어나지 않았습니다.'
+          });
+        } else {
+          // Victim dies
+          victim.alive = false;
+          victim.lives = 0;
+          killedPlayer = victim;
+          deathMessage = 'kill';
+
+          ms.killLog.push({ victimId: victim.id, killerId, method: 'kill', round: ms.round });
+          ms.deathOrder.push(victim.id);
+
+          announcements.push({
+            type: 'death',
+            icon: '💀',
+            text: `${victim.name}님이 마피아에게 살해당했습니다.`
+          });
+        }
+      }
+    }
+  } else {
+    // No mafia action
+    announcements.push({
+      type: 'safe',
+      icon: '🌙',
+      text: '평화로운 밤이었습니다.'
+    });
+  }
+
+  // --- Detective result (only if a citizen was killed by normal kill) ---
+  let detectiveResult = null;
+  if (detectivePlayer && detectivePlayer.alive && detectiveTargetId && killedPlayer) {
+    // Detective was tracking the killed person
+    if (detectiveTargetId === killedPlayer.id && deathMessage === 'kill') {
+      const killerP = ms.players.find(p => p.id === killerId);
+      if (killerP) {
+        detectiveResult = { victimName: killedPlayer.name, killerName: killerP.name, killerId };
+      }
+    }
+    // Note: snipe bypasses detective
+  }
+
+  // --- Spy: update dead player roles knowledge ---
+  if (spyPlayer && spyPlayer.alive) {
+    ms.players.forEach(p => {
+      if (!p.alive && !ms.spyKnownRoles[p.id]) {
+        // Spy can see dead player's role
+        ms.spyKnownRoles[p.id] = MF_ROLES[p.activeRole]?.name || '시민';
+      }
+    });
+  }
+
+  // --- Baeksu mechanic: 4th death triggers inheritance ---
+  if (ms.deathOrder.length >= 4) {
+    const baeksuPlayer = ms.players.find(p => p.activeRole === 'baeksu' && p.alive && !p.baeksuInherited);
+    if (baeksuPlayer) {
+      let inheritFrom = null;
+      // First death's role
+      const firstDead = ms.players.find(p => p.id === ms.deathOrder[0]);
+      if (firstDead) {
+        const firstRole = firstDead.activeRole;
+        const firstTeam = MF_ROLES[firstRole]?.team;
+        if (firstTeam === 'mafia') {
+          // If first dead was mafia team, inherit next citizen's role
+          for (let i = 1; i < ms.deathOrder.length; i++) {
+            const dp = ms.players.find(p => p.id === ms.deathOrder[i]);
+            if (dp && MF_ROLES[dp.activeRole]?.team === 'citizen') {
+              inheritFrom = dp;
+              break;
+            }
+          }
+        } else {
+          inheritFrom = firstDead;
+        }
+      }
+
+      if (inheritFrom) {
+        baeksuPlayer.activeRole = inheritFrom.activeRole;
+        baeksuPlayer.baeksuInherited = true;
+        // Copy special attributes
+        if (inheritFrom.activeRole === 'soldier') {
+          baeksuPlayer.lives = 2;
+        }
+      }
+    }
+  }
+
+  // Store announcements
+  ms.announcements = announcements;
+
+  // Store personal results for this night
+  ms._nightResults = {
+    policeResult,
+    reporterResult,
+    spyResult,
+    detectiveResult,
+    undertakerResult,
+    killedPlayer,
+    deathMessage,
+  };
+
+  // Check win
+  if (mfCheckWin()) return;
+
+  // Move to day announce
+  ms.phase = 'day-announce';
+  mfSetPhaseTimer(MF_ANNOUNCE_DURATION);
+  mfBroadcastState();
+}
+
+// ========================= VOTE RESOLUTION ====================
+
+function mfResolveVote() {
+  const ms = mfState;
+  const votes = ms.votes;
+
+  // Count votes
+  const counts = {};
+  let skipCount = 0;
+  Object.values(votes).forEach(v => {
+    if (v === 'skip') { skipCount++; return; }
+    counts[v] = (counts[v] || 0) + 1;
+  });
+
+  // Find highest vote
+  let maxVotes = 0;
+  let candidates = [];
+  Object.entries(counts).forEach(([pid, c]) => {
+    if (c > maxVotes) {
+      maxVotes = c;
+      candidates = [pid];
+    } else if (c === maxVotes) {
+      candidates.push(pid);
+    }
+  });
+
+  const announcements = [];
+
+  if (candidates.length === 1 && maxVotes > skipCount) {
+    const targetId = candidates[0];
+    const target = ms.players.find(p => p.id === targetId);
+
+    if (target) {
+      // Check senator immunity
+      if (target.activeRole === 'senator' && !target.senatorRevealed) {
+        target.senatorRevealed = true;
+        announcements.push({
+          type: 'immunity',
+          icon: '🏛️',
+          text: `${target.name}님은 국회의원입니다! 투표로 처형할 수 없습니다.`
+        });
+      } else {
+        // Execute
+        target.alive = false;
+        target.lives = 0;
+        ms.deathOrder.push(target.id);
+
+        const roleName = MF_ROLES[target.activeRole]?.name || '시민';
+        const teamLabel = MF_ROLES[target.activeRole]?.team === 'mafia' ? '마피아팀' : '시민팀';
+
+        announcements.push({
+          type: 'vote-result',
+          icon: '⚖️',
+          text: `${target.name}님이 처형되었습니다. 정체: ${roleName} (${teamLabel})`
+        });
+
+        // Check baeksu inheritance
+        if (ms.deathOrder.length >= 4) {
+          const baeksu = ms.players.find(p => p.activeRole === 'baeksu' && p.alive && !p.baeksuInherited);
+          if (baeksu) {
+            const firstDead = ms.players.find(p => p.id === ms.deathOrder[0]);
+            if (firstDead) {
+              const firstTeam = MF_ROLES[firstDead.activeRole]?.team;
+              let inheritFrom = null;
+              if (firstTeam === 'mafia') {
+                for (let i = 1; i < ms.deathOrder.length; i++) {
+                  const dp = ms.players.find(p => p.id === ms.deathOrder[i]);
+                  if (dp && MF_ROLES[dp.activeRole]?.team === 'citizen') {
+                    inheritFrom = dp;
+                    break;
+                  }
+                }
+              } else {
+                inheritFrom = firstDead;
+              }
+              if (inheritFrom) {
+                baeksu.activeRole = inheritFrom.activeRole;
+                baeksu.baeksuInherited = true;
+                if (inheritFrom.activeRole === 'soldier') baeksu.lives = 2;
+              }
+            }
+          }
+        }
+      }
+    }
+  } else if (candidates.length > 1) {
+    announcements.push({
+      type: 'safe',
+      icon: '⚖️',
+      text: '투표가 동률입니다. 아무도 처형되지 않았습니다.'
+    });
+  } else {
+    announcements.push({
+      type: 'safe',
+      icon: '⚖️',
+      text: '과반수 건너뛰기로 아무도 처형되지 않았습니다.'
+    });
+  }
+
+  ms.announcements = announcements;
+  ms._nightResults = null;
+  ms.votes = {};
+
+  // Check win
+  if (mfCheckWin()) return;
+
+  ms.phase = 'vote-result';
+  mfSetPhaseTimer(MF_VOTE_RESULT_DURATION);
+  mfBroadcastState();
+}
+
+// ========================= WIN CHECK ==========================
+
+function mfCheckWin() {
+  const ms = mfState;
+  const alive = ms.players.filter(p => p.alive);
+  const mafiaAlive = alive.filter(p => MF_ROLES[p.activeRole]?.team === 'mafia').length;
+  const citizenAlive = alive.filter(p => MF_ROLES[p.activeRole]?.team !== 'mafia').length;
+
+  let winner = null;
+  let message = '';
+
+  if (mafiaAlive === 0) {
+    winner = 'citizen';
+    message = '시민 팀 승리! 모든 마피아가 제거되었습니다.';
+  } else if (mafiaAlive >= citizenAlive) {
+    winner = 'mafia';
+    message = '마피아 팀 승리! 마피아가 도시를 장악했습니다.';
+  }
+
+  if (winner) {
+    ms.phase = 'result';
+    clearInterval(mfTimer);
+    mfBroadcastState();
+
+    const result = { type: 'mf-result', winner, message };
+    broadcast(result);
+    mfHandleResult(result);
+    return true;
+  }
+  return false;
+}
+
+// ========================= STATE BROADCAST ====================
+
+function mfBroadcastState() {
+  if (!mfState) return;
+  const ms = mfState;
+
+  ms.players.forEach(p => {
+    const view = mfBuildView(p.id);
+    if (p.id === state.myId) {
+      mfView = view;
+      mfRenderView();
+    } else {
+      sendTo(p.id, { type: 'mf-state', ...view });
+    }
+  });
+}
+
+function mfBuildView(playerId) {
+  const ms = mfState;
+  const me = ms.players.find(p => p.id === playerId);
+  if (!me) return {};
+
+  const myRole = me.activeRole;
+  const myTeam = MF_ROLES[myRole]?.team || 'citizen';
+  const isAlive = me.alive;
+  const results = ms._nightResults || {};
+
+  // Build player list with visibility rules
+  const playersView = ms.players.map(p => {
+    const pv = {
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      alive: p.alive,
+      isHost: p.isHost,
+      isMe: p.id === playerId,
+      role: null,           // hidden by default
+      roleEmoji: null,
+      roleName: null,
+      showLoverHeart: false,
+      showSoldierShield: false,
+      showSnipeUsed: false,
+      voteCount: 0,
+    };
+
+    // Self always sees own role
+    if (p.id === playerId) {
+      pv.role = p.activeRole;
+      pv.roleEmoji = MF_ROLES[p.activeRole]?.emoji;
+      pv.roleName = MF_ROLES[p.activeRole]?.name;
+    }
+
+    // Mafia can see other mafia
+    if (myRole === 'mafia' && p.activeRole === 'mafia' && p.id !== playerId) {
+      pv.role = 'mafia';
+      pv.roleEmoji = '🔪';
+      pv.roleName = '마피아';
+    }
+
+    // Spy who found mafia can see mafia
+    if (myRole === 'spy' && me.spyFoundMafia && p.activeRole === 'mafia') {
+      pv.role = 'mafia';
+      pv.roleEmoji = '🔪';
+      pv.roleName = '마피아';
+    }
+
+    // Lover sees partner
+    if (myRole === 'lover' && me.loverPartnerId === p.id) {
+      pv.showLoverHeart = true;
+    }
+
+    // Result phase: show all roles
+    if (ms.phase === 'result') {
+      pv.role = p.activeRole;
+      pv.roleEmoji = MF_ROLES[p.activeRole]?.emoji;
+      pv.roleName = MF_ROLES[p.activeRole]?.name;
+    }
+
+    // Dead player role reveal (public)
+    if (!p.alive && ms.phase !== 'night' && ms.phase !== 'role-reveal') {
+      pv.role = p.activeRole;
+      pv.roleEmoji = MF_ROLES[p.activeRole]?.emoji;
+      pv.roleName = MF_ROLES[p.activeRole]?.name;
+    }
+
+    // Soldier shield indicator (only for self or result)
+    if (p.activeRole === 'soldier' && p.lives > 1 && (p.id === playerId || ms.phase === 'result')) {
+      pv.showSoldierShield = true;
+    }
+
+    // Vote counts
+    if (ms.phase === 'day-vote' || ms.phase === 'vote-result') {
+      let vc = 0;
+      Object.values(ms.votes).forEach(v => { if (v === p.id) vc++; });
+      pv.voteCount = vc;
+    }
+
+    return pv;
+  });
+
+  // Build personal notifications
+  const personalEvents = [];
+
+  // Police result
+  if (results.policeResult && playerId === (ms.players.find(p => p.activeRole === 'police' && p.alive)?.id)) {
+    const r = results.policeResult;
+    personalEvents.push({
+      type: 'info',
+      icon: '🔍',
+      text: `${r.targetName}님은 ${r.isMafia ? '마피아입니다!' : '마피아가 아닙니다.'}`
+    });
+  }
+
+  // Reporter result
+  if (results.reporterResult && playerId === (ms.players.find(p => p.activeRole === 'reporter' && p.alive)?.id)) {
+    const r = results.reporterResult;
+    personalEvents.push({
+      type: 'info',
+      icon: '📰',
+      text: `${r.targetName}님은 ${r.isSpy ? '스파이입니다!' : '스파이가 아닙니다.'}`
+    });
+  }
+
+  // Spy result
+  if (results.spyResult && playerId === (ms.players.find(p => p.activeRole === 'spy' && p.alive)?.id)) {
+    const r = results.spyResult;
+    personalEvents.push({
+      type: 'info',
+      icon: '🕵️',
+      text: `${r.targetName}님은 ${r.isMafia ? '마피아입니다! 이제 마피아와 대화할 수 있습니다.' : '마피아가 아닙니다.'}`
+    });
+  }
+
+  // Detective result
+  if (results.detectiveResult && playerId === (ms.players.find(p => p.activeRole === 'detective' && p.alive)?.id)) {
+    const r = results.detectiveResult;
+    personalEvents.push({
+      type: 'info',
+      icon: '🔎',
+      text: `${r.victimName}님을 죽인 마피아는 ${r.killerName}님입니다!`
+    });
+  }
+
+  // Undertaker result
+  if (results.undertakerResult && playerId === (ms.players.find(p => p.activeRole === 'undertaker' && p.alive)?.id)) {
+    const r = results.undertakerResult;
+    personalEvents.push({
+      type: 'info',
+      icon: '⚰️',
+      text: `${r.targetName}님의 시체를 확인: ${r.team}입니다.`
+    });
+  }
+
+  // Baeksu inheritance notification
+  const mePlayer = ms.players.find(p => p.id === playerId);
+  if (mePlayer && mePlayer.role === 'baeksu' && mePlayer.baeksuInherited) {
+    const newRoleName = MF_ROLES[mePlayer.activeRole]?.name || '시민';
+    personalEvents.push({
+      type: 'info',
+      icon: '😴',
+      text: `백수 능력 발동! 이제 당신의 역할은 "${newRoleName}"입니다.`
+    });
+  }
+
+  // Can this player chat with mafia team?
+  const canChat = (myRole === 'mafia') ||
+                  (myRole === 'spy' && me.spyFoundMafia);
+
+  // What chat messages to show
+  const chatView = canChat ? ms.chatMessages : [];
+
+  // Spy dead role info
+  const spyDeadRoles = (myRole === 'spy') ? ms.spyKnownRoles : {};
+
+  // Determine what night action this player can take
+  let nightAction = null;
+  if (ms.phase === 'night' && isAlive) {
+    // 6-player first night: only doctor scans
+    const isFirstNight = ms.round === 1;
+    const sixPlayerRestrict = ms.sixPlayerFirstNight && isFirstNight;
+
+    if (myRole === 'mafia' && !sixPlayerRestrict) {
+      nightAction = { type: 'mafia', canSnipe: me.snipesLeft > 0, label: '제거할 대상 선택' };
+    } else if (myRole === 'spy') {
+      nightAction = { type: 'spy', label: '마피아로 의심되는 대상 선택' };
+    } else if (myRole === 'police' && !sixPlayerRestrict) {
+      nightAction = { type: 'police', label: '조사할 대상 선택' };
+    } else if (myRole === 'doctor') {
+      nightAction = { type: 'doctor', label: '치료할 대상 선택' };
+    } else if (myRole === 'reporter' && !sixPlayerRestrict) {
+      nightAction = { type: 'reporter', label: '스파이 의심 대상 선택' };
+    } else if (myRole === 'undertaker') {
+      nightAction = { type: 'undertaker', label: '확인할 시체 선택' };
+    } else if (myRole === 'detective' && !sixPlayerRestrict) {
+      nightAction = { type: 'detective', label: '추적할 대상 선택' };
+    }
+  }
+
+  // Did this player already submit night action?
+  const nightActionDone = ms.nightActions[playerId] !== undefined;
+
+  // My snipes remaining
+  const mySnipesLeft = me.snipesLeft;
+
+  // Lover partner info
+  let loverPartnerName = null;
+  if (myRole === 'lover' && me.loverPartnerId) {
+    const partner = ms.players.find(p => p.id === me.loverPartnerId);
+    if (partner) loverPartnerName = partner.name;
+  }
+
+  return {
+    phase: ms.phase,
+    round: ms.round,
+    timer: ms.timer,
+    players: playersView,
+    myId: playerId,
+    myRole: myRole,
+    myOriginalRole: me.role,
+    myTeam: myTeam,
+    isAlive: isAlive,
+    announcements: ms.announcements || [],
+    personalEvents,
+    nightAction,
+    nightActionDone,
+    canChat,
+    chatMessages: chatView,
+    spyDeadRoles,
+    votes: ms.votes,
+    mySnipesLeft,
+    loverPartnerName,
+    sixPlayerFirstNight: ms.sixPlayerFirstNight && ms.round === 1,
+  };
+}
+
+// ========================= HOST: PROCESS ACTIONS ==============
+
+function mfProcessAction(senderId, data) {
+  if (!state.isHost || !mfState) return;
+  const ms = mfState;
+
+  if (data.action === 'night-action') {
+    if (ms.phase !== 'night') return;
+    const player = ms.players.find(p => p.id === senderId && p.alive);
+    if (!player) return;
+
+    ms.nightActions[senderId] = {
+      action: data.nightAction,   // 'kill', 'snipe', 'heal', 'investigate', etc.
+      targetId: data.targetId,
+    };
+
+    // Check if all required night actions are submitted
+    if (mfAllNightActionsDone()) {
+      clearInterval(mfTimer);
+      // Small delay to let last player see confirmation
+      setTimeout(() => mfAdvancePhase(), 500);
+    } else {
+      // Send updated state to show action was received
+      mfBroadcastState();
+    }
+  }
+  else if (data.action === 'vote') {
+    if (ms.phase !== 'day-vote') return;
+    const player = ms.players.find(p => p.id === senderId && p.alive);
+    if (!player) return;
+
+    ms.votes[senderId] = data.targetId; // targetId or 'skip'
+
+    // Check if all alive players voted
+    const aliveCount = ms.players.filter(p => p.alive).length;
+    if (Object.keys(ms.votes).length >= aliveCount) {
+      clearInterval(mfTimer);
+      setTimeout(() => mfAdvancePhase(), 500);
+    } else {
+      mfBroadcastState();
+    }
+  }
+  else if (data.action === 'chat') {
+    // Mafia team chat
+    const player = ms.players.find(p => p.id === senderId);
+    if (!player) return;
+    const role = player.activeRole;
+    const canChat = (role === 'mafia') || (role === 'spy' && player.spyFoundMafia);
+    if (!canChat) return;
+
+    ms.chatMessages.push({
+      sender: senderId,
+      senderName: player.name,
+      text: data.text,
+      round: ms.round,
+    });
+
+    mfBroadcastState();
+  }
+  else if (data.action === 'extend') {
+    if (ms.phase !== 'day-discuss') return;
+    if (ms.extensionUsed[senderId]) return;
+    if (ms.extensionAdded) return; // only one extension per day phase
+
+    ms.extensionUsed[senderId] = true;
+    ms.extensionAdded = true;
+    ms.timer += 60; // +1 minute
+    mfBroadcastState();
+    // Notify
+    const player = ms.players.find(p => p.id === senderId);
+    // Broadcast will update timer display
+  }
+}
+
+function mfAllNightActionsDone() {
+  const ms = mfState;
+  const isFirstNight = ms.round === 1;
+  const sixRestrict = ms.sixPlayerFirstNight && isFirstNight;
+
+  let needed = 0;
+  ms.players.forEach(p => {
+    if (!p.alive) return;
+    const role = p.activeRole;
+    if (role === 'mafia' && !sixRestrict) needed++;
+    else if (role === 'spy') needed++;
+    else if (role === 'police' && !sixRestrict) needed++;
+    else if (role === 'doctor') needed++;
+    else if (role === 'reporter' && !sixRestrict) needed++;
+    else if (role === 'undertaker') needed++;
+    else if (role === 'detective' && !sixRestrict) needed++;
+  });
+
+  // Only count unique players who have acted
+  let acted = 0;
+  ms.players.forEach(p => {
+    if (!p.alive) return;
+    if (ms.nightActions[p.id]) {
+      const role = p.activeRole;
+      const hasAction = (role === 'mafia' && !sixRestrict) ||
+                        role === 'spy' ||
+                        (role === 'police' && !sixRestrict) ||
+                        role === 'doctor' ||
+                        (role === 'reporter' && !sixRestrict) ||
+                        role === 'undertaker' ||
+                        (role === 'detective' && !sixRestrict);
+      if (hasAction) acted++;
+    }
+  });
+
+  // For mafia: only 1 mafia needs to act (they coordinate)
+  const mafiaAlive = ms.players.filter(p => p.alive && p.activeRole === 'mafia');
+  const mafiaActed = mafiaAlive.filter(p => ms.nightActions[p.id]).length;
+  // At least 1 mafia must act if not restricted
+  const mafiaOk = sixRestrict ? true : (mafiaAlive.length === 0 || mafiaActed >= 1);
+
+  // Other roles
+  const otherRoles = ['spy', 'police', 'doctor', 'reporter', 'undertaker', 'detective'];
+  let othersOk = true;
+  for (const role of otherRoles) {
+    if (sixRestrict && role !== 'doctor' && role !== 'spy') continue;
+    const p = ms.players.find(pp => pp.alive && pp.activeRole === role);
+    if (p && !ms.nightActions[p.id]) {
+      othersOk = false;
+      break;
+    }
+  }
+
+  return mafiaOk && othersOk;
+}
+
+// ========================= CLIENT: HANDLE MESSAGES ============
+
+// This replaces the existing mafia message handlers.
+// Patch into handleMessage:
+//   'mf-state'  -> show mafia screen, render view
+//   'mf-action' -> host processes action
+//   'mf-result' -> handle game end
+
+function mfHandleState(msg) {
+  mfView = msg;
+  showScreen('mafiaGame');
+  mfRenderView();
+}
+
+function mfHandleResult(msg) {
+  clearInterval(mfTimer);
+  const myRole = mfView?.myRole;
+  const myTeam = mfView?.myTeam;
+  const won = (msg.winner === myTeam);
+  recordGame(won);
+
+  // Show result overlay
+  const overlay = document.getElementById('mfResultOverlay');
+  const title = document.getElementById('mfResultTitle');
+  const subtitle = document.getElementById('mfResultSubtitle');
+  const rolesDiv = document.getElementById('mfResultRoles');
+
+  title.textContent = won ? '승리!' : '패배...';
+  title.className = 'mf-result-title ' + (won ? 'win' : 'lose');
+  subtitle.textContent = msg.message;
+
+  // Show all player roles
+  if (mfView && mfView.players) {
+    rolesDiv.innerHTML = mfView.players.map((p, i) => {
+      const roleInfo = MF_ROLES[p.role] || MF_ROLES.citizen;
+      const teamCls = (roleInfo.team === 'mafia') ? 'mafia-text' : 'citizen-text';
+      const deadCls = !p.alive ? 'dead-result' : '';
+      return `
+        <div class="mf-result-player ${deadCls}">
+          <div class="mf-result-player-avatar" style="background:${PLAYER_COLORS[i % PLAYER_COLORS.length]};">${p.avatar}</div>
+          <div class="mf-result-player-name">${p.name}</div>
+          <div class="mf-result-player-role ${teamCls}">${roleInfo.emoji} ${roleInfo.name}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  overlay.style.display = 'flex';
+}
+
+function mfCloseResult() {
+  document.getElementById('mfResultOverlay').style.display = 'none';
+  mfState = null;
+  mfView = null;
+  clearInterval(mfTimer);
+  showScreen('lobby');
+}
+
+function mfLeaveGame() {
+  clearInterval(mfTimer);
+  mfState = null;
+  mfView = null;
+  leaveGame();
+}
+
+// ========================= RENDER =============================
+
+function mfRenderView() {
+  const v = mfView;
+  if (!v) return;
+
+  // --- Phase Badge ---
+  const phaseInfo = MF_PHASE_LABELS[v.phase] || { icon: '❓', text: '알 수 없음', cls: 'day' };
+  const phaseBadge = document.getElementById('mfPhaseBadge');
+  document.getElementById('mfPhaseIcon').textContent = phaseInfo.icon;
+  document.getElementById('mfPhaseText').textContent = phaseInfo.text;
+  phaseBadge.className = 'mf-phase-badge ' + phaseInfo.cls;
+
+  // Night mode on game screen
+  const gameScreen = document.getElementById('mafiaGame');
+  if (v.phase === 'night' || v.phase === 'role-reveal') {
+    gameScreen.classList.add('night-mode');
+  } else {
+    gameScreen.classList.remove('night-mode');
+  }
+
+  // --- Day Counter ---
+  document.getElementById('mfDayCounter').textContent = `${v.round}일차`;
+
+  // --- Timer ---
+  const timerEl = document.getElementById('mfTimer');
+  timerEl.textContent = v.timer;
+  const timerBox = document.getElementById('mfTimerBox');
+  timerBox.classList.toggle('urgent', v.timer <= 10);
+
+  // --- Role Banner ---
+  const roleInfo = MF_ROLES[v.myRole] || MF_ROLES.citizen;
+  const banner = document.getElementById('mfRoleBanner');
+  banner.className = 'mf-role-banner ' + (roleInfo.team === 'mafia' ? 'team-mafia' : 'team-citizen');
+  document.getElementById('mfRoleEmoji').textContent = roleInfo.emoji;
+  document.getElementById('mfRoleName').textContent = roleInfo.name;
+  document.getElementById('mfRoleName').className = 'mf-role-name ' + (roleInfo.team === 'mafia' ? 'mafia-color' : 'citizen-color');
+  document.getElementById('mfRoleDesc').textContent = roleInfo.desc;
+
+  // If baeksu inherited, show both
+  if (v.myOriginalRole === 'baeksu' && v.myRole !== 'baeksu') {
+    document.getElementById('mfRoleDesc').textContent = `백수에서 ${roleInfo.name}(으)로 전직! ${roleInfo.desc}`;
+  }
+
+  // --- Main Content ---
+  const content = document.getElementById('mfContent');
+  let html = '';
+
+  // ============ ROLE REVEAL PHASE ============
+  if (v.phase === 'role-reveal') {
+    html += `
+      <div style="text-align:center; padding:20px 0;">
+        <div style="font-size:64px; margin-bottom:12px;">${roleInfo.emoji}</div>
+        <div style="font-family:'Black Han Sans',sans-serif; font-size:28px; color:${roleInfo.team === 'mafia' ? '#ff4444' : '#4fc3f7'}; margin-bottom:8px;">${roleInfo.name}</div>
+        <div style="font-size:14px; color:var(--text-dim); line-height:1.6;">${roleInfo.desc}</div>
+      </div>
+    `;
+
+    // Mafia: show team members
+    if (v.myRole === 'mafia') {
+      const teammates = v.players.filter(p => p.role === 'mafia' && !p.isMe);
+      if (teammates.length > 0) {
+        html += `<div class="mf-section-label">동료 마피아</div>`;
+        html += `<div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">`;
+        teammates.forEach(t => {
+          html += `
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+              <div class="mf-player-avatar" style="background:${PLAYER_COLORS[v.players.indexOf(t) % PLAYER_COLORS.length]};">${t.avatar}</div>
+              <div style="font-size:12px; font-weight:700; color:#ff6b6b;">${t.name}</div>
+            </div>
+          `;
+        });
+        html += `</div>`;
+      }
+    }
+
+    // Lover: show partner
+    if (v.myRole === 'lover' && v.loverPartnerName) {
+      html += `
+        <div class="mf-lover-reveal">
+          <div class="mf-lover-reveal-title">💕 당신의 연인</div>
+          <div class="mf-lover-reveal-text">${v.loverPartnerName}님이 당신의 연인입니다!</div>
+        </div>
+      `;
+    }
+  }
+
+  // ============ NIGHT PHASE ============
+  else if (v.phase === 'night') {
+    if (!v.isAlive) {
+      html += `<div class="mf-spectator-bar">👻 당신은 사망했습니다. 관전 중...</div>`;
+      html += mfRenderPlayerGrid(v, false);
+    } else if (v.nightAction) {
+      // Player has an action to take
+      html += `
+        <div class="mf-night-panel">
+          <div class="mf-night-title">${roleInfo.emoji} ${roleInfo.name} 행동</div>
+          <div class="mf-night-desc">${v.nightAction.label}</div>
+        </div>
+      `;
+
+      // Undertaker: show dead players only
+      if (v.nightAction.type === 'undertaker') {
+        html += mfRenderPlayerGrid(v, true, 'dead-only');
+      } else {
+        html += mfRenderPlayerGrid(v, true);
+      }
+    } else {
+      // Citizen / no action - waiting screen
+      html += `
+        <div class="mf-night-waiting">
+          <div class="mf-night-waiting-icon">🌙</div>
+          <div class="mf-night-waiting-text">밤이 깊었습니다...</div>
+          <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">다른 플레이어들이 행동 중입니다</div>
+        </div>
+      `;
+      html += mfRenderPlayerGrid(v, false);
+    }
+
+    // Mafia/Spy Chat
+    if (v.canChat) {
+      html += mfRenderChat(v);
+    }
+
+    // Spy: dead player roles
+    if (v.myRole === 'spy' && Object.keys(v.spyDeadRoles).length > 0) {
+      html += `
+        <div class="mf-spy-info">
+          <div class="mf-spy-info-title">🕵️ 사망자 직업 정보</div>
+          <div class="mf-spy-dead-roles">
+      `;
+      Object.entries(v.spyDeadRoles).forEach(([pid, roleName]) => {
+        const p = v.players.find(pp => pp.id === pid);
+        if (p) {
+          html += `<div class="mf-spy-dead-tag">${p.name}: ${roleName}</div>`;
+        }
+      });
+      html += `</div></div>`;
+    }
+  }
+
+  // ============ DAY ANNOUNCE PHASE ============
+  else if (v.phase === 'day-announce') {
+    html += `<div class="mf-events-list">`;
+
+    // Public announcements
+    v.announcements.forEach(a => {
+      html += `
+        <div class="mf-event-item ${a.type}">
+          <span class="mf-event-icon">${a.icon}</span>
+          <span>${a.text}</span>
+        </div>
+      `;
+    });
+
+    // Personal events
+    v.personalEvents.forEach(e => {
+      html += `
+        <div class="mf-event-item ${e.type}">
+          <span class="mf-event-icon">${e.icon}</span>
+          <span>${e.text}</span>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    html += mfRenderPlayerGrid(v, false);
+  }
+
+  // ============ DAY DISCUSS PHASE ============
+  else if (v.phase === 'day-discuss') {
+    if (!v.isAlive) {
+      html += `<div class="mf-spectator-bar">👻 당신은 사망했습니다. 관전 중...</div>`;
+    }
+    html += mfRenderPlayerGrid(v, false);
+
+    // Mafia/Spy Chat (even during day for coordination)
+    if (v.canChat) {
+      html += mfRenderChat(v);
+    }
+
+    // Spy: dead player roles
+    if (v.myRole === 'spy' && Object.keys(v.spyDeadRoles).length > 0) {
+      html += `
+        <div class="mf-spy-info">
+          <div class="mf-spy-info-title">🕵️ 사망자 직업 정보</div>
+          <div class="mf-spy-dead-roles">
+      `;
+      Object.entries(v.spyDeadRoles).forEach(([pid, roleName]) => {
+        const p = v.players.find(pp => pp.id === pid);
+        if (p) {
+          html += `<div class="mf-spy-dead-tag">${p.name}: ${roleName}</div>`;
+        }
+      });
+      html += `</div></div>`;
+    }
+  }
+
+  // ============ DAY VOTE PHASE ============
+  else if (v.phase === 'day-vote') {
+    if (!v.isAlive) {
+      html += `<div class="mf-spectator-bar">👻 사망한 플레이어는 투표할 수 없습니다.</div>`;
+    }
+    html += mfRenderPlayerGrid(v, v.isAlive && !v.votes[v.myId]);
+
+    // Vote status panel
+    html += mfRenderVotePanel(v);
+  }
+
+  // ============ VOTE RESULT PHASE ============
+  else if (v.phase === 'vote-result') {
+    html += `<div class="mf-events-list">`;
+    v.announcements.forEach(a => {
+      html += `
+        <div class="mf-event-item ${a.type}">
+          <span class="mf-event-icon">${a.icon}</span>
+          <span>${a.text}</span>
+        </div>
+      `;
+    });
+    html += `</div>`;
+    html += mfRenderPlayerGrid(v, false);
+  }
+
+  // ============ RESULT PHASE ============
+  else if (v.phase === 'result') {
+    html += mfRenderPlayerGrid(v, false);
+  }
+
+  content.innerHTML = html;
+
+  // --- Bottom Action Area ---
+  mfRenderActionArea(v);
+
+  // Attach event listeners for player cards
+  mfAttachCardListeners(v);
+
+  // Scroll chat to bottom
+  const chatMsgs = document.querySelector('.mf-chat-messages');
+  if (chatMsgs) chatMsgs.scrollTop = chatMsgs.scrollHeight;
+}
+
+// ========================= RENDER HELPERS =====================
+
+function mfRenderPlayerGrid(v, selectable, mode) {
+  const gridCls = v.players.length > 8 ? 'mf-player-grid three-col' : 'mf-player-grid';
+  let html = `<div class="${gridCls}">`;
+
+  v.players.forEach((p, i) => {
+    // mode === 'dead-only': only show dead players as selectable
+    const isSelectable = selectable && (mode === 'dead-only' ? !p.alive : (p.alive && !p.isMe));
+    const isDeadCard = !p.alive;
+    const classes = [
+      'mf-player-card',
+      isSelectable ? 'selectable' : '',
+      isDeadCard ? 'dead' : '',
+      p.isMe ? 'is-me' : '',
+      p.voteCount > 0 ? 'voted-on' : '',
+    ].filter(Boolean).join(' ');
+
+    html += `<div class="${classes}" data-pid="${p.id}">`;
+
+    // Host crown
+    if (p.isHost) {
+      html += `<span class="mf-host-crown">👑</span>`;
+    }
+
+    // Lover heart
+    if (p.showLoverHeart) {
+      html += `<span class="mf-lover-heart">💕</span>`;
+    }
+
+    // Vote count badge
+    if (p.voteCount > 0) {
+      html += `<span class="mf-vote-count-badge">${p.voteCount}</span>`;
+    }
+
+    // Dead overlay
+    html += `<div class="mf-dead-overlay">💀</div>`;
+
+    // Avatar
+    html += `<div class="mf-player-avatar" style="background:${PLAYER_COLORS[i % PLAYER_COLORS.length]};">${p.avatar}</div>`;
+
+    // Name
+    html += `<div class="mf-player-name">${p.name}</div>`;
+
+    // Role tag (if visible)
+    if (p.role && (isDeadCard || p.isMe || v.phase === 'result' || p.role === 'mafia')) {
+      const rInfo = MF_ROLES[p.role] || MF_ROLES.citizen;
+      const tagCls = rInfo.team === 'mafia' ? 'mafia-tag' : 'citizen-tag';
+      html += `<div class="mf-player-role-tag ${tagCls}">${rInfo.emoji} ${rInfo.name}</div>`;
+    }
+
+    // Soldier shield
+    if (p.showSoldierShield) {
+      html += `<span class="mf-soldier-shield">🛡️</span>`;
+    }
+
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+function mfRenderChat(v) {
+  let html = `
+    <div class="mf-chat-panel">
+      <div class="mf-chat-header">
+        <span>🔪</span>
+        <span>마피아 팀 채팅</span>
+      </div>
+      <div class="mf-chat-messages" id="mfChatMessages">
+  `;
+
+  v.chatMessages.forEach(m => {
+    html += `
+      <div class="mf-chat-msg">
+        <span class="sender">${m.senderName}:</span>
+        <span class="text"> ${m.text}</span>
+      </div>
+    `;
+  });
+
+  html += `
+      </div>
+      <div class="mf-chat-input-row">
+        <input type="text" class="mf-chat-input" id="mfChatInput" placeholder="메시지 입력..." maxlength="100"
+               onkeydown="if(event.key==='Enter')mfSendChat()">
+        <button class="mf-chat-send-btn" onclick="mfSendChat()">전송</button>
+      </div>
+    </div>
+  `;
+  return html;
+}
+
+function mfRenderVotePanel(v) {
+  // Count votes per target
+  const counts = {};
+  let skipCount = 0;
+  Object.values(v.votes).forEach(t => {
+    if (t === 'skip') { skipCount++; return; }
+    counts[t] = (counts[t] || 0) + 1;
+  });
+
+  const alivePlayers = v.players.filter(p => p.alive);
+  const totalVoters = alivePlayers.length;
+  const votedCount = Object.keys(v.votes).length;
+
+  let html = `
+    <div class="mf-vote-panel">
+      <div class="mf-vote-title">투표 현황 (${votedCount}/${totalVoters})</div>
+      <div class="mf-vote-bars">
+  `;
+
+  // Sort by vote count
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  entries.forEach(([pid, count]) => {
+    const p = v.players.find(pp => pp.id === pid);
+    if (!p) return;
+    const pct = totalVoters > 0 ? Math.round((count / totalVoters) * 100) : 0;
+    html += `
+      <div class="mf-vote-bar">
+        <div class="mf-vote-bar-name">${p.name}</div>
+        <div class="mf-vote-bar-track">
+          <div class="mf-vote-bar-fill" style="width:${pct}%;">${count}</div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+
+  if (skipCount > 0) {
+    html += `<div class="mf-skip-count">건너뛰기: ${skipCount}표</div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+// ========================= ACTION AREA ========================
+
+function mfRenderActionArea(v) {
+  const msgBox = document.getElementById('mfMessageBox');
+  const btnRow = document.getElementById('mfBtnRow');
+  let msg = '';
+  let btns = '';
+
+  if (v.phase === 'role-reveal') {
+    msg = '🎭 역할을 확인하세요! 잠시 후 밤이 시작됩니다.';
+  }
+  else if (v.phase === 'night') {
+    if (!v.isAlive) {
+      msg = '👻 관전 모드';
+    } else if (v.nightActionDone) {
+      msg = '✅ 행동 완료! 다른 플레이어를 기다리는 중...';
+    } else if (v.nightAction) {
+      msg = v.nightAction.label;
+
+      if (v.nightAction.type === 'mafia') {
+        btns += `<button class="mf-action-btn primary" id="mfConfirmBtn" onclick="mfConfirmNightAction()" disabled>🔪 제거</button>`;
+        if (v.nightAction.canSnipe) {
+          btns += `<button class="mf-action-btn snipe" id="mfSnipeBtn" onclick="mfToggleSnipe()">🎯 저격 (${v.mySnipesLeft}회)</button>`;
+        }
+      } else {
+        const actionLabel = {
+          spy: '🕵️ 조사',
+          police: '🔍 조사',
+          doctor: '💊 치료',
+          reporter: '📰 조사',
+          undertaker: '⚰️ 확인',
+          detective: '🔎 추적',
+        };
+        btns += `<button class="mf-action-btn primary" id="mfConfirmBtn" onclick="mfConfirmNightAction()" disabled>${actionLabel[v.nightAction.type] || '확인'}</button>`;
+      }
+    } else {
+      msg = '🌙 밤입니다... 기다리세요.';
+    }
+  }
+  else if (v.phase === 'day-announce') {
+    msg = '☀️ 밤이 지나고 아침이 밝았습니다...';
+  }
+  else if (v.phase === 'day-discuss') {
+    if (!v.isAlive) {
+      msg = '👻 관전 모드';
+    } else {
+      msg = '☀️ 의심되는 사람에 대해 토론하세요!';
+      btns += `<button class="mf-action-btn extend" onclick="mfRequestExtend()">⏰ 연장 (+1분)</button>`;
+    }
+  }
+  else if (v.phase === 'day-vote') {
+    if (!v.isAlive) {
+      msg = '👻 사망한 플레이어는 투표할 수 없습니다.';
+    } else if (v.votes[v.myId]) {
+      msg = '✅ 투표 완료! 결과를 기다리는 중...';
+    } else {
+      msg = '🗳️ 처형할 사람을 선택하고 투표하세요!';
+      btns += `<button class="mf-action-btn primary" id="mfVoteBtn" onclick="mfConfirmVote()" disabled>🗳️ 투표</button>`;
+      btns += `<button class="mf-action-btn secondary" onclick="mfSkipVote()">건너뛰기</button>`;
+    }
+  }
+  else if (v.phase === 'vote-result') {
+    msg = '⚖️ 투표 결과를 확인하세요.';
+  }
+  else if (v.phase === 'result') {
+    msg = '';
+  }
+
+  msgBox.innerHTML = msg;
+  btnRow.innerHTML = btns;
+}
+
+// ========================= UI INTERACTIONS ====================
+
+function mfAttachCardListeners(v) {
+  document.querySelectorAll('.mf-player-card.selectable').forEach(card => {
+    card.addEventListener('click', () => {
+      const pid = card.dataset.pid;
+      if (!pid) return;
+
+      // Deselect all
+      document.querySelectorAll('.mf-player-card').forEach(c => {
+        c.classList.remove('selected', 'selected-snipe');
+      });
+
+      mfSelectedTarget = pid;
+      card.classList.add(mfUseSnipe ? 'selected-snipe' : 'selected');
+
+      // Enable confirm button
+      const confirmBtn = document.getElementById('mfConfirmBtn');
+      const voteBtn = document.getElementById('mfVoteBtn');
+      if (confirmBtn) confirmBtn.disabled = false;
+      if (voteBtn) voteBtn.disabled = false;
+    });
+  });
+}
+
+function mfToggleSnipe() {
+  mfUseSnipe = !mfUseSnipe;
+  const snipeBtn = document.getElementById('mfSnipeBtn');
+  if (snipeBtn) {
+    if (mfUseSnipe) {
+      snipeBtn.style.background = 'linear-gradient(135deg, #b71c1c, #880e0e)';
+      snipeBtn.textContent = '🎯 저격 모드 ON';
+    } else {
+      snipeBtn.style.background = '';
+      snipeBtn.textContent = `🎯 저격 (${mfView?.mySnipesLeft || 0}회)`;
+    }
+  }
+
+  // Update selection visual if target already selected
+  const selectedCard = document.querySelector('.mf-player-card.selected, .mf-player-card.selected-snipe');
+  if (selectedCard) {
+    selectedCard.classList.remove('selected', 'selected-snipe');
+    selectedCard.classList.add(mfUseSnipe ? 'selected-snipe' : 'selected');
+  }
+}
+
+function mfConfirmNightAction() {
+  if (!mfSelectedTarget) { showToast('대상을 선택하세요'); return; }
+
+  const actionType = mfView?.nightAction?.type;
+  let nightAction = 'investigate';
+
+  if (actionType === 'mafia') {
+    nightAction = mfUseSnipe ? 'snipe' : 'kill';
+  } else if (actionType === 'doctor') {
+    nightAction = 'heal';
+  } else if (actionType === 'detective') {
+    nightAction = 'track';
+  }
+
+  const data = {
+    type: 'mf-action',
+    action: 'night-action',
+    nightAction,
+    targetId: mfSelectedTarget,
+  };
+
+  if (state.isHost) {
+    mfProcessAction(state.myId, data);
+  } else {
+    const host = Object.values(state.connections)[0];
+    if (host?.open) host.send(JSON.stringify(data));
+  }
+
+  showToast('행동 완료!');
+  mfSelectedTarget = null;
+  mfUseSnipe = false;
+
+  // Disable buttons
+  const confirmBtn = document.getElementById('mfConfirmBtn');
+  if (confirmBtn) confirmBtn.disabled = true;
+  const snipeBtn = document.getElementById('mfSnipeBtn');
+  if (snipeBtn) snipeBtn.disabled = true;
+}
+
+function mfConfirmVote() {
+  if (!mfSelectedTarget) { showToast('투표 대상을 선택하세요'); return; }
+
+  const data = {
+    type: 'mf-action',
+    action: 'vote',
+    targetId: mfSelectedTarget,
+  };
+
+  if (state.isHost) {
+    mfProcessAction(state.myId, data);
+  } else {
+    const host = Object.values(state.connections)[0];
+    if (host?.open) host.send(JSON.stringify(data));
+  }
+
+  showToast('투표 완료!');
+  mfSelectedTarget = null;
+}
+
+function mfSkipVote() {
+  const data = {
+    type: 'mf-action',
+    action: 'vote',
+    targetId: 'skip',
+  };
+
+  if (state.isHost) {
+    mfProcessAction(state.myId, data);
+  } else {
+    const host = Object.values(state.connections)[0];
+    if (host?.open) host.send(JSON.stringify(data));
+  }
+
+  showToast('건너뛰기 투표 완료');
+}
+
+function mfSendChat() {
+  const input = document.getElementById('mfChatInput');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+
+  const data = {
+    type: 'mf-action',
+    action: 'chat',
+    text,
+  };
+
+  if (state.isHost) {
+    mfProcessAction(state.myId, data);
+  } else {
+    const host = Object.values(state.connections)[0];
+    if (host?.open) host.send(JSON.stringify(data));
+  }
+
+  input.value = '';
+}
+
+function mfRequestExtend() {
+  const data = {
+    type: 'mf-action',
+    action: 'extend',
+  };
+
+  if (state.isHost) {
+    mfProcessAction(state.myId, data);
+  } else {
+    const host = Object.values(state.connections)[0];
+    if (host?.open) host.send(JSON.stringify(data));
+  }
+
+  showToast('연장 요청!');
+}
+
+// ========================= INTEGRATION HOOKS ==================
+
+/*
+ * To integrate into the existing handleMessage system:
+ *
+ * In handleMessage(), add these handlers:
+ *
+ *   'mf-state':  () => { mfHandleState(msg); },
+ *   'mf-action': () => { if(state.isHost) mfProcessAction(peerId, msg); },
+ *   'mf-result': () => { mfHandleResult(msg); },
+ *
+ * Replace the old startMafia() call with the new startMafia() defined above.
+ *
+ * The old mafia-state / mafia-action / mafia-result handlers should be
+ * replaced with the mf-* versions above.
+ *
+ * The old #mafiaGame HTML and CSS should be replaced with the new
+ * sections defined in this file.
+ */
+
+// ========================= END ================================

@@ -1,0 +1,1249 @@
+<!-- RACING GAME -->
+<div class="screen" id="racingGame">
+  <!-- 모드 선택 화면 -->
+  <div class="racing-mode-select" id="racingModeSelect">
+    <div class="racing-mode-header">
+      <button class="back-btn" onclick="leaveGame()">←</button>
+      <div class="racing-mode-title">🏍️ 오토바이 레이싱</div>
+      <div style="width:40px;"></div>
+    </div>
+
+    <div class="racing-mode-cards">
+      <div class="racing-mode-card" onclick="selectRacingMode('survival')">
+        <div class="racing-mode-icon">⚡</div>
+        <div class="racing-mode-name">서바이벌</div>
+        <div class="racing-mode-desc">점점 빨라지는 속도<br>최대한 멀리 가기!</div>
+      </div>
+      <div class="racing-mode-card" onclick="selectRacingMode('race')">
+        <div class="racing-mode-icon">🏁</div>
+        <div class="racing-mode-name">레이스</div>
+        <div class="racing-mode-desc">목표 지점까지<br>1000m 완주하기!</div>
+      </div>
+    </div>
+
+    <div class="racing-gyro-permission" id="racingGyroPermission" style="display:none;">
+      <div class="racing-info-box">
+        <div class="racing-info-icon">📱</div>
+        <div class="racing-info-text">
+          이 게임은 휴대폰 기울기를 사용합니다<br>
+          <small style="color:var(--text-dim);">좌우로 기울여서 조종하세요</small>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="requestGyroPermission()">
+        🎮 기울기 권한 요청
+      </button>
+    </div>
+  </div>
+
+  <!-- 게임 화면 -->
+  <div class="racing-game-area" id="racingGameArea" style="display:none;">
+    <!-- HUD 오버레이 -->
+    <div class="racing-hud">
+      <div class="racing-hud-left">
+        <div class="racing-speed">
+          <div class="racing-speed-label">SPEED</div>
+          <div class="racing-speed-value" id="racingSpeed">0</div>
+          <div class="racing-speed-unit">km/h</div>
+        </div>
+      </div>
+      <div class="racing-hud-center">
+        <div class="racing-distance">
+          <div class="racing-distance-label">DISTANCE</div>
+          <div class="racing-distance-value" id="racingDistance">0</div>
+          <div class="racing-distance-unit">m</div>
+        </div>
+      </div>
+      <div class="racing-hud-right">
+        <div class="racing-rank" id="racingRank" style="display:none;">
+          <div class="racing-rank-label">RANK</div>
+          <div class="racing-rank-value" id="racingRankValue">1위/4명</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 배경 건물 -->
+    <div class="racing-bg-buildings" id="racingBuildings">
+      <!-- 동적 생성 -->
+    </div>
+
+    <!-- 도로 -->
+    <div class="racing-road">
+      <!-- 차선 라인 -->
+      <div class="racing-lane-line" style="left:33.33%;"></div>
+      <div class="racing-lane-line" style="left:66.66%;"></div>
+
+      <!-- 차선 점선 애니메이션 -->
+      <div class="racing-lane-dashes" id="racingDashes">
+        <!-- 동적 생성 -->
+      </div>
+
+      <!-- 장애물 컨테이너 -->
+      <div class="racing-obstacles" id="racingObstacles">
+        <!-- 동적 생성 -->
+      </div>
+
+      <!-- 오토바이 (하단 고정) -->
+      <div class="racing-bike" id="racingBike">
+        <div class="racing-bike-body">🏍️</div>
+      </div>
+    </div>
+
+    <!-- 핸들바 UI -->
+    <div class="racing-handlebar">
+      <div class="racing-handlebar-left"></div>
+      <div class="racing-handlebar-center"></div>
+      <div class="racing-handlebar-right"></div>
+    </div>
+
+    <!-- 터치 컨트롤 폴백 -->
+    <div class="racing-touch-controls" id="racingTouchControls" style="display:none;">
+      <button class="racing-touch-btn racing-touch-left" ontouchstart="racingMoveLane(0)" ontouchend="racingStopMove()">←</button>
+      <button class="racing-touch-btn racing-touch-center" ontouchstart="racingMoveLane(1)" ontouchend="racingStopMove()">↑</button>
+      <button class="racing-touch-btn racing-touch-right" ontouchstart="racingMoveLane(2)" ontouchend="racingStopMove()">→</button>
+    </div>
+
+    <!-- 충돌 효과 오버레이 -->
+    <div class="racing-crash-overlay" id="racingCrashOverlay"></div>
+  </div>
+
+  <!-- 결과 화면 -->
+  <div class="racing-result-screen" id="racingResultScreen" style="display:none;">
+    <div class="racing-result-header">
+      <div class="racing-result-title" id="racingResultTitle">완주!</div>
+      <div class="racing-result-subtitle" id="racingResultSubtitle"></div>
+    </div>
+
+    <div class="racing-result-stats">
+      <div class="racing-result-stat">
+        <div class="racing-result-stat-label">최종 거리</div>
+        <div class="racing-result-stat-value" id="racingResultDistance">0m</div>
+      </div>
+      <div class="racing-result-stat">
+        <div class="racing-result-stat-label">최고 속도</div>
+        <div class="racing-result-stat-value" id="racingResultMaxSpeed">0 km/h</div>
+      </div>
+      <div class="racing-result-stat">
+        <div class="racing-result-stat-label">플레이 시간</div>
+        <div class="racing-result-stat-value" id="racingResultTime">0초</div>
+      </div>
+    </div>
+
+    <div class="racing-result-rankings" id="racingResultRankings">
+      <div class="racing-result-rankings-title">순위</div>
+      <div class="racing-result-rankings-list" id="racingResultRankingsList"></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="restartRacing()">🔁 다시 하기</button>
+    <button class="btn btn-secondary" onclick="leaveGame()" style="margin-top:12px;">← 로비로</button>
+  </div>
+</div>
+
+/* RACING CSS */
+#racingGame {
+  background: linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 50%, #2a1a3a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 모드 선택 */
+.racing-mode-select {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 20px;
+}
+
+.racing-mode-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.racing-mode-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px;
+  color: var(--accent2);
+}
+
+.racing-mode-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 20px;
+}
+
+.racing-mode-card {
+  background: var(--bg-card);
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius);
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.racing-mode-card:active {
+  transform: scale(0.95);
+  border-color: var(--accent2);
+  background: linear-gradient(135deg, rgba(0,229,255,0.1), rgba(255,107,53,0.1));
+}
+
+.racing-mode-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.racing-mode-name {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.racing-mode-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.racing-gyro-permission {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.racing-info-box {
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.racing-info-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.racing-info-text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 게임 화면 */
+.racing-game-area {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* HUD */
+.racing-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 16px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.racing-hud-left,
+.racing-hud-center,
+.racing-hud-right {
+  background: rgba(10,10,18,0.8);
+  backdrop-filter: blur(4px);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.racing-speed,
+.racing-distance,
+.racing-rank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.racing-speed-label,
+.racing-distance-label,
+.racing-rank-label {
+  font-size: 9px;
+  color: var(--text-dim);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.racing-speed-value,
+.racing-distance-value {
+  font-family: 'Courier New', monospace;
+  font-size: 24px;
+  font-weight: 900;
+  color: #00ff00;
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(0,255,0,0.5);
+}
+
+.racing-speed-unit,
+.racing-distance-unit {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.racing-rank-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+/* 배경 건물 */
+.racing-bg-buildings {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.racing-building {
+  position: absolute;
+  background: rgba(20,20,42,0.8);
+  border-left: 1px solid rgba(255,255,255,0.05);
+  border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+.racing-building::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 20px,
+      rgba(255,255,255,0.03) 20px,
+      rgba(255,255,255,0.03) 22px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 15px,
+      rgba(255,255,255,0.02) 15px,
+      rgba(255,255,255,0.02) 17px
+    );
+}
+
+/* 도로 */
+.racing-road {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  height: 70%;
+  background: linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%);
+  perspective: 800px;
+  transform-style: preserve-3d;
+  border-left: 4px solid #444;
+  border-right: 4px solid #444;
+  z-index: 10;
+}
+
+/* 차선 라인 */
+.racing-lane-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255,255,255,0.2);
+  z-index: 2;
+}
+
+/* 차선 점선 */
+.racing-lane-dashes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+.racing-dash {
+  position: absolute;
+  width: 8px;
+  height: 30px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 2px;
+  animation: racingDashMove 1s linear infinite;
+}
+
+@keyframes racingDashMove {
+  from {
+    transform: translateY(-100px) perspective(800px) rotateX(45deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(calc(100vh + 100px)) perspective(800px) rotateX(45deg);
+    opacity: 1;
+  }
+}
+
+/* 장애물 */
+.racing-obstacles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+}
+
+.racing-obstacle {
+  position: absolute;
+  width: 28%;
+  height: 60px;
+  transition: left 0.2s ease-out;
+}
+
+.racing-obstacle-car {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #3d5afe 0%, #1e3af7 100%);
+  border-radius: 8px 8px 4px 4px;
+  box-shadow:
+    0 4px 0 rgba(0,0,0,0.3),
+    inset 0 -2px 4px rgba(0,0,0,0.2),
+    inset 0 2px 4px rgba(255,255,255,0.2);
+  position: relative;
+}
+
+.racing-obstacle-car::before {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 10%;
+  right: 10%;
+  height: 40%;
+  background: rgba(100,150,255,0.3);
+  border-radius: 4px;
+}
+
+.racing-obstacle-truck {
+  width: 100%;
+  height: 80px;
+  background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+  border-radius: 8px 8px 4px 4px;
+  box-shadow:
+    0 4px 0 rgba(0,0,0,0.3),
+    inset 0 -2px 4px rgba(0,0,0,0.2),
+    inset 0 2px 4px rgba(255,255,255,0.2);
+  position: relative;
+}
+
+.racing-obstacle-truck::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 10%;
+  right: 10%;
+  height: 30%;
+  background: rgba(255,150,150,0.3);
+  border-radius: 4px;
+}
+
+/* 오토바이 */
+.racing-bike {
+  position: absolute;
+  bottom: 60px;
+  width: 28%;
+  height: 60px;
+  transition: left 0.3s ease-out;
+  z-index: 20;
+}
+
+.racing-bike-body {
+  width: 100%;
+  height: 100%;
+  font-size: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+}
+
+/* 핸들바 UI */
+.racing-handlebar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 20px 10px;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.racing-handlebar-left,
+.racing-handlebar-right {
+  width: 100px;
+  height: 60px;
+  background: linear-gradient(135deg, #444 0%, #222 100%);
+  border-radius: 50% 50% 20px 20px;
+  border: 3px solid #666;
+  box-shadow:
+    inset 0 2px 4px rgba(255,255,255,0.2),
+    inset 0 -2px 4px rgba(0,0,0,0.5),
+    0 4px 8px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.racing-handlebar-left {
+  transform: rotate(-15deg);
+  transform-origin: bottom right;
+}
+
+.racing-handlebar-right {
+  transform: rotate(15deg);
+  transform-origin: bottom left;
+}
+
+.racing-handlebar-center {
+  width: 40px;
+  height: 20px;
+  background: linear-gradient(135deg, #555 0%, #333 100%);
+  border-radius: 10px;
+  border: 2px solid #777;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* 터치 컨트롤 */
+.racing-touch-controls {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  z-index: 60;
+}
+
+.racing-touch-btn {
+  width: 60px;
+  height: 60px;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(4px);
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  color: var(--text);
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.racing-touch-btn:active {
+  background: rgba(0,229,255,0.3);
+  border-color: var(--accent2);
+  transform: scale(0.9);
+}
+
+/* 충돌 효과 */
+.racing-crash-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255,0,0,0.3);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 90;
+}
+
+.racing-crash-overlay.active {
+  animation: racingCrashShake 0.5s ease-out;
+}
+
+@keyframes racingCrashShake {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translate(-10px, 0);
+    opacity: 0.7;
+  }
+  20%, 40%, 60%, 80% {
+    transform: translate(10px, 0);
+    opacity: 0.7;
+  }
+}
+
+/* 결과 화면 */
+.racing-result-screen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 20px;
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(10,10,26,0.95) 0%, rgba(26,26,46,0.95) 100%);
+}
+
+.racing-result-header {
+  text-align: center;
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.racing-result-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 32px;
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+.racing-result-subtitle {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.racing-result-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.racing-result-stat {
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.racing-result-stat-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.racing-result-stat-value {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: var(--accent2);
+}
+
+.racing-result-rankings {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.racing-result-rankings-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.racing-result-rankings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.racing-result-ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.racing-result-ranking-item.first {
+  background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,193,7,0.1));
+  border: 1px solid rgba(255,215,0,0.3);
+}
+
+.racing-result-ranking-rank {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: var(--text-dim);
+  width: 40px;
+  text-align: center;
+}
+
+.racing-result-ranking-item.first .racing-result-ranking-rank {
+  color: var(--gold);
+  font-size: 20px;
+}
+
+.racing-result-ranking-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.racing-result-ranking-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.racing-result-ranking-distance {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent2);
+}
+
+// ===== RACING ENGINE =====
+const PLAYER_COLORS = [
+  'linear-gradient(135deg, #ff6b35, #ff8f5a)',
+  'linear-gradient(135deg, #00e5ff, #00b8d4)',
+  'linear-gradient(135deg, #ff2d78, #ff6b9d)',
+  'linear-gradient(135deg, #ffd700, #ffed4e)',
+  'linear-gradient(135deg, #00e676, #00c853)',
+  'linear-gradient(135deg, #d500f9, #e040fb)',
+];
+
+let racingState = {
+  mode: 'survival', // 'survival' or 'race'
+  speed: 30, // km/h
+  maxSpeed: 30,
+  distance: 0, // meters
+  lanePos: 1, // 0=left, 1=center, 2=right
+  targetLane: 1,
+  obstacles: [], // [{id, lane, y, type: 'car'|'truck'}]
+  alive: true,
+  players: {}, // {playerId: {distance, alive, maxSpeed}}
+  phase: 'menu', // 'menu', 'playing', 'gameover'
+  startTime: 0,
+  gyroEnabled: false,
+  nextObstacleId: 0,
+};
+
+let racingLoop = null;
+let racingAnimationFrame = null;
+
+function startRacing() {
+  if(!state.isHost) return;
+
+  // 멀티플레이어 모드는 기본 구현
+  broadcast({ type: 'game-start', game: 'racing', state: {} });
+  showScreen('racingGame');
+  document.getElementById('racingModeSelect').style.display = 'flex';
+}
+
+function selectRacingMode(mode) {
+  racingState.mode = mode;
+  racingState.phase = 'permission';
+
+  // iOS 체크
+  const needsPermission = typeof DeviceOrientationEvent !== 'undefined' &&
+                         typeof DeviceOrientationEvent.requestPermission === 'function';
+
+  if(needsPermission) {
+    document.getElementById('racingGyroPermission').style.display = 'flex';
+  } else {
+    // 안드로이드나 데스크톱: 바로 시작
+    startRacingGame();
+  }
+}
+
+function requestGyroPermission() {
+  if(typeof DeviceOrientationEvent !== 'undefined' &&
+     typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(response => {
+        if(response === 'granted') {
+          racingState.gyroEnabled = true;
+          startRacingGame();
+        } else {
+          showToast('기울기 권한이 필요합니다');
+          // 터치 컨트롤 사용
+          startRacingGame();
+        }
+      })
+      .catch(err => {
+        console.error('Gyro permission error:', err);
+        showToast('터치 컨트롤을 사용합니다');
+        startRacingGame();
+      });
+  } else {
+    racingState.gyroEnabled = true;
+    startRacingGame();
+  }
+}
+
+function startRacingGame() {
+  // 초기화
+  racingState = {
+    mode: racingState.mode,
+    speed: 30,
+    maxSpeed: 30,
+    distance: 0,
+    lanePos: 1,
+    targetLane: 1,
+    obstacles: [],
+    alive: true,
+    players: {},
+    phase: 'playing',
+    startTime: Date.now(),
+    gyroEnabled: racingState.gyroEnabled,
+    nextObstacleId: 0,
+  };
+
+  // UI 전환
+  document.getElementById('racingModeSelect').style.display = 'none';
+  document.getElementById('racingGameArea').style.display = 'block';
+
+  // 건물 생성
+  generateBuildings();
+
+  // 차선 점선 생성
+  generateDashes();
+
+  // 자이로스코프 또는 터치 컨트롤
+  if(racingState.gyroEnabled) {
+    window.addEventListener('deviceorientation', handleRacingTilt);
+  } else {
+    document.getElementById('racingTouchControls').style.display = 'flex';
+  }
+
+  // 게임 루프 시작
+  racingLoop = setInterval(racingTick, 50); // 20 FPS
+}
+
+function generateBuildings() {
+  const container = document.getElementById('racingBuildings');
+  container.innerHTML = '';
+
+  for(let i = 0; i < 15; i++) {
+    const building = document.createElement('div');
+    building.className = 'racing-building';
+    building.style.left = (Math.random() * 100) + '%';
+    building.style.width = (30 + Math.random() * 40) + 'px';
+    building.style.height = (50 + Math.random() * 100) + 'px';
+    building.style.bottom = '0';
+    container.appendChild(building);
+  }
+}
+
+function generateDashes() {
+  const container = document.getElementById('racingDashes');
+  container.innerHTML = '';
+
+  // 각 차선마다 점선 생성
+  const lanes = [16.66, 50, 83.33]; // 각 차선 중앙
+
+  lanes.forEach((lanePercent, laneIdx) => {
+    for(let i = 0; i < 8; i++) {
+      const dash = document.createElement('div');
+      dash.className = 'racing-dash';
+      dash.style.left = lanePercent + '%';
+      dash.style.top = (i * 100) + 'px';
+      dash.style.animationDelay = (-i * 0.125) + 's';
+      container.appendChild(dash);
+    }
+  });
+}
+
+function handleRacingTilt(e) {
+  if(racingState.phase !== 'playing' || !racingState.alive) return;
+
+  const gamma = e.gamma || 0; // -90 (left) to 90 (right)
+
+  if(gamma < -15) {
+    racingState.targetLane = 0;
+  } else if(gamma > 15) {
+    racingState.targetLane = 2;
+  } else {
+    racingState.targetLane = 1;
+  }
+}
+
+function racingMoveLane(lane) {
+  if(racingState.phase !== 'playing' || !racingState.alive) return;
+  racingState.targetLane = lane;
+}
+
+function racingStopMove() {
+  // 필요시 구현
+}
+
+function racingTick() {
+  if(racingState.phase !== 'playing' || !racingState.alive) return;
+
+  const dt = 0.05; // 50ms
+
+  // 속도 증가 (서바이벌 모드)
+  if(racingState.mode === 'survival') {
+    racingState.speed += 0.1 * dt * 20; // 점진적 증가
+    if(racingState.speed > 150) racingState.speed = 150; // 최대 속도
+  } else {
+    // 레이스 모드: 고정 속도
+    racingState.speed = 80;
+  }
+
+  racingState.maxSpeed = Math.max(racingState.maxSpeed, racingState.speed);
+
+  // 거리 업데이트
+  const distanceDelta = (racingState.speed / 3.6) * dt; // m/s * dt
+  racingState.distance += distanceDelta;
+
+  // 레이스 모드: 목표 도달 체크
+  if(racingState.mode === 'race' && racingState.distance >= 1000) {
+    racingGameOver(true); // 완주
+    return;
+  }
+
+  // 차선 이동
+  racingState.lanePos += (racingState.targetLane - racingState.lanePos) * 0.15;
+
+  // 장애물 생성
+  if(Math.random() < 0.02 * (racingState.speed / 30)) { // 속도에 비례
+    spawnObstacle();
+  }
+
+  // 장애물 이동
+  const speedFactor = racingState.speed / 30;
+  racingState.obstacles.forEach(obs => {
+    obs.y += 5 * speedFactor;
+  });
+
+  // 장애물 제거 (화면 밖)
+  racingState.obstacles = racingState.obstacles.filter(obs => obs.y < window.innerHeight + 100);
+
+  // 충돌 체크
+  checkRacingCollision();
+
+  // UI 업데이트
+  updateRacingUI();
+
+  // P2P: 내 위치 전송 (멀티플레이어)
+  if(state.isHost && state.players.length > 1) {
+    racingState.players[state.myId] = {
+      distance: racingState.distance,
+      alive: racingState.alive,
+      maxSpeed: racingState.maxSpeed,
+      name: state.myName,
+      avatar: state.myAvatar,
+    };
+
+    // 주기적으로 순위 브로드캐스트
+    if(Math.random() < 0.1) {
+      broadcast({
+        type: 'race-position',
+        playerId: state.myId,
+        distance: racingState.distance,
+        alive: racingState.alive,
+        maxSpeed: racingState.maxSpeed,
+      });
+    }
+  } else if(!state.isHost) {
+    // 게스트: 호스트에게 내 위치 전송
+    if(Math.random() < 0.1) {
+      sendToHost({
+        type: 'race-position',
+        playerId: state.myId,
+        distance: racingState.distance,
+        alive: racingState.alive,
+        maxSpeed: racingState.maxSpeed,
+        name: state.myName,
+        avatar: state.myAvatar,
+      });
+    }
+  }
+}
+
+function spawnObstacle() {
+  const lane = Math.floor(Math.random() * 3);
+  const type = Math.random() < 0.7 ? 'car' : 'truck';
+
+  racingState.obstacles.push({
+    id: racingState.nextObstacleId++,
+    lane: lane,
+    y: -100,
+    type: type,
+  });
+}
+
+function checkRacingCollision() {
+  const bikeBottomY = window.innerHeight - 120; // 오토바이 위치
+  const bikeLane = Math.round(racingState.lanePos);
+
+  racingState.obstacles.forEach(obs => {
+    const obsLane = obs.lane;
+    const obsY = obs.y;
+    const obsHeight = obs.type === 'truck' ? 80 : 60;
+
+    // 충돌 체크
+    if(bikeLane === obsLane &&
+       obsY < bikeBottomY + 60 &&
+       obsY + obsHeight > bikeBottomY) {
+      // 충돌!
+      handleRacingCrash();
+    }
+  });
+}
+
+function handleRacingCrash() {
+  racingState.alive = false;
+  racingState.phase = 'gameover';
+
+  // 효과
+  const overlay = document.getElementById('racingCrashOverlay');
+  overlay.classList.add('active');
+
+  if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
+  setTimeout(() => {
+    overlay.classList.remove('active');
+    racingGameOver(false);
+  }, 500);
+}
+
+function updateRacingUI() {
+  // 속도
+  document.getElementById('racingSpeed').textContent = Math.round(racingState.speed);
+
+  // 거리
+  document.getElementById('racingDistance').textContent = Math.round(racingState.distance);
+
+  // 오토바이 위치
+  const bike = document.getElementById('racingBike');
+  const lanePositions = [10, 36, 62]; // %
+  bike.style.left = lanePositions[Math.round(racingState.lanePos)] + '%';
+
+  // 장애물 렌더링
+  const container = document.getElementById('racingObstacles');
+  const existingIds = Array.from(container.children).map(el => el.dataset.obsId);
+  const currentIds = racingState.obstacles.map(obs => obs.id.toString());
+
+  // 제거할 장애물
+  existingIds.forEach(id => {
+    if(!currentIds.includes(id)) {
+      const el = container.querySelector(`[data-obs-id="${id}"]`);
+      if(el) el.remove();
+    }
+  });
+
+  // 추가/업데이트할 장애물
+  racingState.obstacles.forEach(obs => {
+    let el = container.querySelector(`[data-obs-id="${obs.id}"]`);
+
+    if(!el) {
+      el = document.createElement('div');
+      el.className = 'racing-obstacle';
+      el.dataset.obsId = obs.id;
+
+      const body = document.createElement('div');
+      body.className = obs.type === 'truck' ? 'racing-obstacle-truck' : 'racing-obstacle-car';
+      el.appendChild(body);
+
+      container.appendChild(el);
+    }
+
+    const lanePositions = [10, 36, 62]; // %
+    el.style.left = lanePositions[obs.lane] + '%';
+    el.style.top = obs.y + 'px';
+  });
+
+  // 순위 (멀티플레이어)
+  if(state.players.length > 1) {
+    const rankEl = document.getElementById('racingRank');
+    rankEl.style.display = 'block';
+
+    const allPlayers = Object.values(racingState.players).filter(p => p.alive);
+    allPlayers.sort((a, b) => b.distance - a.distance);
+
+    const myRank = allPlayers.findIndex(p => p.distance === racingState.distance) + 1;
+    document.getElementById('racingRankValue').textContent = myRank + '위/' + allPlayers.length + '명';
+  }
+}
+
+function racingGameOver(completed) {
+  // 게임 종료
+  if(racingLoop) {
+    clearInterval(racingLoop);
+    racingLoop = null;
+  }
+
+  window.removeEventListener('deviceorientation', handleRacingTilt);
+
+  // 결과 전송 (멀티플레이어)
+  if(state.isHost && state.players.length > 1) {
+    racingState.players[state.myId] = {
+      distance: racingState.distance,
+      alive: racingState.alive,
+      maxSpeed: racingState.maxSpeed,
+      time: (Date.now() - racingState.startTime) / 1000,
+      name: state.myName,
+      avatar: state.myAvatar,
+    };
+
+    broadcast({
+      type: 'race-result',
+      playerId: state.myId,
+      distance: racingState.distance,
+      maxSpeed: racingState.maxSpeed,
+      time: (Date.now() - racingState.startTime) / 1000,
+      completed: completed,
+    });
+
+    // 모든 결과 대기 후 결과 화면
+    setTimeout(() => {
+      showRacingResults();
+    }, 2000);
+
+  } else if(!state.isHost) {
+    // 게스트: 호스트에게 결과 전송
+    sendToHost({
+      type: 'race-result',
+      playerId: state.myId,
+      distance: racingState.distance,
+      maxSpeed: racingState.maxSpeed,
+      time: (Date.now() - racingState.startTime) / 1000,
+      completed: completed,
+      name: state.myName,
+      avatar: state.myAvatar,
+    });
+
+    // 결과 대기
+    setTimeout(() => {
+      showRacingResults();
+    }, 2000);
+
+  } else {
+    // 싱글플레이어: 바로 결과
+    showRacingResults();
+  }
+}
+
+function showRacingResults() {
+  document.getElementById('racingGameArea').style.display = 'none';
+  document.getElementById('racingResultScreen').style.display = 'flex';
+
+  // 제목
+  const title = document.getElementById('racingResultTitle');
+  const subtitle = document.getElementById('racingResultSubtitle');
+
+  if(racingState.mode === 'race' && racingState.distance >= 1000) {
+    title.textContent = '완주!';
+    subtitle.textContent = '목표 지점에 도달했습니다!';
+  } else {
+    title.textContent = '게임 오버';
+    subtitle.textContent = racingState.alive ? '잘했어요!' : '충돌!';
+  }
+
+  // 통계
+  document.getElementById('racingResultDistance').textContent = Math.round(racingState.distance) + 'm';
+  document.getElementById('racingResultMaxSpeed').textContent = Math.round(racingState.maxSpeed) + ' km/h';
+  document.getElementById('racingResultTime').textContent =
+    ((Date.now() - racingState.startTime) / 1000).toFixed(1) + '초';
+
+  // 순위 (멀티플레이어)
+  if(state.players.length > 1) {
+    const list = document.getElementById('racingResultRankingsList');
+    const allPlayers = Object.values(racingState.players);
+    allPlayers.sort((a, b) => b.distance - a.distance);
+
+    list.innerHTML = allPlayers.map((p, i) => {
+      const playerIdx = state.players.findIndex(sp => sp.name === p.name);
+      const color = PLAYER_COLORS[playerIdx % PLAYER_COLORS.length];
+
+      return `
+        <div class="racing-result-ranking-item ${i === 0 ? 'first' : ''}">
+          <div class="racing-result-ranking-rank">${i + 1}위</div>
+          <div class="racing-result-ranking-avatar" style="background:${color};">${p.avatar}</div>
+          <div class="racing-result-ranking-name">${p.name}</div>
+          <div class="racing-result-ranking-distance">${Math.round(p.distance)}m</div>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('racingResultRankings').style.display = 'block';
+  } else {
+    document.getElementById('racingResultRankings').style.display = 'none';
+  }
+}
+
+function restartRacing() {
+  document.getElementById('racingResultScreen').style.display = 'none';
+  document.getElementById('racingModeSelect').style.display = 'flex';
+  document.getElementById('racingGyroPermission').style.display = 'none';
+
+  racingState.phase = 'menu';
+}
+
+function sendToHost(msg) {
+  const hostId = state.players.find(p => p.isHost)?.id;
+  if(hostId) sendTo(hostId, msg);
+}
+
+// handleMessage 확장 (기존 handleMessage 함수에 추가)
+// 'race-position': () => { if(state.isHost) handleRacePosition(peerId, msg); }
+// 'race-result': () => handleRaceResult(msg);
+
+function handleRacePosition(peerId, msg) {
+  if(!racingState.players) racingState.players = {};
+
+  racingState.players[msg.playerId] = {
+    distance: msg.distance,
+    alive: msg.alive,
+    maxSpeed: msg.maxSpeed,
+    name: msg.name,
+    avatar: msg.avatar,
+  };
+}
+
+function handleRaceResult(msg) {
+  if(!racingState.players) racingState.players = {};
+
+  racingState.players[msg.playerId] = {
+    distance: msg.distance,
+    maxSpeed: msg.maxSpeed,
+    time: msg.time,
+    completed: msg.completed,
+    name: msg.name,
+    avatar: msg.avatar,
+  };
+}
+
+// handleGameStart 확장 (기존 함수에 추가)
+// else if(msg.game === 'racing') { showScreen('racingGame'); document.getElementById('racingModeSelect').style.display = 'flex'; }

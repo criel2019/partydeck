@@ -1,0 +1,1121 @@
+================================================================================
+섹션 1: HTML
+================================================================================
+<!-- TRUTH GAME -->
+<div class="screen" id="truthGame">
+  <!-- 상단 바 -->
+  <div class="truth-top-bar">
+    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">✕</button>
+    <div class="truth-round-display">
+      <span class="truth-round-badge" id="truthRoundBadge">ROUND 1</span>
+    </div>
+    <div class="truth-questioner-display" id="truthQuestionerDisplay">질문자: ---</div>
+  </div>
+
+  <!-- 메인 콘텐츠 영역 -->
+  <div class="truth-content">
+
+    <!-- Phase: question (질문자 입력) -->
+    <div class="truth-phase-area" id="truthQuestionInputArea" style="display:none;">
+      <div class="truth-your-turn-badge">✨ 당신의 차례입니다</div>
+      <div class="truth-question-box">
+        <textarea
+          class="truth-textarea"
+          id="truthQuestionInput"
+          placeholder="질문을 입력하세요...&#10;예: 여기서 OO를 이성적으로 좋아하는 사람이 있다?"
+          maxlength="200"
+          rows="3"
+        ></textarea>
+        <div class="truth-char-count"><span id="truthCharCount">0</span>/200</div>
+      </div>
+      <button class="btn btn-primary truth-submit-btn" onclick="submitTruthQuestion()">
+        📨 질문 제출
+      </button>
+    </div>
+
+    <!-- Phase: question (대기 화면 - 질문자가 아닌 경우) -->
+    <div class="truth-phase-area" id="truthWaitQuestionArea" style="display:none;">
+      <div class="truth-waiting-icon">🤔</div>
+      <div class="truth-waiting-text" id="truthWaitingText">질문을 기다리는 중...</div>
+      <div class="truth-waiting-sub" id="truthWaitingSubText">질문자가 질문을 작성하고 있습니다</div>
+      <div class="truth-dots-loader">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Phase: voting (질문 표시 + O/X 투표) -->
+    <div class="truth-phase-area" id="truthVotingArea" style="display:none;">
+      <div class="truth-question-display">
+        <div class="truth-question-label">Q.</div>
+        <div class="truth-question-text" id="truthQuestionText">질문 내용</div>
+      </div>
+
+      <!-- 투표 버튼 영역 -->
+      <div class="truth-vote-buttons" id="truthVoteButtons">
+        <button class="truth-vote-btn truth-vote-o" id="truthBtnO" onclick="castTruthVote('O')">
+          <span class="truth-vote-symbol">O</span>
+          <span class="truth-vote-label">예</span>
+        </button>
+        <button class="truth-vote-btn truth-vote-x" id="truthBtnX" onclick="castTruthVote('X')">
+          <span class="truth-vote-symbol">✕</span>
+          <span class="truth-vote-label">아니오</span>
+        </button>
+      </div>
+
+      <!-- 투표 완료 후 대기 -->
+      <div class="truth-vote-waiting" id="truthVoteWaiting" style="display:none;">
+        <div class="truth-voted-badge" id="truthVotedBadge">✅ 투표 완료</div>
+        <div class="truth-vote-progress">
+          <div class="truth-progress-bar">
+            <div class="truth-progress-fill" id="truthProgressFill" style="width:0%"></div>
+          </div>
+          <div class="truth-progress-text" id="truthProgressText">투표 중... (0/0명 완료)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase: result (결과 표시) -->
+    <div class="truth-phase-area" id="truthResultArea" style="display:none;">
+      <div class="truth-question-display truth-question-display-small">
+        <div class="truth-question-label">Q.</div>
+        <div class="truth-question-text" id="truthResultQuestionText">질문 내용</div>
+      </div>
+
+      <div class="truth-result-container">
+        <div class="truth-result-title">투표 결과</div>
+
+        <!-- O 결과 -->
+        <div class="truth-result-row">
+          <div class="truth-result-icon truth-result-icon-o">O</div>
+          <div class="truth-result-info">
+            <div class="truth-result-count" id="truthResultOCount">0명</div>
+            <div class="truth-result-dots" id="truthResultODots"></div>
+          </div>
+        </div>
+
+        <!-- X 결과 -->
+        <div class="truth-result-row">
+          <div class="truth-result-icon truth-result-icon-x">✕</div>
+          <div class="truth-result-info">
+            <div class="truth-result-count" id="truthResultXCount">0명</div>
+            <div class="truth-result-dots" id="truthResultXDots"></div>
+          </div>
+        </div>
+
+        <!-- 총원 -->
+        <div class="truth-result-total" id="truthResultTotal">총 0명 참여</div>
+      </div>
+
+      <!-- 다음 질문 버튼 (질문자 또는 호스트) -->
+      <button class="btn btn-accent2 truth-next-btn" id="truthNextBtn" onclick="truthNextRound()" style="display:none;">
+        ➡️ 다음 질문
+      </button>
+      <div class="truth-next-waiting" id="truthNextWaiting" style="display:none;">
+        다음 질문을 기다리는 중...
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 하단 플레이어 표시 -->
+  <div class="truth-players-bar" id="truthPlayersBar"></div>
+</div>
+
+
+================================================================================
+섹션 2: CSS
+================================================================================
+/* TRUTH GAME CSS */
+
+/* ===== 전체 레이아웃 ===== */
+#truthGame {
+  padding: 12px 16px;
+  gap: 10px;
+  background:
+    radial-gradient(ellipse at 30% 70%, rgba(0,230,118,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 30%, rgba(255,23,68,0.04) 0%, transparent 50%),
+    linear-gradient(180deg, #0d0d14 0%, #0a0a12 50%, #08080e 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+#truthGame::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.008) 2px,
+      rgba(255,255,255,0.008) 4px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+#truthGame > * { position: relative; z-index: 1; }
+
+/* ===== 상단 바 ===== */
+.truth-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(20,20,42,0.95), rgba(28,28,58,0.9));
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(10px);
+}
+
+.truth-round-badge {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 15px;
+  color: var(--accent2);
+  letter-spacing: 2px;
+}
+
+.truth-questioner-display {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+/* ===== 메인 콘텐츠 ===== */
+.truth-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.truth-phase-area {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  animation: truthFadeIn 0.4s ease;
+}
+
+@keyframes truthFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== 질문 입력 (질문자) ===== */
+.truth-your-turn-badge {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px;
+  color: var(--gold);
+  text-align: center;
+  text-shadow: 0 0 20px rgba(255,215,0,0.3);
+}
+
+.truth-question-box {
+  width: 100%;
+  position: relative;
+}
+
+.truth-textarea {
+  width: 100%;
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 2px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 16px;
+  font-family: inherit;
+  outline: none;
+  resize: none;
+  transition: border-color 0.3s;
+  line-height: 1.5;
+}
+
+.truth-textarea:focus {
+  border-color: var(--accent2);
+  box-shadow: 0 0 20px rgba(0,229,255,0.1);
+}
+
+.truth-textarea::placeholder {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.truth-char-count {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.truth-submit-btn {
+  max-width: 100%;
+}
+
+/* ===== 대기 화면 ===== */
+.truth-waiting-icon {
+  font-size: 64px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.truth-waiting-text {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px;
+  color: var(--text);
+}
+
+.truth-waiting-sub {
+  font-size: 14px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.truth-dots-loader {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.truth-dots-loader span {
+  width: 10px;
+  height: 10px;
+  background: var(--accent2);
+  border-radius: 50%;
+  animation: truthDotPulse 1.4s ease-in-out infinite;
+}
+
+.truth-dots-loader span:nth-child(2) { animation-delay: 0.2s; }
+.truth-dots-loader span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes truthDotPulse {
+  0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.2); }
+}
+
+/* ===== 질문 표시 ===== */
+.truth-question-display {
+  width: 100%;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(20,20,42,0.95), rgba(28,28,58,0.85));
+  border-radius: var(--radius);
+  border: 1px solid rgba(0,229,255,0.15);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.truth-question-display::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent2));
+}
+
+.truth-question-display-small {
+  padding: 14px;
+}
+
+.truth-question-display-small .truth-question-text {
+  font-size: 16px;
+}
+
+.truth-question-label {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 28px;
+  color: var(--accent2);
+  margin-bottom: 8px;
+  text-shadow: 0 0 15px rgba(0,229,255,0.4);
+}
+
+.truth-question-display-small .truth-question-label {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.truth-question-text {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+/* ===== O/X 투표 버튼 ===== */
+.truth-vote-buttons {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.truth-vote-btn {
+  width: 130px;
+  height: 130px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.truth-vote-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255,255,255,0.15);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s, height 0.4s;
+}
+
+.truth-vote-btn:active::before {
+  width: 200px;
+  height: 200px;
+}
+
+.truth-vote-btn:active {
+  transform: scale(0.92);
+}
+
+/* O 버튼 - 원형, 초록 */
+.truth-vote-o {
+  border-radius: 50%;
+  background: linear-gradient(145deg, #00e676, #00c853);
+  box-shadow:
+    0 6px 30px rgba(0,230,118,0.4),
+    0 0 60px rgba(0,230,118,0.15),
+    inset 0 2px 4px rgba(255,255,255,0.25),
+    inset 0 -3px 6px rgba(0,0,0,0.2);
+}
+
+.truth-vote-o:hover {
+  box-shadow:
+    0 8px 40px rgba(0,230,118,0.5),
+    0 0 80px rgba(0,230,118,0.2),
+    inset 0 2px 4px rgba(255,255,255,0.25),
+    inset 0 -3px 6px rgba(0,0,0,0.2);
+}
+
+/* X 버튼 - 사각형, 빨강 */
+.truth-vote-x {
+  border-radius: var(--radius);
+  background: linear-gradient(145deg, #ff1744, #d50000);
+  box-shadow:
+    0 6px 30px rgba(255,23,68,0.4),
+    0 0 60px rgba(255,23,68,0.15),
+    inset 0 2px 4px rgba(255,255,255,0.25),
+    inset 0 -3px 6px rgba(0,0,0,0.2);
+}
+
+.truth-vote-x:hover {
+  box-shadow:
+    0 8px 40px rgba(255,23,68,0.5),
+    0 0 80px rgba(255,23,68,0.2),
+    inset 0 2px 4px rgba(255,255,255,0.25),
+    inset 0 -3px 6px rgba(0,0,0,0.2);
+}
+
+.truth-vote-symbol {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 48px;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  line-height: 1;
+}
+
+.truth-vote-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+}
+
+.truth-vote-btn.selected {
+  animation: truthBtnPulse 0.5s ease;
+}
+
+.truth-vote-btn.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+  filter: grayscale(0.5);
+}
+
+@keyframes truthBtnPulse {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.1); }
+  60%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* ===== 투표 대기 ===== */
+.truth-vote-waiting {
+  width: 100%;
+  text-align: center;
+}
+
+.truth-voted-badge {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: var(--success);
+  margin-bottom: 16px;
+  text-shadow: 0 0 15px rgba(0,230,118,0.3);
+}
+
+.truth-vote-progress {
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.truth-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-surface);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.truth-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.truth-progress-text {
+  font-size: 14px;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+/* ===== 결과 영역 ===== */
+.truth-result-container {
+  width: 100%;
+  padding: 24px 20px;
+  background: linear-gradient(135deg, rgba(20,20,42,0.95), rgba(28,28,58,0.85));
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.truth-result-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+}
+
+.truth-result-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.2);
+  border-radius: var(--radius-sm);
+}
+
+.truth-result-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 26px;
+  color: white;
+  flex-shrink: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.truth-result-icon-o {
+  background: linear-gradient(145deg, #00e676, #00c853);
+  box-shadow: 0 4px 20px rgba(0,230,118,0.35), 0 0 40px rgba(0,230,118,0.1);
+}
+
+.truth-result-icon-x {
+  background: linear-gradient(145deg, #ff1744, #d50000);
+  box-shadow: 0 4px 20px rgba(255,23,68,0.35), 0 0 40px rgba(255,23,68,0.1);
+}
+
+.truth-result-info {
+  flex: 1;
+}
+
+.truth-result-count {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 28px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.truth-result-dots {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.truth-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.truth-dot.filled-o {
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(0,230,118,0.5);
+  animation: truthDotAppear 0.4s ease backwards;
+}
+
+.truth-dot.filled-x {
+  background: var(--danger);
+  box-shadow: 0 0 8px rgba(255,23,68,0.5);
+  animation: truthDotAppear 0.4s ease backwards;
+}
+
+.truth-dot.empty {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+@keyframes truthDotAppear {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.truth-result-total {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  font-weight: 700;
+}
+
+/* ===== 다음 라운드 ===== */
+.truth-next-btn {
+  max-width: 100%;
+}
+
+.truth-next-waiting {
+  font-size: 14px;
+  color: var(--text-dim);
+  text-align: center;
+  font-weight: 700;
+}
+
+/* ===== 하단 플레이어 바 ===== */
+.truth-players-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 8px;
+  background: linear-gradient(135deg, rgba(20,20,42,0.9), rgba(28,28,58,0.85));
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.04);
+  overflow-x: auto;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.truth-player-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 48px;
+  flex-shrink: 0;
+}
+
+.truth-player-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.truth-player-avatar.is-questioner {
+  box-shadow: 0 0 0 3px var(--gold), 0 0 16px rgba(255,215,0,0.4);
+}
+
+.truth-player-avatar.has-voted::after {
+  content: '✓';
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  background: var(--success);
+  border-radius: 50%;
+  font-size: 9px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+}
+
+.truth-player-name {
+  font-size: 10px;
+  font-weight: 700;
+  max-width: 52px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.truth-player-name.active-name {
+  color: var(--gold);
+}
+
+
+================================================================================
+섹션 3: JS
+================================================================================
+// ===== TRUTH GAME ENGINE =====
+
+// --- 호스트 상태 ---
+let truthState = null;
+
+function startTruthGame() {
+  if (!state.isHost) return;
+  if (state.players.length < 3) {
+    showToast('진실게임은 3명 이상 필요합니다');
+    return;
+  }
+
+  truthState = {
+    round: 1,
+    questionerIdx: 0,
+    question: '',
+    votes: {},           // { playerId: 'O' | 'X' }
+    votedSet: new Set(),
+    phase: 'question',   // 'question' | 'voting' | 'result'
+    playerOrder: state.players.map(p => p.id),
+    playerMap: {},
+  };
+
+  // 플레이어 맵 구축
+  state.players.forEach((p, i) => {
+    truthState.playerMap[p.id] = {
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      colorIdx: i,
+    };
+  });
+
+  // 호스트 자신에게도 game-start 전달
+  const initView = buildTruthView(state.myId);
+  showScreen('truthGame');
+  renderTruthView(initView);
+
+  // 다른 플레이어에게 game-start + 초기 뷰 전송
+  state.players.forEach(p => {
+    if (p.id !== state.myId) {
+      const view = buildTruthView(p.id);
+      sendTo(p.id, {
+        type: 'game-start',
+        game: 'truth',
+        state: view,
+      });
+    }
+  });
+}
+
+// 각 플레이어에게 맞춤 뷰 생성
+function buildTruthView(forPlayerId) {
+  const ts = truthState;
+  const questionerId = ts.playerOrder[ts.questionerIdx];
+  const isQuestioner = (forPlayerId === questionerId);
+  const totalPlayers = ts.playerOrder.length;
+
+  // 투표 상황: 누가 투표했는지만 (뭘 투표했는지는 비공개)
+  const votedList = Array.from(ts.votedSet || []);
+  const voteCount = votedList.length;
+
+  // 결과: phase === 'result'일 때만 O/X 카운트 전송
+  let oCount = 0;
+  let xCount = 0;
+  if (ts.phase === 'result') {
+    Object.values(ts.votes).forEach(v => {
+      if (v === 'O') oCount++;
+      else if (v === 'X') xCount++;
+    });
+  }
+
+  // 내가 이미 투표했는지
+  const myVoted = ts.votedSet ? ts.votedSet.has(forPlayerId) : false;
+
+  return {
+    type: 'truth-state',
+    round: ts.round,
+    phase: ts.phase,
+    questionerId: questionerId,
+    questionerName: ts.playerMap[questionerId]?.name || '???',
+    isQuestioner: isQuestioner,
+    question: ts.phase !== 'question' ? ts.question : (isQuestioner ? '' : ''),
+    totalPlayers: totalPlayers,
+    voteCount: voteCount,
+    votedList: votedList,
+    myVoted: myVoted,
+    oCount: oCount,
+    xCount: xCount,
+    players: ts.playerOrder.map(pid => ({
+      id: pid,
+      name: ts.playerMap[pid]?.name || '???',
+      avatar: ts.playerMap[pid]?.avatar || '😎',
+      colorIdx: ts.playerMap[pid]?.colorIdx || 0,
+      isQuestioner: pid === questionerId,
+      hasVoted: ts.votedSet ? ts.votedSet.has(pid) : false,
+    })),
+    // 호스트 여부 (다음 라운드 진행 권한)
+    isHost: forPlayerId === state.myId && state.isHost,
+  };
+}
+
+function broadcastTruthState() {
+  if (!truthState) return;
+  const ts = truthState;
+
+  ts.playerOrder.forEach(pid => {
+    const view = buildTruthView(pid);
+    if (pid === state.myId) {
+      renderTruthView(view);
+    } else {
+      sendTo(pid, view);
+    }
+  });
+}
+
+// --- 메시지 처리 (호스트) ---
+function processTruthQuestion(peerId, question) {
+  if (!truthState || truthState.phase !== 'question') return;
+  const questionerId = truthState.playerOrder[truthState.questionerIdx];
+  if (peerId !== questionerId) return;
+
+  truthState.question = question;
+  truthState.phase = 'voting';
+  truthState.votes = {};
+  truthState.votedSet = new Set();
+
+  broadcastTruthState();
+}
+
+function processTruthVote(peerId, vote) {
+  if (!truthState || truthState.phase !== 'voting') return;
+  if (truthState.votedSet.has(peerId)) return; // 중복 투표 방지
+  if (vote !== 'O' && vote !== 'X') return;
+
+  truthState.votes[peerId] = vote;
+  truthState.votedSet.add(peerId);
+
+  // 모두 투표 완료?
+  if (truthState.votedSet.size >= truthState.playerOrder.length) {
+    truthState.phase = 'result';
+    broadcastTruthState();
+  } else {
+    // 진행 상황만 업데이트
+    broadcastTruthState();
+  }
+}
+
+function processTruthNext() {
+  if (!truthState) return;
+  truthState.round++;
+  truthState.questionerIdx = (truthState.questionerIdx + 1) % truthState.playerOrder.length;
+  truthState.question = '';
+  truthState.votes = {};
+  truthState.votedSet = new Set();
+  truthState.phase = 'question';
+
+  broadcastTruthState();
+}
+
+// --- 렌더링 ---
+function renderTruthView(view) {
+  if (!view) return;
+
+  // 상단 바
+  document.getElementById('truthRoundBadge').textContent = 'ROUND ' + view.round;
+  document.getElementById('truthQuestionerDisplay').textContent = '질문자: ' + view.questionerName;
+
+  // 모든 phase 영역 숨기기
+  document.getElementById('truthQuestionInputArea').style.display = 'none';
+  document.getElementById('truthWaitQuestionArea').style.display = 'none';
+  document.getElementById('truthVotingArea').style.display = 'none';
+  document.getElementById('truthResultArea').style.display = 'none';
+
+  if (view.phase === 'question') {
+    if (view.isQuestioner) {
+      // 질문자: 입력 화면
+      document.getElementById('truthQuestionInputArea').style.display = 'flex';
+      document.getElementById('truthQuestionInput').value = '';
+      document.getElementById('truthCharCount').textContent = '0';
+    } else {
+      // 비질문자: 대기 화면
+      document.getElementById('truthWaitQuestionArea').style.display = 'flex';
+      document.getElementById('truthWaitingText').textContent = '질문을 기다리는 중...';
+      document.getElementById('truthWaitingSubText').textContent =
+        view.questionerName + '님이 질문을 작성하고 있습니다';
+    }
+  } else if (view.phase === 'voting') {
+    document.getElementById('truthVotingArea').style.display = 'flex';
+    document.getElementById('truthQuestionText').textContent = view.question;
+
+    if (view.myVoted) {
+      // 이미 투표함 -> 대기 화면
+      document.getElementById('truthVoteButtons').style.display = 'none';
+      document.getElementById('truthVoteWaiting').style.display = 'block';
+      const pct = Math.round((view.voteCount / view.totalPlayers) * 100);
+      document.getElementById('truthProgressFill').style.width = pct + '%';
+      document.getElementById('truthProgressText').textContent =
+        '투표 중... (' + view.voteCount + '/' + view.totalPlayers + '명 완료)';
+    } else {
+      // 아직 투표 안 함 -> 버튼 표시
+      document.getElementById('truthVoteButtons').style.display = 'flex';
+      document.getElementById('truthVoteWaiting').style.display = 'none';
+      // 버튼 초기화
+      document.getElementById('truthBtnO').classList.remove('selected', 'disabled');
+      document.getElementById('truthBtnX').classList.remove('selected', 'disabled');
+    }
+  } else if (view.phase === 'result') {
+    document.getElementById('truthResultArea').style.display = 'flex';
+    document.getElementById('truthResultQuestionText').textContent = view.question;
+    document.getElementById('truthResultOCount').textContent = view.oCount + '명';
+    document.getElementById('truthResultXCount').textContent = view.xCount + '명';
+    document.getElementById('truthResultTotal').textContent =
+      '총 ' + view.totalPlayers + '명 참여';
+
+    // O LED 도트
+    const oDots = document.getElementById('truthResultODots');
+    let oHTML = '';
+    for (let i = 0; i < view.totalPlayers; i++) {
+      const delay = (i * 0.08).toFixed(2);
+      if (i < view.oCount) {
+        oHTML += '<div class="truth-dot filled-o" style="animation-delay:' + delay + 's"></div>';
+      } else {
+        oHTML += '<div class="truth-dot empty"></div>';
+      }
+    }
+    oDots.innerHTML = oHTML;
+
+    // X LED 도트
+    const xDots = document.getElementById('truthResultXDots');
+    let xHTML = '';
+    for (let i = 0; i < view.totalPlayers; i++) {
+      const delay = (i * 0.08).toFixed(2);
+      if (i < view.xCount) {
+        xHTML += '<div class="truth-dot filled-x" style="animation-delay:' + delay + 's"></div>';
+      } else {
+        xHTML += '<div class="truth-dot empty"></div>';
+      }
+    }
+    xDots.innerHTML = xHTML;
+
+    // 다음 라운드 버튼: 호스트만 표시
+    if (view.isHost) {
+      document.getElementById('truthNextBtn').style.display = 'block';
+      document.getElementById('truthNextWaiting').style.display = 'none';
+    } else {
+      document.getElementById('truthNextBtn').style.display = 'none';
+      document.getElementById('truthNextWaiting').style.display = 'block';
+    }
+  }
+
+  // 하단 플레이어 바
+  renderTruthPlayersBar(view.players);
+}
+
+function renderTruthPlayersBar(players) {
+  const bar = document.getElementById('truthPlayersBar');
+  bar.innerHTML = players.map(p => {
+    const isMe = p.id === state.myId;
+    const avatarClasses = [
+      'truth-player-avatar',
+      p.isQuestioner ? 'is-questioner' : '',
+      p.hasVoted ? 'has-voted' : '',
+    ].filter(Boolean).join(' ');
+
+    const nameClass = p.isQuestioner ? 'truth-player-name active-name' : 'truth-player-name';
+
+    return '<div class="truth-player-chip">' +
+      '<div class="' + avatarClasses + '" style="background:' + PLAYER_COLORS[p.colorIdx % PLAYER_COLORS.length] + ';">' +
+        p.avatar +
+      '</div>' +
+      '<div class="' + nameClass + '">' + (isMe ? '나' : p.name) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// --- 클라이언트 액션 ---
+function submitTruthQuestion() {
+  const input = document.getElementById('truthQuestionInput');
+  const question = input.value.trim();
+  if (!question) {
+    showToast('질문을 입력하세요');
+    return;
+  }
+  if (question.length > 200) {
+    showToast('질문이 너무 깁니다 (200자 이내)');
+    return;
+  }
+
+  if (state.isHost) {
+    // 호스트가 직접 질문자인 경우
+    processTruthQuestion(state.myId, question);
+  } else {
+    // 호스트에게 전송
+    const hostConn = Object.values(state.connections)[0];
+    if (hostConn?.open) {
+      hostConn.send(JSON.stringify({
+        type: 'truth-question',
+        question: question,
+      }));
+    }
+  }
+}
+
+function castTruthVote(vote) {
+  // UI 즉시 반응
+  const btnO = document.getElementById('truthBtnO');
+  const btnX = document.getElementById('truthBtnX');
+
+  if (vote === 'O') {
+    btnO.classList.add('selected');
+    btnX.classList.add('disabled');
+  } else {
+    btnX.classList.add('selected');
+    btnO.classList.add('disabled');
+  }
+
+  // 잠시 후 버튼 숨기고 대기 화면
+  setTimeout(() => {
+    document.getElementById('truthVoteButtons').style.display = 'none';
+    document.getElementById('truthVoteWaiting').style.display = 'block';
+    document.getElementById('truthVotedBadge').textContent =
+      vote === 'O' ? '⭕ 투표 완료' : '❌ 투표 완료';
+  }, 400);
+
+  if (state.isHost) {
+    processTruthVote(state.myId, vote);
+  } else {
+    const hostConn = Object.values(state.connections)[0];
+    if (hostConn?.open) {
+      hostConn.send(JSON.stringify({
+        type: 'truth-vote',
+        vote: vote,
+      }));
+    }
+  }
+}
+
+function truthNextRound() {
+  if (state.isHost) {
+    processTruthNext();
+  } else {
+    const hostConn = Object.values(state.connections)[0];
+    if (hostConn?.open) {
+      hostConn.send(JSON.stringify({
+        type: 'truth-next',
+      }));
+    }
+  }
+}
+
+// --- textarea 글자수 카운트 ---
+document.addEventListener('DOMContentLoaded', function() {
+  // DOMContentLoaded 이후 바인딩 시도 (truthGame HTML 삽입 후)
+  const ta = document.getElementById('truthQuestionInput');
+  if (ta) {
+    ta.addEventListener('input', function() {
+      const cnt = document.getElementById('truthCharCount');
+      if (cnt) cnt.textContent = ta.value.length;
+    });
+  }
+});
+
+// 만약 동적으로 렌더링되어 위 이벤트가 놓칠 수 있으므로 이벤트 위임도 추가
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.id === 'truthQuestionInput') {
+    const cnt = document.getElementById('truthCharCount');
+    if (cnt) cnt.textContent = e.target.value.length;
+  }
+});
+
+
+// =========================================================
+// handleMessage에 추가할 핸들러 (기존 handlers 객체에 병합)
+// =========================================================
+//
+// 기존 handleMessage 함수의 handlers 객체에 다음 항목들을 추가:
+//
+//   'truth-state': () => {
+//     showScreen('truthGame');
+//     renderTruthView(msg);
+//   },
+//   'truth-question': () => {
+//     if (state.isHost) processTruthQuestion(peerId, msg.question);
+//   },
+//   'truth-vote': () => {
+//     if (state.isHost) processTruthVote(peerId, msg.vote);
+//   },
+//   'truth-next': () => {
+//     if (state.isHost) processTruthNext();
+//   },
+//
+// =========================================================
+
+
+// =========================================================
+// handleGameStart에 추가할 분기 (기존 else-if 체인에 추가)
+// =========================================================
+//
+// 기존:
+//   else if(msg.game === 'truth') { showToast('진실게임 시작!'); }
+//
+// 변경:
+//   else if(msg.game === 'truth') {
+//     showScreen('truthGame');
+//     renderTruthView(msg.state);
+//   }
+//
+// =========================================================
+
+
+// =========================================================
+// 기존 startTruthGame 스텁 교체
+// =========================================================
+//
+// 기존:
+//   function startTruthGame() { showToast('진실게임 준비 중...'); /* TODO */ }
+//
+// 위 코드의 startTruthGame() 함수로 교체
+//
+// =========================================================

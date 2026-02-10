@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마피아 게임 - 모바일 UI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Cinzel:wght@600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --wood-dark: #2a1810;
+            --wood-mid: #3d2516;
+            --wood-light: #5c3a24;
+            --parchment: #f4e8d0;
+            --gold: #d4af37;
+            --gold-dark: #b8941f;
+            --blood-red: #8b0000;
+            --night-blue: #1a1f3a;
+            --green-vote: #3d8b40;
+            --green-bright: #4fb052;
+            --shadow-deep: rgba(0, 0, 0, 0.6);
+            --lantern-glow: #ff8c42;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(180deg, #1a0f08 0%, #2a1810 50%, #1a0f08 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Lantern decorations */
+        .lantern-left, .lantern-right {
+            position: fixed;
+            width: 60px;
+            height: 80px;
+            top: 40px;
+            z-index: 1;
+            filter: drop-shadow(0 0 20px var(--lantern-glow));
+            animation: lanternFlicker 3s ease-in-out infinite;
+        }
+
+        .lantern-left {
+            left: -10px;
+            animation-delay: 0s;
+        }
+
+        .lantern-right {
+            right: -10px;
+            animation-delay: 1.5s;
+        }
+
+        .lantern-body {
+            width: 40px;
+            height: 50px;
+            background: radial-gradient(circle at 30% 30%, #ffb366, #ff8c42, #d4691c);
+            border-radius: 8px;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 140, 66, 0.8), inset 0 2px 4px rgba(255, 200, 150, 0.6);
+        }
+
+        .lantern-top, .lantern-bottom {
+            width: 50px;
+            height: 8px;
+            background: linear-gradient(90deg, #3a2510, #5c3a24, #3a2510);
+            margin: 0 auto;
+            border-radius: 4px;
+        }
+
+        .lantern-chain {
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(180deg, #5c3a24, #3a2510);
+            margin: 0 auto 4px;
+        }
+
+        @keyframes lanternFlicker {
+            0%, 100% { opacity: 1; filter: drop-shadow(0 0 20px var(--lantern-glow)); }
+            50% { opacity: 0.85; filter: drop-shadow(0 0 15px var(--lantern-glow)); }
+        }
+
+        /* Wood grain background texture */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                repeating-linear-gradient(90deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0,0,0,0.1) 2px,
+                    rgba(0,0,0,0.1) 4px),
+                repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 3px,
+                    rgba(0,0,0,0.05) 3px,
+                    rgba(0,0,0,0.05) 6px);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 430px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+            padding-bottom: 20px;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            padding: 20px 16px 0;
+            margin-bottom: -2px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 14px 20px;
+            background: linear-gradient(180deg, var(--wood-light), var(--wood-mid));
+            border: 2px solid var(--gold-dark);
+            border-bottom: none;
+            color: var(--parchment);
+            font-family: 'Cinzel', serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+        }
+
+        .tab-button:first-child {
+            margin-right: 8px;
+        }
+
+        .tab-button:not(.active) {
+            background: linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
+            opacity: 0.6;
+            transform: translateY(4px);
+            border-color: rgba(212, 175, 55, 0.4);
+        }
+
+        .tab-button.active {
+            box-shadow:
+                0 -4px 12px rgba(212, 175, 55, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-button:hover:not(.active) {
+            opacity: 0.8;
+            transform: translateY(2px);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Game Screen Container */
+        .game-screen {
+            background: linear-gradient(180deg, var(--wood-dark) 0%, var(--wood-mid) 50%, var(--wood-dark) 100%);
+            border: 3px solid var(--gold);
+            border-radius: 0 0 16px 16px;
+            margin: 0 16px;
+            padding: 20px 16px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.8),
+                inset 0 2px 4px rgba(255, 255, 255, 0.05),
+                inset 0 -2px 8px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(255, 140, 66, 0.03), transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(255, 140, 66, 0.03), transparent 40%);
+            pointer-events: none;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05));
+            border: 2px solid var(--gold);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 20px;
+            right: 20px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        .phase-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--gold);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            letter-spacing: 1px;
+        }
+
+        .phase-icon {
+            font-size: 28px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+            animation: phaseIconPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes phaseIconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .timer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--wood-dark);
+            box-shadow:
+                0 4px 8px rgba(0, 0, 0, 0.4),
+                inset 0 1px 2px rgba(255, 255, 255, 0.4);
+            animation: timerPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Night mode header */
+        .night-mode .header {
+            background: linear-gradient(135deg, rgba(26, 31, 58, 0.4), rgba(26, 31, 58, 0.15));
+            border-color: #4a5f8f;
+        }
+
+        .night-mode .phase-title {
+            color: #87a6d9;
+        }
+
+        .night-mode .timer {
+            background: linear-gradient(135deg, #4a5f8f, #354466);
+            color: #d4e4ff;
+            border-color: rgba(135, 166, 217, 0.3);
+        }
+
+        /* Player Grid */
+        .player-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .player-card {
+            background: linear-gradient(135deg, var(--wood-light), var(--wood-mid));
+            border: 2px solid rgba(212, 175, 55, 0.4);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .player-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+            border-color: var(--gold);
+        }
+
+        .player-card.dead {
+            opacity: 0.4;
+            filter: grayscale(1);
+            pointer-events: none;
+        }
+
+        .player-card.dead::after {
+            content: '☠️';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            z-index: 5;
+            filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.9));
+        }
+
+        .crown-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            font-size: 24px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+            animation: crownFloat 2s ease-in-out infinite;
+            z-index: 6;
+        }
+
+        @keyframes crownFloat {
+            0%, 100% { transform: translateY(0) rotate(-10deg); }
+            50% { transform: translateY(-4px) rotate(-10deg); }
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .avatar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            padding: 2px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+
+        .avatar-1 { background: linear-gradient(135deg, #ff6b6b, #c92a2a); }
+        .avatar-2 { background: linear-gradient(135deg, #51cf66, #2f9e44); }
+        .avatar-3 { background: linear-gradient(135deg, #339af0, #1864ab); }
+        .avatar-4 { background: linear-gradient(135deg, #ffd43b, #f59f00); }
+        .avatar-5 { background: linear-gradient(135deg, #ff8787, #fa5252); }
+        .avatar-6 { background: linear-gradient(135deg, #845ef7, #5f3dc4); }
+        .avatar-7 { background: linear-gradient(135deg, #ff6b9d, #c2255c); }
+        .avatar-8 { background: linear-gradient(135deg, #20c997, #087f5b); }
+
+        .player-name {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--parchment);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .vote-button, .waiting-badge, .dead-badge {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .vote-button {
+            background: linear-gradient(135deg, var(--green-bright), var(--green-vote));
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .vote-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(135deg, #5dbf60, var(--green-vote));
+        }
+
+        .vote-button:active {
+            transform: translateY(0);
+        }
+
+        .waiting-badge {
+            background: linear-gradient(135deg, #495057, #343a40);
+            color: #adb5bd;
+            pointer-events: none;
+        }
+
+        .dead-badge {
+            background: linear-gradient(135deg, #2b2b2b, #1a1a1a);
+            color: #6c757d;
+            pointer-events: none;
+        }
+
+        .vote-count {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #e03131, #c92a2a);
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 14px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            animation: voteCountPop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes voteCountPop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Bottom Panel */
+        .bottom-panel {
+            background: linear-gradient(135deg, rgba(92, 58, 36, 0.5), rgba(42, 24, 16, 0.5));
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .vote-status {
+            margin-bottom: 16px;
+        }
+
+        .vote-status-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--gold);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .vote-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .vote-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .vote-bar-name {
+            font-size: 13px;
+            color: var(--parchment);
+            width: 60px;
+            font-weight: 500;
+        }
+
+        .vote-bar-track {
+            flex: 1;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .vote-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green-bright), var(--green-vote));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            font-weight: 700;
+            font-size: 12px;
+            color: white;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .extend-button, .ability-button {
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: 900;
+            font-size: 15px;
+            color: var(--wood-dark);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+        }
+
+        .extend-button:hover, .ability-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg, #e0bf47, var(--gold));
+        }
+
+        .extend-button:active, .ability-button:active {
+            transform: translateY(0);
+        }
+
+        /* Night Events */
+        .night-events {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .event-item {
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: eventSlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes eventSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .investigation-result {
+            background: linear-gradient(135deg, rgba(51, 154, 240, 0.2), rgba(24, 100, 171, 0.1));
+            border: 2px solid rgba(51, 154, 240, 0.4);
+            color: #87ceeb;
+        }
+
+        .death-notification {
+            background: linear-gradient(135deg, rgba(139, 0, 0, 0.3), rgba(80, 0, 0, 0.2));
+            border: 2px solid rgba(139, 0, 0, 0.6);
+            color: #ff6b6b;
+            animation: eventSlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1), deathShake 0.5s ease-in-out 0.6s;
+        }
+
+        @keyframes deathShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        .event-icon {
+            font-size: 20px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+        }
+
+        /* Role Card */
+        .role-card {
+            background: linear-gradient(135deg, rgba(92, 58, 36, 0.6), rgba(42, 24, 16, 0.6));
+            border: 2px solid var(--gold);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 0 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+        }
+
+        .role-icon {
+            font-size: 48px;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8));
+        }
+
+        .role-info {
+            flex: 1;
+        }
+
+        .role-name {
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--gold);
+            margin-bottom: 6px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .role-description {
+            font-size: 13px;
+            color: var(--parchment);
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+
+        .ability-button.completed {
+            background: linear-gradient(135deg, #495057, #343a40);
+            color: #adb5bd;
+            cursor: not-allowed;
+            border-color: rgba(173, 181, 189, 0.3);
+        }
+
+        .ability-button.completed:hover {
+            transform: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 380px) {
+            .player-grid {
+                gap: 8px;
+            }
+
+            .player-card {
+                padding: 10px;
+            }
+
+            .avatar {
+                width: 70px;
+                height: 70px;
+                font-size: 36px;
+            }
+
+            .player-name {
+                font-size: 14px;
+            }
+
+            .vote-button, .waiting-badge, .dead-badge {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="lantern-left">
+        <div class="lantern-chain"></div>
+        <div class="lantern-top"></div>
+        <div class="lantern-body"></div>
+        <div class="lantern-bottom"></div>
+    </div>
+    <div class="lantern-right">
+        <div class="lantern-chain"></div>
+        <div class="lantern-top"></div>
+        <div class="lantern-body"></div>
+        <div class="lantern-bottom"></div>
+    </div>
+
+    <div class="container">
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-button active" onclick="switchTab('day')">☀️ 낮</button>
+            <button class="tab-button" onclick="switchTab('night')">🌙 밤</button>
+        </div>
+
+        <!-- Day Screen -->
+        <div id="day-screen" class="tab-content active">
+            <div class="game-screen">
+                <div class="header">
+                    <div class="phase-title">
+                        <span class="phase-icon">☀️</span>
+                        <span>낮 - 토론 중</span>
+                    </div>
+                    <div class="timer">
+                        <span>⏱️</span>
+                        <span>00:45</span>
+                    </div>
+                </div>
+
+                <div class="player-grid">
+                    <!-- Player 1 - Host -->
+                    <div class="player-card">
+                        <span class="crown-badge">👑</span>
+                        <div class="vote-count">2</div>
+                        <div class="avatar avatar-1">👨‍💼</div>
+                        <div class="player-name">철수</div>
+                        <button class="vote-button">투표</button>
+                    </div>
+
+                    <!-- Player 2 -->
+                    <div class="player-card">
+                        <div class="vote-count">1</div>
+                        <div class="avatar avatar-2">👩‍🦰</div>
+                        <div class="player-name">민지</div>
+                        <button class="vote-button">투표</button>
+                    </div>
+
+                    <!-- Player 3 -->
+                    <div class="player-card">
+                        <div class="vote-count">2</div>
+                        <div class="avatar avatar-3">👨‍🎓</div>
+                        <div class="player-name">지훈</div>
+                        <button class="vote-button">투표</button>
+                    </div>
+
+                    <!-- Player 4 -->
+                    <div class="player-card">
+                        <div class="vote-count">1</div>
+                        <div class="avatar avatar-4">👨‍🔬</div>
+                        <div class="player-name">요한</div>
+                        <button class="vote-button">투표</button>
+                    </div>
+
+                    <!-- Player 5 -->
+                    <div class="player-card">
+                        <div class="avatar avatar-5">👨‍🍳</div>
+                        <div class="player-name">수현</div>
+                        <button class="vote-button">투표</button>
+                    </div>
+
+                    <!-- Player 6 -->
+                    <div class="player-card">
+                        <div class="avatar avatar-6">👨‍🎨</div>
+                        <div class="player-name">준석</div>
+                        <button class="vote-button">투표</button>
+                    </div>
+
+                    <!-- Player 7 -->
+                    <div class="player-card">
+                        <div class="avatar avatar-7">👩‍💻</div>
+                        <div class="player-name">유리</div>
+                        <button class="vote-button">투표</button>
+                    </div>
+
+                    <!-- Player 8 - Dead -->
+                    <div class="player-card dead">
+                        <div class="avatar avatar-8">👨‍⚕️</div>
+                        <div class="player-name">현우</div>
+                        <div class="dead-badge">사망</div>
+                    </div>
+                </div>
+
+                <div class="bottom-panel">
+                    <div class="vote-status">
+                        <div class="vote-status-title">투표 현황</div>
+                        <div class="vote-bars">
+                            <div class="vote-bar">
+                                <div class="vote-bar-name">철수</div>
+                                <div class="vote-bar-track">
+                                    <div class="vote-bar-fill" style="width: 40%;">2</div>
+                                </div>
+                            </div>
+                            <div class="vote-bar">
+                                <div class="vote-bar-name">민지</div>
+                                <div class="vote-bar-track">
+                                    <div class="vote-bar-fill" style="width: 20%;">1</div>
+                                </div>
+                            </div>
+                            <div class="vote-bar">
+                                <div class="vote-bar-name">지훈</div>
+                                <div class="vote-bar-track">
+                                    <div class="vote-bar-fill" style="width: 40%;">2</div>
+                                </div>
+                            </div>
+                            <div class="vote-bar">
+                                <div class="vote-bar-name">요한</div>
+                                <div class="vote-bar-track">
+                                    <div class="vote-bar-fill" style="width: 20%;">1</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="extend-button">⏰ 연장 요청</button>
+                </div>
+            </div>
+
+            <div class="role-card">
+                <div class="role-icon">🔍</div>
+                <div class="role-info">
+                    <div class="role-name">경찰</div>
+                    <div class="role-description">밤에 한 명의 정체를 조사할 수 있습니다.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Night Screen -->
+        <div id="night-screen" class="tab-content">
+            <div class="game-screen night-mode">
+                <div class="header">
+                    <div class="phase-title">
+                        <span class="phase-icon">🌙</span>
+                        <span>밤 - 능력 사용</span>
+                    </div>
+                    <div class="timer">
+                        <span>⏱️</span>
+                        <span>00:57</span>
+                    </div>
+                </div>
+
+                <div class="player-grid">
+                    <!-- Player 1 - Host -->
+                    <div class="player-card">
+                        <span class="crown-badge">👑</span>
+                        <div class="avatar avatar-1">👨‍💼</div>
+                        <div class="player-name">철수</div>
+                        <div class="waiting-badge">대기중</div>
+                    </div>
+
+                    <!-- Player 2 -->
+                    <div class="player-card">
+                        <div class="avatar avatar-2">👩‍🦰</div>
+                        <div class="player-name">민지</div>
+                        <div class="waiting-badge">대기중</div>
+                    </div>
+
+                    <!-- Player 3 - Will die -->
+                    <div class="player-card">
+                        <div class="avatar avatar-3">👨‍🎓</div>
+                        <div class="player-name">지훈</div>
+                        <div class="waiting-badge">대기중</div>
+                    </div>
+
+                    <!-- Player 4 -->
+                    <div class="player-card">
+                        <div class="avatar avatar-4">👨‍🔬</div>
+                        <div class="player-name">요한</div>
+                        <div class="waiting-badge">대기중</div>
+                    </div>
+
+                    <!-- Player 5 -->
+                    <div class="player-card">
+                        <div class="avatar avatar-5">👨‍🍳</div>
+                        <div class="player-name">수현</div>
+                        <div class="waiting-badge">대기중</div>
+                    </div>
+
+                    <!-- Player 6 -->
+                    <div class="player-card">
+                        <div class="avatar avatar-6">👨‍🎨</div>
+                        <div class="player-name">준석</div>
+                        <div class="waiting-badge">대기중</div>
+                    </div>
+
+                    <!-- Player 7 -->
+                    <div class="player-card">
+                        <div class="avatar avatar-7">👩‍💻</div>
+                        <div class="player-name">유리</div>
+                        <div class="waiting-badge">대기중</div>
+                    </div>
+
+                    <!-- Player 8 - Dead -->
+                    <div class="player-card dead">
+                        <div class="avatar avatar-8">👨‍⚕️</div>
+                        <div class="player-name">현우</div>
+                        <div class="dead-badge">사망</div>
+                    </div>
+                </div>
+
+                <div class="bottom-panel">
+                    <div class="night-events">
+                        <div class="event-item investigation-result">
+                            <span class="event-icon">🔍</span>
+                            <span><strong>철수</strong>는 <strong>시민</strong>입니다.</span>
+                        </div>
+                        <div class="event-item death-notification">
+                            <span class="event-icon">💀</span>
+                            <span><strong>지훈</strong>이 마피아에게 살해당했습니다!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="role-card">
+                <div class="role-icon">🔍</div>
+                <div class="role-info">
+                    <div class="role-name">경찰</div>
+                    <div class="role-description">밤에 한 명의 정체를 조사할 수 있습니다.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName + '-screen').classList.add('active');
+
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+
+        // Add interactive hover effects to player cards
+        document.querySelectorAll('.player-card:not(.dead)').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-4px) scale(1.02)';
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = '';
+            });
+        });
+
+        // Simulate vote button interaction
+        document.querySelectorAll('.vote-button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                this.style.background = 'linear-gradient(135deg, #2f9e44, #2b8a3e)';
+                this.textContent = '투표됨';
+                setTimeout(() => {
+                    this.style.background = '';
+                    this.textContent = '투표';
+                }, 2000);
+            });
+        });
+
+        // Animate timer countdown (visual effect only)
+        function animateTimer() {
+            const timers = document.querySelectorAll('.timer span:last-child');
+            timers.forEach(timer => {
+                let time = timer.textContent.split(':');
+                let minutes = parseInt(time[0]);
+                let seconds = parseInt(time[1]);
+
+                setInterval(() => {
+                    seconds--;
+                    if (seconds < 0) {
+                        seconds = 59;
+                        minutes--;
+                    }
+                    if (minutes < 0) {
+                        minutes = 0;
+                        seconds = 0;
+                    }
+                    timer.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }, 1000);
+            });
+        }
+
+        // Initialize animations
+        document.addEventListener('DOMContentLoaded', () => {
+            animateTimer();
+        });
+    </script>
+</body>
+</html>

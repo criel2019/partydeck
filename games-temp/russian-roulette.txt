@@ -1,0 +1,720 @@
+================================================================================
+러시안 룰렛 게임 구현 코드
+================================================================================
+
+아래 코드를 index.html의 해당 섹션에 삽입하세요.
+
+================================================================================
+섹션 1: HTML - POKER 게임 스크린 뒤에 추가 (라인 614 이후)
+================================================================================
+
+<!-- RUSSIAN ROULETTE -->
+<div class="screen" id="rouletteGame">
+  <div class="roulette-header">
+    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">✕</button>
+    <div class="roulette-title">🔫 러시안 룰렛</div>
+    <div class="roulette-survivors">
+      <span id="rouletteSurvivors">6</span>/<span id="rouletteTotalPlayers">6</span>
+    </div>
+  </div>
+
+  <!-- 게임 시작 전 설정 (호스트만) -->
+  <div class="roulette-setup" id="rouletteSetup" style="display:none;">
+    <div class="setup-card">
+      <div class="setup-label">총알 개수</div>
+      <div class="setup-slider-row">
+        <input type="range" class="setup-slider" id="bulletsSlider" min="1" max="3" value="1">
+        <div class="setup-value" id="bulletsValue">1</div>
+      </div>
+    </div>
+    <div class="setup-card">
+      <div class="setup-label">실린더 칸 수</div>
+      <div class="setup-slider-row">
+        <input type="range" class="setup-slider" id="chambersSlider" min="6" max="8" value="6">
+        <div class="setup-value" id="chambersValue">6</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="confirmRouletteSetup()" style="margin-top:12px;">설정 완료 및 시작</button>
+  </div>
+
+  <!-- 실린더 시각화 -->
+  <div class="cylinder-area">
+    <div class="current-turn-display" id="currentTurnDisplay">
+      <span id="currentTurnName">플레이어</span>의 차례
+    </div>
+
+    <div class="cylinder-container">
+      <div class="cylinder" id="cylinder">
+        <!-- 동적 생성: 6~8개 칸 -->
+      </div>
+      <div class="cylinder-center">🎯</div>
+    </div>
+
+    <div class="cylinder-info" id="cylinderInfo">
+      실린더를 돌려주세요
+    </div>
+  </div>
+
+  <!-- 생존자 리스트 -->
+  <div class="survivors-list" id="survivorsList">
+    <!-- 동적 생성 -->
+  </div>
+
+  <!-- 액션 버튼 -->
+  <div class="roulette-actions" id="rouletteActions">
+    <button class="btn btn-secondary" id="spinBtn" onclick="spinCylinder()" style="display:none;">
+      🔄 실린더 돌리기
+    </button>
+    <button class="btn btn-danger" id="triggerBtn" onclick="pullTrigger()" style="display:none;">
+      💥 방아쇠 당기기
+    </button>
+    <button class="btn btn-primary" id="restartBtn" onclick="restartRoulette()" style="display:none;">
+      🔁 다시 하기
+    </button>
+  </div>
+</div>
+
+<!-- 결과 플래시 오버레이 -->
+<div class="roulette-flash" id="rouletteFlash">
+  <div class="flash-content" id="flashContent">
+    <div class="flash-icon" id="flashIcon">💥</div>
+    <div class="flash-text" id="flashText">탕!</div>
+  </div>
+</div>
+
+
+================================================================================
+섹션 2: CSS - MAFIA CSS 뒤에 추가 (라인 467 이전, </style> 전)
+================================================================================
+
+/* ===== RUSSIAN ROULETTE CSS ===== */
+#rouletteGame { padding: 12px; gap: 10px; }
+
+.roulette-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; background: var(--bg-card); border-radius: var(--radius-sm);
+}
+
+.roulette-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px; letter-spacing: 0.5px;
+}
+
+.roulette-survivors {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px; color: var(--success);
+}
+
+/* 설정 패널 */
+.roulette-setup {
+  padding: 16px; background: var(--bg-card);
+  border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.06);
+}
+
+.setup-card {
+  background: var(--bg-surface); padding: 14px;
+  border-radius: var(--radius-sm); margin-bottom: 10px;
+}
+
+.setup-label {
+  font-size: 14px; font-weight: 700; margin-bottom: 8px;
+  color: var(--text-dim);
+}
+
+.setup-slider-row {
+  display: flex; align-items: center; gap: 12px;
+}
+
+.setup-slider {
+  flex: 1; -webkit-appearance: none; height: 6px;
+  border-radius: 3px; background: var(--bg-dark); outline: none;
+}
+
+.setup-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 24px; height: 24px;
+  border-radius: 50%; background: var(--accent2); cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,229,255,0.4);
+}
+
+.setup-value {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px; color: var(--accent2); min-width: 30px;
+  text-align: center;
+}
+
+/* 실린더 영역 */
+.cylinder-area {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 16px; gap: 16px;
+}
+
+.current-turn-display {
+  font-size: 16px; font-weight: 700;
+  color: var(--text); text-align: center;
+  padding: 8px 16px; background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+}
+
+#currentTurnName {
+  color: var(--accent2); font-family: 'Black Han Sans', sans-serif;
+}
+
+.cylinder-container {
+  position: relative; width: 200px; height: 200px;
+}
+
+.cylinder {
+  width: 100%; height: 100%; border-radius: 50%;
+  position: relative;
+  background:
+    conic-gradient(from 0deg,
+      #2a2a3e 0deg 60deg, #1a1a2e 60deg 120deg,
+      #2a2a3e 120deg 180deg, #1a1a2e 180deg 240deg,
+      #2a2a3e 240deg 300deg, #1a1a2e 300deg 360deg);
+  box-shadow:
+    inset 0 0 30px rgba(0,0,0,0.5),
+    0 4px 20px rgba(0,0,0,0.3);
+  border: 4px solid #3a3a4e;
+  transition: transform 3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.cylinder.spinning {
+  animation: spin-cylinder 3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+@keyframes spin-cylinder {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(1440deg); }
+}
+
+.cylinder-center {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px; height: 50px; border-radius: 50%;
+  background: linear-gradient(135deg, #3a3a4e, #2a2a3e);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+
+.chamber-indicator {
+  position: absolute;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: rgba(120,120,140,0.5);
+  border: 2px solid rgba(255,255,255,0.2);
+  transform-origin: center;
+}
+
+.chamber-indicator.bullet {
+  background: radial-gradient(circle, #ff1744, #c41c1c);
+  border-color: #ff4444;
+  box-shadow: 0 0 10px rgba(255,23,68,0.6);
+}
+
+.chamber-indicator.empty {
+  background: rgba(120,120,140,0.3);
+}
+
+.cylinder-info {
+  font-size: 13px; color: var(--text-dim);
+  text-align: center; min-height: 18px;
+}
+
+/* 생존자 리스트 */
+.survivors-list {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; padding: 0 4px; max-height: 120px;
+  overflow-y: auto;
+}
+
+.survivor-item {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  padding: 8px 4px; background: var(--bg-card);
+  border-radius: var(--radius-sm); position: relative;
+  transition: all 0.3s;
+}
+
+.survivor-item.dead {
+  opacity: 0.4; filter: grayscale(1);
+}
+
+.survivor-item.dead::after {
+  content: '💀';
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px; pointer-events: none;
+}
+
+.survivor-avatar-sm {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+
+.survivor-name {
+  font-size: 11px; font-weight: 700;
+  max-width: 60px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  text-align: center;
+}
+
+/* 액션 버튼 */
+.roulette-actions {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 0 4px;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--danger), #c41c1c);
+  color: white;
+  box-shadow: 0 4px 20px rgba(255,23,68,0.4);
+  font-size: 20px; padding: 18px;
+  position: relative; overflow: hidden;
+}
+
+.btn-danger::before {
+  content: '';
+  position: absolute; top: 50%; left: 50%;
+  width: 0; height: 0; border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-danger:active::before {
+  width: 300px; height: 300px;
+}
+
+/* 결과 플래시 */
+.roulette-flash {
+  display: none; position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 150; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+
+.roulette-flash.active { display: flex; }
+
+.roulette-flash.bang {
+  background: radial-gradient(circle, rgba(255,23,68,0.8), rgba(255,23,68,0) 70%);
+  animation: flash-bang 0.8s ease-out;
+}
+
+.roulette-flash.safe {
+  background: radial-gradient(circle, rgba(0,230,118,0.6), rgba(0,230,118,0) 70%);
+  animation: flash-safe 0.8s ease-out;
+}
+
+@keyframes flash-bang {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes flash-safe {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.flash-content {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 12px;
+  animation: flash-zoom 0.8s ease-out;
+}
+
+@keyframes flash-zoom {
+  0% { transform: scale(0.5); opacity: 0; }
+  40% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+.flash-icon {
+  font-size: 120px; line-height: 1;
+}
+
+.flash-text {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 48px; color: white;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+
+================================================================================
+섹션 3: JavaScript - 게임 엔진 코드
+라인 1740 (게임 스텁들) 위치에서 startRussianRoulette 함수를 교체하고,
+라인 1069 (handleGameStart) 내부의 'roulette' 케이스도 수정
+================================================================================
+
+// ===== RUSSIAN ROULETTE ENGINE =====
+let rrState = {
+  bullets: 1,
+  chambers: 6,
+  cylinder: [], // [false, false, true, false, false, false] - true=총알
+  currentChamber: 0,
+  turnIdx: 0,
+  players: [], // {id, name, avatar, alive}
+  phase: 'setup', // setup, playing, spinning, triggered, gameover
+  setupDone: false,
+  lastResult: null,
+};
+
+function startRussianRoulette() {
+  if(!state.isHost) return;
+
+  rrState = {
+    bullets: 1,
+    chambers: 6,
+    cylinder: [],
+    currentChamber: 0,
+    turnIdx: 0,
+    players: state.players.map(p => ({
+      id: p.id, name: p.name, avatar: p.avatar, alive: true
+    })),
+    phase: 'setup',
+    setupDone: false,
+    lastResult: null,
+  };
+
+  showScreen('rouletteGame');
+  document.getElementById('rouletteSetup').style.display = 'block';
+
+  // 슬라이더 이벤트
+  document.getElementById('bulletsSlider').oninput = (e) => {
+    document.getElementById('bulletsValue').textContent = e.target.value;
+  };
+  document.getElementById('chambersSlider').oninput = (e) => {
+    document.getElementById('chambersValue').textContent = e.target.value;
+  };
+}
+
+function confirmRouletteSetup() {
+  const bullets = parseInt(document.getElementById('bulletsSlider').value);
+  const chambers = parseInt(document.getElementById('chambersSlider').value);
+
+  rrState.bullets = bullets;
+  rrState.chambers = chambers;
+  rrState.cylinder = new Array(chambers).fill(false);
+
+  // 랜덤하게 총알 배치 (호스트만 알고 있음)
+  const positions = [];
+  while(positions.length < bullets) {
+    const pos = Math.floor(Math.random() * chambers);
+    if(!positions.includes(pos)) positions.push(pos);
+  }
+  positions.forEach(p => rrState.cylinder[p] = true);
+
+  rrState.currentChamber = Math.floor(Math.random() * chambers);
+  rrState.phase = 'playing';
+  rrState.setupDone = true;
+  rrState.turnIdx = 0;
+
+  document.getElementById('rouletteSetup').style.display = 'none';
+
+  broadcastRRState();
+  renderRouletteView();
+}
+
+function broadcastRRState() {
+  const rs = rrState;
+
+  rs.players.forEach(p => {
+    const view = {
+      type: 'roulette-state',
+      players: rs.players.map(pp => ({
+        id: pp.id, name: pp.name, avatar: pp.avatar, alive: pp.alive
+      })),
+      turnIdx: rs.turnIdx,
+      phase: rs.phase,
+      chambers: rs.chambers,
+      bullets: rs.bullets,
+      lastResult: rs.lastResult,
+      // 실린더 내용은 호스트만 알고 있음 (보안)
+      showCylinder: false,
+    };
+
+    if(p.id === state.myId) renderRouletteView(view);
+    else sendTo(p.id, view);
+  });
+}
+
+function renderRouletteView(data) {
+  const rs = data || {
+    players: rrState.players,
+    turnIdx: rrState.turnIdx,
+    phase: rrState.phase,
+    chambers: rrState.chambers,
+    bullets: rrState.bullets,
+    lastResult: rrState.lastResult,
+  };
+
+  // 상단 생존자 수
+  const alive = rs.players.filter(p => p.alive).length;
+  document.getElementById('rouletteSurvivors').textContent = alive;
+  document.getElementById('rouletteTotalPlayers').textContent = rs.players.length;
+
+  // 현재 차례
+  const currentPlayer = rs.players[rs.turnIdx];
+  if(currentPlayer) {
+    document.getElementById('currentTurnName').textContent = currentPlayer.name;
+  }
+
+  // 실린더 렌더링 (칸만 표시, 총알은 게임 중엔 숨김)
+  const cylinder = document.getElementById('cylinder');
+  cylinder.innerHTML = '';
+  const angleStep = 360 / rs.chambers;
+
+  for(let i = 0; i < rs.chambers; i++) {
+    const indicator = document.createElement('div');
+    indicator.className = 'chamber-indicator empty';
+    const angle = i * angleStep;
+    const radius = 80; // 중심으로부터 거리
+    const x = 100 + radius * Math.cos((angle - 90) * Math.PI / 180);
+    const y = 100 + radius * Math.sin((angle - 90) * Math.PI / 180);
+    indicator.style.left = x + 'px';
+    indicator.style.top = y + 'px';
+    cylinder.appendChild(indicator);
+  }
+
+  // 생존자 리스트
+  const survivorsList = document.getElementById('survivorsList');
+  survivorsList.innerHTML = rs.players.map((p, i) => `
+    <div class="survivor-item ${!p.alive ? 'dead' : ''}">
+      <div class="survivor-avatar-sm" style="background:${PLAYER_COLORS[i % PLAYER_COLORS.length]};">${p.avatar}</div>
+      <div class="survivor-name">${p.name}</div>
+    </div>
+  `).join('');
+
+  // 버튼 상태
+  const isMyTurn = currentPlayer?.id === state.myId;
+  const spinBtn = document.getElementById('spinBtn');
+  const triggerBtn = document.getElementById('triggerBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const cylinderInfo = document.getElementById('cylinderInfo');
+
+  spinBtn.style.display = 'none';
+  triggerBtn.style.display = 'none';
+  restartBtn.style.display = 'none';
+
+  if(rs.phase === 'gameover') {
+    cylinderInfo.textContent = '게임 종료!';
+    if(state.isHost) {
+      restartBtn.style.display = 'block';
+    }
+  } else if(isMyTurn && rs.phase === 'playing') {
+    spinBtn.style.display = 'block';
+    cylinderInfo.textContent = '실린더를 돌려주세요';
+  } else if(isMyTurn && rs.phase === 'spinning') {
+    triggerBtn.style.display = 'block';
+    cylinderInfo.textContent = '방아쇠를 당기세요...';
+  } else {
+    cylinderInfo.textContent = currentPlayer ? `${currentPlayer.name}의 차례` : '대기 중...';
+  }
+}
+
+function spinCylinder() {
+  if(!state.isHost) {
+    // 게스트는 호스트에게 액션 전송
+    const host = Object.values(state.connections)[0];
+    if(host?.open) host.send(JSON.stringify({ type: 'rr-action', action: 'spin' }));
+    return;
+  }
+
+  // 호스트 처리
+  rrState.phase = 'spinning';
+
+  // 실린더 회전 애니메이션
+  const cylinder = document.getElementById('cylinder');
+  cylinder.classList.add('spinning');
+
+  setTimeout(() => {
+    cylinder.classList.remove('spinning');
+    broadcastRRState();
+  }, 3000);
+
+  broadcastRRState();
+}
+
+function pullTrigger() {
+  if(!state.isHost) {
+    // 게스트는 호스트에게 액션 전송
+    const host = Object.values(state.connections)[0];
+    if(host?.open) host.send(JSON.stringify({ type: 'rr-action', action: 'trigger' }));
+    return;
+  }
+
+  // 호스트 처리
+  const currentPlayer = rrState.players[rrState.turnIdx];
+  const isBullet = rrState.cylinder[rrState.currentChamber];
+
+  if(isBullet) {
+    // 탕! 사망
+    currentPlayer.alive = false;
+    rrState.lastResult = { playerId: currentPlayer.id, result: 'dead' };
+
+    // 진동
+    if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
+    // 플래시 효과
+    showRouletteFlash('bang', '💥', '탕!');
+
+    setTimeout(() => {
+      // 다음 생존자로
+      rrState.currentChamber = (rrState.currentChamber + 1) % rrState.chambers;
+      advanceRouletteTurn();
+    }, 2000);
+
+  } else {
+    // 찰칵... 생존
+    rrState.lastResult = { playerId: currentPlayer.id, result: 'safe' };
+
+    // 플래시 효과
+    showRouletteFlash('safe', '😮‍💨', '찰칵... 살았다!');
+
+    setTimeout(() => {
+      rrState.currentChamber = (rrState.currentChamber + 1) % rrState.chambers;
+      advanceRouletteTurn();
+    }, 2000);
+  }
+
+  broadcastRRState();
+}
+
+function showRouletteFlash(type, icon, text) {
+  const flash = document.getElementById('rouletteFlash');
+  const flashIcon = document.getElementById('flashIcon');
+  const flashText = document.getElementById('flashText');
+
+  flash.className = 'roulette-flash active ' + type;
+  flashIcon.textContent = icon;
+  flashText.textContent = text;
+
+  setTimeout(() => {
+    flash.classList.remove('active', type);
+  }, 800);
+}
+
+function advanceRouletteTurn() {
+  const alivePlayers = rrState.players.filter(p => p.alive);
+
+  if(alivePlayers.length === 1) {
+    // 승자!
+    rrState.phase = 'gameover';
+    const winner = alivePlayers[0];
+
+    const result = {
+      type: 'rr-result',
+      winnerId: winner.id,
+      winnerName: winner.name,
+      winnerAvatar: winner.avatar,
+    };
+
+    broadcast(result);
+    handleRRResult(result);
+    return;
+  }
+
+  if(alivePlayers.length === 0) {
+    // 이론적으로 불가능하지만 안전장치
+    rrState.phase = 'gameover';
+    broadcastRRState();
+    return;
+  }
+
+  // 다음 생존자 찾기
+  let nextIdx = (rrState.turnIdx + 1) % rrState.players.length;
+  while(!rrState.players[nextIdx].alive) {
+    nextIdx = (nextIdx + 1) % rrState.players.length;
+  }
+
+  rrState.turnIdx = nextIdx;
+  rrState.phase = 'playing';
+  broadcastRRState();
+}
+
+function handleRRResult(msg) {
+  const won = msg.winnerId === state.myId;
+  recordGame(won);
+
+  document.getElementById('resultTitle').textContent = won ? '🏆 생존!' : '💀 탈락...';
+  document.getElementById('resultTitle').style.color = won ? 'var(--success)' : 'var(--danger)';
+  document.getElementById('winnerName').textContent = msg.winnerName + ' ' + msg.winnerAvatar + ' 승리!';
+  document.getElementById('resultHand').textContent = '러시안 룰렛 최후의 생존자';
+  document.getElementById('resultPot').textContent = '';
+  document.getElementById('resultCards').innerHTML = '';
+  document.getElementById('resultOverlay').classList.add('active');
+}
+
+function restartRoulette() {
+  if(!state.isHost) return;
+  startRussianRoulette();
+}
+
+// P2P 메시지 핸들러 추가
+// handleMessage 함수 내부의 handlers 객체에 추가:
+// 'roulette-state': () => { showScreen('rouletteGame'); renderRouletteView(msg); },
+// 'rr-action': () => { if(state.isHost) processRRAction(peerId, msg.action); },
+// 'rr-result': () => handleRRResult(msg),
+
+function processRRAction(peerId, action) {
+  const currentPlayer = rrState.players[rrState.turnIdx];
+  if(!currentPlayer || currentPlayer.id !== peerId) return;
+
+  if(action === 'spin') {
+    spinCylinder();
+  } else if(action === 'trigger') {
+    pullTrigger();
+  }
+}
+
+
+================================================================================
+통합 가이드
+================================================================================
+
+1. HTML 섹션을 index.html의 라인 614 이후 (</div> 다음, MAFIA 스크린 전)에 추가
+
+2. CSS 섹션을 index.html의 라인 467 이전 (</style> 전)에 추가
+
+3. JavaScript 섹션:
+   - 라인 1734의 startRussianRoulette() 함수를 위 코드로 교체
+   - 라인 1062의 handleGameStart 내부에서:
+     else if(msg.game === 'roulette') { showScreen('rouletteGame'); renderRouletteView(msg.state); }
+
+   - 라인 869의 handleMessage 함수 내 handlers 객체에 추가:
+     'roulette-state': () => { showScreen('rouletteGame'); renderRouletteView(msg); },
+     'rr-action': () => { if(state.isHost) processRRAction(peerId, msg.action); },
+     'rr-result': () => handleRRResult(msg),
+
+4. 전체 러시안 룰렛 엔진 코드 (라인 1730 근처에 추가)를 위 JavaScript 섹션 전체로 교체
+
+
+================================================================================
+게임 플레이 흐름
+================================================================================
+
+1. 호스트가 대기실에서 "룰렛" 선택 후 게임 시작
+2. 설정 화면에서 총알 수(1~3), 실린더 칸 수(6~8) 선택
+3. 설정 완료 시 게임 시작, 실린더에 총알 랜덤 배치 (호스트만 알고 있음)
+4. 순서대로:
+   - "실린더 돌리기" 버튼 → 3초 회전 애니메이션
+   - "방아쇠 당기기" 버튼 → 결과 판정
+   - 총알이면: 빨간 플래시 + "탕!" + 진동 → 탈락
+   - 빈칸이면: 초록 플래시 + "찰칵... 살았다!" → 다음 차례
+5. 마지막 1명 생존 시 승리
+6. 호스트는 "다시 하기"로 재시작 가능
+
+
+================================================================================
+주요 특징
+================================================================================
+
+- P2P 동기화: 호스트가 실린더 상태 관리, 게스트는 액션만 전송
+- 실린더 시각화: CSS로 원형 실린더 구현, 회전 애니메이션
+- 긴장감 연출: 큰 빨간 방아쇠 버튼, 플래시 효과, 진동
+- 생존자 표시: 그리드 레이아웃, 탈락자는 💀 표시
+- 보안: 총알 위치는 호스트만 알고 있음, 게임 중엔 숨김

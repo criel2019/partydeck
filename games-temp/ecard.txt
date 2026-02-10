@@ -1,0 +1,950 @@
+<!-- ===== E CARD GAME ===== -->
+<div class="screen" id="ecardGame">
+  <div class="ecard-top-bar">
+    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">✕</button>
+    <div class="ecard-title">👑 E카드 (왕과 노예)</div>
+    <div class="ecard-round">라운드 <span id="ecardRound">1</span>/5</div>
+  </div>
+
+  <div class="ecard-score">
+    <div class="score-item score-emperor">
+      <div class="score-icon">👑</div>
+      <div class="score-value" id="ecardScoreEmperor">0</div>
+    </div>
+    <div class="score-divider">:</div>
+    <div class="score-item score-slave">
+      <div class="score-icon">⛓️</div>
+      <div class="score-value" id="ecardScoreSlave">0</div>
+    </div>
+  </div>
+
+  <div class="ecard-role-display" id="ecardRoleDisplay">
+    <div class="role-badge" id="ecardRoleBadge">
+      <div class="role-icon" id="ecardRoleIcon">👑</div>
+      <div class="role-text">당신은 <span id="ecardRoleName">황제</span>입니다</div>
+    </div>
+  </div>
+
+  <div class="ecard-opponent-area" id="ecardOpponentArea">
+    <div class="opponent-info">
+      <div class="opponent-avatar" id="ecardOppAvatar" style="background: linear-gradient(135deg, #00e5ff, #00b8d4);">😎</div>
+      <div class="opponent-name" id="ecardOppName">상대방</div>
+      <div class="opponent-cards-count">남은 카드: <span id="ecardOppCardsCount">5</span>장</div>
+    </div>
+    <div class="opponent-played-card" id="ecardOppPlayedCard">
+      <!-- Opponent's played card (back or revealed) -->
+    </div>
+  </div>
+
+  <div class="ecard-battle-area" id="ecardBattleArea" style="display:none;">
+    <div class="battle-card" id="ecardBattleOpp"></div>
+    <div class="battle-vs">VS</div>
+    <div class="battle-card" id="ecardBattleMy"></div>
+  </div>
+
+  <div class="ecard-result-text" id="ecardResultText"></div>
+
+  <div class="ecard-my-cards-area">
+    <div class="my-cards-label">내 카드 (<span id="ecardMyCardsCount">5</span>장)</div>
+    <div class="ecard-cards-hand" id="ecardMyCards">
+      <!-- My cards displayed in fan layout -->
+    </div>
+  </div>
+
+  <div class="ecard-bet-area" id="ecardBetArea" style="display:none;">
+    <div class="bet-label">배팅 금액 제안</div>
+    <div class="bet-controls">
+      <input type="range" class="bet-slider" id="ecardBetSlider" min="10" max="500" value="100" step="10">
+      <div class="bet-amount" id="ecardBetAmount">100</div>
+    </div>
+    <button class="btn btn-primary" id="ecardBetSubmit" onclick="ecardSubmitBet()">배팅 제안</button>
+  </div>
+
+  <div class="ecard-bet-response" id="ecardBetResponse" style="display:none;">
+    <div class="bet-proposal">상대방이 <span id="ecardBetProposed">100</span> 배팅을 제안했습니다</div>
+    <div class="bet-buttons">
+      <button class="btn btn-secondary" onclick="ecardRejectBet()">거절</button>
+      <button class="btn btn-primary" onclick="ecardAcceptBet()">수락</button>
+    </div>
+  </div>
+
+  <div class="ecard-action-buttons" id="ecardActionButtons">
+    <button class="btn btn-primary" id="ecardSubmitBtn" onclick="ecardSubmitCard()" disabled>카드 제출</button>
+  </div>
+
+  <div class="ecard-waiting" id="ecardWaiting" style="display:none;">
+    <div class="spinner"></div>
+    <div style="margin-top:8px;font-size:14px;color:var(--text-dim);" id="ecardWaitingText">상대방을 기다리는 중...</div>
+  </div>
+</div>
+
+/* ===== E CARD CSS ===== */
+#ecardGame {
+  background: linear-gradient(135deg, #0a4d0a 0%, #064206 100%);
+  padding: 12px;
+  gap: 8px;
+}
+
+.ecard-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(20, 20, 42, 0.8);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.ecard-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: var(--gold);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.ecard-round {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.ecard-score {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  background: rgba(20, 20, 42, 0.6);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+}
+
+.score-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-icon {
+  font-size: 28px;
+}
+
+.score-value {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 32px;
+  color: var(--gold);
+  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+.score-divider {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 32px;
+  color: var(--text-dim);
+}
+
+.ecard-role-display {
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+}
+
+.role-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(20, 20, 42, 0.8);
+  border-radius: 20px;
+  border: 2px solid var(--gold);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.role-icon {
+  font-size: 32px;
+}
+
+.role-text {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.role-text span {
+  color: var(--gold);
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 17px;
+}
+
+.ecard-opponent-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(20, 20, 42, 0.5);
+  border-radius: var(--radius-sm);
+  min-height: 120px;
+}
+
+.opponent-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.opponent-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.opponent-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.opponent-cards-count {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.opponent-played-card {
+  margin-top: 8px;
+}
+
+.ecard-battle-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(20, 20, 42, 0.7);
+  border-radius: var(--radius);
+  border: 2px solid var(--gold);
+  margin: 8px 0;
+  min-height: 140px;
+}
+
+.battle-card {
+  transform: scale(1.1);
+}
+
+.battle-vs {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 24px;
+  color: var(--accent);
+  text-shadow: 0 0 10px rgba(255, 107, 53, 0.6);
+}
+
+.ecard-result-text {
+  text-align: center;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: var(--gold);
+  padding: 8px;
+  min-height: 28px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.ecard-my-cards-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.my-cards-label {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.ecard-cards-hand {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: -20px;
+  padding: 12px 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.ecard-card {
+  width: 70px;
+  height: 100px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  margin: 0 -10px;
+}
+
+.ecard-card:hover {
+  transform: translateY(-15px) scale(1.05);
+  z-index: 10;
+}
+
+.ecard-card.selected {
+  transform: translateY(-20px) scale(1.08);
+  z-index: 11;
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
+}
+
+.ecard-card-emperor {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  border: 3px solid #b8860b;
+  color: #1a1a2e;
+}
+
+.ecard-card-citizen {
+  background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+  border: 3px solid #808080;
+  color: #1a1a2e;
+}
+
+.ecard-card-slave {
+  background: linear-gradient(135deg, #4a4a4a 0%, #6a6a6a 100%);
+  border: 3px solid #2a2a2a;
+  color: #e8e8f0;
+}
+
+.ecard-card-dummy {
+  background: linear-gradient(135deg, #7a7a7a 0%, #9a9a9a 100%);
+  border: 3px solid #5a5a5a;
+  color: #1a1a2e;
+}
+
+.ecard-card-icon {
+  font-size: 36px;
+  margin-bottom: 4px;
+}
+
+.ecard-card-name {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.ecard-card-back {
+  background: linear-gradient(135deg, #8b0000 0%, #640000 100%);
+  border: 3px solid #400000;
+  position: relative;
+  overflow: hidden;
+}
+
+.ecard-card-back::before {
+  content: 'E';
+  position: absolute;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 56px;
+  color: var(--gold);
+  opacity: 0.3;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.ecard-bet-area, .ecard-bet-response {
+  padding: 16px;
+  background: rgba(20, 20, 42, 0.8);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.bet-label {
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.bet-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.bet-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-surface);
+  outline: none;
+}
+
+.bet-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.5);
+}
+
+.bet-amount {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: var(--gold);
+  min-width: 60px;
+  text-align: right;
+}
+
+.bet-proposal {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.bet-proposal span {
+  color: var(--gold);
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+}
+
+.bet-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.ecard-action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.ecard-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(20, 20, 42, 0.6);
+  border-radius: var(--radius-sm);
+}
+
+// ===== E CARD ENGINE =====
+let ecState = {
+  player1: { id: '', name: '', avatar: '', role: 'emperor', cards: [], played: null },
+  player2: { id: '', name: '', avatar: '', role: 'slave', cards: [], played: null },
+  round: 1,
+  maxRounds: 5,
+  score: { emperor: 0, slave: 0 },
+  bet: 100,
+  betProposed: null,
+  betAccepted: false,
+  phase: 'role-assign', // role-assign, betting, slave-play, emperor-play, reveal, result, gameover
+  selectedCard: null,
+};
+
+function startECard() {
+  if (state.players.length !== 2) {
+    showToast('E카드는 정확히 2명만 플레이 가능합니다');
+    return;
+  }
+
+  // Random role assignment (rock-paper-scissors simulation)
+  const roles = ['emperor', 'slave'];
+  const shuffled = roles.sort(() => Math.random() - 0.5);
+
+  ecState = {
+    player1: {
+      id: state.players[0].id,
+      name: state.players[0].name,
+      avatar: state.players[0].avatar,
+      role: shuffled[0],
+      cards: shuffled[0] === 'emperor'
+        ? ['emperor', 'citizen', 'citizen', 'citizen', 'citizen']
+        : ['slave', 'dummy', 'citizen', 'citizen', 'citizen'],
+      played: null,
+    },
+    player2: {
+      id: state.players[1].id,
+      name: state.players[1].name,
+      avatar: state.players[1].avatar,
+      role: shuffled[1],
+      cards: shuffled[1] === 'emperor'
+        ? ['emperor', 'citizen', 'citizen', 'citizen', 'citizen']
+        : ['slave', 'dummy', 'citizen', 'citizen', 'citizen'],
+      played: null,
+    },
+    round: 1,
+    maxRounds: 5,
+    score: { emperor: 0, slave: 0 },
+    bet: 100,
+    betProposed: null,
+    betAccepted: false,
+    phase: 'betting',
+    selectedCard: null,
+  };
+
+  state.ecard = ecState;
+  broadcastECardState();
+  showScreen('ecardGame');
+}
+
+function broadcastECardState() {
+  const ec = state.ecard;
+
+  [ec.player1, ec.player2].forEach(p => {
+    const opponent = p === ec.player1 ? ec.player2 : ec.player1;
+    const view = {
+      type: 'ec-state',
+      myId: p.id,
+      myRole: p.role,
+      myCards: p.cards,
+      myPlayed: p.played,
+      myName: p.name,
+      myAvatar: p.avatar,
+      oppId: opponent.id,
+      oppName: opponent.name,
+      oppAvatar: opponent.avatar,
+      oppRole: opponent.role,
+      oppCardsCount: opponent.cards.length,
+      oppPlayed: opponent.played,
+      round: ec.round,
+      maxRounds: ec.maxRounds,
+      score: ec.score,
+      bet: ec.bet,
+      betProposed: ec.betProposed,
+      betAccepted: ec.betAccepted,
+      phase: ec.phase,
+    };
+
+    if (p.id === state.myId) {
+      renderECardView(view);
+    } else {
+      sendTo(p.id, view);
+    }
+  });
+}
+
+function renderECardView(view) {
+  state._ecardView = view;
+
+  // Update round and score
+  document.getElementById('ecardRound').textContent = view.round;
+  document.getElementById('ecardScoreEmperor').textContent = view.score.emperor;
+  document.getElementById('ecardScoreSlave').textContent = view.score.slave;
+
+  // Update role display
+  const roleIcon = view.myRole === 'emperor' ? '👑' : '⛓️';
+  const roleName = view.myRole === 'emperor' ? '황제' : '노예';
+  const roleColor = view.myRole === 'emperor' ? 'var(--gold)' : '#c0c0c0';
+
+  document.getElementById('ecardRoleIcon').textContent = roleIcon;
+  document.getElementById('ecardRoleName').textContent = roleName;
+  document.getElementById('ecardRoleName').style.color = roleColor;
+
+  // Update opponent info
+  const oppIndex = state.players.findIndex(p => p.id === view.oppId);
+  document.getElementById('ecardOppAvatar').style.background = PLAYER_COLORS[oppIndex % PLAYER_COLORS.length];
+  document.getElementById('ecardOppAvatar').textContent = view.oppAvatar;
+  document.getElementById('ecardOppName').textContent = view.oppName;
+  document.getElementById('ecardOppCardsCount').textContent = view.oppCardsCount;
+
+  // Update opponent played card
+  const oppPlayedEl = document.getElementById('ecardOppPlayedCard');
+  if (view.phase === 'emperor-play' && view.myRole === 'emperor' && view.oppPlayed) {
+    // Slave played, show back
+    oppPlayedEl.innerHTML = '<div class="ecard-card ecard-card-back" style="width:70px;height:100px;"></div>';
+  } else if (view.phase === 'reveal' && view.oppPlayed) {
+    // Reveal opponent card
+    oppPlayedEl.innerHTML = ecardCardHTML(view.oppPlayed, false);
+  } else {
+    oppPlayedEl.innerHTML = '';
+  }
+
+  // Update my cards
+  document.getElementById('ecardMyCardsCount').textContent = view.myCards.length;
+  const myCardsEl = document.getElementById('ecardMyCards');
+  myCardsEl.innerHTML = view.myCards.map((card, i) =>
+    `<div class="ecard-card ecard-card-${card} ${ecState.selectedCard === i ? 'selected' : ''}"
+          onclick="ecardSelectCard(${i})" data-card-idx="${i}">
+      <div class="ecard-card-icon">${ecardCardIcon(card)}</div>
+      <div class="ecard-card-name">${ecardCardName(card)}</div>
+    </div>`
+  ).join('');
+
+  // Battle area
+  const battleArea = document.getElementById('ecardBattleArea');
+  if (view.phase === 'reveal' && view.myPlayed && view.oppPlayed) {
+    battleArea.style.display = 'flex';
+    document.getElementById('ecardBattleOpp').innerHTML = ecardCardHTML(view.oppPlayed, false).replace('width:70px;height:100px;', 'width:80px;height:115px;');
+    document.getElementById('ecardBattleMy').innerHTML = ecardCardHTML(view.myPlayed, false).replace('width:70px;height:100px;', 'width:80px;height:115px;');
+  } else {
+    battleArea.style.display = 'none';
+  }
+
+  // Result text
+  const resultTextEl = document.getElementById('ecardResultText');
+  if (view.phase === 'result') {
+    const result = state.ecard._lastResult;
+    if (result) {
+      resultTextEl.textContent = result.message;
+      resultTextEl.style.color = result.winner === view.myRole ? 'var(--gold)' : 'var(--text-dim)';
+    }
+  } else {
+    resultTextEl.textContent = '';
+  }
+
+  // Betting UI
+  const betArea = document.getElementById('ecardBetArea');
+  const betResponse = document.getElementById('ecardBetResponse');
+  const actionButtons = document.getElementById('ecardActionButtons');
+  const waiting = document.getElementById('ecardWaiting');
+
+  betArea.style.display = 'none';
+  betResponse.style.display = 'none';
+  actionButtons.style.display = 'none';
+  waiting.style.display = 'none';
+
+  if (view.phase === 'betting') {
+    if (view.myRole === 'slave' && !view.betProposed) {
+      betArea.style.display = 'block';
+    } else if (view.myRole === 'emperor' && view.betProposed && !view.betAccepted) {
+      betResponse.style.display = 'block';
+      document.getElementById('ecardBetProposed').textContent = view.betProposed;
+    } else {
+      waiting.style.display = 'flex';
+      document.getElementById('ecardWaitingText').textContent = '배팅 대기 중...';
+    }
+  } else if (view.phase === 'slave-play') {
+    if (view.myRole === 'slave') {
+      actionButtons.style.display = 'flex';
+      document.getElementById('ecardSubmitBtn').disabled = ecState.selectedCard === null;
+    } else {
+      waiting.style.display = 'flex';
+      document.getElementById('ecardWaitingText').textContent = '노예가 카드를 선택 중...';
+    }
+  } else if (view.phase === 'emperor-play') {
+    if (view.myRole === 'emperor') {
+      actionButtons.style.display = 'flex';
+      document.getElementById('ecardSubmitBtn').disabled = ecState.selectedCard === null;
+    } else {
+      waiting.style.display = 'flex';
+      document.getElementById('ecardWaitingText').textContent = '황제가 카드를 선택 중...';
+    }
+  }
+}
+
+function ecardCardIcon(card) {
+  const icons = {
+    emperor: '👑',
+    citizen: '🤵',
+    slave: '⛓️',
+    dummy: '❓',
+  };
+  return icons[card] || '?';
+}
+
+function ecardCardName(card) {
+  const names = {
+    emperor: '황제',
+    citizen: '시민',
+    slave: '노예',
+    dummy: '더미',
+  };
+  return names[card] || '?';
+}
+
+function ecardCardHTML(card, isBack) {
+  if (isBack) {
+    return '<div class="ecard-card ecard-card-back" style="width:70px;height:100px;"></div>';
+  }
+  return `<div class="ecard-card ecard-card-${card}" style="width:70px;height:100px;">
+    <div class="ecard-card-icon">${ecardCardIcon(card)}</div>
+    <div class="ecard-card-name">${ecardCardName(card)}</div>
+  </div>`;
+}
+
+function ecardSelectCard(idx) {
+  const view = state._ecardView;
+  if (!view) return;
+
+  const canPlay = (view.phase === 'slave-play' && view.myRole === 'slave') ||
+                  (view.phase === 'emperor-play' && view.myRole === 'emperor');
+
+  if (!canPlay) return;
+
+  ecState.selectedCard = idx;
+  renderECardView(view);
+}
+
+document.getElementById('ecardBetSlider').addEventListener('input', e => {
+  document.getElementById('ecardBetAmount').textContent = e.target.value;
+});
+
+function ecardSubmitBet() {
+  const bet = parseInt(document.getElementById('ecardBetSlider').value);
+  if (state.isHost) {
+    processECardBet(state.myId, bet);
+  } else {
+    const host = Object.values(state.connections)[0];
+    if (host?.open) host.send(JSON.stringify({ type: 'ec-bet', bet }));
+  }
+}
+
+function ecardAcceptBet() {
+  if (state.isHost) {
+    processECardBetResponse(state.myId, true);
+  } else {
+    const host = Object.values(state.connections)[0];
+    if (host?.open) host.send(JSON.stringify({ type: 'ec-bet-response', accept: true }));
+  }
+}
+
+function ecardRejectBet() {
+  if (state.isHost) {
+    processECardBetResponse(state.myId, false);
+  } else {
+    const host = Object.values(state.connections)[0];
+    if (host?.open) host.send(JSON.stringify({ type: 'ec-bet-response', accept: false }));
+  }
+}
+
+function ecardSubmitCard() {
+  if (ecState.selectedCard === null) {
+    showToast('카드를 선택하세요');
+    return;
+  }
+
+  const view = state._ecardView;
+  const cardType = view.myCards[ecState.selectedCard];
+
+  if (state.isHost) {
+    processECardPlay(state.myId, cardType, ecState.selectedCard);
+  } else {
+    const host = Object.values(state.connections)[0];
+    if (host?.open) host.send(JSON.stringify({ type: 'ec-play', cardType, cardIdx: ecState.selectedCard }));
+  }
+
+  ecState.selectedCard = null;
+}
+
+function processECardBet(playerId, bet) {
+  if (!state.isHost) return;
+  const ec = state.ecard;
+  if (ec.phase !== 'betting') return;
+
+  const player = ec.player1.id === playerId ? ec.player1 : ec.player2;
+  if (player.role !== 'slave') return;
+
+  ec.betProposed = bet;
+  broadcastECardState();
+}
+
+function processECardBetResponse(playerId, accept) {
+  if (!state.isHost) return;
+  const ec = state.ecard;
+  if (ec.phase !== 'betting') return;
+
+  const player = ec.player1.id === playerId ? ec.player1 : ec.player2;
+  if (player.role !== 'emperor') return;
+
+  if (accept) {
+    ec.bet = ec.betProposed;
+    ec.betAccepted = true;
+    ec.phase = 'slave-play';
+    broadcastECardState();
+  } else {
+    ec.betProposed = null;
+    broadcastECardState();
+    showToast('황제가 배팅을 거절했습니다. 다시 제안하세요.');
+  }
+}
+
+function processECardPlay(playerId, cardType, cardIdx) {
+  if (!state.isHost) return;
+  const ec = state.ecard;
+
+  const player = ec.player1.id === playerId ? ec.player1 : ec.player2;
+
+  if (ec.phase === 'slave-play' && player.role === 'slave') {
+    player.played = cardType;
+    player.cards.splice(cardIdx, 1);
+    ec.phase = 'emperor-play';
+    broadcastECardState();
+  } else if (ec.phase === 'emperor-play' && player.role === 'emperor') {
+    player.played = cardType;
+    player.cards.splice(cardIdx, 1);
+    ec.phase = 'reveal';
+    broadcastECardState();
+    setTimeout(() => ecardReveal(), 1500);
+  }
+}
+
+function ecardReveal() {
+  if (!state.isHost) return;
+  const ec = state.ecard;
+
+  const card1 = ec.player1.played;
+  const card2 = ec.player2.played;
+
+  const result = ecardJudge(card1, card2);
+
+  let winner = null;
+  let message = '';
+
+  if (result === 0) {
+    message = '무승부! (더미 또는 시민 vs 시민)';
+  } else if (result === 1) {
+    winner = ec.player1.role;
+    message = `${ec.player1.name} 승리!`;
+    if (ec.player1.role === 'emperor') ec.score.emperor++;
+    else ec.score.slave++;
+  } else {
+    winner = ec.player2.role;
+    message = `${ec.player2.name} 승리!`;
+    if (ec.player2.role === 'emperor') ec.score.emperor++;
+    else ec.score.slave++;
+  }
+
+  ec._lastResult = { winner, message };
+  ec.phase = 'result';
+  broadcastECardState();
+
+  setTimeout(() => {
+    if (ec.round >= ec.maxRounds) {
+      ecardGameOver();
+    } else {
+      ecardNextRound();
+    }
+  }, 3000);
+}
+
+function ecardJudge(card1, card2) {
+  // Return: 0 = draw, 1 = card1 wins, -1 = card2 wins
+
+  // Dummy nullifies round
+  if (card1 === 'dummy' || card2 === 'dummy') return 0;
+
+  // Citizen vs Citizen
+  if (card1 === 'citizen' && card2 === 'citizen') return 0;
+
+  // Emperor > Citizen
+  if (card1 === 'emperor' && card2 === 'citizen') return 1;
+  if (card1 === 'citizen' && card2 === 'emperor') return -1;
+
+  // Citizen > Slave
+  if (card1 === 'citizen' && card2 === 'slave') return 1;
+  if (card1 === 'slave' && card2 === 'citizen') return -1;
+
+  // Slave > Emperor (twist!)
+  if (card1 === 'slave' && card2 === 'emperor') return 1;
+  if (card1 === 'emperor' && card2 === 'slave') return -1;
+
+  return 0;
+}
+
+function ecardNextRound() {
+  if (!state.isHost) return;
+  const ec = state.ecard;
+
+  ec.round++;
+  ec.player1.played = null;
+  ec.player2.played = null;
+  ec.betProposed = null;
+  ec.betAccepted = false;
+  ec.phase = 'betting';
+  ec._lastResult = null;
+
+  broadcastECardState();
+}
+
+function ecardGameOver() {
+  if (!state.isHost) return;
+  const ec = state.ecard;
+
+  const emperorScore = ec.score.emperor;
+  const slaveScore = ec.score.slave;
+
+  let winnerRole = null;
+  let message = '';
+
+  if (emperorScore > slaveScore) {
+    winnerRole = 'emperor';
+    message = '👑 황제 승리!';
+  } else if (slaveScore > emperorScore) {
+    winnerRole = 'slave';
+    message = '⛓️ 노예 승리! 대역전!';
+  } else {
+    message = '무승부!';
+  }
+
+  const winner = ec.player1.role === winnerRole ? ec.player1 : (ec.player2.role === winnerRole ? ec.player2 : null);
+
+  const result = {
+    type: 'ec-result',
+    winnerId: winner?.id,
+    winnerName: winner?.name || '무승부',
+    winnerRole,
+    message,
+    score: ec.score,
+  };
+
+  broadcast(result);
+  handleECardResult(result);
+}
+
+function handleECardResult(msg) {
+  const won = msg.winnerId === state.myId;
+  recordGame(won);
+
+  document.getElementById('resultTitle').textContent = won ? '🏆 승리!' : (msg.winnerId ? '😢 패배...' : '무승부');
+  document.getElementById('resultTitle').style.color = won ? 'var(--gold)' : 'var(--text-dim)';
+  document.getElementById('winnerName').textContent = msg.message;
+  document.getElementById('resultHand').textContent = `최종 점수: 황제 ${msg.score.emperor} - ${msg.score.slave} 노예`;
+  document.getElementById('resultPot').textContent = '';
+  document.getElementById('resultCards').innerHTML = '';
+  document.getElementById('resultOverlay').classList.add('active');
+}
+
+// Extend handleMessage
+const _origHandleMessage = handleMessage;
+handleMessage = function(peerId, raw) {
+  const msg = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+  if (msg.type === 'ec-state') {
+    showScreen('ecardGame');
+    renderECardView(msg);
+  } else if (msg.type === 'ec-bet' && state.isHost) {
+    processECardBet(peerId, msg.bet);
+  } else if (msg.type === 'ec-bet-response' && state.isHost) {
+    processECardBetResponse(peerId, msg.accept);
+  } else if (msg.type === 'ec-play' && state.isHost) {
+    processECardPlay(peerId, msg.cardType, msg.cardIdx);
+  } else if (msg.type === 'ec-result') {
+    handleECardResult(msg);
+  } else {
+    _origHandleMessage(peerId, raw);
+  }
+};
+
+// Extend handleGameStart
+const _origHandleGameStart = handleGameStart;
+handleGameStart = function(msg) {
+  if (msg.game === 'ecard') {
+    showScreen('ecardGame');
+    renderECardView(msg.state);
+  } else {
+    _origHandleGameStart(msg);
+  }
+};

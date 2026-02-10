@@ -1,0 +1,964 @@
+============================================
+파티덱 - 종이뽑기 & 룰렛 게임
+============================================
+
+SECTION 1: HTML
+============================================
+
+<!-- LOTTERY & ROULETTE GAME -->
+<div class="screen" id="lotteryGame">
+  <!-- Top Bar -->
+  <div class="lottery-top-bar">
+    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">✕</button>
+    <div class="lottery-title">🎰 뽑기 & 룰렛</div>
+    <div style="width:40px;"></div>
+  </div>
+
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <div class="mode-tab active" data-mode="lottery" onclick="switchLotteryMode('lottery')">
+      📋 종이뽑기
+    </div>
+    <div class="mode-tab" data-mode="roulette" onclick="switchLotteryMode('roulette')">
+      🎡 룰렛
+    </div>
+  </div>
+
+  <!-- LOTTERY MODE -->
+  <div class="lottery-mode-container" id="lotteryModeContainer">
+    <!-- Setup Panel (Host Only) -->
+    <div class="lottery-setup-panel" id="lotterySetupPanel" style="display:none;">
+      <div class="setup-title">🎯 뽑기 항목 설정 (호스트만 가능)</div>
+      <textarea class="lottery-items-input" id="lotteryItemsInput" placeholder="항목을 줄바꿈으로 구분하여 입력하세요&#10;예:&#10;당첨!&#10;꽝&#10;벌칙: 원샷&#10;벌칙: 춤추기&#10;행운!&#10;다시 뽑기"></textarea>
+      <div class="setup-row">
+        <label style="color:var(--text);font-size:14px;font-weight:700;">칸 개수:</label>
+        <select class="grid-size-select" id="gridSizeSelect">
+          <option value="4">4x4 (16칸)</option>
+          <option value="5">5x5 (25칸)</option>
+          <option value="6">6x6 (36칸)</option>
+          <option value="8">8x8 (64칸)</option>
+          <option value="10" selected>10x10 (100칸)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="startLotteryGame()">🎮 뽑기 시작</button>
+    </div>
+
+    <!-- Lottery Grid -->
+    <div class="lottery-grid-container" id="lotteryGridContainer" style="display:none;">
+      <div class="lottery-status">
+        <div class="status-text">🎯 칸을 터치하여 뽑기!</div>
+        <div class="picked-count">뽑은 개수: <span id="pickedCount">0</span> / <span id="totalCount">100</span></div>
+      </div>
+      <div class="lottery-grid" id="lotteryGrid"></div>
+    </div>
+
+    <!-- My Result Display -->
+    <div class="my-result-panel" id="myLotteryResult" style="display:none;">
+      <div class="result-label">🎁 내가 뽑은 결과</div>
+      <div class="result-list" id="myResultList"></div>
+    </div>
+  </div>
+
+  <!-- ROULETTE MODE -->
+  <div class="roulette-mode-container" id="rouletteModeContainer" style="display:none;">
+    <!-- Setup Panel (Host Only) -->
+    <div class="roulette-setup-panel" id="rouletteSetupPanel" style="display:none;">
+      <div class="setup-title">🎡 룰렛 항목 설정 (호스트만 가능)</div>
+      <textarea class="lottery-items-input" id="rouletteItemsInput" placeholder="룰렛 항목을 줄바꿈으로 구분 (2~12개)&#10;예:&#10;당첨!&#10;벌칙 1&#10;꽝&#10;원샷&#10;행운&#10;다시!"></textarea>
+      <button class="btn btn-primary" onclick="startRouletteGame()">🎡 룰렛 시작</button>
+    </div>
+
+    <!-- Roulette Display -->
+    <div class="roulette-display-container" id="rouletteDisplayContainer" style="display:none;">
+      <div class="roulette-status">
+        <div class="status-text">🎰 돌리기 버튼을 눌러주세요!</div>
+      </div>
+
+      <div class="roulette-wheel-container">
+        <div class="roulette-pointer">▼</div>
+        <div class="roulette-wheel" id="rouletteWheel">
+          <canvas id="rouletteCanvas" width="300" height="300"></canvas>
+        </div>
+      </div>
+
+      <button class="btn btn-primary roulette-spin-btn" id="rouletteSpinBtn" onclick="spinRoulette()">
+        🎡 돌리기!
+      </button>
+
+      <!-- Result Display -->
+      <div class="roulette-result-display" id="rouletteResultDisplay" style="display:none;">
+        <div class="result-emoji">🎉</div>
+        <div class="result-text" id="rouletteResultText">당첨!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+============================================
+SECTION 2: CSS
+============================================
+
+/* LOTTERY ROULETTE CSS */
+
+/* Top Bar */
+.lottery-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+}
+
+.lottery-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: var(--text);
+}
+
+/* Mode Tabs */
+.mode-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.mode-tab {
+  flex: 1;
+  padding: 12px;
+  background: var(--bg-surface);
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-tab:active {
+  transform: scale(0.97);
+}
+
+.mode-tab.active {
+  background: rgba(255, 107, 53, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Setup Panels */
+.lottery-setup-panel,
+.roulette-setup-panel {
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin: 0 12px;
+}
+
+.setup-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.lottery-items-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  background: var(--bg-surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  margin-bottom: 12px;
+}
+
+.lottery-items-input:focus {
+  border-color: var(--accent);
+}
+
+.setup-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  justify-content: center;
+}
+
+.grid-size-select {
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Lottery Grid */
+.lottery-grid-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.lottery-status {
+  text-align: center;
+  padding: 10px;
+  margin-bottom: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+}
+
+.status-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent2);
+  margin-bottom: 4px;
+}
+
+.picked-count {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+.lottery-grid {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.lottery-cell {
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, #ffd700, #ffab00);
+  border: 2px solid rgba(255, 215, 0, 0.6);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.lottery-cell:active {
+  transform: scale(0.95);
+}
+
+.lottery-cell.revealed {
+  background: var(--bg-surface);
+  border-color: var(--text-dim);
+  cursor: default;
+  animation: flip 0.6s ease;
+}
+
+.lottery-cell.revealed .cell-content {
+  color: var(--text);
+  font-size: 11px;
+  padding: 4px;
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+@keyframes flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(90deg);
+  }
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+/* My Result Panel */
+.my-result-panel {
+  padding: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  margin: 0 12px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.result-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent2);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.result-item {
+  padding: 8px 10px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Roulette */
+.roulette-display-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 12px;
+  gap: 20px;
+}
+
+.roulette-status {
+  text-align: center;
+  padding: 10px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  width: 100%;
+}
+
+.roulette-wheel-container {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.roulette-pointer {
+  font-size: 40px;
+  color: var(--accent3);
+  margin-bottom: -10px;
+  z-index: 10;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.roulette-wheel {
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 1;
+  position: relative;
+  transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
+
+.roulette-wheel.spinning {
+  transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
+
+#rouletteCanvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3),
+              0 0 0 8px var(--bg-surface),
+              0 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.roulette-spin-btn {
+  max-width: 280px;
+  font-size: 24px;
+  padding: 20px;
+  box-shadow: 0 6px 30px rgba(255, 107, 53, 0.4);
+}
+
+.roulette-spin-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.roulette-result-display {
+  text-align: center;
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 2px solid var(--accent);
+  animation: resultPop 0.5s ease;
+  width: 100%;
+  max-width: 300px;
+}
+
+@keyframes resultPop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.result-emoji {
+  font-size: 56px;
+  margin-bottom: 8px;
+}
+
+.result-text {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 28px;
+  color: var(--accent2);
+  word-break: break-word;
+}
+
+/* Mode Containers */
+.lottery-mode-container,
+.roulette-mode-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+
+============================================
+SECTION 3: JAVASCRIPT
+============================================
+
+// ===== LOTTERY ROULETTE ENGINE =====
+
+let lotteryState = {
+  mode: 'lottery', // 'lottery' or 'roulette'
+  items: [],
+
+  // Lottery
+  grid: [],
+  gridSize: 10,
+  picked: [],
+
+  // Roulette
+  spinning: false,
+  resultAngle: 0,
+  currentRotation: 0,
+
+  phase: 'setup' // setup, playing
+};
+
+// ===== START LOTTERY/ROULETTE =====
+function startLottery() {
+  if(!state.isHost) {
+    showToast('호스트만 게임을 시작할 수 있습니다');
+    return;
+  }
+
+  // Show setup panel
+  lotteryState.mode = 'lottery';
+  lotteryState.phase = 'setup';
+
+  broadcast({ type: 'game-start', game: 'lottery', state: lotteryState });
+  showScreen('lotteryGame');
+  renderLotterySetup();
+}
+
+function startLotteryGame() {
+  if(!state.isHost) return;
+
+  const itemsText = document.getElementById('lotteryItemsInput').value.trim();
+  const gridSize = parseInt(document.getElementById('gridSizeSelect').value);
+
+  if(!itemsText) {
+    showToast('항목을 입력하세요');
+    return;
+  }
+
+  const items = itemsText.split('\n').map(s => s.trim()).filter(s => s);
+
+  if(items.length < 2) {
+    showToast('최소 2개 항목 필요');
+    return;
+  }
+
+  lotteryState.items = items;
+  lotteryState.gridSize = gridSize;
+  lotteryState.phase = 'playing';
+
+  // Create grid
+  const totalCells = gridSize * gridSize;
+  lotteryState.grid = [];
+
+  for(let i = 0; i < totalCells; i++) {
+    const item = items[Math.floor(Math.random() * items.length)];
+    lotteryState.grid.push({
+      index: i,
+      item: item,
+      revealed: false,
+      revealedBy: null
+    });
+  }
+
+  lotteryState.picked = [];
+
+  const stateToSend = {
+    mode: 'lottery',
+    phase: 'playing',
+    gridSize: gridSize,
+    grid: lotteryState.grid.map(c => ({
+      index: c.index,
+      revealed: false,
+      revealedBy: null
+    })),
+    items: items
+  };
+
+  broadcast({ type: 'lottery-state', state: stateToSend });
+  renderLotteryGame(stateToSend);
+}
+
+function startRouletteGame() {
+  if(!state.isHost) return;
+
+  const itemsText = document.getElementById('rouletteItemsInput').value.trim();
+
+  if(!itemsText) {
+    showToast('항목을 입력하세요');
+    return;
+  }
+
+  const items = itemsText.split('\n').map(s => s.trim()).filter(s => s);
+
+  if(items.length < 2 || items.length > 12) {
+    showToast('2~12개 항목 필요');
+    return;
+  }
+
+  lotteryState.items = items;
+  lotteryState.mode = 'roulette';
+  lotteryState.phase = 'playing';
+  lotteryState.currentRotation = 0;
+
+  const stateToSend = {
+    mode: 'roulette',
+    phase: 'playing',
+    items: items,
+    currentRotation: 0
+  };
+
+  broadcast({ type: 'lottery-state', state: stateToSend });
+  renderRouletteGame(stateToSend);
+}
+
+// ===== LOTTERY CELL PICK =====
+function pickLotteryCell(index) {
+  if(lotteryState.phase !== 'playing') return;
+
+  const cell = lotteryState.grid[index];
+  if(!cell || cell.revealed) return;
+
+  if(state.isHost) {
+    cell.revealed = true;
+    cell.revealedBy = state.myId;
+
+    const update = {
+      type: 'lottery-pick',
+      index: index,
+      item: cell.item,
+      playerId: state.myId,
+      playerName: state.myName
+    };
+
+    broadcast(update);
+    handleLotteryPick(update);
+  } else {
+    const host = Object.values(state.connections)[0];
+    if(host?.open) {
+      host.send(JSON.stringify({
+        type: 'lottery-pick-request',
+        index: index,
+        playerId: state.myId,
+        playerName: state.myName
+      }));
+    }
+  }
+}
+
+function handleLotteryPick(msg) {
+  const cell = lotteryState.grid[msg.index];
+  if(!cell) return;
+
+  cell.revealed = true;
+  cell.revealedBy = msg.playerId;
+  cell.item = msg.item;
+
+  lotteryState.picked.push({
+    playerId: msg.playerId,
+    playerName: msg.playerName,
+    item: msg.item
+  });
+
+  // Update UI
+  const cellEl = document.querySelector(`[data-cell-index="${msg.index}"]`);
+  if(cellEl) {
+    cellEl.classList.add('revealed');
+    cellEl.innerHTML = `<div class="cell-content">${msg.item}</div>`;
+  }
+
+  // Update counter
+  const pickedCount = lotteryState.grid.filter(c => c.revealed).length;
+  const totalCount = lotteryState.grid.length;
+
+  if(document.getElementById('pickedCount')) {
+    document.getElementById('pickedCount').textContent = pickedCount;
+  }
+
+  // Update my result
+  if(msg.playerId === state.myId) {
+    updateMyLotteryResult();
+  }
+
+  showToast(`${msg.playerName}: ${msg.item}`);
+}
+
+function updateMyLotteryResult() {
+  const myPicks = lotteryState.picked.filter(p => p.playerId === state.myId);
+
+  if(myPicks.length > 0) {
+    document.getElementById('myLotteryResult').style.display = 'block';
+    const list = document.getElementById('myResultList');
+    list.innerHTML = myPicks.map((p, i) =>
+      `<div class="result-item">${i + 1}. ${p.item}</div>`
+    ).join('');
+  }
+}
+
+// ===== ROULETTE SPIN =====
+function spinRoulette() {
+  if(lotteryState.spinning) return;
+
+  const items = lotteryState.items;
+  if(!items || items.length < 2) return;
+
+  if(state.isHost) {
+    const randomIndex = Math.floor(Math.random() * items.length);
+    const resultItem = items[randomIndex];
+
+    // Calculate angle (add multiple full rotations + target angle)
+    const anglePerItem = 360 / items.length;
+    const targetAngle = randomIndex * anglePerItem;
+    const fullRotations = 5 + Math.floor(Math.random() * 3); // 5-7 full spins
+    const totalRotation = lotteryState.currentRotation + (fullRotations * 360) + (360 - targetAngle);
+
+    const spinData = {
+      type: 'roulette-spin',
+      resultItem: resultItem,
+      resultIndex: randomIndex,
+      totalRotation: totalRotation
+    };
+
+    broadcast(spinData);
+    handleRouletteSpin(spinData);
+  } else {
+    const host = Object.values(state.connections)[0];
+    if(host?.open) {
+      host.send(JSON.stringify({
+        type: 'roulette-spin-request',
+        playerId: state.myId,
+        playerName: state.myName
+      }));
+    }
+  }
+}
+
+function handleRouletteSpin(msg) {
+  lotteryState.spinning = true;
+  lotteryState.currentRotation = msg.totalRotation;
+
+  const wheel = document.getElementById('rouletteWheel');
+  const btn = document.getElementById('rouletteSpinBtn');
+  const resultDisplay = document.getElementById('rouletteResultDisplay');
+
+  if(btn) btn.disabled = true;
+  if(resultDisplay) resultDisplay.style.display = 'none';
+
+  if(wheel) {
+    wheel.style.transform = `rotate(${msg.totalRotation}deg)`;
+  }
+
+  // Show result after animation
+  setTimeout(() => {
+    lotteryState.spinning = false;
+    if(btn) btn.disabled = false;
+
+    if(resultDisplay) {
+      resultDisplay.style.display = 'block';
+      document.getElementById('rouletteResultText').textContent = msg.resultItem;
+    }
+
+    showToast(`🎉 결과: ${msg.resultItem}`);
+  }, 4000);
+}
+
+// ===== MODE SWITCHING =====
+function switchLotteryMode(mode) {
+  lotteryState.mode = mode;
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.classList.remove('active');
+  });
+
+  document.querySelector(`[data-mode="${mode}"]`)?.classList.add('active');
+
+  if(mode === 'lottery') {
+    document.getElementById('lotteryModeContainer').style.display = 'flex';
+    document.getElementById('rouletteModeContainer').style.display = 'none';
+
+    if(state.isHost && lotteryState.phase === 'setup') {
+      renderLotterySetup();
+    }
+  } else {
+    document.getElementById('lotteryModeContainer').style.display = 'none';
+    document.getElementById('rouletteModeContainer').style.display = 'flex';
+
+    if(state.isHost && lotteryState.phase === 'setup') {
+      renderRouletteSetup();
+    }
+  }
+}
+
+// ===== RENDERING =====
+function renderLotterySetup() {
+  const isHost = state.isHost;
+
+  document.getElementById('lotterySetupPanel').style.display = isHost ? 'block' : 'none';
+  document.getElementById('lotteryGridContainer').style.display = 'none';
+  document.getElementById('myLotteryResult').style.display = 'none';
+
+  if(!isHost) {
+    // Guest waiting
+    document.getElementById('lotteryModeContainer').innerHTML = `
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+        <div class="spinner"></div>
+        <div style="color:var(--text-dim);font-size:14px;">호스트가 설정 중...</div>
+      </div>
+    `;
+  }
+}
+
+function renderRouletteSetup() {
+  const isHost = state.isHost;
+
+  document.getElementById('rouletteSetupPanel').style.display = isHost ? 'block' : 'none';
+  document.getElementById('rouletteDisplayContainer').style.display = 'none';
+
+  if(!isHost) {
+    document.getElementById('rouletteModeContainer').innerHTML = `
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+        <div class="spinner"></div>
+        <div style="color:var(--text-dim);font-size:14px;">호스트가 설정 중...</div>
+      </div>
+    `;
+  }
+}
+
+function renderLotteryGame(stateData) {
+  lotteryState.grid = stateData.grid;
+  lotteryState.gridSize = stateData.gridSize;
+  lotteryState.items = stateData.items;
+  lotteryState.phase = 'playing';
+  lotteryState.picked = [];
+
+  document.getElementById('lotterySetupPanel').style.display = 'none';
+  document.getElementById('lotteryGridContainer').style.display = 'flex';
+  document.getElementById('myLotteryResult').style.display = 'none';
+
+  const grid = document.getElementById('lotteryGrid');
+  grid.style.gridTemplateColumns = `repeat(${stateData.gridSize}, 1fr)`;
+
+  const totalCount = stateData.grid.length;
+  document.getElementById('totalCount').textContent = totalCount;
+  document.getElementById('pickedCount').textContent = '0';
+
+  grid.innerHTML = stateData.grid.map((cell, i) => `
+    <div class="lottery-cell" data-cell-index="${i}" onclick="pickLotteryCell(${i})">
+      <div class="cell-content">?</div>
+    </div>
+  `).join('');
+}
+
+function renderRouletteGame(stateData) {
+  lotteryState.items = stateData.items;
+  lotteryState.phase = 'playing';
+  lotteryState.currentRotation = stateData.currentRotation || 0;
+
+  document.getElementById('rouletteSetupPanel').style.display = 'none';
+  document.getElementById('rouletteDisplayContainer').style.display = 'flex';
+  document.getElementById('rouletteResultDisplay').style.display = 'none';
+
+  // Draw roulette wheel
+  drawRouletteWheel(stateData.items);
+}
+
+function drawRouletteWheel(items) {
+  const canvas = document.getElementById('rouletteCanvas');
+  if(!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const radius = canvas.width / 2 - 10;
+
+  const anglePerItem = (2 * Math.PI) / items.length;
+
+  const colors = [
+    '#ff6b35', '#00e5ff', '#ff2d78', '#ffd700',
+    '#76ff03', '#e040fb', '#ff6e40', '#18ffff',
+    '#ffab40', '#69f0ae', '#ea80fc', '#ff80ab'
+  ];
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw segments
+  items.forEach((item, i) => {
+    const startAngle = i * anglePerItem - Math.PI / 2;
+    const endAngle = startAngle + anglePerItem;
+
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.closePath();
+
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw text
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(startAngle + anglePerItem / 2);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px "Noto Sans KR"';
+    ctx.fillText(item, radius * 0.6, 5);
+    ctx.restore();
+  });
+
+  // Center circle
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 20, 0, 2 * Math.PI);
+  ctx.fillStyle = '#1c1c3a';
+  ctx.fill();
+  ctx.strokeStyle = '#ff6b35';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+// ===== MESSAGE HANDLERS =====
+// Add to existing handleMessage function in main code:
+
+function handleLotteryMessage(peerId, msg) {
+  if(msg.type === 'lottery-state') {
+    showScreen('lotteryGame');
+
+    if(msg.state.mode === 'lottery') {
+      switchLotteryMode('lottery');
+      renderLotteryGame(msg.state);
+    } else {
+      switchLotteryMode('roulette');
+      renderRouletteGame(msg.state);
+    }
+  }
+  else if(msg.type === 'lottery-pick-request') {
+    if(state.isHost) {
+      const cell = lotteryState.grid[msg.index];
+      if(cell && !cell.revealed) {
+        cell.revealed = true;
+        cell.revealedBy = msg.playerId;
+
+        const response = {
+          type: 'lottery-pick',
+          index: msg.index,
+          item: cell.item,
+          playerId: msg.playerId,
+          playerName: msg.playerName
+        };
+
+        broadcast(response);
+        handleLotteryPick(response);
+      }
+    }
+  }
+  else if(msg.type === 'lottery-pick') {
+    handleLotteryPick(msg);
+  }
+  else if(msg.type === 'roulette-spin-request') {
+    if(state.isHost && !lotteryState.spinning) {
+      spinRoulette();
+    }
+  }
+  else if(msg.type === 'roulette-spin') {
+    handleRouletteSpin(msg);
+  }
+}
+
+
+// ===== INTEGRATION NOTES =====
+/*
+1. Add to handleMessage() function:
+   case 'lottery-state':
+   case 'lottery-pick-request':
+   case 'lottery-pick':
+   case 'roulette-spin-request':
+   case 'roulette-spin':
+     handleLotteryMessage(peerId, msg);
+     break;
+
+2. Update handleGameStart() function to add:
+   else if(msg.game === 'lottery') {
+     if(msg.state) {
+       showScreen('lotteryGame');
+       if(msg.state.mode === 'lottery') {
+         switchLotteryMode('lottery');
+         if(msg.state.phase === 'playing') {
+           renderLotteryGame(msg.state);
+         } else {
+           renderLotterySetup();
+         }
+       } else {
+         switchLotteryMode('roulette');
+         if(msg.state.phase === 'playing') {
+           renderRouletteGame(msg.state);
+         } else {
+           renderRouletteSetup();
+         }
+       }
+     }
+   }
+
+3. Update startLottery() function (replace the stub at line 1736)
+*/
+
+============================================
+END OF FILE
+============================================
