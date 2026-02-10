@@ -436,39 +436,187 @@ body {
   font-family: 'Black Han Sans', sans-serif; font-size: 14px; cursor: pointer;
 }
 
-/* ===== MAFIA FULL VERSION ===== */
+/* ===== MAFIA FULL VERSION - Tavern & Moonlight Theme ===== */
+
+/* ---------- Custom Properties ---------- */
 #mafiaGame {
+  --mf-wood-dark: #3b2314;
+  --mf-wood-mid: #5c3a1e;
+  --mf-wood-light: #7a5230;
+  --mf-wood-grain: #4a2e18;
+  --mf-gold: #d4a843;
+  --mf-gold-bright: #f5d576;
+  --mf-gold-dim: #a07830;
+  --mf-parchment: #e8d5b0;
+  --mf-parchment-dark: #c7b08a;
+  --mf-lantern: #ffb347;
+  --mf-lantern-glow: rgba(255,179,71,0.35);
+  --mf-night-bg: #0b0e1f;
+  --mf-night-mid: #141a33;
+  --mf-night-accent: #3a5ba0;
+  --mf-night-moon: #d4dff7;
+  --mf-night-star: #a8c4f0;
+  --mf-vote-green: #3a8a3e;
+  --mf-vote-green-bright: #4caf50;
+  --mf-mafia-red: #c0392b;
+  --mf-mafia-red-bright: #e74c3c;
+  --mf-citizen-blue: #5b8dd9;
+
   padding: 0;
   gap: 0;
   overflow: hidden;
+  position: relative;
+
+  /* Warm wood-panel tavern background */
   background:
-    radial-gradient(ellipse at 30% 80%, rgba(139,0,0,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 20%, rgba(26,31,58,0.08) 0%, transparent 50%),
-    var(--bg-dark);
+    /* subtle vertical grain lines */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 18px,
+      rgba(0,0,0,0.08) 18px,
+      rgba(0,0,0,0.08) 19px
+    ),
+    /* horizontal plank seams */
+    repeating-linear-gradient(
+      180deg,
+      transparent,
+      transparent 120px,
+      rgba(0,0,0,0.15) 120px,
+      rgba(0,0,0,0.15) 122px
+    ),
+    /* wood color gradient */
+    linear-gradient(
+      180deg,
+      #3b2314 0%,
+      #4a2e18 20%,
+      #5c3a1e 50%,
+      #4a2e18 80%,
+      #3b2314 100%
+    );
 }
 
-/* --- Top Bar --- */
+/* --- Lantern glow left & right --- */
+#mafiaGame::before,
+#mafiaGame::after {
+  content: '';
+  position: absolute;
+  top: 60px;
+  width: 160px;
+  height: 280px;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 50%;
+  opacity: 0.7;
+  animation: mf-lantern-flicker 4s ease-in-out infinite alternate;
+}
+#mafiaGame::before {
+  left: -60px;
+  background: radial-gradient(ellipse at center, rgba(255,179,71,0.30) 0%, rgba(255,140,30,0.10) 40%, transparent 70%);
+}
+#mafiaGame::after {
+  right: -60px;
+  background: radial-gradient(ellipse at center, rgba(255,179,71,0.30) 0%, rgba(255,140,30,0.10) 40%, transparent 70%);
+  animation-delay: 2s;
+}
+@keyframes mf-lantern-flicker {
+  0%   { opacity: 0.55; transform: scale(1); }
+  50%  { opacity: 0.75; transform: scale(1.05); }
+  100% { opacity: 0.60; transform: scale(0.98); }
+}
+
+/* ---- Night mode background ---- */
+#mafiaGame.night-mode {
+  background:
+    /* star field (tiny dots) */
+    radial-gradient(1px 1px at 15% 12%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 8%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 18%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 82% 6%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 25%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 22%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 15%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 10% 5%, rgba(255,255,255,0.35) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 72% 10%, rgba(200,220,255,0.7) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 30% 3%, rgba(200,220,255,0.5) 0%, transparent 100%),
+    /* moon glow */
+    radial-gradient(ellipse at 78% 8%, rgba(200,215,240,0.20) 0%, transparent 30%),
+    /* deep navy sky */
+    linear-gradient(180deg, #070a18 0%, #0b1028 30%, #101636 60%, #0d1228 100%);
+}
+
+/* Night mode: change lanterns to cool blue moonlight */
+#mafiaGame.night-mode::before {
+  background: radial-gradient(ellipse at center, rgba(100,140,220,0.20) 0%, rgba(70,100,180,0.08) 40%, transparent 70%);
+  animation-name: mf-moonlight-flicker;
+}
+#mafiaGame.night-mode::after {
+  background: radial-gradient(ellipse at center, rgba(100,140,220,0.20) 0%, rgba(70,100,180,0.08) 40%, transparent 70%);
+  animation-name: mf-moonlight-flicker;
+}
+@keyframes mf-moonlight-flicker {
+  0%   { opacity: 0.4; }
+  50%  { opacity: 0.55; }
+  100% { opacity: 0.45; }
+}
+
+/* ========== TOP BAR ========== */
 .mf-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: linear-gradient(180deg, rgba(20,20,42,0.98) 0%, rgba(20,20,42,0.85) 100%);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background:
+    linear-gradient(180deg,
+      rgba(30,18,8,0.97) 0%,
+      rgba(42,26,12,0.92) 60%,
+      rgba(50,30,14,0.85) 100%
+    );
+  border-bottom: 2px solid var(--mf-gold-dim);
+  box-shadow:
+    0 2px 12px rgba(0,0,0,0.5),
+    inset 0 -1px 0 rgba(212,168,67,0.15);
   flex-shrink: 0;
   z-index: 20;
+  position: relative;
 }
+#mafiaGame.night-mode .mf-topbar {
+  background:
+    linear-gradient(180deg,
+      rgba(8,10,24,0.97) 0%,
+      rgba(12,16,35,0.92) 60%,
+      rgba(16,20,44,0.85) 100%
+    );
+  border-bottom-color: rgba(80,110,180,0.4);
+  box-shadow:
+    0 2px 12px rgba(0,0,0,0.6),
+    inset 0 -1px 0 rgba(80,110,180,0.15);
+}
+
 .mf-topbar-left { display: flex; align-items: center; gap: 10px; }
+
 .mf-back-btn {
   width: 36px; height: 36px;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(90,60,20,0.4);
+  border: 1px solid var(--mf-gold-dim);
   border-radius: 10px;
-  color: var(--text);
+  color: var(--mf-gold-bright);
   font-size: 18px;
   cursor: pointer;
+  transition: all 0.2s;
 }
+.mf-back-btn:active {
+  transform: scale(0.92);
+  background: rgba(90,60,20,0.6);
+}
+#mafiaGame.night-mode .mf-back-btn {
+  background: rgba(30,40,80,0.5);
+  border-color: rgba(80,110,180,0.4);
+  color: var(--mf-night-moon);
+}
+
+/* Phase badge */
 .mf-phase-badge {
   display: flex; align-items: center; gap: 6px;
   padding: 6px 14px;
@@ -478,91 +626,160 @@ body {
   letter-spacing: 0.5px;
 }
 .mf-phase-badge.day {
-  background: linear-gradient(135deg, rgba(255,200,50,0.2), rgba(255,150,30,0.1));
-  color: #ffd700;
-  border: 1px solid rgba(255,215,0,0.3);
+  background: linear-gradient(135deg, rgba(212,168,67,0.30), rgba(160,120,48,0.15));
+  color: var(--mf-gold-bright);
+  border: 1px solid rgba(212,168,67,0.5);
+  text-shadow: 0 1px 4px rgba(212,168,67,0.3);
 }
 .mf-phase-badge.night {
-  background: linear-gradient(135deg, rgba(70,90,160,0.25), rgba(40,50,100,0.15));
-  color: #87a6d9;
-  border: 1px solid rgba(135,166,217,0.3);
+  background: linear-gradient(135deg, rgba(58,91,160,0.30), rgba(40,60,120,0.15));
+  color: var(--mf-night-moon);
+  border: 1px solid rgba(58,91,160,0.5);
+  text-shadow: 0 1px 4px rgba(100,140,220,0.3);
 }
 .mf-phase-badge.vote {
-  background: linear-gradient(135deg, rgba(255,45,120,0.2), rgba(200,30,80,0.1));
-  color: #ff6b9d;
-  border: 1px solid rgba(255,45,120,0.3);
+  background: linear-gradient(135deg, rgba(60,140,60,0.25), rgba(40,100,40,0.12));
+  color: #7dcc7d;
+  border: 1px solid rgba(76,175,80,0.4);
 }
 .mf-phase-badge.result {
-  background: linear-gradient(135deg, rgba(0,230,118,0.2), rgba(0,180,90,0.1));
-  color: #69f0ae;
-  border: 1px solid rgba(0,230,118,0.3);
+  background: linear-gradient(135deg, rgba(212,168,67,0.25), rgba(160,120,48,0.12));
+  color: var(--mf-gold-bright);
+  border: 1px solid rgba(212,168,67,0.4);
 }
+
+/* Timer box - gold clock style */
 .mf-timer-box {
   display: flex; align-items: center; gap: 5px;
-  padding: 6px 12px;
-  background: rgba(255,107,53,0.15);
-  border: 1px solid rgba(255,107,53,0.3);
+  padding: 6px 14px;
+  background: linear-gradient(135deg, rgba(212,168,67,0.25), rgba(160,120,48,0.15));
+  border: 2px solid var(--mf-gold);
   border-radius: 20px;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 18px;
-  color: var(--accent);
+  color: var(--mf-gold-bright);
+  box-shadow:
+    0 0 10px rgba(212,168,67,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  position: relative;
 }
 .mf-timer-box.urgent {
   animation: mf-timer-pulse 0.5s ease-in-out infinite;
-  color: #ff1744;
-  border-color: rgba(255,23,68,0.5);
-  background: rgba(255,23,68,0.15);
+  color: var(--mf-mafia-red-bright);
+  border-color: var(--mf-mafia-red);
+  background: linear-gradient(135deg, rgba(192,57,43,0.25), rgba(140,30,20,0.15));
+  box-shadow: 0 0 14px rgba(192,57,43,0.3);
 }
 @keyframes mf-timer-pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.08); }
 }
+#mafiaGame.night-mode .mf-timer-box {
+  background: linear-gradient(135deg, rgba(58,91,160,0.25), rgba(40,60,120,0.15));
+  border-color: rgba(100,140,220,0.5);
+  color: var(--mf-night-moon);
+  box-shadow: 0 0 10px rgba(80,120,200,0.15);
+}
+
 .mf-day-counter {
   font-size: 11px;
-  color: var(--text-dim);
+  color: var(--mf-gold);
   text-align: center;
   padding: 2px 0;
   font-weight: 700;
   letter-spacing: 1px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+#mafiaGame.night-mode .mf-day-counter {
+  color: var(--mf-night-star);
 }
 
-/* --- Role Banner --- */
+/* ========== ROLE BANNER - Parchment Card ========== */
 .mf-role-banner {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
   margin: 8px 14px 4px;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+
+  /* parchment texture base */
+  background:
+    /* subtle noise/grain */
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(139,109,64,0.04) 4px,
+      rgba(139,109,64,0.04) 5px
+    ),
+    linear-gradient(135deg, #d9c89e 0%, #c7b48a 30%, #d2c090 60%, #c4ae7e 100%);
+  box-shadow:
+    0 3px 12px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    inset 0 -1px 0 rgba(0,0,0,0.1);
 }
 .mf-role-banner.team-mafia {
-  background: linear-gradient(135deg, rgba(139,0,0,0.25), rgba(80,0,0,0.15));
-  border: 1px solid rgba(139,0,0,0.4);
+  border: 2px solid var(--mf-mafia-red);
+  box-shadow:
+    0 3px 12px rgba(0,0,0,0.4),
+    0 0 8px rgba(192,57,43,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.20);
 }
 .mf-role-banner.team-citizen {
-  background: linear-gradient(135deg, rgba(0,150,255,0.15), rgba(0,100,200,0.08));
-  border: 1px solid rgba(0,150,255,0.25);
+  border: 2px solid var(--mf-gold);
+  box-shadow:
+    0 3px 12px rgba(0,0,0,0.4),
+    0 0 8px rgba(212,168,67,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.25);
 }
-.mf-role-emoji { font-size: 36px; flex-shrink: 0; }
+.mf-role-emoji { font-size: 36px; flex-shrink: 0; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
 .mf-role-info { flex: 1; min-width: 0; }
 .mf-role-name {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 18px;
   margin-bottom: 2px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
-.mf-role-name.mafia-color { color: #ff4444; }
-.mf-role-name.citizen-color { color: #4fc3f7; }
+.mf-role-name.mafia-color { color: var(--mf-mafia-red); }
+.mf-role-name.citizen-color { color: #3a6e3a; }
 .mf-role-desc {
   font-size: 12px;
-  color: var(--text-dim);
+  color: #5a4a32;
   line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* --- Scrollable Content --- */
+/* Night mode role banner - darker parchment */
+#mafiaGame.night-mode .mf-role-banner {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(50,60,100,0.06) 4px,
+      rgba(50,60,100,0.06) 5px
+    ),
+    linear-gradient(135deg, #1a2040 0%, #1e2648 30%, #222c52 60%, #1a2040 100%);
+  box-shadow:
+    0 3px 12px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(100,140,220,0.08);
+}
+#mafiaGame.night-mode .mf-role-banner.team-citizen {
+  border-color: rgba(80,110,180,0.5);
+}
+#mafiaGame.night-mode .mf-role-banner.team-mafia {
+  border-color: rgba(180,50,40,0.6);
+}
+#mafiaGame.night-mode .mf-role-name.citizen-color { color: var(--mf-night-moon); }
+#mafiaGame.night-mode .mf-role-desc { color: rgba(168,196,240,0.6); }
+
+/* ========== SCROLLABLE CONTENT ========== */
 .mf-content {
   flex: 1;
   overflow-y: auto;
@@ -571,9 +788,11 @@ body {
   flex-direction: column;
   gap: 10px;
   -webkit-overflow-scrolling: touch;
+  position: relative;
+  z-index: 5;
 }
 
-/* --- Player Grid --- */
+/* ========== PLAYER GRID ========== */
 .mf-player-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -581,58 +800,140 @@ body {
 }
 .mf-player-grid.three-col { grid-template-columns: repeat(3, 1fr); }
 
+/* --- Player Card: Gold-bordered tavern card --- */
 .mf-player-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 5px;
   padding: 10px 6px 8px;
-  background: var(--bg-card);
-  border-radius: var(--radius-sm);
-  border: 2px solid transparent;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
   position: relative;
   overflow: hidden;
+
+  /* Wood card face */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(74,46,24,0.90) 0%,
+      rgba(60,36,16,0.95) 50%,
+      rgba(50,30,12,0.90) 100%
+    );
+  border: 2px solid var(--mf-gold-dim);
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(212,168,67,0.10),
+    inset 0 -1px 0 rgba(0,0,0,0.2);
+}
+.mf-player-card::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(212,168,67,0.12);
+  border-radius: 5px;
+  pointer-events: none;
 }
 .mf-player-card:active { transform: scale(0.96); }
-.mf-player-card.selectable:hover { border-color: rgba(255,255,255,0.15); }
+.mf-player-card.selectable:hover {
+  border-color: var(--mf-gold);
+  box-shadow:
+    0 2px 12px rgba(212,168,67,0.2),
+    inset 0 1px 0 rgba(212,168,67,0.15);
+}
 .mf-player-card.selected {
-  border-color: var(--accent3);
-  background: rgba(255,45,120,0.12);
-  box-shadow: 0 0 12px rgba(255,45,120,0.2);
+  border-color: var(--mf-vote-green-bright);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(40,80,40,0.5) 0%,
+      rgba(30,60,30,0.6) 100%
+    );
+  box-shadow:
+    0 0 14px rgba(76,175,80,0.25),
+    inset 0 1px 0 rgba(76,175,80,0.10);
 }
 .mf-player-card.selected-snipe {
-  border-color: #ff1744;
-  background: rgba(255,23,68,0.15);
-  box-shadow: 0 0 16px rgba(255,23,68,0.3);
+  border-color: var(--mf-mafia-red-bright);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(140,20,10,0.4) 0%,
+      rgba(100,15,8,0.5) 100%
+    );
+  box-shadow: 0 0 16px rgba(192,57,43,0.3);
 }
+
+/* Dead player */
 .mf-player-card.dead {
-  opacity: 0.3;
+  opacity: 0.45;
   pointer-events: none;
-  filter: grayscale(0.6);
+  border-color: rgba(100,70,40,0.3);
+}
+.mf-player-card.dead::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(60,20,10,0.4);
+  border-radius: 6px;
+  pointer-events: none;
 }
 .mf-player-card.dead .mf-dead-overlay {
   display: flex;
 }
 .mf-player-card.voted-on {
-  border-color: rgba(255,107,53,0.5);
+  border-color: var(--mf-gold);
+  box-shadow: 0 0 8px rgba(212,168,67,0.2);
 }
 .mf-player-card.is-me {
-  border-color: rgba(0,229,255,0.3);
+  border-color: var(--mf-gold-bright);
+  box-shadow:
+    0 0 12px rgba(245,213,118,0.15),
+    inset 0 0 8px rgba(245,213,118,0.05);
 }
 
+/* Night mode player cards */
+#mafiaGame.night-mode .mf-player-card {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(18,24,48,0.92) 0%,
+      rgba(14,18,38,0.95) 50%,
+      rgba(10,14,30,0.92) 100%
+    );
+  border-color: rgba(80,110,180,0.35);
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(80,110,180,0.06);
+}
+#mafiaGame.night-mode .mf-player-card::before {
+  border-color: rgba(80,110,180,0.08);
+}
+#mafiaGame.night-mode .mf-player-card.selectable:hover {
+  border-color: rgba(100,140,220,0.5);
+}
+#mafiaGame.night-mode .mf-player-card.is-me {
+  border-color: rgba(140,170,230,0.5);
+  box-shadow: 0 0 12px rgba(100,140,220,0.12);
+}
+
+/* Dead overlay */
 .mf-dead-overlay {
   display: none;
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(40,10,5,0.55);
   align-items: center;
   justify-content: center;
   font-size: 32px;
   z-index: 5;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
+  color: var(--mf-mafia-red-bright);
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
 }
+
+/* Player avatar */
 .mf-player-avatar {
   width: 48px; height: 48px;
   border-radius: 12px;
@@ -641,18 +942,27 @@ body {
   justify-content: center;
   font-size: 24px;
   flex-shrink: 0;
-  border: 2px solid rgba(255,255,255,0.08);
+  border: 2px solid rgba(212,168,67,0.20);
+  background: rgba(0,0,0,0.15);
 }
+#mafiaGame.night-mode .mf-player-avatar {
+  border-color: rgba(80,110,180,0.20);
+}
+
+/* Player name */
 .mf-player-name {
   font-size: 12px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--mf-parchment);
   text-align: center;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
+
+/* Role tag */
 .mf-player-role-tag {
   font-size: 10px;
   padding: 1px 6px;
@@ -660,21 +970,24 @@ body {
   font-weight: 700;
 }
 .mf-player-role-tag.mafia-tag {
-  background: rgba(255,0,0,0.2);
-  color: #ff6b6b;
+  background: rgba(192,57,43,0.30);
+  color: #ef6b5b;
+  border: 1px solid rgba(192,57,43,0.3);
 }
 .mf-player-role-tag.citizen-tag {
-  background: rgba(0,150,255,0.15);
-  color: #64b5f6;
+  background: rgba(58,91,160,0.20);
+  color: #8ab4ea;
+  border: 1px solid rgba(58,91,160,0.2);
 }
 
+/* Vote count badge */
 .mf-vote-count-badge {
   position: absolute;
   top: -2px;
   right: -2px;
   min-width: 22px; height: 22px;
-  background: linear-gradient(135deg, #e03131, #c92a2a);
-  border: 2px solid var(--bg-dark);
+  background: linear-gradient(135deg, var(--mf-mafia-red-bright), var(--mf-mafia-red));
+  border: 2px solid var(--mf-wood-dark);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -684,12 +997,15 @@ body {
   color: white;
   z-index: 10;
   animation: mf-badge-pop 0.3s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
 @keyframes mf-badge-pop {
   0% { transform: scale(0); }
   50% { transform: scale(1.3); }
   100% { transform: scale(1); }
 }
+
+/* Host crown */
 .mf-host-crown {
   position: absolute;
   top: -6px;
@@ -698,6 +1014,8 @@ body {
   z-index: 10;
   filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
 }
+
+/* Lover heart */
 .mf-lover-heart {
   position: absolute;
   top: -4px;
@@ -710,6 +1028,8 @@ body {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.2); }
 }
+
+/* Soldier shield */
 .mf-soldier-shield {
   position: absolute;
   bottom: 2px;
@@ -717,6 +1037,8 @@ body {
   font-size: 12px;
   z-index: 10;
 }
+
+/* Snipe used badge */
 .mf-snipe-used-badge {
   position: absolute;
   bottom: 2px;
@@ -726,23 +1048,28 @@ body {
   opacity: 0.5;
 }
 
-/* --- Night Action Panel --- */
+/* ========== NIGHT ACTION PANEL ========== */
 .mf-night-panel {
-  background: var(--bg-card);
-  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(20,26,51,0.95), rgba(14,18,38,0.98));
+  border-radius: 10px;
   padding: 14px;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(58,91,160,0.30);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(80,110,180,0.06);
 }
 .mf-night-title {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 16px;
-  color: #87a6d9;
+  color: var(--mf-night-moon);
   margin-bottom: 8px;
   text-align: center;
+  text-shadow: 0 0 12px rgba(100,140,220,0.3);
 }
 .mf-night-desc {
   font-size: 13px;
-  color: var(--text-dim);
+  color: rgba(168,196,240,0.6);
   text-align: center;
   margin-bottom: 12px;
   line-height: 1.5;
@@ -755,6 +1082,7 @@ body {
   font-size: 48px;
   margin-bottom: 10px;
   animation: mf-moon-float 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(180,200,240,0.3));
 }
 @keyframes mf-moon-float {
   0%, 100% { transform: translateY(0); }
@@ -762,29 +1090,31 @@ body {
 }
 .mf-night-waiting-text {
   font-size: 14px;
-  color: var(--text-dim);
+  color: rgba(168,196,240,0.5);
 }
 
-/* --- Chat Panel (Mafia / Spy) --- */
+/* ========== CHAT PANEL (Mafia / Spy) ========== */
 .mf-chat-panel {
-  background: var(--bg-card);
-  border-radius: var(--radius);
-  border: 1px solid rgba(139,0,0,0.3);
+  background:
+    linear-gradient(180deg, rgba(50,20,15,0.95), rgba(40,16,10,0.98));
+  border-radius: 10px;
+  border: 1px solid rgba(192,57,43,0.35);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   max-height: 180px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
 }
 .mf-chat-header {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: rgba(139,0,0,0.15);
-  border-bottom: 1px solid rgba(139,0,0,0.2);
+  background: rgba(192,57,43,0.20);
+  border-bottom: 1px solid rgba(192,57,43,0.25);
   font-size: 13px;
   font-weight: 700;
-  color: #ff6b6b;
+  color: var(--mf-mafia-red-bright);
 }
 .mf-chat-messages {
   flex: 1;
@@ -803,70 +1133,101 @@ body {
 }
 .mf-chat-msg .sender {
   font-weight: 700;
-  color: #ff8a80;
+  color: #ef8b80;
 }
 .mf-chat-msg .text {
-  color: var(--text);
+  color: var(--mf-parchment);
 }
 .mf-chat-input-row {
   display: flex;
   gap: 6px;
   padding: 8px;
-  background: rgba(0,0,0,0.2);
-  border-top: 1px solid rgba(139,0,0,0.15);
+  background: rgba(0,0,0,0.3);
+  border-top: 1px solid rgba(192,57,43,0.20);
 }
 .mf-chat-input {
   flex: 1;
   padding: 8px 12px;
   background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(192,57,43,0.25);
   border-radius: 8px;
-  color: var(--text);
+  color: var(--mf-parchment);
   font-size: 13px;
   font-family: 'Noto Sans KR', sans-serif;
   outline: none;
 }
-.mf-chat-input::placeholder { color: var(--text-dim); }
+.mf-chat-input::placeholder { color: rgba(200,160,130,0.4); }
+.mf-chat-input:focus { border-color: rgba(192,57,43,0.5); }
 .mf-chat-send-btn {
   padding: 8px 14px;
-  background: rgba(139,0,0,0.4);
-  border: 1px solid rgba(139,0,0,0.5);
+  background: rgba(192,57,43,0.45);
+  border: 1px solid rgba(192,57,43,0.55);
   border-radius: 8px;
-  color: #ff8a80;
+  color: #ef8b80;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   flex-shrink: 0;
+  transition: all 0.15s;
 }
-.mf-chat-send-btn:active { transform: scale(0.95); }
+.mf-chat-send-btn:active { transform: scale(0.95); background: rgba(192,57,43,0.6); }
 
-/* --- Action Buttons Area --- */
+/* ========== ACTION AREA (Bottom) ========== */
 .mf-action-area {
   padding: 10px 14px 14px;
-  background: linear-gradient(0deg, rgba(20,20,42,0.98) 0%, rgba(20,20,42,0.7) 100%);
-  border-top: 1px solid rgba(255,255,255,0.04);
+  background:
+    linear-gradient(0deg,
+      rgba(30,18,8,0.98) 0%,
+      rgba(42,26,12,0.90) 60%,
+      rgba(50,30,14,0.70) 100%
+    );
+  border-top: 2px solid var(--mf-gold-dim);
+  box-shadow:
+    0 -2px 12px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(212,168,67,0.10);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
   z-index: 20;
+  position: relative;
 }
+#mafiaGame.night-mode .mf-action-area {
+  background:
+    linear-gradient(0deg,
+      rgba(8,10,24,0.98) 0%,
+      rgba(12,16,35,0.90) 60%,
+      rgba(16,20,44,0.70) 100%
+    );
+  border-top-color: rgba(80,110,180,0.35);
+  box-shadow:
+    0 -2px 12px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(80,110,180,0.08);
+}
+
 .mf-message-box {
   font-size: 13px;
-  color: var(--text);
+  color: var(--mf-parchment);
   text-align: center;
   padding: 6px;
   line-height: 1.5;
   min-height: 24px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
+#mafiaGame.night-mode .mf-message-box {
+  color: var(--mf-night-moon);
+}
+
 .mf-btn-row {
   display: flex;
   gap: 8px;
 }
+
+/* Action buttons */
 .mf-action-btn {
   flex: 1;
   padding: 12px 16px;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   font-family: 'Noto Sans KR', sans-serif;
   font-weight: 900;
   font-size: 15px;
@@ -874,31 +1235,44 @@ body {
   transition: all 0.2s;
   border: none;
   text-align: center;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 .mf-action-btn:active { transform: scale(0.96); }
+
+/* Primary vote button - GREEN */
 .mf-action-btn.primary {
-  background: linear-gradient(135deg, var(--accent), #e55a2b);
+  background: linear-gradient(180deg, var(--mf-vote-green-bright) 0%, var(--mf-vote-green) 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(255,107,53,0.3);
+  border: 1px solid rgba(76,175,80,0.6);
+  box-shadow:
+    0 4px 12px rgba(58,138,62,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.15);
 }
 .mf-action-btn.primary:disabled {
   opacity: 0.4;
   pointer-events: none;
 }
 .mf-action-btn.secondary {
-  background: rgba(255,255,255,0.08);
-  color: var(--text);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(90,60,20,0.40);
+  color: var(--mf-parchment);
+  border: 1px solid rgba(212,168,67,0.25);
+}
+#mafiaGame.night-mode .mf-action-btn.secondary {
+  background: rgba(30,40,80,0.50);
+  color: var(--mf-night-moon);
+  border-color: rgba(80,110,180,0.25);
 }
 .mf-action-btn.danger {
-  background: linear-gradient(135deg, #d32f2f, #b71c1c);
+  background: linear-gradient(180deg, var(--mf-mafia-red-bright) 0%, var(--mf-mafia-red) 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(211,47,47,0.3);
+  border: 1px solid rgba(192,57,43,0.6);
+  box-shadow: 0 4px 12px rgba(192,57,43,0.3);
 }
 .mf-action-btn.snipe {
-  background: linear-gradient(135deg, #ff1744, #d50000);
+  background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(255,23,68,0.3);
+  border: 1px solid rgba(231,76,60,0.6);
+  box-shadow: 0 4px 12px rgba(192,57,43,0.3);
   font-size: 13px;
 }
 .mf-action-btn.snipe:disabled {
@@ -906,27 +1280,46 @@ body {
   pointer-events: none;
 }
 .mf-action-btn.extend {
-  background: rgba(255,215,0,0.15);
-  color: var(--gold);
-  border: 1px solid rgba(255,215,0,0.3);
+  background: rgba(212,168,67,0.20);
+  color: var(--mf-gold-bright);
+  border: 1px solid rgba(212,168,67,0.35);
   font-size: 13px;
 }
 
-/* --- Vote Status Panel --- */
+/* ========== VOTE STATUS PANEL ========== */
 .mf-vote-panel {
-  background: var(--bg-card);
-  border-radius: var(--radius);
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(139,109,64,0.03) 4px,
+      rgba(139,109,64,0.03) 5px
+    ),
+    linear-gradient(135deg, rgba(74,46,24,0.92), rgba(60,36,16,0.95));
+  border-radius: 10px;
   padding: 12px;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(212,168,67,0.25);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.35);
 }
+#mafiaGame.night-mode .mf-vote-panel {
+  background: linear-gradient(135deg, rgba(20,26,51,0.92), rgba(14,18,38,0.95));
+  border-color: rgba(80,110,180,0.25);
+}
+
 .mf-vote-title {
   font-size: 13px;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--mf-gold);
   margin-bottom: 10px;
   text-transform: uppercase;
   letter-spacing: 1px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
+#mafiaGame.night-mode .mf-vote-title {
+  color: var(--mf-night-moon);
+}
+
 .mf-vote-bars {
   display: flex;
   flex-direction: column;
@@ -939,7 +1332,7 @@ body {
 }
 .mf-vote-bar-name {
   font-size: 12px;
-  color: var(--text);
+  color: var(--mf-parchment);
   width: 52px;
   font-weight: 600;
   text-align: right;
@@ -950,15 +1343,18 @@ body {
 .mf-vote-bar-track {
   flex: 1;
   height: 20px;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0,0,0,0.35);
   border-radius: 10px;
   overflow: hidden;
   position: relative;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(212,168,67,0.12);
+}
+#mafiaGame.night-mode .mf-vote-bar-track {
+  border-color: rgba(80,110,180,0.12);
 }
 .mf-vote-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), #e55a2b);
+  background: linear-gradient(90deg, var(--mf-vote-green) 0%, var(--mf-vote-green-bright) 100%);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -969,15 +1365,19 @@ body {
   color: white;
   transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
   min-width: 0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
 }
 .mf-skip-count {
   font-size: 12px;
-  color: var(--text-dim);
+  color: rgba(200,170,120,0.5);
   text-align: center;
   margin-top: 8px;
 }
+#mafiaGame.night-mode .mf-skip-count {
+  color: rgba(168,196,240,0.4);
+}
 
-/* --- Events / Announcements --- */
+/* ========== EVENTS / ANNOUNCEMENTS ========== */
 .mf-events-list {
   display: flex;
   flex-direction: column;
@@ -988,35 +1388,36 @@ body {
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   line-height: 1.4;
   animation: mf-event-in 0.5s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 @keyframes mf-event-in {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .mf-event-item.death {
-  background: linear-gradient(135deg, rgba(139,0,0,0.25), rgba(80,0,0,0.15));
-  border: 1px solid rgba(139,0,0,0.4);
-  color: #ff6b6b;
+  background: linear-gradient(135deg, rgba(120,20,10,0.35), rgba(80,10,5,0.25));
+  border: 1px solid rgba(192,57,43,0.45);
+  color: #ef6b5b;
 }
 .mf-event-item.safe {
-  background: linear-gradient(135deg, rgba(0,200,100,0.15), rgba(0,150,80,0.08));
-  border: 1px solid rgba(0,200,100,0.3);
-  color: #69f0ae;
+  background: linear-gradient(135deg, rgba(40,100,40,0.25), rgba(30,80,30,0.15));
+  border: 1px solid rgba(58,138,62,0.35);
+  color: #7dcc7d;
 }
 .mf-event-item.info {
-  background: linear-gradient(135deg, rgba(51,154,240,0.15), rgba(24,100,171,0.08));
-  border: 1px solid rgba(51,154,240,0.3);
-  color: #64b5f6;
+  background: linear-gradient(135deg, rgba(40,60,120,0.25), rgba(30,45,90,0.15));
+  border: 1px solid rgba(58,91,160,0.35);
+  color: #8ab4ea;
 }
 .mf-event-item.snipe {
-  background: linear-gradient(135deg, rgba(255,23,68,0.2), rgba(200,0,50,0.12));
-  border: 1px solid rgba(255,23,68,0.5);
-  color: #ff5252;
+  background: linear-gradient(135deg, rgba(160,20,10,0.30), rgba(120,15,8,0.20));
+  border: 1px solid rgba(231,76,60,0.5);
+  color: #ef5350;
   animation: mf-event-in 0.5s cubic-bezier(0.4,0,0.2,1), mf-shake 0.4s ease-in-out 0.5s;
 }
 @keyframes mf-shake {
@@ -1025,22 +1426,24 @@ body {
   75% { transform: translateX(4px); }
 }
 .mf-event-item.vote-result {
-  background: linear-gradient(135deg, rgba(255,45,120,0.15), rgba(200,30,80,0.08));
-  border: 1px solid rgba(255,45,120,0.3);
-  color: #ff6b9d;
+  background: linear-gradient(135deg, rgba(76,175,80,0.20), rgba(58,138,62,0.12));
+  border: 1px solid rgba(76,175,80,0.35);
+  color: #7dcc7d;
 }
 .mf-event-item.immunity {
-  background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(200,170,0,0.08));
-  border: 1px solid rgba(255,215,0,0.3);
-  color: #ffd740;
+  background: linear-gradient(135deg, rgba(212,168,67,0.20), rgba(160,120,48,0.12));
+  border: 1px solid rgba(212,168,67,0.35);
+  color: var(--mf-gold-bright);
 }
 .mf-event-icon { font-size: 18px; flex-shrink: 0; }
 
-/* --- Result Screen Overlay --- */
+/* ========== RESULT SCREEN OVERLAY ========== */
 .mf-result-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.85);
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(60,36,16,0.3) 0%, transparent 60%),
+    rgba(15,8,3,0.90);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1058,12 +1461,13 @@ body {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 36px;
   text-align: center;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
-.mf-result-title.win { color: var(--gold); }
-.mf-result-title.lose { color: var(--text-dim); }
+.mf-result-title.win { color: var(--mf-gold-bright); }
+.mf-result-title.lose { color: #7a6a5a; }
 .mf-result-subtitle {
   font-size: 16px;
-  color: var(--text);
+  color: var(--mf-parchment);
   text-align: center;
 }
 .mf-result-roles {
@@ -1081,11 +1485,13 @@ body {
   align-items: center;
   gap: 3px;
   padding: 8px 4px;
-  background: var(--bg-card);
+  background:
+    linear-gradient(180deg, rgba(74,46,24,0.80), rgba(60,36,16,0.85));
+  border: 1px solid rgba(212,168,67,0.20);
   border-radius: 8px;
   font-size: 11px;
 }
-.mf-result-player.dead-result { opacity: 0.5; }
+.mf-result-player.dead-result { opacity: 0.45; }
 .mf-result-player-avatar {
   width: 36px; height: 36px;
   border-radius: 10px;
@@ -1095,7 +1501,7 @@ body {
 .mf-result-player-name {
   font-weight: 700;
   font-size: 11px;
-  color: var(--text);
+  color: var(--mf-parchment);
   max-width: 70px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1105,27 +1511,35 @@ body {
   font-size: 10px;
   font-weight: 700;
 }
-.mf-result-player-role.mafia-text { color: #ff6b6b; }
-.mf-result-player-role.citizen-text { color: #64b5f6; }
+.mf-result-player-role.mafia-text { color: var(--mf-mafia-red-bright); }
+.mf-result-player-role.citizen-text { color: #8ab4ea; }
 
 .mf-result-close-btn {
   padding: 12px 40px;
-  background: var(--accent);
-  border: none;
-  border-radius: var(--radius-sm);
-  color: white;
+  background: linear-gradient(180deg, var(--mf-gold) 0%, var(--mf-gold-dim) 100%);
+  border: 1px solid rgba(245,213,118,0.4);
+  border-radius: 8px;
+  color: #2a1a08;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 16px;
   cursor: pointer;
   margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(212,168,67,0.25);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+  transition: all 0.2s;
+}
+.mf-result-close-btn:active {
+  transform: scale(0.96);
 }
 
-/* --- Spy Info Panel --- */
+/* ========== SPY INFO PANEL ========== */
 .mf-spy-info {
-  background: var(--bg-card);
-  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(135deg, rgba(60,30,60,0.40), rgba(40,16,40,0.50));
+  border-radius: 8px;
   padding: 10px 12px;
-  border: 1px solid rgba(128,0,128,0.3);
+  border: 1px solid rgba(150,60,150,0.30);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 .mf-spy-info-title {
   font-size: 12px;
@@ -1142,16 +1556,19 @@ body {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 10px;
-  background: rgba(128,0,128,0.15);
+  background: rgba(150,60,150,0.20);
   color: #e1bee7;
+  border: 1px solid rgba(150,60,150,0.15);
 }
 
-/* --- Undertaker Info --- */
+/* ========== UNDERTAKER INFO ========== */
 .mf-undertaker-result {
-  background: var(--bg-card);
-  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(135deg, rgba(50,50,50,0.45), rgba(35,35,35,0.55));
+  border-radius: 8px;
   padding: 10px 12px;
-  border: 1px solid rgba(100,100,100,0.3);
+  border: 1px solid rgba(120,120,120,0.30);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 .mf-undertaker-result-title {
   font-size: 12px;
@@ -1160,79 +1577,124 @@ body {
   margin-bottom: 4px;
 }
 
-/* --- Night overlay tint --- */
+/* ========== NIGHT OVERLAY TINT ========== */
 .mf-night-tint {
   position: absolute;
   inset: 0;
-  background: rgba(10,12,30,0.4);
+  background:
+    radial-gradient(ellipse at 78% 8%, rgba(180,200,240,0.06) 0%, transparent 25%),
+    rgba(6,8,20,0.45);
   pointer-events: none;
   z-index: 1;
   transition: opacity 0.5s;
 }
 .mf-night-tint.hidden { opacity: 0; }
 
-/* --- Misc --- */
+/* ========== MISC ========== */
 .mf-divider {
   height: 1px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(212,168,67,0.12);
   margin: 4px 0;
+}
+#mafiaGame.night-mode .mf-divider {
+  background: rgba(80,110,180,0.12);
 }
 .mf-section-label {
   font-size: 12px;
   font-weight: 700;
-  color: var(--text-dim);
+  color: var(--mf-gold-dim);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 4px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+#mafiaGame.night-mode .mf-section-label {
+  color: rgba(168,196,240,0.5);
 }
 
-/* Night mode background shift */
-#mafiaGame.night-mode {
-  background:
-    radial-gradient(ellipse at 30% 80%, rgba(26,31,58,0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 20%, rgba(40,50,120,0.08) 0%, transparent 50%),
-    linear-gradient(180deg, #080818 0%, #0a0a16 100%);
-}
-
-/* Lover reveal */
+/* ========== LOVER REVEAL ========== */
 .mf-lover-reveal {
-  background: var(--bg-card);
-  border-radius: var(--radius);
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(180,80,120,0.03) 4px,
+      rgba(180,80,120,0.03) 5px
+    ),
+    linear-gradient(135deg, rgba(74,46,24,0.90), rgba(60,36,16,0.95));
+  border-radius: 10px;
   padding: 16px;
-  border: 1px solid rgba(255,105,180,0.3);
+  border: 1px solid rgba(255,105,180,0.35);
   text-align: center;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.35);
 }
 .mf-lover-reveal-title {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 18px;
   color: #ff69b4;
   margin-bottom: 8px;
+  text-shadow: 0 0 10px rgba(255,105,180,0.2);
 }
 .mf-lover-reveal-text {
   font-size: 14px;
-  color: var(--text);
+  color: var(--mf-parchment);
 }
 
-/* --- Spectator bar for dead players --- */
+/* ========== SPECTATOR BAR ========== */
 .mf-spectator-bar {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 8px 14px;
-  background: rgba(100,100,100,0.15);
-  border: 1px solid rgba(100,100,100,0.2);
-  border-radius: var(--radius-sm);
+  background: rgba(50,30,14,0.50);
+  border: 1px solid rgba(212,168,67,0.15);
+  border-radius: 8px;
   font-size: 13px;
-  color: var(--text-dim);
+  color: rgba(200,170,120,0.5);
+}
+#mafiaGame.night-mode .mf-spectator-bar {
+  background: rgba(14,18,38,0.50);
+  border-color: rgba(80,110,180,0.15);
+  color: rgba(168,196,240,0.4);
 }
 
-/* Scroll styling */
+/* ========== SCROLLBAR STYLING ========== */
 .mf-content::-webkit-scrollbar { width: 4px; }
 .mf-content::-webkit-scrollbar-track { background: transparent; }
-.mf-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.mf-content::-webkit-scrollbar-thumb { background: rgba(212,168,67,0.20); border-radius: 2px; }
+#mafiaGame.night-mode .mf-content::-webkit-scrollbar-thumb { background: rgba(80,110,180,0.20); }
 .mf-chat-messages::-webkit-scrollbar { width: 3px; }
-.mf-chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.mf-chat-messages::-webkit-scrollbar-thumb { background: rgba(192,57,43,0.30); border-radius: 2px; }
+
+/* ========== MOBILE RESPONSIVE ========== */
+@media (max-width: 360px) {
+  .mf-player-grid { gap: 6px; }
+  .mf-player-card { padding: 8px 4px 6px; }
+  .mf-player-avatar { width: 40px; height: 40px; font-size: 20px; }
+  .mf-player-name { font-size: 11px; }
+  .mf-topbar { padding: 8px 10px; }
+  .mf-role-banner { margin: 6px 10px 2px; padding: 10px 12px; gap: 10px; }
+  .mf-role-emoji { font-size: 28px; }
+  .mf-role-name { font-size: 16px; }
+  .mf-content { padding: 6px 10px; }
+  .mf-action-area { padding: 8px 10px 10px; }
+  .mf-action-btn { padding: 10px 12px; font-size: 14px; }
+  .mf-result-roles { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+}
+
+@media (max-width: 320px) {
+  .mf-player-grid { grid-template-columns: repeat(2, 1fr); }
+  .mf-player-grid.three-col { grid-template-columns: repeat(2, 1fr); }
+  .mf-timer-box { font-size: 16px; padding: 5px 10px; }
+  .mf-phase-badge { font-size: 14px; padding: 5px 10px; }
+}
+
+@media (min-width: 500px) {
+  .mf-player-grid { grid-template-columns: repeat(3, 1fr); }
+  .mf-result-roles { grid-template-columns: repeat(4, 1fr); max-width: 440px; }
+}
 
 /* ===== RESULT OVERLAY ===== */
 .result-overlay {
@@ -1286,19 +1748,21 @@ body {
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 
 /* TRUTH GAME CSS */
+/* Redesign: Metallic Dark + LED Dot-Matrix O/X + 3D Glow Buttons */
 
 /* ===== 전체 레이아웃 ===== */
 #truthGame {
   padding: 12px 16px;
   gap: 10px;
   background:
-    radial-gradient(ellipse at 30% 70%, rgba(0,230,118,0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 30%, rgba(255,23,68,0.04) 0%, transparent 50%),
-    linear-gradient(180deg, #0d0d14 0%, #0a0a12 50%, #08080e 100%);
+    radial-gradient(ellipse at 50% 0%, rgba(80,80,100,0.08) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 100%, rgba(40,40,60,0.12) 0%, transparent 40%),
+    linear-gradient(180deg, #0c0c10 0%, #101014 40%, #0a0a0e 100%);
   position: relative;
   overflow: hidden;
 }
 
+/* Brushed-metal scanline overlay */
 #truthGame::before {
   content: '';
   position: absolute;
@@ -1307,9 +1771,16 @@ body {
     repeating-linear-gradient(
       0deg,
       transparent,
-      transparent 2px,
-      rgba(255,255,255,0.008) 2px,
-      rgba(255,255,255,0.008) 4px
+      transparent 1px,
+      rgba(255,255,255,0.012) 1px,
+      rgba(255,255,255,0.012) 2px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3px,
+      rgba(255,255,255,0.006) 3px,
+      rgba(255,255,255,0.006) 4px
     );
   pointer-events: none;
   z-index: 0;
@@ -1323,23 +1794,31 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: linear-gradient(135deg, rgba(20,20,42,0.95), rgba(28,28,58,0.9));
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(255,255,255,0.06);
-  backdrop-filter: blur(10px);
+  background:
+    linear-gradient(180deg, rgba(35,35,45,0.95) 0%, rgba(25,25,32,0.95) 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(120,120,140,0.15);
+  border-top: 1px solid rgba(180,180,200,0.1);
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
 .truth-round-badge {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 15px;
-  color: var(--accent2);
-  letter-spacing: 2px;
+  color: #7af5ca;
+  letter-spacing: 3px;
+  text-shadow: 0 0 8px rgba(122,245,202,0.4), 0 0 20px rgba(122,245,202,0.15);
+  /* LED dot-matrix style */
+  text-transform: uppercase;
 }
 
 .truth-questioner-display {
   font-size: 13px;
   font-weight: 700;
-  color: var(--text-dim);
+  color: #8888a0;
+  letter-spacing: 0.5px;
 }
 
 /* ===== 메인 콘텐츠 ===== */
@@ -1373,9 +1852,12 @@ body {
 .truth-your-turn-badge {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 22px;
-  color: var(--gold);
+  color: #7af5ca;
   text-align: center;
-  text-shadow: 0 0 20px rgba(255,215,0,0.3);
+  text-shadow:
+    0 0 12px rgba(122,245,202,0.5),
+    0 0 30px rgba(122,245,202,0.2);
+  letter-spacing: 1px;
 }
 
 .truth-question-box {
@@ -1386,25 +1868,28 @@ body {
 .truth-textarea {
   width: 100%;
   padding: 16px;
-  background: var(--bg-surface);
-  border: 2px solid rgba(255,255,255,0.08);
-  border-radius: var(--radius-sm);
-  color: var(--text);
+  background: linear-gradient(180deg, #141418 0%, #18181e 100%);
+  border: 2px solid rgba(120,120,140,0.2);
+  border-radius: 8px;
+  color: #d0d0e0;
   font-size: 16px;
   font-family: inherit;
   outline: none;
   resize: none;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, box-shadow 0.3s;
   line-height: 1.5;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);
 }
 
 .truth-textarea:focus {
-  border-color: var(--accent2);
-  box-shadow: 0 0 20px rgba(0,229,255,0.1);
+  border-color: rgba(122,245,202,0.5);
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,0.3),
+    0 0 16px rgba(122,245,202,0.12);
 }
 
 .truth-textarea::placeholder {
-  color: var(--text-dim);
+  color: #555568;
   font-size: 14px;
 }
 
@@ -1413,7 +1898,7 @@ body {
   bottom: 8px;
   right: 12px;
   font-size: 11px;
-  color: var(--text-dim);
+  color: #555568;
 }
 
 .truth-submit-btn {
@@ -1429,12 +1914,12 @@ body {
 .truth-waiting-text {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 22px;
-  color: var(--text);
+  color: #d0d0e0;
 }
 
 .truth-waiting-sub {
   font-size: 14px;
-  color: var(--text-dim);
+  color: #666680;
   text-align: center;
 }
 
@@ -1448,9 +1933,10 @@ body {
 .truth-dots-loader span {
   width: 10px;
   height: 10px;
-  background: var(--accent2);
+  background: #7af5ca;
   border-radius: 50%;
   animation: truthDotPulse 1.4s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(122,245,202,0.5);
 }
 
 .truth-dots-loader span:nth-child(2) { animation-delay: 0.2s; }
@@ -1464,21 +1950,33 @@ body {
 /* ===== 질문 표시 ===== */
 .truth-question-display {
   width: 100%;
-  padding: 20px;
-  background: linear-gradient(135deg, rgba(20,20,42,0.95), rgba(28,28,58,0.85));
-  border-radius: var(--radius);
-  border: 1px solid rgba(0,229,255,0.15);
+  padding: 24px 20px;
+  background:
+    linear-gradient(135deg, rgba(30,30,38,0.95) 0%, rgba(22,22,28,0.95) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(120,120,140,0.15);
+  border-top: 1px solid rgba(180,180,200,0.08);
   text-align: center;
   position: relative;
   overflow: hidden;
+  box-shadow:
+    0 4px 20px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.03);
 }
 
+/* LED strip accent top */
 .truth-question-display::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent2));
+  height: 2px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #7af5ca 0px, #7af5ca 4px,
+      transparent 4px, transparent 8px
+    );
+  box-shadow: 0 0 8px rgba(122,245,202,0.4), 0 0 20px rgba(122,245,202,0.15);
 }
 
 .truth-question-display-small {
@@ -1492,9 +1990,13 @@ body {
 .truth-question-label {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 28px;
-  color: var(--accent2);
+  color: #7af5ca;
   margin-bottom: 8px;
-  text-shadow: 0 0 15px rgba(0,229,255,0.4);
+  text-shadow:
+    0 0 10px rgba(122,245,202,0.5),
+    0 0 30px rgba(122,245,202,0.2);
+  /* LED dot-matrix Q effect */
+  letter-spacing: 4px;
 }
 
 .truth-question-display-small .truth-question-label {
@@ -1507,12 +2009,13 @@ body {
   font-weight: 700;
   line-height: 1.5;
   word-break: keep-all;
+  color: #e0e0f0;
 }
 
-/* ===== O/X 투표 버튼 ===== */
+/* ===== O/X 투표 버튼 - 3D Glow ===== */
 .truth-vote-buttons {
   display: flex;
-  gap: 20px;
+  gap: 24px;
   width: 100%;
   justify-content: center;
   padding: 10px 0;
@@ -1540,7 +2043,7 @@ body {
   left: 50%;
   width: 0;
   height: 0;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.12);
   border-radius: 50%;
   transform: translate(-50%, -50%);
   transition: width 0.4s, height 0.4s;
@@ -1555,49 +2058,63 @@ body {
   transform: scale(0.92);
 }
 
-/* O 버튼 - 원형, 초록 */
+/* O 버튼 - 3D Glow 초록 */
 .truth-vote-o {
   border-radius: 50%;
-  background: linear-gradient(145deg, #00e676, #00c853);
+  background:
+    radial-gradient(circle at 40% 35%, #2aff8a 0%, #00c853 40%, #009640 100%);
   box-shadow:
-    0 6px 30px rgba(0,230,118,0.4),
+    0 0 0 3px rgba(0,200,83,0.3),
+    0 0 30px rgba(0,230,118,0.35),
     0 0 60px rgba(0,230,118,0.15),
-    inset 0 2px 4px rgba(255,255,255,0.25),
-    inset 0 -3px 6px rgba(0,0,0,0.2);
+    0 8px 24px rgba(0,0,0,0.5),
+    inset 0 2px 6px rgba(255,255,255,0.3),
+    inset 0 -4px 10px rgba(0,0,0,0.4);
+  border: 2px solid rgba(0,255,100,0.25);
 }
 
 .truth-vote-o:hover {
   box-shadow:
-    0 8px 40px rgba(0,230,118,0.5),
-    0 0 80px rgba(0,230,118,0.2),
-    inset 0 2px 4px rgba(255,255,255,0.25),
-    inset 0 -3px 6px rgba(0,0,0,0.2);
+    0 0 0 3px rgba(0,200,83,0.4),
+    0 0 40px rgba(0,230,118,0.5),
+    0 0 80px rgba(0,230,118,0.25),
+    0 8px 24px rgba(0,0,0,0.5),
+    inset 0 2px 6px rgba(255,255,255,0.3),
+    inset 0 -4px 10px rgba(0,0,0,0.4);
 }
 
-/* X 버튼 - 사각형, 빨강 */
+/* X 버튼 - 3D Glow 빨강 */
 .truth-vote-x {
-  border-radius: var(--radius);
-  background: linear-gradient(145deg, #ff1744, #d50000);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 40% 35%, #ff5566 0%, #e01030 40%, #b00020 100%);
   box-shadow:
-    0 6px 30px rgba(255,23,68,0.4),
+    0 0 0 3px rgba(224,16,48,0.3),
+    0 0 30px rgba(255,23,68,0.35),
     0 0 60px rgba(255,23,68,0.15),
-    inset 0 2px 4px rgba(255,255,255,0.25),
-    inset 0 -3px 6px rgba(0,0,0,0.2);
+    0 8px 24px rgba(0,0,0,0.5),
+    inset 0 2px 6px rgba(255,255,255,0.3),
+    inset 0 -4px 10px rgba(0,0,0,0.4);
+  border: 2px solid rgba(255,60,80,0.25);
 }
 
 .truth-vote-x:hover {
   box-shadow:
-    0 8px 40px rgba(255,23,68,0.5),
-    0 0 80px rgba(255,23,68,0.2),
-    inset 0 2px 4px rgba(255,255,255,0.25),
-    inset 0 -3px 6px rgba(0,0,0,0.2);
+    0 0 0 3px rgba(224,16,48,0.4),
+    0 0 40px rgba(255,23,68,0.5),
+    0 0 80px rgba(255,23,68,0.25),
+    0 8px 24px rgba(0,0,0,0.5),
+    inset 0 2px 6px rgba(255,255,255,0.3),
+    inset 0 -4px 10px rgba(0,0,0,0.4);
 }
 
 .truth-vote-symbol {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 48px;
   color: white;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  text-shadow:
+    0 0 12px rgba(255,255,255,0.4),
+    0 2px 8px rgba(0,0,0,0.3);
   line-height: 1;
 }
 
@@ -1605,6 +2122,7 @@ body {
   font-size: 14px;
   font-weight: 700;
   color: rgba(255,255,255,0.9);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
 .truth-vote-btn.selected {
@@ -1619,7 +2137,7 @@ body {
 
 @keyframes truthBtnPulse {
   0%   { transform: scale(1); }
-  30%  { transform: scale(1.1); }
+  30%  { transform: scale(1.15); }
   60%  { transform: scale(0.95); }
   100% { transform: scale(1); }
 }
@@ -1633,9 +2151,9 @@ body {
 .truth-voted-badge {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 20px;
-  color: var(--success);
+  color: #7af5ca;
   margin-bottom: 16px;
-  text-shadow: 0 0 15px rgba(0,230,118,0.3);
+  text-shadow: 0 0 12px rgba(122,245,202,0.4);
 }
 
 .truth-vote-progress {
@@ -1646,23 +2164,25 @@ body {
 
 .truth-progress-bar {
   width: 100%;
-  height: 8px;
-  background: var(--bg-surface);
-  border-radius: 4px;
+  height: 6px;
+  background: rgba(60,60,80,0.6);
+  border-radius: 3px;
   overflow: hidden;
   margin-bottom: 8px;
+  border: 1px solid rgba(120,120,140,0.1);
 }
 
 .truth-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent2), var(--accent));
-  border-radius: 4px;
+  background: linear-gradient(90deg, #7af5ca, #4de8b0);
+  border-radius: 3px;
   transition: width 0.4s ease;
+  box-shadow: 0 0 8px rgba(122,245,202,0.4);
 }
 
 .truth-progress-text {
   font-size: 14px;
-  color: var(--text-dim);
+  color: #8888a0;
   font-weight: 700;
 }
 
@@ -1670,18 +2190,21 @@ body {
 .truth-result-container {
   width: 100%;
   padding: 24px 20px;
-  background: linear-gradient(135deg, rgba(20,20,42,0.95), rgba(28,28,58,0.85));
-  border-radius: var(--radius);
-  border: 1px solid rgba(255,255,255,0.06);
+  background:
+    linear-gradient(135deg, rgba(28,28,35,0.95) 0%, rgba(20,20,26,0.95) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(120,120,140,0.12);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
 
 .truth-result-title {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 18px;
-  color: var(--text-dim);
+  color: #8888a0;
   text-align: center;
   margin-bottom: 20px;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
 }
 
 .truth-result-row {
@@ -1689,11 +2212,13 @@ body {
   align-items: center;
   gap: 16px;
   margin-bottom: 16px;
-  padding: 12px 16px;
-  background: rgba(0,0,0,0.2);
-  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 10px;
+  border: 1px solid rgba(120,120,140,0.08);
 }
 
+/* LED-style result icons */
 .truth-result-icon {
   width: 52px;
   height: 52px;
@@ -1705,17 +2230,27 @@ body {
   font-size: 26px;
   color: white;
   flex-shrink: 0;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  text-shadow: 0 0 8px rgba(255,255,255,0.3);
 }
 
 .truth-result-icon-o {
-  background: linear-gradient(145deg, #00e676, #00c853);
-  box-shadow: 0 4px 20px rgba(0,230,118,0.35), 0 0 40px rgba(0,230,118,0.1);
+  background:
+    radial-gradient(circle at 40% 35%, #2aff8a, #00c853 60%, #008030);
+  box-shadow:
+    0 0 20px rgba(0,230,118,0.4),
+    0 0 40px rgba(0,230,118,0.15),
+    inset 0 2px 4px rgba(255,255,255,0.2),
+    inset 0 -2px 4px rgba(0,0,0,0.3);
 }
 
 .truth-result-icon-x {
-  background: linear-gradient(145deg, #ff1744, #d50000);
-  box-shadow: 0 4px 20px rgba(255,23,68,0.35), 0 0 40px rgba(255,23,68,0.1);
+  background:
+    radial-gradient(circle at 40% 35%, #ff5566, #e01030 60%, #900018);
+  box-shadow:
+    0 0 20px rgba(255,23,68,0.4),
+    0 0 40px rgba(255,23,68,0.15),
+    inset 0 2px 4px rgba(255,255,255,0.2),
+    inset 0 -2px 4px rgba(0,0,0,0.3);
 }
 
 .truth-result-info {
@@ -1725,7 +2260,7 @@ body {
 .truth-result-count {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 28px;
-  color: var(--text);
+  color: #e0e0f0;
   margin-bottom: 6px;
 }
 
@@ -1742,21 +2277,22 @@ body {
   transition: all 0.3s ease;
 }
 
+/* LED glow dots */
 .truth-dot.filled-o {
-  background: var(--success);
-  box-shadow: 0 0 8px rgba(0,230,118,0.5);
+  background: #00e676;
+  box-shadow: 0 0 6px rgba(0,230,118,0.6), 0 0 12px rgba(0,230,118,0.3);
   animation: truthDotAppear 0.4s ease backwards;
 }
 
 .truth-dot.filled-x {
-  background: var(--danger);
-  box-shadow: 0 0 8px rgba(255,23,68,0.5);
+  background: #ff1744;
+  box-shadow: 0 0 6px rgba(255,23,68,0.6), 0 0 12px rgba(255,23,68,0.3);
   animation: truthDotAppear 0.4s ease backwards;
 }
 
 .truth-dot.empty {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(80,80,100,0.3);
+  border: 1px solid rgba(120,120,140,0.15);
 }
 
 @keyframes truthDotAppear {
@@ -1767,7 +2303,7 @@ body {
 .truth-result-total {
   text-align: center;
   font-size: 13px;
-  color: var(--text-dim);
+  color: #666680;
   margin-top: 4px;
   font-weight: 700;
 }
@@ -1779,7 +2315,7 @@ body {
 
 .truth-next-waiting {
   font-size: 14px;
-  color: var(--text-dim);
+  color: #666680;
   text-align: center;
   font-weight: 700;
 }
@@ -1789,12 +2325,15 @@ body {
   display: flex;
   gap: 8px;
   padding: 10px 8px;
-  background: linear-gradient(135deg, rgba(20,20,42,0.9), rgba(28,28,58,0.85));
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(255,255,255,0.04);
+  background:
+    linear-gradient(180deg, rgba(30,30,38,0.9) 0%, rgba(22,22,28,0.9) 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(120,120,140,0.1);
+  border-top: 1px solid rgba(180,180,200,0.05);
   overflow-x: auto;
   flex-shrink: 0;
   justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
 .truth-player-chip {
@@ -1816,10 +2355,14 @@ body {
   font-size: 18px;
   position: relative;
   transition: all 0.3s;
+  border: 2px solid rgba(120,120,140,0.15);
 }
 
 .truth-player-avatar.is-questioner {
-  box-shadow: 0 0 0 3px var(--gold), 0 0 16px rgba(255,215,0,0.4);
+  box-shadow:
+    0 0 0 3px rgba(122,245,202,0.4),
+    0 0 16px rgba(122,245,202,0.3);
+  border-color: #7af5ca;
 }
 
 .truth-player-avatar.has-voted::after {
@@ -1829,14 +2372,15 @@ body {
   right: -2px;
   width: 16px;
   height: 16px;
-  background: var(--success);
+  background: #7af5ca;
   border-radius: 50%;
   font-size: 9px;
-  color: white;
+  color: #0a0a0e;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
+  box-shadow: 0 0 6px rgba(122,245,202,0.4);
 }
 
 .truth-player-name {
@@ -1847,11 +2391,12 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: center;
-  color: var(--text-dim);
+  color: #8888a0;
 }
 
 .truth-player-name.active-name {
-  color: var(--gold);
+  color: #7af5ca;
+  text-shadow: 0 0 6px rgba(122,245,202,0.3);
 }
 
 /* QUICK DRAW CSS */
@@ -2395,28 +2940,41 @@ body {
 
 /* ========================================= */
 /* UP DOWN CSS */
+/* Redesign: Casino Green Felt, Check-Pattern Card Backs, */
+/* "K's Game" branding, Up=Green / Down=Blue, */
+/* Wood/Leather penalty buttons, King penalty=Red+Gold */
 /* ========================================= */
 .updown-top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 10px 14px;
-  background: var(--bg-card);
-  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, rgba(10,32,18,0.95) 0%, rgba(6,24,12,0.95) 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(180,160,80,0.2);
+  border-bottom: 2px solid rgba(180,160,80,0.1);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
 }
 
 .updown-title {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 20px;
-  color: var(--gold);
+  color: #e8c86e;
+  text-shadow:
+    0 1px 3px rgba(0,0,0,0.6),
+    0 0 10px rgba(232,200,110,0.25);
+  letter-spacing: 2px;
 }
 
 .updown-turn-name {
   font-size: 15px;
   font-weight: 700;
-  color: var(--accent2);
+  color: #a8d8a8;
+  text-shadow: 0 0 6px rgba(168,216,168,0.2);
 }
 
+/* Casino green felt table */
 .updown-table {
   flex: 1;
   display: flex;
@@ -2424,11 +2982,44 @@ body {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: linear-gradient(135deg, #1a5f2f, #0f4520);
-  border-radius: var(--radius);
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(40,110,60,0.3) 0%, transparent 70%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+    linear-gradient(135deg, #1a6b3a 0%, #145a2e 30%, #0f4a22 60%, #0a3a18 100%);
+  border-radius: 16px;
   margin: 0 12px;
   position: relative;
   min-height: 300px;
+  border: 3px solid #2a5a1e;
+  box-shadow:
+    inset 0 2px 8px rgba(0,0,0,0.3),
+    inset 0 0 40px rgba(0,0,0,0.15),
+    0 4px 16px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(180,160,80,0.15);
+}
+
+/* Subtle diamond pattern on felt */
+.updown-table::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 13px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 20px,
+      rgba(255,255,255,0.008) 20px,
+      rgba(255,255,255,0.008) 21px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 20px,
+      rgba(255,255,255,0.008) 20px,
+      rgba(255,255,255,0.008) 21px
+    );
+  pointer-events: none;
 }
 
 .updown-deck-count {
@@ -2437,10 +3028,13 @@ body {
   right: 12px;
   font-size: 13px;
   font-weight: 700;
-  color: rgba(255,255,255,0.7);
-  background: rgba(0,0,0,0.3);
-  padding: 6px 12px;
+  color: rgba(232,216,168,0.8);
+  background: rgba(0,0,0,0.35);
+  padding: 6px 14px;
   border-radius: 20px;
+  border: 1px solid rgba(180,160,80,0.2);
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(4px);
 }
 
 .updown-cards-row {
@@ -2464,8 +3058,9 @@ body {
 .updown-card-label {
   font-size: 11px;
   font-weight: 700;
-  color: rgba(255,255,255,0.6);
+  color: rgba(232,216,168,0.5);
   text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .updown-card {
@@ -2500,26 +3095,29 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.4),
+    0 1px 0 rgba(255,255,255,0.05);
 }
 
 .updown-card-front {
-  background: white;
+  background: linear-gradient(180deg, #fffff8 0%, #f5f0e0 100%);
   color: #1a1a2e;
-  border: 3px solid #ddd;
+  border: 2px solid #c8b888;
   font-weight: 900;
   font-size: 32px;
   transform: rotateY(180deg);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 0 20px rgba(200,180,120,0.1);
 }
 
 .updown-card-front.red {
-  color: #d32f2f;
-  border-color: #ffcdd2;
+  color: #c62828;
+  border-color: #e8c0a0;
 }
 
 .updown-card-front.black {
   color: #1a1a2e;
-  border-color: #ccc;
+  border-color: #b0a888;
 }
 
 .updown-card-front .updown-card-rank {
@@ -2533,19 +3131,41 @@ body {
   line-height: 1;
 }
 
+/* Check-pattern card back */
 .updown-card-back-face {
-  background: linear-gradient(135deg, #8b0000, #dc143c);
-  border: 3px solid #b22222;
+  background:
+    repeating-conic-gradient(
+      #8b1a1a 0% 25%,
+      #a02828 25% 50%
+    ) 0 0 / 14px 14px,
+    linear-gradient(135deg, #8b1a1a, #6b0a0a);
+  border: 3px solid #e8c86e;
   font-size: 48px;
-  color: rgba(255,255,255,0.3);
+  color: rgba(232,200,110,0.4);
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.4),
+    inset 0 0 20px rgba(0,0,0,0.2),
+    0 0 0 1px rgba(139,26,26,0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Gold frame inner line */
+.updown-card-back-face::before {
+  content: '';
+  position: absolute;
+  top: 4px; left: 4px; right: 4px; bottom: 4px;
+  border: 1px solid rgba(232,200,110,0.25);
+  border-radius: 4px;
+  pointer-events: none;
 }
 
 .updown-card-placeholder {
   width: 70px;
   height: 100px;
   border-radius: 8px;
-  background: rgba(255,255,255,0.05);
-  border: 2px dashed rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.03);
+  border: 2px dashed rgba(232,216,168,0.15);
 }
 
 .updown-result {
@@ -2554,21 +3174,20 @@ body {
   text-align: center;
   min-height: 40px;
   animation: resultPop 0.4s ease;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 
-@keyframes resultPop {
-  0% { transform: scale(0); opacity: 0; }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); opacity: 1; }
-}
-
+/* ===== Penalty List ===== */
 .updown-penalty-list {
   padding: 10px 16px;
-  background: var(--bg-card);
-  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, rgba(14,28,16,0.9) 0%, rgba(10,22,12,0.9) 100%);
+  border-radius: 8px;
   margin: 0 12px;
   max-height: 100px;
   overflow-y: auto;
+  border: 1px solid rgba(180,160,80,0.1);
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.2);
 }
 
 #updownPenaltyItems {
@@ -2579,12 +3198,14 @@ body {
 
 .updown-penalty-item {
   font-size: 12px;
-  color: var(--text-dim);
+  color: #a0a888;
   padding: 4px 8px;
-  background: var(--bg-surface);
+  background: rgba(0,0,0,0.2);
   border-radius: 6px;
+  border-left: 2px solid rgba(180,160,80,0.3);
 }
 
+/* ===== Action Area ===== */
 .updown-action-area {
   padding: 12px 16px;
   display: flex;
@@ -2598,10 +3219,11 @@ body {
   gap: 12px;
 }
 
+/* Up = Green, Down = Blue */
 .updown-btn {
   padding: 20px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 20px;
   cursor: pointer;
@@ -2610,11 +3232,20 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    inset 0 -2px 0 rgba(0,0,0,0.2);
+  position: relative;
+  overflow: hidden;
 }
 
 .updown-btn:active {
   transform: scale(0.95);
+  box-shadow:
+    0 2px 6px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    inset 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .updown-btn:disabled {
@@ -2623,15 +3254,20 @@ body {
 }
 
 .updown-btn-up {
-  background: linear-gradient(135deg, #2d6a4f, #40916c);
-  color: white;
+  background: linear-gradient(180deg, #2e8b57 0%, #1e6b40 50%, #185530 100%);
+  color: #d0ffd8;
+  border: 1px solid rgba(46,139,87,0.5);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 
 .updown-btn-down {
-  background: linear-gradient(135deg, #264653, #2a9d8f);
-  color: white;
+  background: linear-gradient(180deg, #2a6eaa 0%, #1e5588 50%, #163e68 100%);
+  color: #c8e0ff;
+  border: 1px solid rgba(42,110,170,0.5);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 
+/* Wood/Leather bet area */
 .updown-bet-area {
   display: flex;
   gap: 8px;
@@ -2641,60 +3277,73 @@ body {
 .updown-bet-input {
   flex: 1;
   padding: 10px 12px;
-  background: var(--bg-surface);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: var(--radius-sm);
-  color: var(--text);
+  background: rgba(10,22,12,0.8);
+  border: 1px solid rgba(180,160,80,0.2);
+  border-radius: 8px;
+  color: #d0d8c8;
   font-size: 13px;
   font-family: inherit;
   outline: none;
+  transition: border-color 0.3s;
 }
 
 .updown-bet-input:focus {
-  border-color: var(--accent);
+  border-color: rgba(232,200,110,0.5);
+  box-shadow: 0 0 8px rgba(232,200,110,0.1);
 }
 
+/* Wood/leather styled bet button */
 .updown-btn-bet {
   padding: 10px 16px;
-  background: linear-gradient(135deg, #8b4513, #a0522d);
-  color: white;
-  border: none;
-  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, #6b4423 0%, #553318 50%, #3d2410 100%);
+  color: #e8d0a0;
+  border: 1px solid rgba(180,140,80,0.35);
+  border-radius: 8px;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 14px;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s;
+  box-shadow:
+    0 2px 6px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    inset 0 -1px 0 rgba(0,0,0,0.2);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
 }
 
 .updown-btn-bet:active {
   transform: scale(0.95);
 }
 
+/* ===== Special Card Areas ===== */
 .updown-special-area {
   padding: 16px;
-  background: var(--bg-card);
-  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(14,28,16,0.92) 0%, rgba(10,22,12,0.92) 100%);
+  border-radius: 12px;
   margin: 0 12px;
-  border: 2px solid var(--accent);
+  border: 2px solid rgba(232,200,110,0.35);
   animation: specialGlow 2s ease infinite;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
 }
 
 @keyframes specialGlow {
-  0%, 100% { box-shadow: 0 0 10px rgba(255,107,53,0.3); }
-  50% { box-shadow: 0 0 20px rgba(255,107,53,0.6); }
+  0%, 100% { box-shadow: 0 0 10px rgba(232,200,110,0.2), 0 4px 16px rgba(0,0,0,0.3); }
+  50% { box-shadow: 0 0 20px rgba(232,200,110,0.4), 0 4px 16px rgba(0,0,0,0.3); }
 }
 
 .updown-special-title {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 18px;
-  color: var(--accent);
+  color: #e8c86e;
   margin-bottom: 6px;
+  text-shadow: 0 0 8px rgba(232,200,110,0.3);
 }
 
 .updown-special-desc {
   font-size: 12px;
-  color: var(--text-dim);
+  color: #8a9880;
   margin-bottom: 12px;
   line-height: 1.4;
 }
@@ -2710,14 +3359,15 @@ body {
 
 .updown-player-option {
   padding: 10px 8px;
-  background: var(--bg-surface);
-  border: 2px solid transparent;
-  border-radius: var(--radius-sm);
+  background: rgba(0,0,0,0.25);
+  border: 2px solid rgba(120,120,80,0.15);
+  border-radius: 8px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
   font-size: 12px;
   font-weight: 700;
+  color: #b0b8a0;
 }
 
 .updown-player-option:active {
@@ -2725,35 +3375,54 @@ body {
 }
 
 .updown-player-option.selected {
-  border-color: var(--accent2);
-  background: rgba(0,229,255,0.15);
+  border-color: #e8c86e;
+  background: rgba(232,200,110,0.1);
+  color: #e8d0a0;
 }
 
 .updown-player-option .player-avatar-sm {
   margin: 0 auto 4px;
 }
 
+/* Wood/leather special button */
 .updown-btn-special {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, var(--accent), #ff8f5a);
-  color: white;
-  border: none;
-  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, #6b4423 0%, #553318 50%, #3d2410 100%);
+  color: #e8d0a0;
+  border: 1px solid rgba(180,140,80,0.35);
+  border-radius: 10px;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 16px;
   cursor: pointer;
   transition: all 0.15s;
+  box-shadow:
+    0 3px 10px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    inset 0 -2px 0 rgba(0,0,0,0.2);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
 .updown-btn-special:active {
   transform: scale(0.97);
 }
 
+/* King Penalty Button = Red + Gold */
 .updown-btn-king {
-  background: linear-gradient(135deg, #c1121f, #780000);
+  background:
+    linear-gradient(180deg, #a82020 0%, #881010 50%, #680808 100%);
+  color: #ffe080;
+  border: 2px solid rgba(232,200,110,0.5);
+  box-shadow:
+    0 3px 10px rgba(168,32,32,0.3),
+    0 0 16px rgba(232,200,110,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 -2px 0 rgba(0,0,0,0.3);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 
+/* ===== Penalty Modal ===== */
 .updown-penalty-modal {
   display: none;
   position: fixed;
@@ -2761,7 +3430,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(10,10,18,0.95);
+  background: rgba(4,10,6,0.95);
   z-index: 150;
   align-items: center;
   justify-content: center;
@@ -2773,44 +3442,51 @@ body {
 }
 
 .updown-penalty-content {
-  background: var(--bg-card);
-  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, #1a2e1e 0%, #122218 100%);
+  border-radius: 16px;
   padding: 24px;
   max-width: 360px;
   width: 100%;
   text-align: center;
-  border: 2px solid var(--danger);
+  border: 2px solid rgba(232,200,110,0.25);
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
 .updown-penalty-title {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 32px;
-  color: var(--danger);
+  color: #ff4444;
   margin-bottom: 12px;
+  text-shadow: 0 0 16px rgba(255,68,68,0.3);
 }
 
 .updown-penalty-text {
   font-size: 20px;
   font-weight: 700;
-  color: var(--text);
+  color: #e0e8d8;
   margin-bottom: 8px;
   padding: 12px;
-  background: var(--bg-surface);
-  border-radius: var(--radius-sm);
+  background: rgba(0,0,0,0.25);
+  border-radius: 8px;
+  border: 1px solid rgba(180,160,80,0.15);
 }
 
 .updown-penalty-who {
   font-size: 14px;
-  color: var(--text-dim);
+  color: #8a9880;
   margin-bottom: 16px;
 }
 
+/* Wood/Leather styled modal buttons */
 .updown-btn-accept,
 .updown-btn-reject {
   width: 100%;
   padding: 14px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 16px;
   cursor: pointer;
@@ -2819,14 +3495,23 @@ body {
 }
 
 .updown-btn-accept {
-  background: var(--bg-surface);
-  color: var(--text);
-  border: 1px solid rgba(255,255,255,0.1);
+  background:
+    linear-gradient(180deg, #6b4423 0%, #553318 50%, #3d2410 100%);
+  color: #e8d0a0;
+  border: 1px solid rgba(180,140,80,0.3);
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 .updown-btn-reject {
-  background: linear-gradient(135deg, var(--danger), #ff4569);
-  color: white;
+  background:
+    linear-gradient(180deg, #cc2222 0%, #aa1111 50%, #880808 100%);
+  color: #ffcccc;
+  border: 1px solid rgba(255,100,100,0.3);
+  box-shadow:
+    0 2px 8px rgba(204,34,34,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .updown-btn-accept:active,
@@ -2836,25 +3521,56 @@ body {
 
 /* ============================== */
 /* YAHTZEE CSS */
+/* Redesign: Wood Table, Red Velvet Dice Tray (Gold Metal Frame), */
+/* 3D White Dice, Gold Score Text */
 /* ============================== */
 #yahtzeeGame.active {
   padding: 10px;
   gap: 8px;
-  background: linear-gradient(135deg, #5d4037, #6d4c41, #795548);
+  background:
+    radial-gradient(ellipse at 50% 80%, rgba(80,50,20,0.15) 0%, transparent 60%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(50,28,10,0.12) 0px, rgba(50,28,10,0.12) 2px,
+      transparent 2px, transparent 14px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(50,28,10,0.06) 0px, rgba(50,28,10,0.06) 1px,
+      transparent 1px, transparent 10px
+    ),
+    linear-gradient(180deg, #4a3020 0%, #3d2818 30%, #2e1c0e 60%, #241508 100%);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
+
+/* Wood grain noise */
+#yahtzeeGame.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+#yahtzeeGame.active > * { position: relative; z-index: 1; }
 
 .yahtzee-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: var(--bg-card);
-  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, rgba(30,18,8,0.9) 0%, rgba(22,14,6,0.9) 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(180,140,80,0.2);
+  border-top: 1px solid rgba(200,170,100,0.1);
   z-index: 10;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
 .yahtzee-turn-info {
@@ -2865,32 +3581,38 @@ body {
 .yahtzee-turn-text {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 16px;
-  color: var(--text);
+  color: #e8d0a0;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 .yahtzee-current-player {
   font-size: 11px;
-  color: var(--text-dim);
+  color: #8a7a60;
   margin-top: 2px;
 }
 
 .yahtzee-rolls-left {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 18px;
-  color: var(--accent2);
+  color: #e8c86e;
   min-width: 60px;
   text-align: right;
+  text-shadow: 0 0 8px rgba(232,200,110,0.3);
 }
 
+/* Players bar - dark wood panel */
 .yahtzee-players-bar {
   display: flex;
   justify-content: center;
   gap: 8px;
   padding: 8px;
-  background: var(--bg-card);
-  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, rgba(26,16,6,0.9) 0%, rgba(20,12,4,0.9) 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(180,140,80,0.12);
   flex-wrap: wrap;
   flex-shrink: 0;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.2);
 }
 
 .yahtzee-player-mini {
@@ -2899,15 +3621,17 @@ body {
   align-items: center;
   gap: 3px;
   padding: 6px;
-  background: var(--bg-surface);
-  border-radius: var(--radius-sm);
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
   border: 2px solid transparent;
   min-width: 55px;
+  transition: all 0.3s;
 }
 
 .yahtzee-player-mini.active {
-  border-color: var(--accent);
-  box-shadow: 0 0 10px rgba(255,107,53,0.3);
+  border-color: #e8c86e;
+  box-shadow: 0 0 12px rgba(232,200,110,0.3);
+  background: rgba(232,200,110,0.06);
 }
 
 .yahtzee-player-mini-avatar {
@@ -2927,24 +3651,51 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: #b0a080;
 }
 
 .yahtzee-player-mini-score {
   font-size: 11px;
-  color: var(--gold);
+  color: #e8c86e;
   font-weight: 700;
+  text-shadow: 0 0 4px rgba(232,200,110,0.3);
 }
 
+/* ===== Red Velvet Dice Tray with Gold Metal Frame ===== */
 .yahtzee-dice-area {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 12px;
-  background: rgba(10,10,18,0.4);
-  border-radius: var(--radius);
-  border: 2px solid rgba(255,255,255,0.1);
+  padding: 14px 16px;
+  /* Red velvet background */
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(160,30,30,0.2) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #5a1818 0%, #4a1010 40%, #3a0808 100%);
+  border-radius: 12px;
+  /* Gold metal frame */
+  border: 3px solid #c8a040;
+  box-shadow:
+    0 0 0 1px rgba(180,140,60,0.3),
+    0 0 0 5px rgba(40,24,10,0.8),
+    0 0 0 6px rgba(180,140,60,0.2),
+    inset 0 2px 8px rgba(0,0,0,0.4),
+    inset 0 0 30px rgba(0,0,0,0.2),
+    0 4px 16px rgba(0,0,0,0.4);
   flex-shrink: 0;
+  position: relative;
+}
+
+/* Velvet sheen highlight */
+.yahtzee-dice-area::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
+  border-radius: 9px 9px 0 0;
+  pointer-events: none;
 }
 
 .yahtzee-dice-container {
@@ -2952,8 +3703,11 @@ body {
   gap: 6px;
   justify-content: center;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
+/* ===== 3D White Dice ===== */
 .yahtzee-die {
   width: 52px;
   height: 52px;
@@ -2974,22 +3728,32 @@ body {
 .yahtzee-die-face {
   width: 100%;
   height: 100%;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  background:
+    linear-gradient(145deg, #ffffff 0%, #f0f0f0 40%, #e0e0e0 100%);
+  border-radius: 10px;
+  box-shadow:
+    0 4px 8px rgba(0,0,0,0.35),
+    0 2px 4px rgba(0,0,0,0.2),
+    inset 0 1px 2px rgba(255,255,255,0.9),
+    inset 0 -2px 4px rgba(0,0,0,0.08);
   display: grid;
   grid-template-areas:
     "a . c"
     "e g f"
     "d . b";
   padding: 6px;
-  border: 3px solid transparent;
-  transition: border-color 0.2s;
+  border: 2px solid transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .yahtzee-die.held .yahtzee-die-face {
-  border-color: #2196F3;
-  box-shadow: 0 0 0 2px #2196F3, 0 4px 12px rgba(0,0,0,0.3);
+  border-color: #e8c86e;
+  box-shadow:
+    0 0 0 2px #e8c86e,
+    0 0 12px rgba(232,200,110,0.4),
+    0 4px 8px rgba(0,0,0,0.35),
+    inset 0 1px 2px rgba(255,255,255,0.9),
+    inset 0 -2px 4px rgba(0,0,0,0.08);
 }
 
 .yahtzee-die.rolling .yahtzee-die-inner {
@@ -3003,12 +3767,15 @@ body {
   75% { transform: translateY(-10px) rotate(270deg); }
 }
 
+/* Dark pips for 3D dice */
 .pip {
   display: block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #1a1a2e;
+  background:
+    radial-gradient(circle at 40% 35%, #3a2a18, #1a1008);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
 }
 
 .yahtzee-die-face[data-value="1"] .pip:nth-child(1) { grid-area: g; }
@@ -3040,13 +3807,26 @@ body {
 
 .yahtzee-roll-hint {
   font-size: 11px;
-  color: var(--text-dim);
+  color: rgba(232,200,140,0.5);
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
+/* Roll button - polished wood */
 .yahtzee-roll-btn {
-  background: linear-gradient(135deg, #2196F3, #1976D2);
+  background:
+    linear-gradient(180deg, #6b4423 0%, #553318 50%, #3d2410 100%);
+  color: #e8d0a0;
   max-width: 240px;
+  border: 1px solid rgba(180,140,80,0.35);
+  box-shadow:
+    0 3px 10px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    inset 0 -2px 0 rgba(0,0,0,0.2);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  position: relative;
+  z-index: 1;
 }
 
 .yahtzee-roll-btn:disabled {
@@ -3054,24 +3834,32 @@ body {
   cursor: not-allowed;
 }
 
+/* ===== Scorecard - Gold Score Theme ===== */
 .yahtzee-scorecard-area {
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  background: var(--bg-card);
-  border-radius: var(--radius);
-  border: 1px solid rgba(255,255,255,0.06);
+  background:
+    linear-gradient(180deg, rgba(26,16,6,0.92) 0%, rgba(20,12,4,0.92) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(180,140,80,0.15);
+  border-top: 1px solid rgba(200,170,100,0.08);
   flex: 1;
   overflow-y: auto;
+  box-shadow:
+    0 2px 10px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
 .yahtzee-scorecard-title {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 16px;
   text-align: center;
-  color: var(--text);
+  color: #e8c86e;
   margin-bottom: 4px;
+  text-shadow: 0 0 6px rgba(232,200,110,0.25);
+  letter-spacing: 1px;
 }
 
 .yahtzee-score-table {
@@ -3081,11 +3869,13 @@ body {
 }
 
 .yahtzee-score-table th {
-  background: var(--bg-surface);
+  background: rgba(40,24,10,0.7);
   padding: 8px;
   text-align: left;
   font-weight: 700;
-  border-bottom: 2px solid rgba(255,255,255,0.1);
+  border-bottom: 2px solid rgba(180,140,80,0.2);
+  color: #c8a870;
+  letter-spacing: 0.5px;
 }
 
 .yahtzee-score-table th:last-child {
@@ -3099,7 +3889,7 @@ body {
 }
 
 .yahtzee-score-row:hover {
-  background: rgba(255,255,255,0.03);
+  background: rgba(232,200,110,0.04);
 }
 
 .yahtzee-score-row.filled {
@@ -3108,41 +3898,44 @@ body {
 }
 
 .yahtzee-score-row.selected {
-  background: rgba(255,152,0,0.2);
-  border-left: 3px solid #FF9800;
+  background: rgba(232,200,110,0.12);
+  border-left: 3px solid #e8c86e;
 }
 
 .yahtzee-score-row.preview {
-  background: rgba(33,150,243,0.15);
+  background: rgba(232,200,110,0.08);
 }
 
 .yahtzee-score-row td {
   padding: 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(180,140,80,0.08);
 }
 
 .yahtzee-cat-name {
   font-weight: 600;
+  color: #c0a880;
 }
 
 .yahtzee-cat-score {
   text-align: center;
   font-weight: 700;
-  color: var(--text);
+  color: #e0d0b0;
 }
 
 .yahtzee-score-row.preview .yahtzee-cat-score {
-  color: var(--accent2);
+  color: #e8c86e;
+  text-shadow: 0 0 6px rgba(232,200,110,0.3);
 }
 
 .yahtzee-score-row.filled .yahtzee-cat-score {
-  color: var(--text-dim);
+  color: #8a7a60;
 }
 
+/* Subtotal / Bonus / Total rows - gold accented */
 .yahtzee-subtotal-row,
 .yahtzee-bonus-row,
 .yahtzee-total-row {
-  background: rgba(255,255,255,0.04);
+  background: rgba(180,140,80,0.06);
   font-weight: 700;
 }
 
@@ -3150,16 +3943,18 @@ body {
 .yahtzee-bonus-row td,
 .yahtzee-total-row td {
   padding: 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(180,140,80,0.15);
   text-align: left;
+  color: #c0a880;
 }
 
 .yahtzee-subtotal-row td:last-child,
 .yahtzee-bonus-row td:last-child,
 .yahtzee-total-row td:last-child {
   text-align: center;
-  color: var(--gold);
+  color: #e8c86e;
   font-family: 'Black Han Sans', sans-serif;
+  text-shadow: 0 0 6px rgba(232,200,110,0.3);
 }
 
 .yahtzee-divider-row {
@@ -3171,20 +3966,29 @@ body {
   border: none;
 }
 
+/* Score confirm button - polished gold */
 .yahtzee-score-btn {
-  background: linear-gradient(135deg, #FF9800, #F57C00);
-  color: white;
+  background:
+    linear-gradient(180deg, #d4a040 0%, #b08428 50%, #8a6418 100%);
+  color: #fff8e0;
   max-width: 240px;
   margin: 0 auto;
+  border: 1px solid rgba(232,200,110,0.4);
+  box-shadow:
+    0 3px 10px rgba(180,130,40,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.2),
+    inset 0 -2px 0 rgba(0,0,0,0.15);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
+/* ===== Game Over Screen ===== */
 .yahtzee-game-over {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(10,10,18,0.95);
+  background: rgba(10,6,2,0.95);
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -3195,11 +3999,14 @@ body {
 }
 
 .yahtzee-final-scores {
-  background: var(--bg-card);
-  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(30,20,10,0.95) 0%, rgba(22,14,6,0.95) 100%);
+  border-radius: 16px;
   padding: 20px;
   width: 100%;
   max-width: 340px;
+  border: 2px solid rgba(232,200,110,0.25);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
 
 .yahtzee-final-title {
@@ -3207,9 +4014,10 @@ body {
   font-size: 32px;
   text-align: center;
   margin-bottom: 16px;
-  background: linear-gradient(135deg, var(--gold), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #e8c86e;
+  text-shadow:
+    0 0 12px rgba(232,200,110,0.4),
+    0 2px 4px rgba(0,0,0,0.5);
 }
 
 .yahtzee-rankings {
@@ -3223,14 +4031,16 @@ body {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: var(--bg-surface);
-  border-radius: var(--radius-sm);
+  background: rgba(0,0,0,0.25);
+  border-radius: 10px;
   border-left: 3px solid transparent;
+  border: 1px solid rgba(180,140,80,0.08);
 }
 
 .yahtzee-rank-item.first {
-  border-left-color: var(--gold);
-  background: rgba(255,215,0,0.08);
+  border-left: 3px solid #e8c86e;
+  background: rgba(232,200,110,0.08);
+  box-shadow: 0 0 16px rgba(232,200,110,0.1);
 }
 
 .yahtzee-rank-item.second {
@@ -3244,7 +4054,7 @@ body {
 .yahtzee-rank-number {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 20px;
-  color: var(--text-dim);
+  color: #8a7a60;
   min-width: 25px;
 }
 
@@ -3265,53 +4075,143 @@ body {
 .yahtzee-rank-name {
   font-weight: 700;
   font-size: 15px;
+  color: #d0c0a0;
 }
 
 .yahtzee-rank-score {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 18px;
-  color: var(--gold);
+  color: #e8c86e;
+  text-shadow: 0 0 6px rgba(232,200,110,0.3);
 }
 
 /* ===== E CARD CSS ===== */
+
+/* -- E-Card Design Tokens -- */
 #ecardGame {
-  background: linear-gradient(135deg, #0a4d0a 0%, #064206 100%);
-  padding: 12px;
-  gap: 8px;
+  --felt-green: #1a5c2a;
+  --felt-dark: #0e3a18;
+  --felt-light: #237a38;
+  --wood-frame: #5c3a1e;
+  --wood-highlight: #8b6914;
+  --wood-shadow: #3a2210;
+  --card-gold-border: #c9a84c;
+  --card-gold-glow: rgba(201, 168, 76, 0.5);
+  --velvet-red: #8b1a2b;
+  --velvet-dark: #5c0e1a;
+  --emperor-gold: #d4a520;
+  --emperor-glow: rgba(212, 165, 32, 0.6);
+  --citizen-silver: #8a9bae;
+  --slave-dark: #2a2a3a;
 }
 
+/* -- Felt Table Background -- */
+#ecardGame {
+  background:
+    url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 50% 50%, var(--felt-light) 0%, var(--felt-green) 40%, var(--felt-dark) 100%);
+  padding: 0;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+  border: 6px solid var(--wood-frame);
+  box-shadow:
+    inset 0 0 60px rgba(0,0,0,0.4),
+    inset 0 0 120px rgba(0,0,0,0.15),
+    0 0 0 2px var(--wood-shadow),
+    0 0 0 8px var(--wood-highlight),
+    0 0 0 10px var(--wood-shadow),
+    0 8px 30px rgba(0,0,0,0.7);
+}
+
+/* -- Felt Texture Overlay -- */
+#ecardGame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(0,0,0,0.02) 1px,
+      rgba(0,0,0,0.02) 2px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      rgba(0,0,0,0.015) 1px,
+      rgba(0,0,0,0.015) 2px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+#ecardGame > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* -- Top Bar: Wood Trim -- */
 .ecard-top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background: rgba(20, 20, 42, 0.8);
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  padding: 10px 14px;
+  background:
+    linear-gradient(180deg, #5c3a1e 0%, #4a2e16 50%, #3a2210 100%);
+  border-bottom: 2px solid #8b6914;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 3px 10px rgba(0,0,0,0.5);
+}
+
+.ecard-top-bar .back-btn {
+  background: rgba(0,0,0,0.3) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  border-radius: 6px !important;
+  color: #d4c4a0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .ecard-title {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 18px;
-  color: var(--gold);
-  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  font-size: 19px;
+  color: #ffd700;
+  text-shadow:
+    0 1px 0 #b8860b,
+    0 2px 4px rgba(0,0,0,0.6),
+    0 0 12px rgba(255,215,0,0.3);
+  letter-spacing: 1px;
 }
 
 .ecard-round {
   font-size: 13px;
   font-weight: 700;
-  color: var(--text-dim);
+  color: #d4c4a0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
+/* -- Score Board: Brass Plaque -- */
 .ecard-score {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  padding: 12px;
-  background: rgba(20, 20, 42, 0.6);
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  gap: 20px;
+  padding: 12px 20px;
+  margin: 8px 12px 4px;
+  background:
+    linear-gradient(135deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.2) 100%);
+  border-radius: 12px;
+  border: 2px solid rgba(201,168,76,0.3);
+  box-shadow:
+    inset 0 2px 8px rgba(0,0,0,0.3),
+    0 1px 0 rgba(255,255,255,0.05);
 }
 
 .score-item {
@@ -3322,62 +4222,78 @@ body {
 
 .score-icon {
   font-size: 28px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
 .score-value {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 32px;
-  color: var(--gold);
-  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+  font-size: 34px;
+  color: #ffd700;
+  text-shadow:
+    0 0 10px rgba(255,215,0,0.5),
+    0 2px 4px rgba(0,0,0,0.6);
 }
 
 .score-divider {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 32px;
-  color: var(--text-dim);
+  color: rgba(255,255,255,0.25);
 }
 
+/* -- Role Badge: Gold Emblem -- */
 .ecard-role-display {
   display: flex;
   justify-content: center;
-  padding: 8px;
+  padding: 6px 12px;
 }
 
 .role-badge {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 20px;
-  background: rgba(20, 20, 42, 0.8);
-  border-radius: 20px;
-  border: 2px solid var(--gold);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  padding: 10px 24px;
+  background:
+    linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.25) 100%);
+  border-radius: 24px;
+  border: 2px solid var(--card-gold-border);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 0 20px var(--card-gold-glow);
 }
 
 .role-icon {
   font-size: 32px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
 .role-text {
   font-weight: 700;
   font-size: 15px;
-  color: var(--text);
+  color: #e8dcc8;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 .role-text span {
-  color: var(--gold);
+  color: #ffd700;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 17px;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
 }
 
+/* -- Opponent Area: Recessed Felt -- */
 .ecard-opponent-area {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   padding: 12px;
-  background: rgba(20, 20, 42, 0.5);
-  border-radius: var(--radius-sm);
+  margin: 0 12px;
+  background:
+    radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.25) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.2);
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
   min-height: 120px;
 }
 
@@ -3396,72 +4312,90 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 28px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(201,168,76,0.4);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.4);
 }
 
 .ecard-opponent-area .opponent-name {
   font-weight: 700;
   font-size: 14px;
+  color: #e8dcc8;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 .opponent-cards-count {
   font-size: 12px;
-  color: var(--text-dim);
+  color: rgba(200,190,160,0.6);
 }
 
 .opponent-played-card {
   margin-top: 8px;
 }
 
+/* -- Battle Area: Spotlight Center -- */
 .ecard-battle-area {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: rgba(20, 20, 42, 0.7);
-  border-radius: var(--radius);
-  border: 2px solid var(--gold);
-  margin: 8px 0;
+  margin: 6px 12px;
+  background:
+    radial-gradient(ellipse at center, rgba(255,215,0,0.06) 0%, rgba(0,0,0,0.3) 70%);
+  border-radius: 16px;
+  border: 2px solid var(--card-gold-border);
+  box-shadow:
+    inset 0 0 30px rgba(0,0,0,0.4),
+    0 0 20px var(--card-gold-glow);
   min-height: 140px;
 }
 
 .battle-card {
   transform: scale(1.1);
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
 }
 
 .battle-vs {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 24px;
-  color: var(--accent);
-  text-shadow: 0 0 10px rgba(255, 107, 53, 0.6);
+  font-size: 26px;
+  color: #ffd700;
+  text-shadow:
+    0 0 15px rgba(255,215,0,0.7),
+    0 2px 4px rgba(0,0,0,0.6);
 }
 
+/* -- Result Text -- */
 .ecard-result-text {
   text-align: center;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 20px;
-  color: var(--gold);
-  padding: 8px;
+  color: #ffd700;
+  padding: 6px 12px;
   min-height: 28px;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  text-shadow:
+    0 0 12px rgba(255,215,0,0.5),
+    0 2px 4px rgba(0,0,0,0.6);
 }
 
+/* -- My Cards Area -- */
 .ecard-my-cards-area {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   min-height: 0;
+  padding: 0 12px;
 }
 
 .my-cards-label {
   text-align: center;
   font-size: 13px;
   font-weight: 700;
-  color: var(--text-dim);
+  color: rgba(200,190,160,0.6);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
 }
 
+/* -- Card Hand: Fan Layout -- */
 .ecard-cards-hand {
   display: flex;
   justify-content: center;
@@ -3472,6 +4406,7 @@ body {
   min-height: 0;
 }
 
+/* -- Card Base -- */
 .ecard-card {
   width: 70px;
   height: 100px;
@@ -3482,89 +4417,165 @@ body {
   justify-content: center;
   font-weight: 900;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   position: relative;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.5),
+    0 1px 0 rgba(255,255,255,0.1) inset;
   margin: 0 -10px;
+  border: 3px solid var(--card-gold-border);
+}
+
+.ecard-card::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 6px;
+  pointer-events: none;
 }
 
 .ecard-card:hover {
   transform: translateY(-15px) scale(1.05);
   z-index: 10;
+  box-shadow:
+    0 12px 24px rgba(0,0,0,0.6),
+    0 0 15px var(--card-gold-glow);
 }
 
 .ecard-card.selected {
   transform: translateY(-20px) scale(1.08);
   z-index: 11;
-  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
+  box-shadow:
+    0 16px 32px rgba(0,0,0,0.6),
+    0 0 25px var(--card-gold-glow),
+    0 0 50px rgba(255,215,0,0.2);
+  border-color: #ffd700;
 }
 
+/* -- Emperor Card: Royal Gold -- */
 .ecard-card-emperor {
-  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-  border: 3px solid #b8860b;
-  color: #1a1a2e;
+  background:
+    linear-gradient(145deg, #fce94f 0%, #d4a520 30%, #b8860b 70%, #d4a520 100%);
+  color: #3a2210;
 }
 
+.ecard-card-emperor::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 10%;
+  width: 80%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  border-radius: 50%;
+}
+
+/* -- Citizen Card: Noble Silver -- */
 .ecard-card-citizen {
-  background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
-  border: 3px solid #808080;
-  color: #1a1a2e;
+  background:
+    linear-gradient(145deg, #b8c6d0 0%, #8a9bae 40%, #6a7b8e 70%, #8a9bae 100%);
+  color: #1a2030;
 }
 
+/* -- Slave Card: Shadow Depths -- */
 .ecard-card-slave {
-  background: linear-gradient(135deg, #4a4a4a 0%, #6a6a6a 100%);
-  border: 3px solid #2a2a2a;
-  color: #e8e8f0;
+  background:
+    linear-gradient(145deg, #4a4a5e 0%, #2a2a3a 40%, #1a1a28 70%, #2a2a3a 100%);
+  color: #c8c8d8;
 }
 
+/* -- Dummy Card -- */
 .ecard-card-dummy {
-  background: linear-gradient(135deg, #7a7a7a 0%, #9a9a9a 100%);
-  border: 3px solid #5a5a5a;
+  background:
+    linear-gradient(145deg, #8a8a9a 0%, #6a6a7a 40%, #5a5a6a 70%, #6a6a7a 100%);
   color: #1a1a2e;
 }
 
+/* -- Card Icon & Name -- */
 .ecard-card-icon {
   font-size: 36px;
   margin-bottom: 4px;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
 }
 
 .ecard-card-name {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 13px;
   letter-spacing: 1px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
+/* -- Card Back: Red Velvet + Gold Emblem -- */
 .ecard-card-back {
-  background: linear-gradient(135deg, #8b0000 0%, #640000 100%);
-  border: 3px solid #400000;
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.08) 0%, transparent 50%),
+    linear-gradient(145deg, #a02040 0%, #8b1a2b 25%, #5c0e1a 60%, #8b1a2b 100%);
+  border-color: var(--card-gold-border);
   position: relative;
   overflow: hidden;
 }
 
+/* Velvet Texture */
 .ecard-card-back::before {
   content: 'E';
   position: absolute;
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 56px;
-  color: var(--gold);
-  opacity: 0.3;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  font-size: 52px;
+  color: #ffd700;
+  opacity: 0.45;
+  text-shadow:
+    0 0 15px rgba(255,215,0,0.6),
+    0 2px 4px rgba(0,0,0,0.5);
+  z-index: 2;
 }
 
+/* Diamond Pattern on Velvet */
+.ecard-card-back::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1.5px solid rgba(201,168,76,0.35);
+  border-radius: 5px;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 6px,
+      rgba(255,215,0,0.04) 6px,
+      rgba(255,215,0,0.04) 7px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 6px,
+      rgba(255,215,0,0.04) 6px,
+      rgba(255,215,0,0.04) 7px
+    );
+  z-index: 1;
+}
+
+/* -- Betting Area: Wood Panel -- */
 .ecard-bet-area, .ecard-bet-response {
   padding: 16px;
-  background: rgba(20, 20, 42, 0.8);
-  border-radius: var(--radius);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  margin: 4px 12px;
+  background:
+    linear-gradient(180deg, #4a3220 0%, #3a2816 50%, #2e1e10 100%);
+  border-radius: 12px;
+  border: 2px solid #8b6914;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 4px 12px rgba(0,0,0,0.5);
 }
 
 .bet-label {
   text-align: center;
   font-weight: 700;
   font-size: 14px;
-  color: var(--text);
+  color: #e8dcc8;
   margin-bottom: 12px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 .bet-controls {
@@ -3577,28 +4588,35 @@ body {
 .bet-slider {
   flex: 1;
   -webkit-appearance: none;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--bg-surface);
+  height: 8px;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, #1a3a1a 0%, #0d260d 100%);
+  border: 1px solid rgba(201,168,76,0.3);
   outline: none;
 }
 
 .bet-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: var(--gold);
+  background:
+    radial-gradient(circle at 35% 35%, #fce94f, #d4a520, #b8860b);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.5);
+  border: 2px solid #8b6914;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.5),
+    0 0 10px rgba(255,215,0,0.3);
 }
 
 .bet-amount {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 20px;
-  color: var(--gold);
+  color: #ffd700;
   min-width: 60px;
   text-align: right;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
 }
 
 .bet-proposal {
@@ -3606,13 +4624,15 @@ body {
   font-size: 15px;
   font-weight: 700;
   margin-bottom: 12px;
-  color: var(--text);
+  color: #e8dcc8;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 .bet-proposal span {
-  color: var(--gold);
+  color: #ffd700;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 18px;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
 }
 
 .bet-buttons {
@@ -3620,45 +4640,187 @@ body {
   gap: 8px;
 }
 
+/* -- Action Buttons: Bottom Wood Bar -- */
 .ecard-action-buttons {
   display: flex;
   gap: 8px;
+  padding: 8px 12px 12px;
 }
 
+.ecard-action-buttons .btn {
+  background:
+    linear-gradient(180deg, #3a6a3a 0%, #2a5a2a 50%, #1a4a1a 100%);
+  border: 2px solid #4a8a4a;
+  color: #d4ecd4;
+  font-family: 'Black Han Sans', sans-serif;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    0 3px 8px rgba(0,0,0,0.4);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+.ecard-action-buttons .btn:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.3),
+    0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* -- Waiting Area -- */
 .ecard-waiting {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(20, 20, 42, 0.6);
-  border-radius: var(--radius-sm);
+  margin: 8px 12px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(201,168,76,0.15);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* -- Mobile Responsive -- */
+@media (max-width: 400px) {
+  #ecardGame {
+    border-width: 4px;
+  }
+  .ecard-card {
+    width: 58px;
+    height: 84px;
+    margin: 0 -8px;
+  }
+  .ecard-card-icon {
+    font-size: 28px;
+  }
+  .ecard-card-name {
+    font-size: 10px;
+  }
+  .ecard-battle-area {
+    padding: 14px;
+    min-height: 110px;
+  }
+  .score-value {
+    font-size: 26px;
+  }
+  .ecard-title {
+    font-size: 16px;
+  }
+  .role-badge {
+    padding: 8px 16px;
+  }
+  .role-icon {
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 340px) {
+  .ecard-card {
+    width: 50px;
+    height: 72px;
+    margin: 0 -6px;
+    border-width: 2px;
+  }
+  .ecard-card-icon {
+    font-size: 22px;
+  }
+  .ecard-card-name {
+    font-size: 9px;
+  }
+  .ecard-card-back::before {
+    font-size: 36px;
+  }
 }
 
 /* SUTDA CSS */
 
-/* ===== 섯다 전체 레이아웃 ===== */
+/* -- Sutda Design Tokens -- */
 #sutdaGame {
-  padding: 10px 12px;
-  gap: 6px;
-  background:
-    radial-gradient(ellipse at 40% 60%, rgba(34,120,60,0.12) 0%, transparent 55%),
-    radial-gradient(ellipse at 60% 40%, rgba(180,140,40,0.08) 0%, transparent 50%),
-    linear-gradient(180deg, #0a0f0a 0%, #0d1a0d 40%, #0a0a12 100%);
-  position: relative;
-  overflow: hidden;
+  --felt-green: #1a5c2a;
+  --felt-dark: #0e3a18;
+  --felt-light: #237a38;
+  --wood-frame: #5c3a1e;
+  --wood-highlight: #8b6914;
+  --wood-shadow: #3a2210;
+  --card-cream: #f5edd6;
+  --card-cream-dark: #e8dcc0;
+  --hwatu-red: #cc1a33;
+  --brass-gold: #c9a84c;
+  --brass-glow: rgba(201,168,76,0.5);
 }
 
-/* ===== 상단 바 ===== */
+/* ===== Sutda Full Layout ===== */
+#sutdaGame {
+  padding: 0;
+  gap: 0;
+  background:
+    url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 50% 55%, var(--felt-light) 0%, var(--felt-green) 40%, var(--felt-dark) 100%);
+  position: relative;
+  overflow: hidden;
+  border: 6px solid var(--wood-frame);
+  box-shadow:
+    inset 0 0 60px rgba(0,0,0,0.4),
+    inset 0 0 120px rgba(0,0,0,0.15),
+    0 0 0 2px var(--wood-shadow),
+    0 0 0 8px var(--wood-highlight),
+    0 0 0 10px var(--wood-shadow),
+    0 8px 30px rgba(0,0,0,0.7);
+}
+
+/* Felt Weave Texture */
+#sutdaGame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(0,0,0,0.02) 1px,
+      rgba(0,0,0,0.02) 2px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      rgba(0,0,0,0.015) 1px,
+      rgba(0,0,0,0.015) 2px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+#sutdaGame::after {
+  content: none;
+}
+
+#sutdaGame > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Top Bar: Dark Wood Trim ===== */
 .sutda-top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: rgba(20,20,42,0.9);
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(255,215,0,0.15);
+  padding: 10px 14px;
+  background:
+    linear-gradient(180deg, #5c3a1e 0%, #4a2e16 50%, #3a2210 100%);
+  border-bottom: 2px solid #8b6914;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 3px 10px rgba(0,0,0,0.5);
   z-index: 10;
+}
+
+.sutda-top-bar .back-btn {
+  background: rgba(0,0,0,0.3) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  border-radius: 6px !important;
+  color: #d4c4a0 !important;
 }
 
 .sutda-title-area {
@@ -3670,35 +4832,43 @@ body {
 .sutda-title-text {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 18px;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffd700;
+  text-shadow:
+    0 1px 0 #b8860b,
+    0 2px 4px rgba(0,0,0,0.6),
+    0 0 12px rgba(255,215,0,0.3);
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: unset;
+  background: none;
 }
 
 .sutda-pot-badge {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 14px;
-  color: var(--gold);
-  background: rgba(255,215,0,0.1);
-  padding: 2px 10px;
+  color: #ffd700;
+  background:
+    linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.2) 100%);
+  padding: 3px 12px;
   border-radius: 20px;
-  border: 1px solid rgba(255,215,0,0.3);
+  border: 1px solid rgba(201,168,76,0.4);
+  text-shadow: 0 0 6px rgba(255,215,0,0.3);
 }
 
 .sutda-my-balance {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 14px;
-  color: var(--accent2);
+  color: #ffd700;
+  text-shadow: 0 0 6px rgba(255,215,0,0.3);
 }
 
-/* ===== 상대방 영역 ===== */
+/* ===== Opponents Area ===== */
 .sutda-opponents {
   display: flex;
   justify-content: center;
   gap: 8px;
   flex-wrap: wrap;
   width: 100%;
-  padding: 4px 0;
+  padding: 8px 8px 4px;
   min-height: 90px;
 }
 
@@ -3722,16 +4892,31 @@ body {
   font-size: 18px;
   position: relative;
   transition: all 0.3s;
+  border: 2px solid rgba(201,168,76,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
 .sutda-opp-avatar.active-turn {
-  box-shadow: 0 0 0 3px var(--gold), 0 0 20px rgba(255,215,0,0.5);
+  box-shadow:
+    0 0 0 3px #ffd700,
+    0 0 20px rgba(255,215,0,0.5),
+    0 0 40px rgba(255,215,0,0.2);
   animation: sutda-pulse 1.5s ease infinite;
 }
 
 @keyframes sutda-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px var(--gold), 0 0 20px rgba(255,215,0,0.4); }
-  50% { box-shadow: 0 0 0 5px var(--gold), 0 0 30px rgba(255,215,0,0.7); }
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px #ffd700,
+      0 0 20px rgba(255,215,0,0.4),
+      0 0 40px rgba(255,215,0,0.15);
+  }
+  50% {
+    box-shadow:
+      0 0 0 5px #ffd700,
+      0 0 30px rgba(255,215,0,0.6),
+      0 0 50px rgba(255,215,0,0.25);
+  }
 }
 
 .sutda-opp-name {
@@ -3742,24 +4927,28 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: center;
+  color: #e8dcc8;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
 }
 
 .sutda-opp-chips {
   font-size: 9px;
-  color: var(--gold);
+  color: #ffd700;
   font-weight: 700;
+  text-shadow: 0 0 4px rgba(255,215,0,0.3);
 }
 
 .sutda-opp-status {
   font-size: 9px;
   font-weight: 700;
   min-height: 14px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
-.sutda-opp-status.die { color: var(--danger); }
-.sutda-opp-status.call { color: var(--success); }
-.sutda-opp-status.waiting { color: var(--text-dim); }
-.sutda-opp-status.bet { color: var(--accent); }
+.sutda-opp-status.die { color: #e57373; }
+.sutda-opp-status.call { color: #81c784; }
+.sutda-opp-status.waiting { color: rgba(200,190,160,0.5); }
+.sutda-opp-status.bet { color: #ffb74d; }
 
 .sutda-opp-cards {
   display: flex;
@@ -3770,13 +4959,14 @@ body {
   opacity: 0.3;
 }
 
-/* ===== 테이블 중앙 ===== */
+/* ===== Table Center: Casino Felt ===== */
 .sutda-table {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 0;
+  padding: 4px 12px;
 }
 
 .sutda-table-felt {
@@ -3784,18 +4974,28 @@ body {
   max-width: 340px;
   padding: 20px;
   background:
-    radial-gradient(ellipse at center, rgba(34,120,60,0.3) 0%, rgba(20,80,40,0.15) 60%, transparent 100%),
-    linear-gradient(135deg, #1a3a1a, #0d260d);
+    radial-gradient(ellipse at center, rgba(40,140,70,0.2) 0%, rgba(30,100,50,0.1) 50%, transparent 100%);
   border-radius: 60px;
-  border: 3px solid rgba(255,215,0,0.2);
+  border: 3px solid rgba(201,168,76,0.25);
   box-shadow:
-    inset 0 2px 20px rgba(0,0,0,0.4),
-    0 4px 30px rgba(0,0,0,0.3);
+    inset 0 2px 20px rgba(0,0,0,0.35),
+    inset 0 0 40px rgba(0,0,0,0.15),
+    0 0 20px rgba(201,168,76,0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
   position: relative;
+}
+
+/* Decorative Gold Corner Marks on Felt */
+.sutda-table-felt::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(201,168,76,0.12);
+  border-radius: 52px;
+  pointer-events: none;
 }
 
 .sutda-pot-center {
@@ -3804,25 +5004,31 @@ body {
 
 .sutda-pot-label {
   font-size: 11px;
-  color: rgba(255,215,0,0.6);
+  color: rgba(200,190,160,0.6);
   font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 .sutda-pot-amount {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 28px;
-  color: var(--gold);
-  text-shadow: 0 0 20px rgba(255,215,0,0.3);
+  font-size: 30px;
+  color: #ffd700;
+  text-shadow:
+    0 0 20px rgba(255,215,0,0.4),
+    0 2px 4px rgba(0,0,0,0.6);
 }
 
 .sutda-turn-indicator {
   font-size: 13px;
-  color: var(--text);
+  color: #e8dcc8;
   font-weight: 700;
   min-height: 20px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
-/* ===== 화투패 CSS ===== */
+/* ===== Hwatu Cards: Traditional Cream + Red Seal ===== */
 .hwatu-card {
   width: 42px;
   height: 62px;
@@ -3832,7 +5038,9 @@ body {
   align-items: center;
   justify-content: center;
   position: relative;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.5),
+    0 1px 0 rgba(255,255,255,0.08) inset;
   transition: all 0.3s;
   overflow: hidden;
 }
@@ -3841,13 +5049,17 @@ body {
   width: 72px;
   height: 108px;
   border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.6),
+    0 1px 0 rgba(255,255,255,0.1) inset;
 }
 
-/* 카드 앞면 - 광 */
+/* Gwang (Bright) Card: Cream with Red Seal */
 .hwatu-card.gwang {
-  background: linear-gradient(180deg, #fff8e1 0%, #ffe082 30%, #fff8e1 100%);
-  border: 2px solid #ffd54f;
+  background:
+    radial-gradient(circle at 75% 15%, rgba(204,26,51,0.15) 0%, transparent 40%),
+    linear-gradient(180deg, #f5edd6 0%, #e8dcc0 50%, #f5edd6 100%);
+  border: 2px solid #c9a84c;
 }
 
 .hwatu-card.gwang::before {
@@ -3855,25 +5067,26 @@ body {
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
-  background: radial-gradient(circle, #ff1744, #d50000);
-  box-shadow: 0 0 6px rgba(255,23,68,0.6);
+  background: radial-gradient(circle at 40% 40%, #ff3355, #cc1a33, #990d22);
+  box-shadow: 0 0 6px rgba(204,26,51,0.6);
 }
 
 .hwatu-card-big.gwang::before {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   top: 6px;
   right: 6px;
-  box-shadow: 0 0 10px rgba(255,23,68,0.7);
+  box-shadow: 0 0 10px rgba(204,26,51,0.7);
 }
 
-/* 카드 앞면 - 비광 */
+/* Normal Card: Cream Tone */
 .hwatu-card.normal {
-  background: linear-gradient(180deg, #f5f5f5 0%, #e0e0e0 100%);
-  border: 2px solid #90a4ae;
+  background:
+    linear-gradient(180deg, #f0e8d0 0%, #ddd2b8 50%, #f0e8d0 100%);
+  border: 2px solid #b8a070;
 }
 
 .hwatu-card.normal::before {
@@ -3884,7 +5097,8 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #546e7a;
+  background:
+    radial-gradient(circle at 40% 40%, #8a7a60, #6a5a40);
 }
 
 .hwatu-card-big.normal::before {
@@ -3894,7 +5108,7 @@ body {
   right: 6px;
 }
 
-/* 카드 숫자 */
+/* Card Number */
 .hwatu-num {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 22px;
@@ -3907,15 +5121,15 @@ body {
 }
 
 .hwatu-card.gwang .hwatu-num {
-  color: #bf360c;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  color: #8b1a2b;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
 
 .hwatu-card.normal .hwatu-num {
-  color: #263238;
+  color: #3a3020;
 }
 
-/* 카드 월 표시 */
+/* Card Month Label */
 .hwatu-month {
   font-size: 8px;
   font-weight: 700;
@@ -3927,17 +5141,18 @@ body {
   font-size: 11px;
 }
 
-.hwatu-card.gwang .hwatu-month { color: #bf360c; }
-.hwatu-card.normal .hwatu-month { color: #455a64; }
+.hwatu-card.gwang .hwatu-month { color: #8b1a2b; }
+.hwatu-card.normal .hwatu-month { color: #5a4a30; }
 
-/* 광 글자 */
+/* Gwang Text Badge */
 .hwatu-gwang-text {
   position: absolute;
   bottom: 3px;
   font-size: 7px;
   font-weight: 900;
-  color: #d50000;
+  color: #cc1a33;
   letter-spacing: -0.5px;
+  text-shadow: 0 0 3px rgba(204,26,51,0.3);
 }
 
 .hwatu-card-big .hwatu-gwang-text {
@@ -3945,12 +5160,12 @@ body {
   font-size: 11px;
 }
 
-/* 카드 전통 문양 배경 */
+/* Inner Border Pattern */
 .hwatu-card::after {
   content: '';
   position: absolute;
   inset: 3px;
-  border: 1px solid rgba(0,0,0,0.06);
+  border: 1px solid rgba(160,130,80,0.15);
   border-radius: 4px;
   pointer-events: none;
 }
@@ -3958,9 +5173,10 @@ body {
 .hwatu-card-big::after {
   inset: 5px;
   border-radius: 6px;
+  border-color: rgba(160,130,80,0.2);
 }
 
-/* 카드 뒷면 */
+/* Card Back: Red Weave Pattern */
 .hwatu-card.back {
   background:
     repeating-linear-gradient(
@@ -3970,7 +5186,7 @@ body {
       #c62828 4px,
       #c62828 8px
     );
-  border: 2px solid #e53935;
+  border: 2px solid #c9a84c;
 }
 
 .hwatu-card.back::before {
@@ -3980,12 +5196,12 @@ body {
   height: 20px;
   border-radius: 50%;
   background: rgba(0,0,0,0.2);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,215,0,0.15);
 }
 
 .hwatu-card.back::after {
   inset: 2px;
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,215,0,0.12);
 }
 
 .hwatu-card-big.back::before {
@@ -3993,28 +5209,41 @@ body {
   height: 32px;
 }
 
-/* 1월 광 특수 문양 (송학) */
+/* Month 1 Gwang: Pine & Crane (warm gold) */
 .hwatu-card.m1.gwang {
-  background: linear-gradient(180deg, #fff8e1 0%, #ffecb3 50%, #fff3e0 100%);
+  background:
+    radial-gradient(circle at 75% 15%, rgba(204,26,51,0.12) 0%, transparent 35%),
+    linear-gradient(180deg, #f5edd6 0%, #ffe8b0 50%, #f5edd6 100%);
 }
 
-/* 3월 광 특수 문양 (사쿠라) */
+/* Month 3 Gwang: Cherry Blossom (blush cream) */
 .hwatu-card.m3.gwang {
-  background: linear-gradient(180deg, #fce4ec 0%, #f8bbd0 50%, #fce4ec 100%);
+  background:
+    radial-gradient(circle at 75% 15%, rgba(204,26,51,0.12) 0%, transparent 35%),
+    linear-gradient(180deg, #f5edd6 0%, #f0d8d0 50%, #f5edd6 100%);
 }
 
-/* 8월 광 특수 문양 (공산) */
+/* Month 8 Gwang: Full Moon (cool cream) */
 .hwatu-card.m8.gwang {
-  background: linear-gradient(180deg, #e8eaf6 0%, #c5cae9 50%, #e8eaf6 100%);
+  background:
+    radial-gradient(circle at 75% 15%, rgba(204,26,51,0.12) 0%, transparent 35%),
+    linear-gradient(180deg, #f5edd6 0%, #e0dce8 50%, #f5edd6 100%);
 }
 
-/* ===== 내 패 영역 ===== */
+/* ===== My Card Area: Polished Wood Tray ===== */
 .sutda-my-area {
   width: 100%;
   padding: 10px 16px;
-  background: rgba(20,20,42,0.9);
-  border-radius: var(--radius);
-  border: 1px solid rgba(255,215,0,0.1);
+  background:
+    linear-gradient(180deg, #4a3220 0%, #3a2816 50%, #2e1e10 100%);
+  border-top: 2px solid #8b6914;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.06),
+    0 -4px 12px rgba(0,0,0,0.4);
 }
 
 .sutda-my-info {
@@ -4027,12 +5256,15 @@ body {
 .sutda-my-name {
   font-weight: 700;
   font-size: 14px;
+  color: #e8dcc8;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 .sutda-my-chips {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 16px;
-  color: var(--gold);
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255,215,0,0.3);
 }
 
 .sutda-my-cards {
@@ -4042,16 +5274,20 @@ body {
   margin-bottom: 6px;
 }
 
+/* Rank Name: Gold Leaf Style */
 .sutda-my-rank {
   text-align: center;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 20px;
-  color: #ff1744;
+  color: #ffd700;
   min-height: 26px;
-  text-shadow: 0 0 10px rgba(255,23,68,0.4);
+  text-shadow:
+    0 0 12px rgba(255,215,0,0.5),
+    0 1px 0 #b8860b,
+    0 2px 4px rgba(0,0,0,0.5);
 }
 
-/* ===== 세륙 패널 ===== */
+/* ===== Seryuk Panel: Dark Overlay ===== */
 .sutda-seryuk-panel {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -4068,12 +5304,15 @@ body {
 .sutda-seryuk-title {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 28px;
-  color: var(--gold);
+  color: #ffd700;
+  text-shadow:
+    0 0 15px rgba(255,215,0,0.5),
+    0 2px 4px rgba(0,0,0,0.6);
 }
 
 .sutda-seryuk-desc {
   font-size: 13px;
-  color: var(--text-dim);
+  color: rgba(200,190,160,0.6);
   text-align: center;
 }
 
@@ -4089,7 +5328,7 @@ body {
   gap: 8px;
   padding: 24px 32px;
   border: 2px solid transparent;
-  border-radius: var(--radius);
+  border-radius: 14px;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 20px;
   cursor: pointer;
@@ -4099,15 +5338,23 @@ body {
 .sutda-seryuk-btn:active { transform: scale(0.95); }
 
 .sutda-seryuk-push {
-  background: linear-gradient(135deg, #1b5e20, #2e7d32);
+  background:
+    linear-gradient(180deg, #2a6a2a 0%, #1a5a1a 50%, #0e4a0e 100%);
   color: #a5d6a7;
   border-color: #4caf50;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    0 4px 12px rgba(0,0,0,0.5);
 }
 
 .sutda-seryuk-chaos {
-  background: linear-gradient(135deg, #b71c1c, #c62828);
+  background:
+    linear-gradient(180deg, #8b2020 0%, #6e1818 50%, #4a1010 100%);
   color: #ef9a9a;
-  border-color: #f44336;
+  border-color: #e53935;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    0 4px 12px rgba(0,0,0,0.5);
 }
 
 .sutda-seryuk-icon {
@@ -4119,13 +5366,16 @@ body {
   opacity: 0.7;
 }
 
-/* ===== 배팅 버튼 바 ===== */
+/* ===== Betting Buttons: Casino Chips Style ===== */
 .sutda-action-bar {
   display: flex;
   gap: 5px;
   width: 100%;
-  padding: 0 4px;
+  padding: 6px 8px 10px;
   flex-wrap: wrap;
+  background:
+    linear-gradient(180deg, #3a2816 0%, #2e1e10 100%);
+  border-top: 1px solid rgba(201,168,76,0.15);
 }
 
 .sutda-bet-btn {
@@ -4133,48 +5383,74 @@ body {
   min-width: 0;
   padding: 12px 4px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.15s;
   letter-spacing: 0.3px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    0 3px 6px rgba(0,0,0,0.4);
+  border-bottom: 3px solid rgba(0,0,0,0.3);
 }
 
-.sutda-bet-btn:active { transform: scale(0.95); }
-.sutda-bet-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.sutda-bet-btn:active {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.3),
+    0 1px 2px rgba(0,0,0,0.3);
+  border-bottom-width: 1px;
+}
 
+.sutda-bet-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Amount Buttons: Green Felt Chip */
 .sutda-bet-10k {
-  background: linear-gradient(135deg, #1565c0, #1976d2);
-  color: white;
+  background:
+    linear-gradient(180deg, #2e8b3a 0%, #1a6b28 50%, #0e5a1a 100%);
+  color: #d4ecd4;
 }
 
 .sutda-bet-50k {
-  background: linear-gradient(135deg, #1565c0, #42a5f5);
-  color: white;
+  background:
+    linear-gradient(180deg, #35993e 0%, #1f7a2d 50%, #146822 100%);
+  color: #d4ecd4;
 }
 
 .sutda-bet-100k {
-  background: linear-gradient(135deg, #0d47a1, #1565c0);
-  color: white;
+  background:
+    linear-gradient(180deg, #277830 0%, #165a20 50%, #0a4a14 100%);
+  color: #c8e8c8;
 }
 
+/* Call: Deep Blue with Metallic Sheen */
 .sutda-bet-call {
-  background: linear-gradient(135deg, #2e7d32, #43a047);
-  color: white;
+  background:
+    linear-gradient(180deg, #1a65b0 0%, #104a8a 50%, #0a3a70 100%);
+  color: #b0d4f0;
 }
 
+/* Die: Warm Brown Wood */
 .sutda-bet-die {
-  background: linear-gradient(135deg, #4e342e, #6d4c41);
+  background:
+    linear-gradient(180deg, #6d4c41 0%, #4e342e 50%, #3e2723 100%);
   color: #bcaaa4;
 }
 
+/* All-In: Dramatic Red */
 .sutda-bet-allin {
-  background: linear-gradient(135deg, #c62828, #e53935);
-  color: white;
+  background:
+    linear-gradient(180deg, #c62828 0%, #a01818 50%, #7a0e0e 100%);
+  color: #ffcdd2;
+  border-color: rgba(255,100,100,0.2);
 }
 
-/* ===== 결과 오버레이 ===== */
+/* ===== Result Overlay ===== */
 .sutda-result-overlay {
   display: none;
   position: fixed;
@@ -4191,34 +5467,47 @@ body {
 }
 
 .sutda-result-box {
-  background: var(--bg-card);
-  border-radius: var(--radius);
-  border: 1px solid rgba(255,215,0,0.2);
+  background:
+    linear-gradient(180deg, #3a2816 0%, #2e1e10 50%, #241a0c 100%);
+  border-radius: 16px;
+  border: 2px solid rgba(201,168,76,0.3);
   padding: 24px;
   width: 100%;
   max-width: 380px;
   text-align: center;
   max-height: 90vh;
   overflow-y: auto;
+  box-shadow:
+    0 0 40px rgba(201,168,76,0.15),
+    0 8px 30px rgba(0,0,0,0.6);
 }
 
 .sutda-result-title {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 32px;
   margin-bottom: 12px;
+  color: #ffd700;
+  text-shadow:
+    0 0 15px rgba(255,215,0,0.5),
+    0 2px 4px rgba(0,0,0,0.6);
 }
 
 .sutda-result-winner {
   font-size: 16px;
   font-weight: 700;
   margin-bottom: 8px;
+  color: #e8dcc8;
 }
 
+/* Rank Name: Gold Leaf */
 .sutda-result-rank {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 24px;
-  color: #ff1744;
+  color: #ffd700;
   margin-bottom: 12px;
+  text-shadow:
+    0 0 12px rgba(255,215,0,0.5),
+    0 1px 0 #b8860b;
 }
 
 .sutda-result-cards {
@@ -4231,14 +5520,15 @@ body {
 .sutda-result-pot {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 22px;
-  color: var(--gold);
+  color: #ffd700;
   margin-bottom: 16px;
+  text-shadow: 0 0 10px rgba(255,215,0,0.4);
 }
 
 .sutda-result-all-hands {
   text-align: left;
   font-size: 13px;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(201,168,76,0.15);
   padding-top: 12px;
 }
 
@@ -4247,7 +5537,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(201,168,76,0.06);
 }
 
 .sutda-result-hand-avatar {
@@ -4265,12 +5555,15 @@ body {
   flex: 1;
   font-weight: 700;
   font-size: 12px;
+  color: #e8dcc8;
 }
 
+/* Result Rank: Gold */
 .sutda-result-hand-rank {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 13px;
-  color: #ff1744;
+  color: #ffd700;
+  text-shadow: 0 0 6px rgba(255,215,0,0.3);
 }
 
 .sutda-result-hand-cards {
@@ -4300,6 +5593,7 @@ body {
   background: rgba(255,215,0,0.08);
   border-radius: 6px;
   padding: 6px 8px;
+  border: 1px solid rgba(201,168,76,0.15);
 }
 
 .sutda-result-hand-row.died-row {
@@ -4309,6 +5603,45 @@ body {
 @keyframes sutdaReveal {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Mobile Responsive ===== */
+@media (max-width: 400px) {
+  #sutdaGame {
+    border-width: 4px;
+  }
+  .sutda-table-felt {
+    padding: 14px;
+    border-radius: 40px;
+  }
+  .sutda-pot-amount {
+    font-size: 24px;
+  }
+  .sutda-bet-btn {
+    padding: 10px 3px;
+    font-size: 11px;
+  }
+  .sutda-my-rank {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 340px) {
+  .sutda-opponents {
+    gap: 4px;
+  }
+  .sutda-opp-slot {
+    min-width: 50px;
+  }
+  .sutda-opp-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+  }
+  .sutda-bet-btn {
+    padding: 8px 2px;
+    font-size: 10px;
+  }
 }
 
 /* RACING CSS */
