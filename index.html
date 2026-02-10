@@ -6358,8 +6358,9 @@ body {
 
   <div id="waitingMsg" style="text-align:center; color:var(--text-dim); font-size:13px; padding:16px 0;">
     <div class="spinner"></div>
-    <div style="margin-top:8px;">호스트가 게임을 시작하길 대기 중...</div>
+    <div style="margin-top:8px;" id="waitingText">호스트가 게임을 시작하길 대기 중...</div>
   </div>
+  <div id="connectionStatus" style="text-align:center; padding:8px; font-size:12px; border-radius:8px; margin-top:4px; display:none;"></div>
   </div>
 
   <div class="lobby-footer">
@@ -7514,8 +7515,11 @@ function initPeer(id) {
 
 function broadcast(data, exclude) {
   const msg = JSON.stringify(data);
-  Object.entries(state.connections).forEach(([pid, conn]) => {
-    if(pid !== exclude && conn.open) conn.send(msg);
+  const targets = Object.entries(state.connections).filter(([pid]) => pid !== exclude);
+  console.log('[PartyDeck] broadcast:', data.type, '→', targets.length, '명에게 전송');
+  targets.forEach(([pid, conn]) => {
+    if(conn.open) { conn.send(msg); console.log('[PartyDeck]   → 전송:', pid); }
+    else console.warn('[PartyDeck]   → 연결 닫힘:', pid);
   });
 }
 
@@ -7526,7 +7530,8 @@ function sendTo(peerId, data) {
 
 function handleMessage(peerId, raw) {
   const msg = typeof raw === 'string' ? JSON.parse(raw) : raw;
-  
+  console.log('[PartyDeck] 메시지 수신:', msg.type, 'from:', peerId);
+
   const handlers = {
     'player-info': () => handlePlayerJoin(peerId, msg),
     'player-list': () => { state.players = msg.players; updateLobbyUI(); },
@@ -7659,7 +7664,9 @@ async function createRoom() {
     }];
     
     state.peer.on('connection', (conn) => {
+      console.log('[PartyDeck] 새 연결 수신:', conn.peer);
       conn.on('open', () => {
+        console.log('[PartyDeck] 연결 열림:', conn.peer);
         state.connections[conn.peer] = conn;
         conn.on('data', (d) => handleMessage(conn.peer, d));
         conn.on('close', () => {
@@ -7672,14 +7679,15 @@ async function createRoom() {
         });
       });
     });
-    
+
     document.getElementById('roomCodeDisplay').textContent = state.roomCode;
     document.getElementById('gameSelectArea').style.display = 'block';
     document.getElementById('startGameBtn').style.display = 'none';
     document.getElementById('waitingMsg').style.display = 'none';
     showScreen('lobby');
     updateLobbyUI();
-    showToast('방이 만들어졌습니다!');
+    updateConnectionStatus('connected', '호스트 (방 코드: ' + state.roomCode + ')');
+    showToast('방이 만들어졌습니다! 코드: ' + state.roomCode);
 
     setTimeout(() => {
       const qrDiv = document.getElementById('qrCodeDisplay');
@@ -7700,17 +7708,37 @@ async function joinRoom() {
   saveProfile();
   const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
   if(!code || code.length < 4) { showToast('방 코드를 입력하세요'); return; }
-  
+
   state.roomCode = code;
   state.isHost = false;
-  
+
   try {
     showToast('방 연결 중...');
     await initPeer('pd-' + code + '-' + Date.now().toString(36));
-    
+
+    // 로비 화면 먼저 표시 (연결 상태 표시용)
+    document.getElementById('roomCodeDisplay').textContent = code;
+    document.getElementById('gameSelectArea').style.display = 'none';
+    document.getElementById('startGameBtn').style.display = 'none';
+    document.getElementById('waitingMsg').style.display = 'block';
+    document.getElementById('waitingText').textContent = '호스트에 연결 중...';
+    showScreen('lobby');
+    updateConnectionStatus('connecting', '호스트에 연결 시도 중...');
+
     const conn = state.peer.connect('pd-' + code, { reliable: true });
-    
+
+    // 연결 타임아웃 (15초)
+    const connTimeout = setTimeout(() => {
+      if(!conn.open) {
+        updateConnectionStatus('error', '연결 시간 초과. 방 코드를 확인하세요.');
+        document.getElementById('waitingText').textContent = '연결 실패 - 뒤로가기 후 다시 시도하세요';
+        showToast('호스트 연결 시간 초과');
+      }
+    }, 15000);
+
     conn.on('open', () => {
+      clearTimeout(connTimeout);
+      console.log('[PartyDeck] 호스트 연결 성공:', conn.peer);
       state.connections[conn.peer] = conn;
       conn.send(JSON.stringify({
         type: 'player-info', name: state.myName, avatar: state.myAvatar, id: state.myId
@@ -7720,26 +7748,47 @@ async function joinRoom() {
         showToast('호스트와 연결이 끊어졌습니다');
         leaveLobby();
       });
+      updateConnectionStatus('connected', '호스트에 연결됨');
+      document.getElementById('waitingText').textContent = '호스트가 게임을 시작하길 대기 중...';
+      showToast('방에 참가했습니다!');
     });
-    
+
     conn.on('error', (err) => {
-      showToast('연결 실패: ' + err);
+      clearTimeout(connTimeout);
+      console.error('[PartyDeck] 연결 에러:', err);
+      updateConnectionStatus('error', '연결 실패: ' + (err.type || err));
+      document.getElementById('waitingText').textContent = '연결 실패 - 뒤로가기 후 다시 시도하세요';
+      showToast('연결 실패: ' + (err.type || err));
     });
-    
+
     state.peer.on('connection', (inConn) => {
       inConn.on('open', () => {
         state.connections[inConn.peer] = inConn;
         inConn.on('data', (d) => handleMessage(inConn.peer, d));
       });
     });
-    
-    document.getElementById('roomCodeDisplay').textContent = code;
-    document.getElementById('gameSelectArea').style.display = 'none';
-    document.getElementById('startGameBtn').style.display = 'none';
-    document.getElementById('waitingMsg').style.display = 'block';
-    showScreen('lobby');
-    
-  } catch(e) { console.error(e); }
+
+  } catch(e) {
+    console.error('[PartyDeck] joinRoom 에러:', e);
+    showToast('연결 오류: ' + e.message);
+  }
+}
+
+function updateConnectionStatus(status, text) {
+  const el = document.getElementById('connectionStatus');
+  if(!el) return;
+  el.style.display = 'block';
+  el.textContent = text;
+  if(status === 'connecting') {
+    el.style.background = 'rgba(255,180,0,0.15)';
+    el.style.color = '#ffb400';
+  } else if(status === 'connected') {
+    el.style.background = 'rgba(0,230,118,0.15)';
+    el.style.color = '#00e676';
+  } else if(status === 'error') {
+    el.style.background = 'rgba(255,50,50,0.15)';
+    el.style.color = '#ff5252';
+  }
 }
 
 function handlePlayerJoin(peerId, msg) {
@@ -7813,7 +7862,8 @@ function selectGame(el) {
 
 // ===== GAME START =====
 function startGame() {
-  if(!state.isHost || state.players.length < 2) { showToast('최소 2명 필요'); return; }
+  console.log('[PartyDeck] startGame 호출. isHost:', state.isHost, 'players:', state.players.length, 'game:', state.selectedGame);
+  if(!state.isHost || state.players.length < 2) { showToast('최소 2명 필요 (현재 ' + state.players.length + '명)'); return; }
   const g = state.selectedGame;
   if(g === 'poker') startPoker();
   else if(g === 'mafia') startMafia();
