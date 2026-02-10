@@ -4465,6 +4465,11 @@ body {
   opacity: 0.4;
 }
 
+@keyframes sutdaReveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* RACING CSS */
 #racingGame {
   background: linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 50%, #2a1a3a 100%);
@@ -11639,9 +11644,10 @@ function getSutdaRank(card1, card2) {
 
   // === 땡 (같은 숫자 2장) ===
   if (n1 === n2) {
-    const ttRank = 80 + n1; // 1땡=81, ... 10땡(장땡)=90
-    const ttName = n1 === 10 ? '장땡' : n1 + '땡';
-    return { rank: ttRank, name: ttName, tier: 'ttaeng' };
+    // 장땡(10땡)은 최상위 (광땡보다 위)
+    if (n1 === 10) return { rank: 101, name: '장땡', tier: 'ttaeng' };
+    const ttRank = 80 + n1; // 1땡=81, ... 9땡=89
+    return { rank: ttRank, name: n1 + '땡', tier: 'ttaeng' };
   }
 
   // === 특수패 체크 ===
@@ -11676,30 +11682,9 @@ function getSutdaRank(card1, card2) {
 // 대결 판정 함수
 // =========================
 function sutdaCompare(r1, r2) {
-  // 38광땡은 무적 (암행어사도 못 잡음)
-  if (r1.rank === 100) return 1;
-  if (r2.rank === 100) return -1;
-
-  // 암행어사: 13광땡(98), 18광땡(99)만 잡음
-  if (r1.special === '47' && (r2.rank === 99 || r2.rank === 98)) return 1;
-  if (r2.special === '47' && (r1.rank === 99 || r1.rank === 98)) return -1;
-
-  // 암행어사 vs 일반패: 암행어사는 일반 끗수로 계산 (4+7=1끗)
-  // 이미 rank가 75로 설정되어 있으므로, 특수 잡기 실패 시 끗수로 재계산
-  if (r1.special === '47' && r2.rank < 98) {
-    const r1asKkut = { rank: 51, name: '1끗', tier: 'kkut', kkut: 1, mult: 28 };
-    return sutdaCompare(r1asKkut, r2);
-  }
-  if (r2.special === '47' && r1.rank < 98) {
-    const r2asKkut = { rank: 51, name: '1끗', tier: 'kkut', kkut: 1, mult: 28 };
-    return sutdaCompare(r1, r2asKkut);
-  }
-
-  // 땡잡이: 모든 땡(rank 81~90)을 잡음
+  // === 1순위: 땡잡이(37) - 모든 땡을 잡음 (장땡 포함), 일반패에겐 짐 ===
   if (r1.special === '37' && r2.tier === 'ttaeng') return 1;
   if (r2.special === '37' && r1.tier === 'ttaeng') return -1;
-
-  // 땡잡이 vs 일반패: 땡잡이는 일반 끗수로 계산 (3+7=0끗=망통)
   if (r1.special === '37' && r2.tier !== 'ttaeng') {
     const r1asKkut = { rank: 50, name: '망통', tier: 'kkut', kkut: 0, mult: 21 };
     return sutdaCompare(r1asKkut, r2);
@@ -11709,17 +11694,25 @@ function sutdaCompare(r1, r2) {
     return sutdaCompare(r1, r2asKkut);
   }
 
-  // 세륙은 선택 후 rank가 변환됨 (밀기=10끗, 깽판=재분배)
-  // 여기선 이미 변환된 상태로 들어옴
+  // === 2순위: 암행어사(47) - 13광땡(98), 18광땡(99)만 잡음 ===
+  if (r1.special === '47' && (r2.rank === 99 || r2.rank === 98)) return 1;
+  if (r2.special === '47' && (r1.rank === 99 || r1.rank === 98)) return -1;
+  if (r1.special === '47') {
+    const r1asKkut = { rank: 51, name: '1끗', tier: 'kkut', kkut: 1, mult: 28 };
+    return sutdaCompare(r1asKkut, r2);
+  }
+  if (r2.special === '47') {
+    const r2asKkut = { rank: 51, name: '1끗', tier: 'kkut', kkut: 1, mult: 28 };
+    return sutdaCompare(r1, r2asKkut);
+  }
 
-  // 같은 끗일 때: 곱으로 비교 (무승부 없음)
+  // === 3순위: 같은 끗일 때 곱으로 비교 (무승부 없음) ===
   if (r1.rank === r2.rank && r1.tier === 'kkut' && r2.tier === 'kkut') {
     if (r1.mult !== r2.mult) return r1.mult > r2.mult ? 1 : -1;
-    // 극히 드물게 곱도 같으면 (불가능하지만 안전장치)
     return 0;
   }
 
-  // 일반 rank 비교
+  // === 일반 rank 비교: 장땡(101) > 38광땡(100) > 18광땡(99) > 13광땡(98) > 9땡~1땡 > ... ===
   return r1.rank > r2.rank ? 1 : r1.rank < r2.rank ? -1 : 0;
 }
 
@@ -12190,11 +12183,8 @@ function processSutdaSeryuk(playerId, choice) {
   seryukP.seryukChoice = choice;
 
   if (choice === 'push') {
-    // 밀기: 세륙을 망통(0끗) 대신 갑오(9끗) 급으로 취급? 아니, 10끗으로 계산
-    // 끗수에서 10끗은 0끗이지만, 여기서는 특별히 "밀기"로 갑오(9끗)와 동급 또는 그 위로 계산
-    // 규칙상 "10끗" = 합 10의 일의 자리 = 0이지만, 밀기는 "갑오(9끗) 바로 아래"로 적용하는 것이 일반적
-    // 더 정확히는: 밀기 = 갑오(9끗)와 동일한 등급으로 "세륙밀기"
-    seryukP.rank = { rank: 59, name: '세륙밀기', tier: 'kkut', kkut: 10, mult: 24, special: null };
+    // 밀기: 숫자 10으로써 기능 → 10%10=0끗=망통
+    seryukP.rank = { rank: 50, name: '세륙밀기(망통)', tier: 'kkut', kkut: 0, mult: 24, special: null };
     gs.phase = 'betting';
     // 배팅 계속 (추가 라운드 없이 바로 showdown)
     resolveSutdaShowdown();
@@ -12205,8 +12195,8 @@ function processSutdaSeryuk(playerId, choice) {
     // 9땡 이상이면 깽판 불가 (38광땡, 18광땡, 13광땡, 장땡)
     const hasHighHand = alive.some(p => p.id !== playerId && p.rank.rank >= 90);
     if (hasHighHand) {
-      // 깽판 실패 - 밀기로 강제 전환
-      seryukP.rank = { rank: 59, name: '세륙밀기', tier: 'kkut', kkut: 10, mult: 24, special: null };
+      // 깽판 실패 - 밀기로 강제 전환 (망통)
+      seryukP.rank = { rank: 50, name: '세륙밀기(망통)', tier: 'kkut', kkut: 0, mult: 24, special: null };
       showToast('상대에게 장땡 이상이 있어 깽판 실패!');
     } else {
       // 패 재분배
@@ -12271,7 +12261,15 @@ function endSutdaRound(winner) {
   // 먼저 showdown 뷰를 브로드캐스트
   broadcastSutdaState();
 
-  // 결과 메시지 전송
+  // 패 공개 순서: 콜을 받는 사람(lastRaiser)이 먼저, 나머지 후에
+  const alive = gs.players.filter(p => !p.died);
+  const revealOrder = [];
+  if (gs.lastRaiser !== undefined && gs.lastRaiser !== null) {
+    const firstReveal = gs.players[gs.lastRaiser];
+    if (firstReveal && !firstReveal.died) revealOrder.push(firstReveal.id);
+  }
+  alive.forEach(p => { if (!revealOrder.includes(p.id)) revealOrder.push(p.id); });
+
   const result = {
     type: 'sutda-result',
     winnerId: winner.id,
@@ -12280,6 +12278,7 @@ function endSutdaRound(winner) {
     winnerCards: winner.cards,
     winnerRank: winner.rank,
     pot: gs.pot,
+    revealOrder: revealOrder,
     allHands: gs.players.map(p => ({
       id: p.id,
       name: p.name,
@@ -12314,20 +12313,31 @@ function handleSutdaResult(msg) {
     : '';
   document.getElementById('sutdaResultPot').textContent = formatChips(msg.pot);
 
-  // 전체 결과 표시
+  // 전체 결과 표시 (순차 공개: 콜 받은 사람 먼저)
   const allEl = document.getElementById('sutdaResultAllHands');
-  allEl.innerHTML = msg.allHands.map(h => {
+  allEl.innerHTML = '';
+
+  const order = msg.revealOrder || msg.allHands.map(h => h.id);
+  const sortedHands = [];
+  order.forEach(id => {
+    const h = msg.allHands.find(x => x.id === id);
+    if (h) sortedHands.push(h);
+  });
+  msg.allHands.forEach(h => { if (!sortedHands.includes(h)) sortedHands.push(h); });
+
+  sortedHands.forEach((h, idx) => {
     const isWinner = h.id === msg.winnerId;
     const isDied = h.died;
     const rowClass = 'sutda-result-hand-row' + (isWinner ? ' winner-row' : '') + (isDied ? ' died-row' : '');
     const pIdx = h.seatIdx;
-    return '<div class="' + rowClass + '">' +
+    const rowHTML = '<div class="' + rowClass + '" style="opacity:0;animation:sutdaReveal 0.4s ease ' + (idx * 0.6) + 's forwards;">' +
       '<div class="sutda-result-hand-avatar" style="background:' + PLAYER_COLORS[pIdx % PLAYER_COLORS.length] + ';">' + h.avatar + '</div>' +
-      '<div class="sutda-result-hand-name">' + h.name + (isWinner ? ' (승)' : '') + (isDied ? ' (다이)' : '') + '</div>' +
+      '<div class="sutda-result-hand-name">' + h.name + (isWinner ? ' (승)' : '') + (isDied ? ' (다이)' : '') + (idx === 0 && !isDied ? ' (선공개)' : '') + '</div>' +
       '<div class="sutda-result-hand-rank">' + (h.rank ? h.rank.name : '-') + '</div>' +
       '<div class="sutda-result-hand-cards">' + (h.cards ? h.cards.map(c => hwatuCardHTML(c, false)).join('') : '') + '</div>' +
       '</div>';
-  }).join('');
+    allEl.innerHTML += rowHTML;
+  });
 
   overlay.classList.add('active');
 }
