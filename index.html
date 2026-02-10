@@ -4504,37 +4504,130 @@ body {
   text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);
 }
 
-/* ===== Red Velvet Dice Tray with Gold Metal Frame ===== */
+/* ===== Red Velvet Dice Tray with Metal Frame ===== */
 .yahtzee-dice-area {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 24px 16px;
-  /* Red velvet from mockup */
-  background:
-    radial-gradient(ellipse at center, var(--velvet-red), #600000),
-    repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px);
-  border-radius: 16px;
-  /* Gold frame */
-  border: 3px solid #4a0000;
-  box-shadow:
-    inset 0 4px 12px rgba(0,0,0,0.6),
-    0 8px 24px rgba(0,0,0,0.4);
+  padding: 16px;
   flex-shrink: 0;
   position: relative;
-  min-height: 160px;
 }
 
-/* Velvet sheen highlight */
-.yahtzee-dice-area::before {
+/* ===== 3D Metal Tray ===== */
+.yahtzee-tray {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1.2;
+  /* 금속 프레임 */
+  background: linear-gradient(145deg, #4a4a4a, #2a2a2a);
+  border-radius: 20px;
+  padding: 12px;
+  /* 3D 깊이감 */
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.6),
+    inset 0 2px 0 rgba(255,255,255,0.15),
+    inset 0 -4px 8px rgba(0,0,0,0.4);
+  border: 3px solid #555;
+}
+
+.yahtzee-tray-inner {
+  width: 100%;
+  height: 100%;
+  /* 빨간 벨벳 내부 */
+  background:
+    radial-gradient(ellipse at center, #8b0000, #500000);
+  border-radius: 12px;
+  /* 오목한 느낌 */
+  box-shadow:
+    inset 0 6px 20px rgba(0,0,0,0.7),
+    inset 0 -2px 8px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 벨벳 텍스처 */
+.yahtzee-tray-inner::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 40%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
-  border-radius: 13px 13px 0 0;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    45deg, transparent, transparent 2px,
+    rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
+  );
   pointer-events: none;
+}
+
+/* ===== 족보 텍스트 ===== */
+.yahtzee-combo-label {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px;
+  color: #ffd700;
+  text-shadow:
+    0 0 10px rgba(255, 215, 0, 0.5),
+    2px 2px 4px rgba(0,0,0,0.8);
+  letter-spacing: 2px;
+  text-align: center;
+  min-height: 30px;
+  z-index: 2;
+}
+
+@keyframes comboFadeIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ===== 주사위 컵 (오른쪽 장식) ===== */
+.yahtzee-cup {
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 70px;
+  z-index: 5;
+}
+
+.yahtzee-cup-body {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #2a2a2a, #444, #2a2a2a);
+  border-radius: 0 0 12px 12px;
+  box-shadow:
+    4px 4px 12px rgba(0,0,0,0.5),
+    inset -2px 0 4px rgba(255,255,255,0.1);
+  border: 2px solid #555;
+}
+
+.yahtzee-cup-rim {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  height: 12px;
+  background: linear-gradient(180deg, #666, #444);
+  border-radius: 4px 4px 0 0;
+  border: 2px solid #777;
+}
+
+/* 컵 쏟기 애니메이션 */
+.yahtzee-cup.pouring {
+  animation: cupPour 0.6s ease-in-out;
+}
+
+@keyframes cupPour {
+  0% { transform: translateY(-50%) rotate(0deg); }
+  30% { transform: translateY(-50%) rotate(-120deg) translateX(-30px); }
+  60% { transform: translateY(-50%) rotate(-120deg) translateX(-30px); }
+  100% { transform: translateY(-50%) rotate(0deg); }
 }
 
 .yahtzee-dice-container {
@@ -4634,18 +4727,37 @@ body {
   filter: drop-shadow(0 0 8px rgba(255, 165, 0, 0.6));
 }
 
-/* Rolling animation */
+/* Rolling animation - 컵에서 쏟아지는 느낌 */
 .yahtzee-die.rolling .yahtzee-die-cube {
-  animation: diceRoll3d 0.5s ease-out;
+  animation: diceRoll3d 0.6s cubic-bezier(0.15, 0.8, 0.3, 1);
 }
 
 @keyframes diceRoll3d {
-  0%  { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-  25% { transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg); }
-  50% { transform: rotateX(270deg) rotateY(180deg) rotateZ(90deg); }
-  75% { transform: rotateX(360deg) rotateY(270deg) rotateZ(135deg); }
-  100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(0deg); }
+  0% {
+    transform: translateX(80px) translateY(-40px) scale(0.3) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(40px) translateY(-20px) scale(0.7) rotateX(180deg) rotateY(90deg) rotateZ(45deg);
+  }
+  50% {
+    transform: translateX(10px) translateY(5px) scale(1) rotateX(270deg) rotateY(180deg) rotateZ(90deg);
+  }
+  70% {
+    transform: translateX(-5px) translateY(0) scale(1.05) rotateX(330deg) rotateY(270deg) rotateZ(120deg);
+  }
+  100% {
+    transform: translateX(0) translateY(0) scale(1);
+  }
 }
+
+/* 주사위 staggered delay */
+.yahtzee-die:nth-child(1).rolling .yahtzee-die-cube { animation-delay: 0ms; }
+.yahtzee-die:nth-child(2).rolling .yahtzee-die-cube { animation-delay: 50ms; }
+.yahtzee-die:nth-child(3).rolling .yahtzee-die-cube { animation-delay: 100ms; }
+.yahtzee-die:nth-child(4).rolling .yahtzee-die-cube { animation-delay: 150ms; }
+.yahtzee-die:nth-child(5).rolling .yahtzee-die-cube { animation-delay: 200ms; }
 
 /* Dark pips for 3D dice */
 .pip {
@@ -8959,58 +9071,73 @@ body {
   </div>
 
   <div class="yahtzee-dice-area">
-    <div class="yahtzee-dice-container" id="yahtzeeDiceContainer">
-      <div class="yahtzee-die" data-idx="0" onclick="yahToggleHold(0)">
-        <div class="yahtzee-die-cube">
-          <div class="yahtzee-die-face face-1"><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-2"><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-        </div>
-      </div>
-      <div class="yahtzee-die" data-idx="1" onclick="yahToggleHold(1)">
-        <div class="yahtzee-die-cube">
-          <div class="yahtzee-die-face face-1"><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-2"><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-        </div>
-      </div>
-      <div class="yahtzee-die" data-idx="2" onclick="yahToggleHold(2)">
-        <div class="yahtzee-die-cube">
-          <div class="yahtzee-die-face face-1"><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-2"><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-        </div>
-      </div>
-      <div class="yahtzee-die" data-idx="3" onclick="yahToggleHold(3)">
-        <div class="yahtzee-die-cube">
-          <div class="yahtzee-die-face face-1"><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-2"><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-        </div>
-      </div>
-      <div class="yahtzee-die" data-idx="4" onclick="yahToggleHold(4)">
-        <div class="yahtzee-die-cube">
-          <div class="yahtzee-die-face face-1"><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-2"><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="yahtzee-die-face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+    <!-- 3D 금속 트레이 -->
+    <div class="yahtzee-tray">
+      <div class="yahtzee-tray-inner">
+        <!-- 족보 텍스트 (트레이 중앙) -->
+        <div class="yahtzee-combo-label" id="yahtzeeComboLabel"></div>
+        <!-- 주사위 5개 -->
+        <div class="yahtzee-dice-container" id="yahtzeeDiceContainer">
+          <div class="yahtzee-die" data-idx="0" onclick="yahToggleHold(0)">
+            <div class="yahtzee-die-cube">
+              <div class="yahtzee-die-face face-1"><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-2"><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+            </div>
+          </div>
+          <div class="yahtzee-die" data-idx="1" onclick="yahToggleHold(1)">
+            <div class="yahtzee-die-cube">
+              <div class="yahtzee-die-face face-1"><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-2"><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+            </div>
+          </div>
+          <div class="yahtzee-die" data-idx="2" onclick="yahToggleHold(2)">
+            <div class="yahtzee-die-cube">
+              <div class="yahtzee-die-face face-1"><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-2"><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+            </div>
+          </div>
+          <div class="yahtzee-die" data-idx="3" onclick="yahToggleHold(3)">
+            <div class="yahtzee-die-cube">
+              <div class="yahtzee-die-face face-1"><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-2"><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+            </div>
+          </div>
+          <div class="yahtzee-die" data-idx="4" onclick="yahToggleHold(4)">
+            <div class="yahtzee-die-cube">
+              <div class="yahtzee-die-face face-1"><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-2"><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+              <div class="yahtzee-die-face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- 주사위 컵 (오른쪽) -->
+    <div class="yahtzee-cup" id="yahtzeeCup">
+      <div class="yahtzee-cup-body"></div>
+      <div class="yahtzee-cup-rim"></div>
+    </div>
+
     <div class="yahtzee-roll-hint">탭하여 주사위 잠금/해제</div>
     <button class="btn btn-primary yahtzee-roll-btn" id="yahtzeeRollBtn" onclick="yahRoll()">주사위 굴리기</button>
   </div>
@@ -14298,6 +14425,28 @@ function calcPossibleScores(dice) {
   return possible;
 }
 
+function getYahtzeeComboName(dice) {
+  const counts = {};
+  dice.forEach(d => counts[d] = (counts[d] || 0) + 1);
+  const vals = Object.values(counts).sort((a, b) => b - a);
+  const sorted = [...dice].sort((a, b) => a - b);
+
+  if (vals[0] === 5) return 'YAHTZEE!';
+  if (vals[0] === 4) return 'Four of a Kind';
+  if (vals[0] === 3 && vals[1] === 2) return 'Full House';
+  if (sorted.join('') === '12345' || sorted.join('') === '23456') return 'Large Straight';
+  if (vals[0] === 3) return 'Three of a Kind';
+
+  // small straight check
+  const unique = [...new Set(sorted)];
+  const uStr = unique.join('');
+  if (uStr.includes('1234') || uStr.includes('2345') || uStr.includes('3456')) return 'Small Straight';
+
+  if (vals[0] === 2 && vals[1] === 2) return 'Two Pair';
+  if (vals[0] === 2) return 'One Pair';
+  return 'Chance';
+}
+
 function broadcastYahtzeeState() {
   const view = createYahtzeeView();
   broadcast({ type: 'yah-state', state: view });
@@ -14352,6 +14501,16 @@ function renderYahtzeeView(view) {
     6: 'rotateX(90deg)'
   };
 
+  const cup = document.getElementById('yahtzeeCup');
+  const comboLabel = document.getElementById('yahtzeeComboLabel');
+
+  // 컵 쏟기 애니메이션
+  if(cup) {
+    cup.classList.remove('pouring');
+    setTimeout(() => cup.classList.add('pouring'), 10);
+    setTimeout(() => cup.classList.remove('pouring'), 700);
+  }
+
   view.dice.forEach((val, idx) => {
     const die = document.querySelector('.yahtzee-die[data-idx="' + idx + '"]');
     const cube = die.querySelector('.yahtzee-die-cube');
@@ -14361,16 +14520,30 @@ function renderYahtzeeView(view) {
       else die.classList.remove('held');
     }
 
-    // 3D rolling animation then snap to correct face
-    die.classList.remove('rolling');
-    setTimeout(() => {
-      die.classList.add('rolling');
-    }, 10);
-    setTimeout(() => {
+    // held된 주사위는 굴리지 않음
+    if(!view.held[idx]) {
       die.classList.remove('rolling');
+      setTimeout(() => {
+        die.classList.add('rolling');
+      }, 10);
+      setTimeout(() => {
+        die.classList.remove('rolling');
+        cube.style.transform = DICE_ROTATIONS[val];
+      }, 800);
+    } else {
       cube.style.transform = DICE_ROTATIONS[val];
-    }, 500);
+    }
   });
+
+  // 족보 표시
+  if(comboLabel) {
+    setTimeout(() => {
+      comboLabel.textContent = getYahtzeeComboName(view.dice);
+      comboLabel.style.animation = 'none';
+      comboLabel.offsetHeight; // reflow
+      comboLabel.style.animation = 'comboFadeIn 0.3s ease-out';
+    }, 900);
+  }
 
   const rollBtn = document.getElementById('yahtzeeRollBtn');
   const isMyTurn = currentPlayer.id === state.myId;
