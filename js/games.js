@@ -4404,12 +4404,11 @@ function renderYahtzeeView(view) {
       const row = document.querySelector('.yahtzee-score-row[data-cat="' + cat + '"]');
 
       if(myPlayer.scores[cat] !== null) {
-        cell.textContent = myPlayer.scores[cat];
+        cell.textContent = '\u2713 ' + myPlayer.scores[cat];
         row.classList.add('filled');
         row.classList.remove('preview', 'selected', 'available');
         row.onclick = null;
       } else if(isMyTurn && view.rollsLeft < 3) {
-        cell.textContent = possible[cat];
         row.classList.add('preview');
         row.classList.remove('filled');
         // Scorecard navigation: pulse available categories
@@ -4420,8 +4419,10 @@ function renderYahtzeeView(view) {
         }
         if(view.selectedCategory === cat) {
           row.classList.add('selected');
+          cell.textContent = '\u25B6 ' + possible[cat];
         } else {
           row.classList.remove('selected');
+          cell.textContent = possible[cat];
         }
         row.onclick = () => yahSelectCategory(cat);
       } else {
