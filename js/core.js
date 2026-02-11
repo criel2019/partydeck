@@ -94,14 +94,18 @@ function showScreen(id) {
   const prev = document.querySelector('.screen.active');
   if(prev && prev.id === 'yahtzeeGame' && id !== 'yahtzeeGame') {
     if(typeof destroyYahtzeeThree === 'function') destroyYahtzeeThree();
+    // Unlock orientation when leaving yahtzee
+    try { screen.orientation.unlock(); } catch(e) {}
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   // Init Three.js scene when entering yahtzee
   if(id === 'yahtzeeGame') {
+    // Force landscape orientation
+    try { screen.orientation.lock('landscape').catch(()=>{}); } catch(e) {}
     if(typeof initYahtzeeThree === 'function') {
       const canvas = document.getElementById('yahtzeeCanvas');
-      if(canvas) initYahtzeeThree(canvas);
+      if(canvas) setTimeout(() => initYahtzeeThree(canvas), 300);
     }
   }
 }
