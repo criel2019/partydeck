@@ -7362,103 +7362,195 @@
 /* YAHTZEE, UPDOWN, TRUTH MOBILE FIXES */
 /* ===================================== */
 
-/* YAHTZEE GAME MOBILE FIXES */
+/* YAHTZEE GAME MOBILE FIXES — Horizontal 2/5 + 3/5 layout */
 @media (max-width: 430px) {
   #yahtzeeGame.active {
+    display: grid !important;
+    grid-template-columns: 40% 60%;
+    grid-template-rows: auto auto 1fr;
+    gap: 0;
     overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
+    padding: 0 !important;
   }
 
+  /* Header spans both columns */
   .yahtzee-header {
+    grid-column: 1 / 3;
+    grid-row: 1;
     flex-shrink: 0 !important;
-    padding: 6px 10px !important;
+    padding: 4px 8px !important;
   }
 
   .yahtzee-turn-text {
-    font-size: 14px !important;
-  }
-
-  .yahtzee-rolls-left {
-    font-size: 16px !important;
-  }
-
-  .yahtzee-players-bar {
-    flex-shrink: 0 !important;
-    padding: 6px !important;
-    gap: 6px !important;
-  }
-
-  .yahtzee-player-mini {
-    min-width: 50px !important;
-    padding: 4px !important;
-  }
-
-  .yahtzee-player-mini-avatar {
-    width: 28px !important;
-    height: 28px !important;
-    font-size: 14px !important;
-  }
-
-  .yahtzee-player-mini-name {
-    font-size: 9px !important;
-  }
-
-  .yahtzee-dice-area {
-    gap: 8px !important;
-    padding: 10px !important;
-    flex-shrink: 0 !important;
-  }
-
-  #yahtzeeThreeContainer {
-    max-width: 100% !important;
-    aspect-ratio: 4 / 3 !important;
-  }
-
-  .yahtzee-held-die {
-    width: 42px !important;
-    height: 42px !important;
-  }
-
-  .yahtzee-roll-hint {
-    font-size: 10px !important;
-  }
-
-  .yahtzee-roll-btn {
-    padding: 12px 20px !important;
-    font-size: 14px !important;
-    min-height: 44px !important;
-  }
-
-  .yahtzee-scorecard-area {
-    flex: 1 !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding: 10px !important;
-  }
-
-  .yahtzee-scorecard-title {
-    flex-shrink: 0 !important;
-    font-size: 14px !important;
-  }
-
-  .yahtzee-score-table {
-    font-size: 12px !important;
-  }
-
-  .yahtzee-score-row td {
-    padding: 6px 8px !important;
-  }
-
-  .yahtzee-cat-name {
     font-size: 11px !important;
   }
 
+  .yahtzee-current-player {
+    font-size: 9px !important;
+  }
+
+  .yahtzee-rolls-left {
+    font-size: 12px !important;
+    padding: 3px 8px !important;
+  }
+
+  /* Players bar spans both columns */
+  .yahtzee-players-bar {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    flex-shrink: 0 !important;
+    padding: 3px 4px !important;
+    gap: 4px !important;
+  }
+
+  .yahtzee-player-mini {
+    min-width: 40px !important;
+    padding: 2px !important;
+  }
+
+  .yahtzee-player-mini-avatar {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 11px !important;
+  }
+
+  .yahtzee-player-mini-name {
+    font-size: 8px !important;
+  }
+
+  .yahtzee-player-mini-score {
+    font-size: 9px !important;
+  }
+
+  /* Scorecard on LEFT (row 3, column 1) — 2/5 width */
+  .yahtzee-scorecard-area {
+    grid-column: 1;
+    grid-row: 3;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 4px !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    border-radius: 0 !important;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .yahtzee-scorecard-title {
+    font-size: 10px !important;
+    margin-bottom: 2px !important;
+    padding: 2px 4px !important;
+  }
+
+  .yahtzee-score-table {
+    font-size: 9px !important;
+  }
+
+  .yahtzee-score-table th {
+    padding: 3px 2px !important;
+    font-size: 8px !important;
+  }
+
+  .yahtzee-score-row td {
+    padding: 3px 3px !important;
+  }
+
+  .yahtzee-cat-name {
+    font-size: 8px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 75px !important;
+  }
+
+  .yahtzee-cat-score {
+    font-size: 10px !important;
+    min-width: 20px !important;
+    text-align: center !important;
+  }
+
+  .yahtzee-subtotal-row td,
+  .yahtzee-bonus-row td,
+  .yahtzee-total-row td {
+    padding: 3px 3px !important;
+    font-size: 8px !important;
+  }
+
+  .yahtzee-total-row td:last-child {
+    font-size: 11px !important;
+  }
+
+  .yahtzee-divider-row td {
+    padding: 1px !important;
+  }
+
   .yahtzee-score-btn {
+    min-height: 32px !important;
+    padding: 6px 8px !important;
+    font-size: 10px !important;
+    margin-top: 4px !important;
+    border-radius: 6px !important;
+  }
+
+  /* Dice area on RIGHT (row 3, column 2) — 3/5 width */
+  .yahtzee-dice-area {
+    grid-column: 2;
+    grid-row: 3;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-y: auto !important;
+    align-items: center !important;
+  }
+
+  #yahtzeeThreeContainer {
+    width: 100% !important;
+    max-width: 100% !important;
+    aspect-ratio: 4 / 3 !important;
+    border-radius: 8px !important;
+  }
+
+  .yahtzee-hold-bar {
     min-height: 44px !important;
-    padding: 12px 20px !important;
-    font-size: 14px !important;
+    padding: 4px 6px !important;
+    gap: 4px !important;
+    max-width: 100% !important;
+  }
+
+  .yahtzee-held-die {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .yahtzee-held-die .held-pip {
+    width: 5px !important;
+    height: 5px !important;
+  }
+
+  .yahtzee-hold-bar::before {
+    font-size: 8px !important;
+    top: -6px !important;
+  }
+
+  .yahtzee-roll-hint {
+    font-size: 9px !important;
+    margin: 0 !important;
+  }
+
+  .yahtzee-roll-btn {
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+    min-height: 38px !important;
+    max-width: 100% !important;
+    border-radius: 8px !important;
+  }
+
+  /* Game over overlay spans entire grid */
+  .yahtzee-game-over {
+    grid-column: 1 / 3 !important;
+    grid-row: 1 / 4 !important;
+    z-index: 10 !important;
   }
 }
 
@@ -7782,13 +7874,22 @@
 
 /* Extra small screens for Y/U/T games */
 @media (max-width: 360px) {
+  #yahtzeeGame.active {
+    grid-template-columns: 38% 62% !important;
+  }
+
   .yahtzee-held-die {
-    width: 38px !important;
-    height: 38px !important;
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .yahtzee-cat-name {
+    font-size: 7px !important;
+    max-width: 65px !important;
   }
 
   .yahtzee-score-table {
-    font-size: 11px !important;
+    font-size: 8px !important;
   }
 
   .truth-vote-btn {

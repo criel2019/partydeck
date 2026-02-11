@@ -32,21 +32,25 @@
   const FACE_ROTATIONS = {};
 
   function computeFaceRotations() {
-    // Value → rotation that shows that face toward camera
-    // Camera looks from above-front, so we want the value face pointing mostly up+toward camera
-    const E = new THREE.Euler();
-    // face 1: front face (default)
-    FACE_ROTATIONS[1] = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0));
-    // face 2: back face
-    FACE_ROTATIONS[2] = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI, 0));
-    // face 3: left face
-    FACE_ROTATIONS[3] = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
-    // face 4: right face
-    FACE_ROTATIONS[4] = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0));
-    // face 5: top face (rotate to show upward, tilted toward camera)
-    FACE_ROTATIONS[5] = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
-    // face 6: bottom face
-    FACE_ROTATIONS[6] = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0));
+    // Camera is at (0, 8, 7) looking at (0, 0, 0.3) — views primarily from above.
+    // The dominant visible face is +Y (top). We rotate so the desired value's
+    // textured face points UP (+Y direction).
+    //
+    // Texture map (faceValues): +X=4, -X=3, +Y=5, -Y=6, +Z=1, -Z=2
+    // Standard die opposite faces sum to 7: 1↔6, 2↔5, 3↔4
+
+    // Value 1: texture on +Z face → tilt +Z up to +Y → rotate X by -90°
+    FACE_ROTATIONS[1] = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
+    // Value 2: texture on -Z face → tilt -Z up to +Y → rotate X by +90°
+    FACE_ROTATIONS[2] = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0));
+    // Value 3: texture on -X face → tilt -X up to +Y → rotate Z by -90°
+    FACE_ROTATIONS[3] = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, -Math.PI / 2));
+    // Value 4: texture on +X face → tilt +X up to +Y → rotate Z by +90°
+    FACE_ROTATIONS[4] = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, Math.PI / 2));
+    // Value 5: texture on +Y face → already on top → identity
+    FACE_ROTATIONS[5] = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0));
+    // Value 6: texture on -Y face → flip upside down → rotate X by 180°
+    FACE_ROTATIONS[6] = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI, 0, 0));
   }
 
   // ===== TEXTURE GENERATION =====
