@@ -92,50 +92,56 @@ function renderPokerView(ps) {
   state._pokerView = ps;
   const me = ps.players.find(p => p.id === state.myId);
   const isMyTurn = ps.players[ps.turnIdx]?.id === state.myId && ps.phase !== 'showdown';
-  
-  // Opponents
+
+  // Opponents - compact row
   const opArea = document.getElementById('opponentsArea');
   const ops = ps.players.filter(p => p.id !== state.myId);
-  opArea.innerHTML = ops.map((p, i) => {
+  opArea.innerHTML = ops.map(p => {
     const isTurn = ps.players[ps.turnIdx]?.id === p.id && ps.phase !== 'showdown';
-    return `<div class="opponent-slot ${p.folded ? 'fold-overlay' : ''}">
-      <div class="opponent-avatar ${isTurn ? 'active-turn' : ''}" style="background:${PLAYER_COLORS[ps.players.findIndex(pp=>pp.id===p.id) % PLAYER_COLORS.length]};">${p.avatar}</div>
-      <div class="opponent-name">${p.name}</div>
-      <div class="opponent-chips">💰${p.chips}</div>
-      <div class="opponent-bet">${p.bet > 0 ? '🔸' + p.bet : (p.folded ? '폴드' : '')}</div>
-      <div class="opponent-cards">${p.cards ? p.cards.map(c => cardHTML(c)).join('') : '<div class="card card-back"></div><div class="card card-back"></div>'}</div>
+    const ci = ps.players.findIndex(pp => pp.id === p.id);
+    const cardsHtml = p.cards
+      ? p.cards.map(c => pkOppCardHTML(c)).join('')
+      : '<div class="pk-opp-card pk-card-back"><div class="pk-opp-card-pattern"></div></div><div class="pk-opp-card pk-card-back"><div class="pk-opp-card-pattern"></div></div>';
+    const betStr = p.bet > 0 ? `<span class="pk-opp-bet">${p.bet}</span>` : (p.folded ? '<span class="pk-opp-bet">폴드</span>' : '');
+    return `<div class="pk-opp-slot ${p.folded ? 'fold-overlay' : ''}">
+      <div class="pk-opp-avatar ${isTurn ? 'active-turn' : ''}" style="background:${PLAYER_COLORS[ci % PLAYER_COLORS.length]};">${p.avatar}</div>
+      <span class="pk-opp-label">${p.name}</span>
+      <span class="pk-opp-chips">${p.chips}</span>${betStr}
+      <div class="pk-opp-cards">${cardsHtml}</div>
     </div>`;
   }).join('');
-  
-  // Community
+
+  // Community cards
   const cc = document.getElementById('communityCards');
   let cHTML = '';
   for(let i = 0; i < 5; i++) {
-    cHTML += i < ps.community.length ? cardHTML(ps.community[i]) : '<div class="card card-placeholder"></div>';
+    cHTML += i < ps.community.length ? pkCommCardHTML(ps.community[i]) : '<div class="pk-comm-placeholder"></div>';
   }
   cc.innerHTML = cHTML;
-  
-  // My cards
+
+  // My cards - hero size
   const mc = document.getElementById('myCardsDisplay');
-  mc.innerHTML = me?.cards ? me.cards.map(c => cardHTML(c)).join('') : '<div class="card card-back"></div><div class="card card-back"></div>';
-  
-  document.getElementById('myChipsDisplay').textContent = '💰 ' + (me?.chips || 0);
-  document.getElementById('potAmount').textContent = ps.pot;
-  
+  mc.innerHTML = me?.cards
+    ? me.cards.map(c => pkHeroCardHTML(c)).join('')
+    : '<div class="pk-hero-card pk-card-back"><div class="pk-hero-back-pattern"></div></div><div class="pk-hero-card pk-card-back"><div class="pk-hero-back-pattern"></div></div>';
+
+  document.getElementById('myChipsDisplay').textContent = (me?.chips || 0).toLocaleString();
+  document.getElementById('potAmount').textContent = ps.pot.toLocaleString();
+
   const phaseNames = { preflop:'프리플랍', flop:'플랍', turn:'턴', river:'리버', showdown:'쇼다운' };
   document.getElementById('roundDisplay').textContent = phaseNames[ps.phase] || ps.phase;
-  
+
   // Hand rank
   if(me?.cards && ps.community.length > 0) {
     document.getElementById('handRankDisplay').textContent = evaluateHandName([...me.cards, ...ps.community]);
   } else {
     document.getElementById('handRankDisplay').textContent = '';
   }
-  
+
   // Actions
-  const btns = document.getElementById('actionBar').querySelectorAll('.action-btn');
+  const btns = document.getElementById('actionBar').querySelectorAll('.pk-action-btn');
   const ccb = document.getElementById('checkCallBtn');
-  
+
   if(!isMyTurn || me?.folded || me?.allIn) {
     btns.forEach(b => b.disabled = true);
   } else {
@@ -143,11 +149,11 @@ function renderPokerView(ps) {
     const toCall = ps.currentBet - (me?.bet || 0);
     if(toCall > 0) {
       ccb.textContent = `콜 ${Math.min(toCall, me.chips)}`;
-      ccb.className = 'action-btn btn-call';
+      ccb.className = 'pk-action-btn pk-btn-call';
       ccb.onclick = () => pokerAction('call');
     } else {
       ccb.textContent = '체크';
-      ccb.className = 'action-btn btn-check';
+      ccb.className = 'pk-action-btn pk-btn-check';
       ccb.onclick = () => pokerAction('check');
     }
     const slider = document.getElementById('raiseSlider');
@@ -159,10 +165,44 @@ function renderPokerView(ps) {
   }
 }
 
+/* Hero card (my hand) — large detailed card */
+function pkHeroCardHTML(c) {
+  if(!c) return '<div class="pk-hero-card pk-card-back"><div class="pk-hero-back-pattern"></div></div>';
+  const cls = (c.suit === '♥' || c.suit === '♦') ? 'pk-red' : 'pk-black';
+  return `<div class="pk-hero-card ${cls}">
+    <div class="pk-hero-inner">
+      <div class="pk-hero-corner"><span class="pk-hero-rank">${c.rank}</span><span class="pk-hero-suit-sm">${c.suit}</span></div>
+      <div class="pk-hero-center">${c.suit}</div>
+      <div class="pk-hero-corner pk-corner-bottom"><span class="pk-hero-rank">${c.rank}</span><span class="pk-hero-suit-sm">${c.suit}</span></div>
+    </div>
+  </div>`;
+}
+
+/* Community card — medium */
+function pkCommCardHTML(c) {
+  if(!c) return '<div class="pk-comm-card pk-card-back"><div class="pk-opp-card-pattern"></div></div>';
+  const cls = (c.suit === '♥' || c.suit === '♦') ? 'pk-red' : 'pk-black';
+  return `<div class="pk-comm-card pk-card-face ${cls}"><span class="pk-comm-rank">${c.rank}</span><span class="pk-comm-suit">${c.suit}</span></div>`;
+}
+
+/* Opponent card — small */
+function pkOppCardHTML(c) {
+  if(!c) return '<div class="pk-opp-card pk-card-back"><div class="pk-opp-card-pattern"></div></div>';
+  const cls = (c.suit === '♥' || c.suit === '♦') ? 'pk-red' : 'pk-black';
+  return `<div class="pk-opp-card pk-card-face ${cls}"><span class="pk-small-rank">${c.rank}</span><span class="pk-small-suit">${c.suit}</span></div>`;
+}
+
+/* Keep old cardHTML for result overlay */
 function cardHTML(c) {
-  if(!c) return '<div class="card card-back"></div>';
-  const red = c.suit === '♥' || c.suit === '♦';
-  return `<div class="card card-face ${red ? 'red' : 'black'}"><span class="card-rank">${c.rank}</span><span class="card-suit">${c.suit}</span></div>`;
+  if(!c) return '<div class="pk-hero-card pk-card-back"><div class="pk-hero-back-pattern"></div></div>';
+  const cls = (c.suit === '♥' || c.suit === '♦') ? 'pk-red' : 'pk-black';
+  return `<div class="pk-hero-card ${cls}" style="width:60px;height:86px;">
+    <div class="pk-hero-inner">
+      <div class="pk-hero-corner"><span class="pk-hero-rank" style="font-size:16px;">${c.rank}</span><span class="pk-hero-suit-sm" style="font-size:11px;">${c.suit}</span></div>
+      <div class="pk-hero-center" style="font-size:28px;">${c.suit}</div>
+      <div class="pk-hero-corner pk-corner-bottom"><span class="pk-hero-rank" style="font-size:16px;">${c.rank}</span><span class="pk-hero-suit-sm" style="font-size:11px;">${c.suit}</span></div>
+    </div>
+  </div>`;
 }
 
 function pokerAction(action) {

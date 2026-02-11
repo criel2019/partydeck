@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/common.css">
 <link rel="stylesheet" href="css/games.css">
 </head>
@@ -152,33 +152,54 @@
 
 <!-- POKER -->
 <div class="screen" id="pokerGame">
-  <div class="poker-top-bar">
-    <div class="pot-display">💰 <span id="potAmount">0</span></div>
-    <div class="round-display" id="roundDisplay">프리플랍</div>
-    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">✕</button>
-  </div>
-  <div class="opponents-area" id="opponentsArea"></div>
-  <div class="table-area">
-    <div class="community-cards" id="communityCards"></div>
-  </div>
-  <div class="my-hand-area">
-    <div class="my-info-row">
-      <div class="my-chips" id="myChipsDisplay">💰 1000</div>
-      <div class="my-hand-label">내 패</div>
+  <div class="pk-felt"></div>
+
+  <div class="pk-content">
+    <!-- Opponent area - top left, small -->
+    <div class="pk-opponent-area" id="opponentsArea"></div>
+
+    <!-- Community cards - top center -->
+    <div class="pk-community" id="communityCards"></div>
+
+    <!-- My cards - LARGE, center -->
+    <div class="pk-my-area">
+      <div class="pk-card-glow"></div>
+      <div class="pk-my-cards" id="myCardsDisplay"></div>
+      <div class="pk-hand-name" id="handRankDisplay"></div>
     </div>
-    <div class="my-cards" id="myCardsDisplay"></div>
-    <div class="hand-rank-display" id="handRankDisplay"></div>
-  </div>
-  <div class="raise-slider-area" id="raiseSliderArea">
-    <input type="range" class="raise-slider" id="raiseSlider" min="0" max="1000" value="100">
-    <div class="raise-amount" id="raiseAmountDisplay">100</div>
-    <button class="raise-confirm" onclick="confirmRaise()">확인</button>
-  </div>
-  <div class="action-bar" id="actionBar">
-    <button class="action-btn btn-fold" onclick="pokerAction('fold')">폴드</button>
-    <button class="action-btn btn-check" id="checkCallBtn" onclick="pokerAction('check')">체크</button>
-    <button class="action-btn btn-raise" onclick="showRaiseSlider()">레이즈</button>
-    <button class="action-btn btn-allin" onclick="pokerAction('allin')">올인</button>
+
+    <!-- Right panel: money + actions -->
+    <div class="pk-right-panel">
+      <div class="pk-money-box">
+        <div class="pk-money-row">
+          <span class="pk-money-label">내 금액</span>
+          <span class="pk-money-value" id="myChipsDisplay">0</span>
+        </div>
+        <div class="pk-money-row">
+          <span class="pk-money-label">판돈</span>
+          <span class="pk-money-value" id="potAmount">0</span>
+        </div>
+      </div>
+
+      <div class="pk-raise-area" id="raiseSliderArea">
+        <input type="range" class="pk-raise-slider" id="raiseSlider" min="0" max="1000" value="100">
+        <div class="pk-raise-amount" id="raiseAmountDisplay">100</div>
+        <button class="pk-raise-confirm" onclick="confirmRaise()">확인</button>
+      </div>
+
+      <div class="pk-actions" id="actionBar">
+        <button class="pk-action-btn pk-btn-call" id="checkCallBtn" onclick="pokerAction('check')">체크</button>
+        <button class="pk-action-btn pk-btn-raise" onclick="showRaiseSlider()">레이즈</button>
+        <button class="pk-action-btn pk-btn-allin" onclick="pokerAction('allin')">올인</button>
+        <button class="pk-action-btn pk-btn-fold" onclick="pokerAction('fold')">폴드</button>
+      </div>
+    </div>
+
+    <!-- Round info + close -->
+    <div class="pk-bottom-bar">
+      <span class="pk-round-badge" id="roundDisplay">프리플랍</span>
+      <button class="pk-close-btn" onclick="leaveGame()">✕</button>
+    </div>
   </div>
 </div>
 
