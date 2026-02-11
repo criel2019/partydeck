@@ -468,20 +468,20 @@ body {
 
 .pk-my-cards {
   display: flex;
-  gap: 12px;
-  margin-bottom: 8px;
-  perspective: 600px;
+  gap: 18px;
+  margin-bottom: 10px;
+  perspective: 800px;
 }
 
 /* Large hero card */
 .pk-hero-card {
-  width: 100px; height: 144px;
+  width: 180px; height: 260px;
   background: linear-gradient(145deg, #fff 0%, #f0ece4 50%, #e8e0d0 100%);
-  border-radius: 10px;
-  border: 2px solid #bbb;
+  border-radius: 14px;
+  border: 2.5px solid #bbb;
   box-shadow:
-    0 6px 18px rgba(0,0,0,0.5),
-    0 2px 4px rgba(0,0,0,0.3),
+    0 10px 30px rgba(0,0,0,0.5),
+    0 3px 6px rgba(0,0,0,0.3),
     inset 0 1px 0 rgba(255,255,255,0.8);
   position: relative;
   overflow: hidden;
@@ -491,12 +491,12 @@ body {
 .pk-hero-card:nth-child(2) { transform: rotate(2deg); }
 
 .pk-hero-inner {
-  position: absolute; inset: 4px;
+  position: absolute; inset: 6px;
   border: 1px solid rgba(0,0,0,0.06);
-  border-radius: 7px;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
-  padding: 5px;
+  padding: 8px;
 }
 .pk-hero-corner {
   display: flex;
@@ -506,16 +506,16 @@ body {
 }
 .pk-hero-corner .pk-hero-rank {
   font-family: 'Oswald', 'Black Han Sans', sans-serif;
-  font-size: 22px;
+  font-size: 36px;
   font-weight: 700;
 }
 .pk-hero-corner .pk-hero-suit-sm {
-  font-size: 14px;
-  margin-top: -1px;
+  font-size: 22px;
+  margin-top: -2px;
 }
 .pk-hero-corner.pk-corner-bottom {
   position: absolute;
-  bottom: 5px; right: 7px;
+  bottom: 8px; right: 10px;
   transform: rotate(180deg);
 }
 .pk-hero-center {
@@ -523,7 +523,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
+  font-size: 80px;
   opacity: 0.9;
 }
 .pk-hero-card.pk-red { color: #cc1111; }
@@ -536,28 +536,28 @@ body {
 }
 .pk-hero-card.pk-card-back::before {
   content: '';
-  position: absolute; inset: 5px;
+  position: absolute; inset: 8px;
   border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 6px;
+  border-radius: 8px;
 }
 .pk-hero-back-pattern {
-  width: 50px; height: 50px;
-  background: repeating-linear-gradient(45deg, rgba(150,100,180,0.3), rgba(150,100,180,0.3) 3px, transparent 3px, transparent 7px);
-  border-radius: 4px;
+  width: 80px; height: 80px;
+  background: repeating-linear-gradient(45deg, rgba(150,100,180,0.3), rgba(150,100,180,0.3) 4px, transparent 4px, transparent 9px);
+  border-radius: 6px;
   position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
 }
 
 /* Hand name */
 .pk-hand-name {
   font-family: 'Oswald', 'Black Han Sans', sans-serif;
-  font-size: 22px;
+  font-size: 32px;
   color: #ffe066;
   text-shadow:
-    0 0 20px rgba(255,200,0,0.3),
-    0 2px 4px rgba(0,0,0,0.8);
-  letter-spacing: 3px;
+    0 0 24px rgba(255,200,0,0.3),
+    0 3px 6px rgba(0,0,0,0.8);
+  letter-spacing: 5px;
   text-align: center;
-  min-height: 24px;
+  min-height: 28px;
   font-weight: 700;
   text-transform: uppercase;
 }

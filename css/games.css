@@ -8443,13 +8443,13 @@
     padding-top: 40px !important;
   }
   #pokerGame .pk-hero-card {
-    width: min(28vh, 120px) !important;
-    height: min(40vh, 172px) !important;
+    width: min(42vh, 180px) !important;
+    height: min(60vh, 260px) !important;
   }
-  #pokerGame .pk-hero-corner .pk-hero-rank { font-size: min(6vh, 24px) !important; }
-  #pokerGame .pk-hero-corner .pk-hero-suit-sm { font-size: min(4vh, 16px) !important; }
-  #pokerGame .pk-hero-center { font-size: min(14vh, 56px) !important; }
-  #pokerGame .pk-hand-name { font-size: min(6vh, 24px) !important; }
+  #pokerGame .pk-hero-corner .pk-hero-rank { font-size: min(8vh, 36px) !important; }
+  #pokerGame .pk-hero-corner .pk-hero-suit-sm { font-size: min(5vh, 22px) !important; }
+  #pokerGame .pk-hero-center { font-size: min(20vh, 80px) !important; }
+  #pokerGame .pk-hand-name { font-size: min(7vh, 32px) !important; }
   #pokerGame .pk-right-panel {
     width: 180px !important;
     flex-direction: column !important;
@@ -8871,13 +8871,13 @@
   #pokerGame .pk-content { padding: 6px !important; }
   #pokerGame .pk-right-panel { width: 150px !important; gap: 6px !important; }
   #pokerGame .pk-hero-card {
-    width: min(24vh, 100px) !important;
-    height: min(34vh, 144px) !important;
+    width: min(36vh, 150px) !important;
+    height: min(52vh, 216px) !important;
   }
-  #pokerGame .pk-hero-corner .pk-hero-rank { font-size: min(5vh, 20px) !important; }
-  #pokerGame .pk-hero-corner .pk-hero-suit-sm { font-size: min(3.5vh, 13px) !important; }
-  #pokerGame .pk-hero-center { font-size: min(11vh, 44px) !important; }
-  #pokerGame .pk-hand-name { font-size: min(5vh, 18px) !important; }
+  #pokerGame .pk-hero-corner .pk-hero-rank { font-size: min(7vh, 30px) !important; }
+  #pokerGame .pk-hero-corner .pk-hero-suit-sm { font-size: min(4.5vh, 18px) !important; }
+  #pokerGame .pk-hero-center { font-size: min(16vh, 64px) !important; }
+  #pokerGame .pk-hand-name { font-size: min(6vh, 26px) !important; }
   #pokerGame .pk-comm-card {
     width: min(10vh, 36px) !important;
     height: min(14vh, 52px) !important;
