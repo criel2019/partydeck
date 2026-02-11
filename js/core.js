@@ -614,6 +614,23 @@ function handleGameStart(msg) {
 }
 
 // ===== DEBUG / PREVIEW MODE =====
+let debugModeOn = false;
+
+function toggleDebugMode() {
+  debugModeOn = !debugModeOn;
+  const btn = document.getElementById('debugToggleBtn');
+  const selector = document.getElementById('debugGameSelector');
+  if(debugModeOn) {
+    btn.classList.add('active');
+    btn.textContent = '🛠 디버그 모드 ON (닫기)';
+    selector.style.display = '';
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '🛠 디버그 미리보기';
+    selector.style.display = 'none';
+  }
+}
+
 function debugGame(game) {
   state.myId = 'debug-me';
   state.myName = '테스터';
@@ -623,6 +640,20 @@ function debugGame(game) {
     { id: 'debug-me', name: '테스터', avatar: '😎' },
     { id: 'debug-bot', name: '봇', avatar: '🤖' }
   ];
+
+  const screenMap = {
+    poker: 'pokerGame',
+    mafia: 'mafiaGame',
+    sutda: 'sutdaGame',
+    quickdraw: 'quickDrawGame',
+    roulette: 'rouletteGame',
+    racing: 'racingGame',
+    lottery: 'lotteryGame',
+    ecard: 'ecardGame',
+    yahtzee: 'yahtzeeGame',
+    updown: 'updownGame',
+    truth: 'truthGame'
+  };
 
   if(game === 'yahtzee') {
     yahState = {
@@ -647,6 +678,12 @@ function debugGame(game) {
     yahRollDice();
     showScreen('yahtzeeGame');
     renderYahtzeeView(createYahtzeeView());
+    return;
+  }
+
+  const screenId = screenMap[game];
+  if(screenId) {
+    showScreen(screenId);
   }
 }
 

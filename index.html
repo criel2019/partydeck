@@ -52,6 +52,25 @@
 
   <button class="btn btn-secondary" onclick="shareApp()" style="max-width:380px;">📱 앱 공유 (QR 코드)</button>
 
+  <!-- Debug Preview Toggle -->
+  <button class="btn btn-debug-toggle" id="debugToggleBtn" onclick="toggleDebugMode()">🛠 디버그 미리보기</button>
+  <div class="debug-game-selector" id="debugGameSelector" style="display:none;">
+    <div class="debug-selector-title">게임 선택 (1인 미리보기)</div>
+    <div class="debug-game-grid">
+      <button class="debug-game-btn" onclick="debugGame('poker')">🃏 포커</button>
+      <button class="debug-game-btn" onclick="debugGame('mafia')">🕵️ 마피아</button>
+      <button class="debug-game-btn" onclick="debugGame('sutda')">🎴 섯다</button>
+      <button class="debug-game-btn" onclick="debugGame('quickdraw')">🤠 총잡이</button>
+      <button class="debug-game-btn" onclick="debugGame('roulette')">🔫 룰렛</button>
+      <button class="debug-game-btn" onclick="debugGame('racing')">🏍️ 레이싱</button>
+      <button class="debug-game-btn" onclick="debugGame('lottery')">🎰 뽑기</button>
+      <button class="debug-game-btn" onclick="debugGame('ecard')">👑 E카드</button>
+      <button class="debug-game-btn" onclick="debugGame('yahtzee')">🎲 야추</button>
+      <button class="debug-game-btn" onclick="debugGame('updown')">🃏 업다운</button>
+      <button class="debug-game-btn" onclick="debugGame('truth')">⭕ 진실게임</button>
+    </div>
+  </div>
+
   <div class="ad-banner">📢 광고 영역 (AdSense / AdMob)</div>
 </div>
 
