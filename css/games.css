@@ -4607,17 +4607,17 @@
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
-/* -- Score Board: Brass Plaque -- */
+/* -- Score Board: Brass Plaque (compact) -- */
 .ecard-score {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 20px;
-  padding: 12px 20px;
-  margin: 8px 12px 4px;
+  gap: 14px;
+  padding: 6px 16px;
+  margin: 4px 12px 2px;
   background:
     linear-gradient(135deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.2) 100%);
-  border-radius: 12px;
+  border-radius: 10px;
   border: 2px solid rgba(201,168,76,0.3);
   box-shadow:
     inset 0 2px 8px rgba(0,0,0,0.3),
@@ -4627,17 +4627,17 @@
 .score-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .score-icon {
-  font-size: 28px;
+  font-size: 22px;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
 .score-value {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 34px;
+  font-size: 26px;
   color: #ffd700;
   text-shadow:
     0 0 10px rgba(255,215,0,0.5),
@@ -4646,40 +4646,40 @@
 
 .score-divider {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 32px;
+  font-size: 24px;
   color: rgba(255,255,255,0.25);
 }
 
-/* -- Role Badge: Gold Emblem -- */
+/* -- Role Badge: Gold Emblem (compact) -- */
 .ecard-role-display {
   display: flex;
   justify-content: center;
-  padding: 6px 12px;
+  padding: 2px 12px;
 }
 
 .role-badge {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 24px;
+  gap: 8px;
+  padding: 5px 16px;
   background:
     linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.25) 100%);
-  border-radius: 24px;
+  border-radius: 20px;
   border: 2px solid var(--card-gold-border);
   box-shadow:
-    0 4px 16px rgba(0,0,0,0.4),
+    0 3px 10px rgba(0,0,0,0.4),
     inset 0 1px 0 rgba(255,255,255,0.06),
-    0 0 20px var(--card-gold-glow);
+    0 0 12px var(--card-gold-glow);
 }
 
 .role-icon {
-  font-size: 32px;
+  font-size: 22px;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
 .role-text {
   font-weight: 700;
-  font-size: 15px;
+  font-size: 13px;
   color: #e8dcc8;
   text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
@@ -4687,59 +4687,73 @@
 .role-text span {
   color: #ffd700;
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 17px;
+  font-size: 15px;
   text-shadow: 0 0 8px rgba(255,215,0,0.4);
 }
 
-/* -- Opponent Area: Recessed Felt -- */
+/* -- Opponent Area: Compact Horizontal Strip -- */
 .ecard-opponent-area {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
-  padding: 12px;
+  padding: 5px 12px;
   margin: 0 12px;
-  background:
-    radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.25) 100%);
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.2);
-  box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
-  min-height: 120px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.15);
+  min-height: 0;
 }
 
 .ecard-opponent-area .opponent-info {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .ecard-opponent-area .opponent-avatar {
-  width: 48px;
-  height: 48px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
-  border: 2px solid rgba(201,168,76,0.4);
-  box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+  font-size: 16px;
+  border: 1.5px solid rgba(201,168,76,0.4);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  flex-shrink: 0;
 }
 
 .ecard-opponent-area .opponent-name {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 12px;
   color: #e8dcc8;
   text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 .opponent-cards-count {
-  font-size: 12px;
+  font-size: 11px;
   color: rgba(200,190,160,0.6);
+  margin-left: auto;
 }
 
 .opponent-played-card {
-  margin-top: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.opponent-played-card .ecard-card {
+  width: 36px !important;
+  height: 52px !important;
+}
+
+.opponent-played-card .ecard-card-icon {
+  font-size: 18px !important;
+}
+
+.opponent-played-card .ecard-card-name {
+  font-size: 7px !important;
 }
 
 /* -- Battle Area: Spotlight Center -- */
@@ -4748,8 +4762,8 @@
   justify-content: center;
   align-items: center;
   gap: 16px;
-  padding: 20px;
-  margin: 6px 12px;
+  padding: 16px;
+  margin: 4px 12px;
   background:
     radial-gradient(ellipse at center, rgba(255,215,0,0.06) 0%, rgba(0,0,0,0.3) 70%);
   border-radius: 16px;
@@ -4757,7 +4771,7 @@
   box-shadow:
     inset 0 0 30px rgba(0,0,0,0.4),
     0 0 20px var(--card-gold-glow);
-  min-height: 140px;
+  min-height: 120px;
 }
 
 .battle-card {
@@ -4778,30 +4792,31 @@
 .ecard-result-text {
   text-align: center;
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   color: #ffd700;
-  padding: 6px 12px;
-  min-height: 28px;
+  padding: 4px 12px;
+  min-height: 24px;
   text-shadow:
     0 0 12px rgba(255,215,0,0.5),
     0 2px 4px rgba(0,0,0,0.6);
 }
 
-/* -- My Cards Area -- */
+/* -- My Cards Area: Maximized -- */
 .ecard-my-cards-area {
-  flex: 1;
+  flex: 2;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-height: 0;
-  padding: 0 12px;
+  padding: 0 8px;
+  justify-content: center;
 }
 
 .my-cards-label {
   text-align: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  color: rgba(200,190,160,0.6);
+  color: rgba(200,190,160,0.5);
   text-shadow: 0 1px 2px rgba(0,0,0,0.4);
 }
 
@@ -4811,15 +4826,15 @@
   justify-content: center;
   align-items: flex-end;
   gap: -20px;
-  padding: 12px 8px;
+  padding: 8px 4px 16px;
   flex: 1;
   min-height: 0;
 }
 
-/* -- Card Base -- */
+/* -- Card Base: Large -- */
 .ecard-card {
-  width: 70px;
-  height: 100px;
+  width: 86px;
+  height: 124px;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -4832,7 +4847,7 @@
   box-shadow:
     0 4px 12px rgba(0,0,0,0.5),
     0 1px 0 rgba(255,255,255,0.1) inset;
-  margin: 0 -10px;
+  margin: 0 -12px;
   border: 3px solid var(--card-gold-border);
 }
 
@@ -4904,14 +4919,14 @@
 
 /* -- Card Icon & Name -- */
 .ecard-card-icon {
-  font-size: 36px;
+  font-size: 42px;
   margin-bottom: 4px;
   filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
 }
 
 .ecard-card-name {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 1px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
@@ -4966,10 +4981,42 @@
   z-index: 1;
 }
 
+/* -- Card Size Variants -- */
+.ecard-card-opp-small {
+  width: 36px !important;
+  height: 52px !important;
+  margin: 0 !important;
+  cursor: default !important;
+}
+
+.ecard-card-opp-small .ecard-card-icon {
+  font-size: 18px !important;
+  margin-bottom: 1px !important;
+}
+
+.ecard-card-opp-small .ecard-card-name {
+  font-size: 7px !important;
+}
+
+.ecard-card-opp-small:hover {
+  transform: none !important;
+}
+
+.ecard-card-battle {
+  width: 80px !important;
+  height: 115px !important;
+  margin: 0 !important;
+  cursor: default !important;
+}
+
+.ecard-card-battle:hover {
+  transform: none !important;
+}
+
 /* -- Betting Area: Wood Panel -- */
 .ecard-bet-area, .ecard-bet-response {
-  padding: 16px;
-  margin: 4px 12px;
+  padding: 12px;
+  margin: 2px 12px;
   background:
     linear-gradient(180deg, #4a3220 0%, #3a2816 50%, #2e1e10 100%);
   border-radius: 12px;
@@ -5054,7 +5101,7 @@
 .ecard-action-buttons {
   display: flex;
   gap: 8px;
-  padding: 8px 12px 12px;
+  padding: 6px 12px 10px;
 }
 
 .ecard-action-buttons .btn {
@@ -5082,8 +5129,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  margin: 8px 12px;
+  padding: 14px;
+  margin: 4px 12px;
   background: rgba(0,0,0,0.3);
   border-radius: 12px;
   border: 1px solid rgba(201,168,76,0.15);
@@ -5096,46 +5143,52 @@
     border-width: 4px;
   }
   .ecard-card {
-    width: 58px;
-    height: 84px;
+    width: 72px;
+    height: 104px;
+    margin: 0 -10px;
+  }
+  .ecard-card-icon {
+    font-size: 34px;
+  }
+  .ecard-card-name {
+    font-size: 12px;
+  }
+  .ecard-battle-area {
+    padding: 12px;
+    min-height: 100px;
+  }
+  .score-value {
+    font-size: 22px;
+  }
+  .score-icon {
+    font-size: 18px;
+  }
+  .ecard-title {
+    font-size: 16px;
+  }
+  .role-badge {
+    padding: 4px 12px;
+  }
+  .role-icon {
+    font-size: 18px;
+  }
+  .role-text {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 340px) {
+  .ecard-card {
+    width: 60px;
+    height: 88px;
     margin: 0 -8px;
+    border-width: 2px;
   }
   .ecard-card-icon {
     font-size: 28px;
   }
   .ecard-card-name {
     font-size: 10px;
-  }
-  .ecard-battle-area {
-    padding: 14px;
-    min-height: 110px;
-  }
-  .score-value {
-    font-size: 26px;
-  }
-  .ecard-title {
-    font-size: 16px;
-  }
-  .role-badge {
-    padding: 8px 16px;
-  }
-  .role-icon {
-    font-size: 26px;
-  }
-}
-
-@media (max-width: 340px) {
-  .ecard-card {
-    width: 50px;
-    height: 72px;
-    margin: 0 -6px;
-    border-width: 2px;
-  }
-  .ecard-card-icon {
-    font-size: 22px;
-  }
-  .ecard-card-name {
-    font-size: 9px;
   }
   .ecard-card-back::before {
     font-size: 36px;
@@ -7060,8 +7113,8 @@
 /* E-CARD GAME MOBILE FIXES */
 @media (max-width: 430px) {
   #ecardGame {
-    padding: 10px;
-    gap: 6px;
+    padding: 0;
+    gap: 0;
   }
 
   /* Compact top bar */
@@ -7077,66 +7130,71 @@
     font-size: 12px;
   }
 
-  /* Score display */
+  /* Score display - compact */
   .ecard-score {
-    padding: 10px;
-    gap: 12px;
+    padding: 5px 12px;
+    gap: 10px;
+    margin: 2px 8px;
   }
 
   .score-icon {
-    font-size: 24px;
+    font-size: 18px;
   }
 
   .score-value {
-    font-size: 28px;
+    font-size: 22px;
   }
 
   .score-divider {
-    font-size: 28px;
+    font-size: 20px;
   }
 
   /* Role badge compact */
+  .ecard-role-display {
+    padding: 2px 8px;
+  }
+
   .role-badge {
-    padding: 8px 16px;
+    padding: 4px 12px;
   }
 
   .role-icon {
-    font-size: 28px;
+    font-size: 18px;
   }
 
   .role-text {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .role-text span {
-    font-size: 15px;
-  }
-
-  /* Opponent area */
-  .ecard-opponent-area {
-    padding: 10px;
-    min-height: 100px;
-  }
-
-  .ecard-opponent-area .opponent-avatar {
-    width: 44px;
-    height: 44px;
-    font-size: 24px;
-  }
-
-  .ecard-opponent-area .opponent-name {
     font-size: 13px;
   }
 
-  .opponent-cards-count {
+  /* Opponent area - already compact strip */
+  .ecard-opponent-area {
+    padding: 4px 10px;
+    margin: 0 8px;
+  }
+
+  .ecard-opponent-area .opponent-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+
+  .ecard-opponent-area .opponent-name {
     font-size: 11px;
+  }
+
+  .opponent-cards-count {
+    font-size: 10px;
   }
 
   /* Battle/reveal area proper sizing */
   .ecard-battle-area {
-    padding: 16px;
+    padding: 12px;
     gap: 12px;
-    min-height: 120px;
+    min-height: 100px;
   }
 
   .battle-card {
@@ -7149,28 +7207,27 @@
 
   /* Result text */
   .ecard-result-text {
-    font-size: 18px;
-    padding: 6px;
+    font-size: 16px;
+    padding: 4px;
   }
 
-  /* Card hand fits mobile width */
+  /* Card hand - big cards on mobile */
   .ecard-my-cards-area {
-    gap: 6px;
+    gap: 4px;
   }
 
   .my-cards-label {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .ecard-cards-hand {
-    padding: 10px 4px;
-    gap: -15px;
+    padding: 8px 4px 14px;
   }
 
   .ecard-card {
-    width: 64px;
-    height: 92px;
-    margin: 0 -8px;
+    width: 76px;
+    height: 110px;
+    margin: 0 -10px;
   }
 
   .ecard-card:hover {
@@ -7182,7 +7239,7 @@
   }
 
   .ecard-card-icon {
-    font-size: 32px;
+    font-size: 36px;
   }
 
   .ecard-card-name {
@@ -7966,71 +8023,77 @@
   }
 
   /* ───────────────────────────────────────────────
-     E-CARD — Ref: cards LEFT, action buttons RIGHT (vertical)
+     E-CARD — Ref: cards LEFT (big), action buttons RIGHT
+     Opponent minimized in top info bar
      ─────────────────────────────────────────────── */
   #ecardGame.active {
     display: grid !important;
     grid-template-columns: 1fr auto !important;
-    grid-template-rows: auto auto 1fr auto !important;
+    grid-template-rows: auto auto auto 1fr !important;
     gap: 0 !important;
     padding: 0 !important;
   }
+  /* Big cards in landscape */
   #ecardGame .ecard-card {
-    width: min(18vh, 70px) !important;
-    height: min(26vh, 100px) !important;
-    margin: 0 -8px !important;
+    width: min(22vh, 86px) !important;
+    height: min(32vh, 124px) !important;
+    margin: 0 -10px !important;
   }
-  #ecardGame .ecard-card-icon { font-size: min(10vh, 32px) !important; }
-  #ecardGame .ecard-card-name { font-size: 10px !important; }
+  #ecardGame .ecard-card-icon { font-size: min(12vh, 38px) !important; }
+  #ecardGame .ecard-card-name { font-size: 11px !important; }
+  /* Row 1: Top bar spans full width */
   #ecardGame .ecard-top-bar {
     grid-column: 1 / -1 !important;
     grid-row: 1 !important;
     padding: 4px 10px !important;
   }
+  /* Row 2: Score + Role + Opponent in compact info strip */
   #ecardGame .ecard-score {
     grid-column: 1 / -1 !important;
     grid-row: 2 !important;
-    padding: 4px 8px !important;
+    padding: 3px 8px !important;
     margin: 0 8px !important;
     gap: 8px !important;
   }
-  #ecardGame .score-icon { font-size: 18px !important; }
-  #ecardGame .score-value { font-size: 22px !important; }
-  #ecardGame .score-divider { font-size: 18px !important; }
-  /* LEFT: role + opponent + my cards (stacked) */
+  #ecardGame .score-icon { font-size: 16px !important; }
+  #ecardGame .score-value { font-size: 20px !important; }
+  #ecardGame .score-divider { font-size: 16px !important; }
+  /* Row 3: Role badge - compact inline */
   #ecardGame .ecard-role-display {
-    grid-column: 1 !important;
+    grid-column: 1 / -1 !important;
     grid-row: 3 !important;
-    padding: 2px 8px !important;
+    padding: 1px 8px !important;
     margin: 0 !important;
-    align-self: start !important;
   }
   #ecardGame .role-badge {
-    padding: 4px 10px !important;
-    gap: 6px !important;
+    padding: 3px 10px !important;
+    gap: 5px !important;
   }
-  #ecardGame .role-icon { font-size: 20px !important; }
-  #ecardGame .role-text { font-size: 11px !important; }
+  #ecardGame .role-icon { font-size: 16px !important; }
+  #ecardGame .role-text { font-size: 10px !important; }
+  /* Opponent: hidden as separate area in landscape, info is in top bar */
   #ecardGame .ecard-opponent-area {
-    grid-column: 1 !important;
-    grid-row: 3 / 4 !important;
-    padding: 6px !important;
-    margin: 0 4px !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    padding: 2px 8px !important;
+    margin: 0 8px !important;
     min-height: 0 !important;
-    align-self: center !important;
+    justify-content: flex-end !important;
   }
-  #ecardGame .opponent-avatar { width: 28px !important; height: 28px !important; font-size: 14px !important; }
+  #ecardGame .opponent-avatar { width: 22px !important; height: 22px !important; font-size: 12px !important; }
+  #ecardGame .opponent-name { font-size: 10px !important; }
+  /* Row 4: Cards area (LEFT) + Action buttons (RIGHT) */
   #ecardGame .ecard-my-cards-area {
     grid-column: 1 !important;
     grid-row: 4 !important;
     padding: 4px 8px !important;
   }
   #ecardGame .my-cards-label { font-size: 10px !important; margin-bottom: 2px !important; }
-  #ecardGame .ecard-cards-hand { gap: 0 !important; }
-  /* RIGHT: vertical action buttons (ref: 제물/취소/포기/패스 스타일) */
+  #ecardGame .ecard-cards-hand { gap: 0 !important; padding: 4px 4px 8px !important; }
+  /* RIGHT: vertical action buttons */
   #ecardGame .ecard-action-buttons {
     grid-column: 2 !important;
-    grid-row: 3 / 5 !important;
+    grid-row: 4 !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
@@ -8047,7 +8110,7 @@
   /* Bet area slides in on right column */
   #ecardGame .ecard-bet-area {
     grid-column: 2 !important;
-    grid-row: 3 !important;
+    grid-row: 4 !important;
     padding: 8px !important;
     display: flex !important;
     flex-direction: column !important;
@@ -8059,12 +8122,12 @@
   /* Battle area overlay */
   #ecardGame .ecard-battle-area {
     grid-column: 1 !important;
-    grid-row: 3 !important;
+    grid-row: 4 !important;
     z-index: 10 !important;
   }
   #ecardGame .ecard-waiting {
     grid-column: 1 / -1 !important;
-    grid-row: 3 / 5 !important;
+    grid-row: 4 !important;
   }
 
   /* ───────────────────────────────────────────────
@@ -8346,28 +8409,89 @@
   }
 
   /* ───────────────────────────────────────────────
-     POKER — compact vertical (no left-right split needed)
+     POKER — LEFT: opponents+community, RIGHT: my hand+actions
      ─────────────────────────────────────────────── */
-  #pokerGame .poker-top-bar { padding: 4px 10px !important; }
+  #pokerGame.active {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-rows: auto 1fr auto !important;
+    gap: 0 !important;
+    padding: 0 !important;
+  }
+  /* Top bar: full width */
+  #pokerGame .poker-top-bar {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+    padding: 3px 10px !important;
+  }
   #pokerGame .pot-display { font-size: 16px !important; }
-  #pokerGame .round-display { font-size: 10px !important; }
-  #pokerGame .opponents-area { padding: 2px 4px !important; gap: 6px !important; }
-  #pokerGame .opponent-avatar { width: 32px !important; height: 32px !important; font-size: 16px !important; }
-  #pokerGame .opponent-name { font-size: 9px !important; }
-  #pokerGame .opponent-chips, #pokerGame .opponent-bet { font-size: 9px !important; }
-  #pokerGame .opponent-cards .card { width: 22px !important; height: 32px !important; }
-  #pokerGame .table-area { min-height: 0 !important; flex: 1 !important; }
-  #pokerGame .community-cards { margin: 4px 0 !important; gap: 4px !important; }
-  #pokerGame .community-cards .card { width: 40px !important; height: 58px !important; }
-  #pokerGame .my-hand-area { padding: 6px 12px !important; }
+  #pokerGame .round-display { font-size: 11px !important; }
+  /* Hide opponents in landscape — each client sees own hand only */
+  #pokerGame .opponents-area {
+    display: none !important;
+  }
+  #pokerGame .table-area {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    min-height: 0 !important;
+    flex: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 4px !important;
+  }
+  #pokerGame .community-cards {
+    margin: 0 !important;
+    gap: 6px !important;
+  }
+  #pokerGame .community-cards .card {
+    width: min(12vh, 52px) !important;
+    height: min(18vh, 76px) !important;
+  }
+  #pokerGame .community-cards .card .card-rank { font-size: min(5vh, 18px) !important; }
+  #pokerGame .community-cards .card .card-suit { font-size: min(4vh, 14px) !important; }
+  /* RIGHT col: my hand (big) */
+  #pokerGame .my-hand-area {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    padding: 6px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
   #pokerGame .my-info-row { margin-bottom: 4px !important; }
   #pokerGame .my-chips { font-size: 14px !important; }
-  #pokerGame .my-cards { gap: 6px !important; margin-bottom: 4px !important; }
-  #pokerGame .my-cards .card { width: 48px !important; height: 70px !important; }
-  #pokerGame .hand-rank-display { font-size: 11px !important; }
-  #pokerGame .action-bar { gap: 4px !important; padding: 0 4px !important; }
-  #pokerGame .action-btn { padding: 8px 4px !important; font-size: 12px !important; }
-  #pokerGame .raise-slider-area { padding: 4px !important; gap: 6px !important; }
+  #pokerGame .my-cards {
+    gap: 8px !important;
+    margin-bottom: 4px !important;
+  }
+  #pokerGame .my-cards .card {
+    width: min(18vh, 70px) !important;
+    height: min(28vh, 105px) !important;
+  }
+  #pokerGame .my-cards .card .card-rank { font-size: min(7vh, 26px) !important; }
+  #pokerGame .my-cards .card .card-suit { font-size: min(5vh, 18px) !important; }
+  #pokerGame .hand-rank-display { font-size: 12px !important; }
+  /* Action bar: full width bottom */
+  #pokerGame .action-bar {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    gap: 4px !important;
+    padding: 4px 8px !important;
+  }
+  #pokerGame .action-btn {
+    padding: 10px 6px !important;
+    font-size: 13px !important;
+    min-height: 38px !important;
+  }
+  #pokerGame .raise-slider-area {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    padding: 4px 8px !important;
+    gap: 6px !important;
+    z-index: 5 !important;
+  }
 
   /* ───── QUICK DRAW ───── */
   #quickDrawGame .qd-header { padding: 4px 10px !important; }
@@ -8761,27 +8885,25 @@
   }
 
   /* ─── POKER ─── */
-  #pokerGame { padding: 4px !important; gap: 2px !important; }
   #pokerGame .poker-top-bar { padding: 2px 8px !important; }
   #pokerGame .pot-display { font-size: 14px !important; }
-  #pokerGame .opponents-area { gap: 4px !important; padding: 0 2px !important; }
-  #pokerGame .opponent-slot { min-width: 50px !important; gap: 1px !important; }
-  #pokerGame .opponent-avatar { width: 28px !important; height: 28px !important; font-size: 14px !important; }
-  #pokerGame .opponent-name { font-size: 8px !important; max-width: 50px !important; }
-  #pokerGame .opponent-chips, #pokerGame .opponent-bet { font-size: 8px !important; }
-  #pokerGame .opponent-cards .card { width: 18px !important; height: 26px !important; }
-  #pokerGame .community-cards .card { width: 34px !important; height: 50px !important; }
-  #pokerGame .community-cards .card .card-rank { font-size: 12px !important; }
-  #pokerGame .community-cards .card .card-suit { font-size: 10px !important; }
+  #pokerGame .community-cards .card {
+    width: min(10vh, 46px) !important;
+    height: min(16vh, 68px) !important;
+  }
+  #pokerGame .community-cards .card .card-rank { font-size: min(5vh, 16px) !important; }
+  #pokerGame .community-cards .card .card-suit { font-size: min(3.5vh, 12px) !important; }
   #pokerGame .my-hand-area { padding: 4px 8px !important; }
-  #pokerGame .my-info-row { margin-bottom: 2px !important; }
   #pokerGame .my-chips { font-size: 12px !important; }
-  #pokerGame .my-cards { gap: 4px !important; margin-bottom: 2px !important; }
-  #pokerGame .my-cards .card { width: 40px !important; height: 58px !important; }
-  #pokerGame .my-cards .card .card-rank { font-size: 16px !important; }
-  #pokerGame .my-cards .card .card-suit { font-size: 12px !important; }
-  #pokerGame .hand-rank-display { font-size: 10px !important; min-height: 14px !important; }
-  #pokerGame .action-btn { padding: 6px 3px !important; font-size: 11px !important; }
+  #pokerGame .my-cards { gap: 6px !important; margin-bottom: 2px !important; }
+  #pokerGame .my-cards .card {
+    width: min(16vh, 62px) !important;
+    height: min(25vh, 94px) !important;
+  }
+  #pokerGame .my-cards .card .card-rank { font-size: min(6vh, 22px) !important; }
+  #pokerGame .my-cards .card .card-suit { font-size: min(4vh, 16px) !important; }
+  #pokerGame .hand-rank-display { font-size: 11px !important; min-height: 14px !important; }
+  #pokerGame .action-btn { padding: 8px 4px !important; font-size: 12px !important; min-height: 34px !important; }
   #pokerGame .raise-slider-area { padding: 2px 4px !important; }
   #pokerGame .raise-amount { font-size: 12px !important; }
 
@@ -8835,7 +8957,7 @@
   #rouletteGame .roulette-setup { padding: 6px 8px !important; margin: 2px 8px !important; }
   #rouletteGame .setup-card { padding: 8px !important; margin-bottom: 6px !important; }
 
-  /* ─── E-CARD ─── */
+  /* ─── E-CARD (short landscape) ─── */
   #ecardGame { border-width: 3px !important; }
   #ecardGame .ecard-top-bar { padding: 2px 8px !important; }
   #ecardGame .ecard-title { font-size: 14px !important; }
@@ -8844,27 +8966,32 @@
     margin: 0 4px !important;
     gap: 6px !important;
   }
-  #ecardGame .score-icon { font-size: 16px !important; }
-  #ecardGame .score-value { font-size: 18px !important; }
-  #ecardGame .score-divider { font-size: 16px !important; }
-  #ecardGame .role-badge { padding: 2px 8px !important; }
-  #ecardGame .role-icon { font-size: 16px !important; }
-  #ecardGame .role-text { font-size: 10px !important; }
+  #ecardGame .score-icon { font-size: 14px !important; }
+  #ecardGame .score-value { font-size: 16px !important; }
+  #ecardGame .score-divider { font-size: 14px !important; }
+  #ecardGame .ecard-role-display { padding: 0 4px !important; }
+  #ecardGame .role-badge { padding: 2px 6px !important; gap: 4px !important; }
+  #ecardGame .role-icon { font-size: 14px !important; }
+  #ecardGame .role-text { font-size: 9px !important; }
   #ecardGame .ecard-opponent-area {
-    padding: 4px !important;
+    padding: 2px 6px !important;
+    margin: 0 4px !important;
     min-height: 0 !important;
   }
-  #ecardGame .opponent-avatar { width: 24px !important; height: 24px !important; font-size: 12px !important; }
+  #ecardGame .opponent-avatar { width: 18px !important; height: 18px !important; font-size: 10px !important; }
+  #ecardGame .opponent-name { font-size: 9px !important; }
+  #ecardGame .opponent-cards-count { font-size: 9px !important; }
+  /* Cards still as large as possible relative to viewport height */
   #ecardGame .ecard-card {
-    width: min(16vh, 56px) !important;
-    height: min(24vh, 82px) !important;
-    margin: 0 -6px !important;
+    width: min(20vh, 72px) !important;
+    height: min(30vh, 104px) !important;
+    margin: 0 -8px !important;
   }
-  #ecardGame .ecard-card-icon { font-size: min(9vh, 28px) !important; }
-  #ecardGame .ecard-card-name { font-size: 8px !important; }
+  #ecardGame .ecard-card-icon { font-size: min(11vh, 32px) !important; }
+  #ecardGame .ecard-card-name { font-size: 9px !important; }
   #ecardGame .ecard-battle-area {
     padding: 8px !important;
-    min-height: 80px !important;
+    min-height: 70px !important;
     margin: 2px 4px !important;
   }
   #ecardGame .battle-vs { font-size: 18px !important; }

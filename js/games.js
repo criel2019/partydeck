@@ -4622,9 +4622,9 @@ function renderECardView(view) {
 
   const oppPlayedEl = document.getElementById('ecardOppPlayedCard');
   if (view.phase === 'emperor-play' && view.myRole === 'emperor' && view.oppPlayed) {
-    oppPlayedEl.innerHTML = '<div class="ecard-card ecard-card-back" style="width:70px;height:100px;"></div>';
+    oppPlayedEl.innerHTML = ecardCardHTML(null, true, 'ecard-card-opp-small');
   } else if (view.phase === 'reveal' && view.oppPlayed) {
-    oppPlayedEl.innerHTML = ecardCardHTML(view.oppPlayed, false);
+    oppPlayedEl.innerHTML = ecardCardHTML(view.oppPlayed, false, 'ecard-card-opp-small');
   } else {
     oppPlayedEl.innerHTML = '';
   }
@@ -4642,8 +4642,8 @@ function renderECardView(view) {
   const battleArea = document.getElementById('ecardBattleArea');
   if (view.phase === 'reveal' && view.myPlayed && view.oppPlayed) {
     battleArea.style.display = 'flex';
-    document.getElementById('ecardBattleOpp').innerHTML = ecardCardHTML(view.oppPlayed, false).replace('width:70px;height:100px;', 'width:80px;height:115px;');
-    document.getElementById('ecardBattleMy').innerHTML = ecardCardHTML(view.myPlayed, false).replace('width:70px;height:100px;', 'width:80px;height:115px;');
+    document.getElementById('ecardBattleOpp').innerHTML = ecardCardHTML(view.oppPlayed, false, 'ecard-card-battle');
+    document.getElementById('ecardBattleMy').innerHTML = ecardCardHTML(view.myPlayed, false, 'ecard-card-battle');
   } else {
     battleArea.style.display = 'none';
   }
@@ -4718,11 +4718,12 @@ function ecardCardName(card) {
   return names[card] || '?';
 }
 
-function ecardCardHTML(card, isBack) {
+function ecardCardHTML(card, isBack, sizeClass) {
+  var cls = sizeClass ? ' ' + sizeClass : '';
   if (isBack) {
-    return '<div class="ecard-card ecard-card-back" style="width:70px;height:100px;"></div>';
+    return '<div class="ecard-card ecard-card-back' + cls + '"></div>';
   }
-  return '<div class="ecard-card ecard-card-' + card + '" style="width:70px;height:100px;">' +
+  return '<div class="ecard-card ecard-card-' + card + cls + '">' +
     '<div class="ecard-card-icon">' + ecardCardIcon(card) + '</div>' +
     '<div class="ecard-card-name">' + ecardCardName(card) + '</div>' +
   '</div>';
