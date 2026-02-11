@@ -7884,7 +7884,7 @@
   /* ───────────────────────────────────────────────
      SUTDA — Ref: cards LEFT, info+buttons RIGHT
      ─────────────────────────────────────────────── */
-  #sutdaGame {
+  #sutdaGame.active {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
     grid-template-rows: auto 1fr !important;
@@ -7961,7 +7961,7 @@
   /* ───────────────────────────────────────────────
      E-CARD — Ref: cards LEFT, action buttons RIGHT (vertical)
      ─────────────────────────────────────────────── */
-  #ecardGame {
+  #ecardGame.active {
     display: grid !important;
     grid-template-columns: 1fr auto !important;
     grid-template-rows: auto auto 1fr auto !important;
@@ -8056,7 +8056,7 @@
   /* ───────────────────────────────────────────────
      UP/DOWN — Ref: card deck LEFT, title+buttons RIGHT
      ─────────────────────────────────────────────── */
-  #updownGame {
+  #updownGame.active {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
     grid-template-rows: auto 1fr auto !important;
@@ -8187,7 +8187,7 @@
      MAFIA — Ref: role banner at BOTTOM, compact topbar,
      4-col player grid, content scrollable
      ─────────────────────────────────────────────── */
-  #mafiaGame {
+  #mafiaGame.active {
     display: flex !important;
     flex-direction: column !important;
   }
@@ -8376,7 +8376,7 @@
   /* ───────────────────────────────────────────────
      RUSSIAN ROULETTE — Ref: cylinder+actions center, survivors compact
      ─────────────────────────────────────────────── */
-  #rouletteGame {
+  #rouletteGame.active {
     display: grid !important;
     grid-template-columns: 1fr auto !important;
     grid-template-rows: auto 1fr auto !important;
