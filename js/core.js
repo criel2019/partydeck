@@ -613,9 +613,53 @@ function handleGameStart(msg) {
   }
 }
 
+// ===== DEBUG / PREVIEW MODE =====
+function debugGame(game) {
+  state.myId = 'debug-me';
+  state.myName = '테스터';
+  state.myAvatar = '😎';
+  state.isHost = true;
+  state.players = [
+    { id: 'debug-me', name: '테스터', avatar: '😎' },
+    { id: 'debug-bot', name: '봇', avatar: '🤖' }
+  ];
+
+  if(game === 'yahtzee') {
+    yahState = {
+      players: state.players.map(p => ({
+        id: p.id, name: p.name, avatar: p.avatar,
+        scores: {
+          ones: null, twos: null, threes: null, fours: null, fives: null, sixes: null,
+          'three-kind': null, 'four-kind': null, 'full-house': null,
+          'small-straight': null, 'large-straight': null, yahtzee: null, chance: null
+        },
+        total: 0
+      })),
+      turnIdx: 0,
+      dice: [1, 1, 1, 1, 1],
+      held: [false, false, false, false, false],
+      rollsLeft: 3,
+      turnNum: 1,
+      maxTurns: 13,
+      selectedCategory: null,
+      phase: 'rolling'
+    };
+    yahRollDice();
+    showScreen('yahtzeeGame');
+    renderYahtzeeView(createYahtzeeView());
+  }
+}
+
 // ===== EVENTS =====
 document.getElementById('nameInput').addEventListener('change', saveProfile);
 document.getElementById('nameInput').addEventListener('blur', saveProfile);
 
 // ===== START =====
 init();
+
+// Auto-enter debug mode if ?debug= param present
+(function() {
+  const p = new URLSearchParams(location.search);
+  const d = p.get('debug');
+  if(d) setTimeout(() => debugGame(d), 500);
+})();
