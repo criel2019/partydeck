@@ -4136,8 +4136,8 @@ window.onYahtzeeThreeReady = function() {
   const currentPlayer = view.players[view.turnIdx];
   const isMyTurn = currentPlayer.id === state.myId;
   const isHumanTurn = !currentPlayer.id.startsWith('ai-');
-  // Show cup if it's my human turn with rolls remaining
-  if(isMyTurn && isHumanTurn && view.rollsLeft > 0 && view.phase === 'rolling' && !cupShakeActive) {
+  // Show cup only at start of turn (first roll)
+  if(isMyTurn && isHumanTurn && view.rollsLeft === 3 && view.phase === 'rolling' && !cupShakeActive) {
     if(typeof showCupReady === 'function') {
       showCupReady(view.held);
     }
@@ -4526,8 +4526,9 @@ function renderYahtzeeView(view) {
     cupShakeActive = false;
   }
 
-  // Show cup ready when it's human turn with rolls remaining and cup not active
-  if(isMyTurn && isHumanTurn && view.rollsLeft > 0 && view.phase === 'rolling' && !cupShakeActive) {
+  // Show cup ready ONLY at start of turn (rollsLeft===3), not after every hold toggle
+  // Subsequent rolls (rollsLeft 2,1) show cup only when user taps roll button via yahRoll()
+  if(isMyTurn && isHumanTurn && view.rollsLeft === 3 && view.phase === 'rolling' && !cupShakeActive && turnChanged) {
     const cupS = typeof getCupState === 'function' ? getCupState() : 'hidden';
     if(cupS === 'hidden' && typeof showCupReady === 'function') {
       showCupReady(view.held);

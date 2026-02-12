@@ -718,8 +718,8 @@
     if (!cupGroup || cupState === 'hidden') return;
 
     if (cupState === 'ready') {
-      // Gentle idle breathing
-      cupGroup.position.y = Math.sin(elapsed * 2) * 0.02;
+      // Gentle idle breathing — never below y=0
+      cupGroup.position.y = Math.abs(Math.sin(elapsed * 2)) * 0.02;
       cupGroup.rotation.x = 0;
       cupGroup.rotation.z = Math.sin(elapsed * 1.5) * 0.01;
 
@@ -816,10 +816,10 @@
         if (cupDumpCallback) cupDumpCallback();
       }
 
-      // Cup tips forward and rises
+      // Cup tips forward and rises — keep y >= 0 to prevent floor clipping
       const et = easeOutCubic(t);
-      cupGroup.rotation.x = et * Math.PI;
-      cupGroup.position.y = Math.sin(t * Math.PI) * 1.0;
+      cupGroup.rotation.x = et * Math.PI * 0.6; // tilt 108° max (not full flip)
+      cupGroup.position.y = Math.max(0, Math.sin(t * Math.PI) * 1.5);
       cupGroup.position.z = CUP_POS.z - et * 1.2;
 
       // Before callback fires, dice slide inside the tipping cup
