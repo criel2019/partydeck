@@ -66,6 +66,9 @@
   ];
   const CUP_POS = { x: 0, z: 0 };
 
+  // All valid rotations per face value (4 Y-axis variants each)
+  const FACE_ROTATIONS_ALL = {};
+
   function computeFaceRotations() {
     // Camera is at (0, 8, 7) looking at (0, 0, 0.3) — views primarily from above.
     // The dominant visible face is +Y (top). We rotate so the desired value's
@@ -86,6 +89,35 @@
     FACE_ROTATIONS[5] = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0));
     // Value 6: texture on -Y face → flip upside down → rotate X by 180°
     FACE_ROTATIONS[6] = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI, 0, 0));
+
+    // Generate 4 Y-axis variants for each face value (0°, 90°, 180°, 270°)
+    // All show the same top face but rotated around Y — pick nearest for natural settle
+    const yRots = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
+    for (let v = 1; v <= 6; v++) {
+      FACE_ROTATIONS_ALL[v] = yRots.map(function(yAngle) {
+        const yQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yAngle);
+        return new THREE.Quaternion().copy(FACE_ROTATIONS[v]).premultiply(yQuat);
+      });
+    }
+  }
+
+  // Find the nearest valid quaternion for a target value from the current rotation
+  function findNearestFaceQuat(currentQuat, targetValue) {
+    const variants = FACE_ROTATIONS_ALL[targetValue];
+    if (!variants) return FACE_ROTATIONS[targetValue];
+
+    let best = variants[0];
+    let bestDot = -1;
+    for (let i = 0; i < variants.length; i++) {
+      // dot product of quaternions: closer to 1 = smaller rotation needed
+      let d = currentQuat.dot(variants[i]);
+      d = Math.abs(d); // handle double-cover (q and -q are same rotation)
+      if (d > bestDot) {
+        bestDot = d;
+        best = variants[i];
+      }
+    }
+    return best;
   }
 
   // ===== TEXTURE GENERATION =====
@@ -911,9 +943,10 @@
         if (t < 0) continue; // waiting for stagger delay
 
         if (t >= 1) {
-          // Rolling done, transition to settling (line up)
+          // Rolling done — pick nearest valid rotation for natural settle
           anim.phase = 'settling';
           anim.settleStartTime = elapsed;
+          anim.settleQuat = findNearestFaceQuat(mesh.quaternion, anim.targetValue);
           mesh.position.copy(anim.landPos);
           continue;
         }
@@ -932,6 +965,13 @@
         mesh.rotation.y += anim.rotVel.y * 0.016 * rotSpeed;
         mesh.rotation.z += anim.rotVel.z * 0.016 * rotSpeed;
 
+        // Last 30% of roll: gently guide toward nearest target rotation
+        if (t > 0.7) {
+          const guideT = (t - 0.7) / 0.3; // 0→1
+          const guideQuat = findNearestFaceQuat(mesh.quaternion, anim.targetValue);
+          mesh.quaternion.slerp(guideQuat, guideT * 0.15); // very subtle pull
+        }
+
       } else if (anim.phase === 'settling') {
         const st = (elapsed - anim.settleStartTime) / anim.settleDuration;
 
@@ -939,7 +979,8 @@
           // Done settling - set final position and rotation at normal scale
           mesh.position.set(ROW_X[anim.dieIdx], ROW_Y, ROW_Z);
           mesh.scale.setScalar(DICE_SCALE_NORMAL);
-          setDieRotation(anim.dieIdx, anim.targetValue);
+          mesh.quaternion.copy(anim.settleQuat || FACE_ROTATIONS[anim.targetValue]);
+          mesh.userData.value = anim.targetValue;
           animatingDice[anim.dieIdx] = false;
           rollAnimations.splice(i, 1);
           continue;
@@ -953,9 +994,9 @@
         const target = new THREE.Vector3(ROW_X[anim.dieIdx], ROW_Y, ROW_Z);
         mesh.position.lerp(target, et);
 
-        // Slerp rotation toward face-showing rotation
-        if (FACE_ROTATIONS[anim.targetValue]) {
-          mesh.quaternion.slerp(FACE_ROTATIONS[anim.targetValue], et);
+        // Slerp to nearest valid rotation (minimal rotation path)
+        if (anim.settleQuat) {
+          mesh.quaternion.slerp(anim.settleQuat, et);
         }
       }
     }
