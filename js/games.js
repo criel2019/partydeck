@@ -3593,31 +3593,31 @@ function renderUpDownView(view) {
   const prevSlot = document.getElementById('updownPrevCard');
   if(view.previousCard) {
     prevSlot.innerHTML =
-      '<div class="updown-card-label">\uc774\uc804 \uce74\ub4dc</div>' +
+      '<div class="ud-card-label">\uc774\uc804</div>' +
       updownCardHTML(view.previousCard, false);
   } else {
     prevSlot.innerHTML =
-      '<div class="updown-card-label">\uc774\uc804 \uce74\ub4dc</div>' +
-      '<div class="updown-card-placeholder"></div>';
+      '<div class="ud-card-label">\uc774\uc804</div>' +
+      '<div class="ud-prev-placeholder"></div>';
   }
 
   const currSlot = document.getElementById('updownCurrentCard');
   currSlot.innerHTML =
-    '<div class="updown-card-label">\ud604\uc7ac \uce74\ub4dc</div>' +
+    '<div class="ud-card-label">\ud604\uc7ac \uce74\ub4dc</div>' +
     updownCardHTML(view.currentCard, true);
 
   setTimeout(() => {
-    const card = currSlot.querySelector('.updown-card');
-    if(card) card.classList.add('flipped');
+    const card = currSlot.querySelector('.ud-hero-card');
+    if(card) card.classList.add('ud-flipping');
   }, 100);
 
   const penaltyItems = document.getElementById('updownPenaltyItems');
   penaltyItems.innerHTML = view.penalties.slice(-5).map(p =>
-    '<div class="updown-penalty-item">\ud83c\udf7a ' + p + '</div>'
+    '<div class="ud-penalty-item">\ud83c\udf7a ' + p + '</div>'
   ).join('');
 
   const isMyTurn = currentPlayer.id === state.myId;
-  const choiceButtons = document.getElementById('updownChoiceButtons').querySelectorAll('.updown-btn');
+  const choiceButtons = document.getElementById('updownChoiceButtons').querySelectorAll('.ud-btn');
   choiceButtons.forEach(btn => btn.disabled = !isMyTurn || view.phase !== 'playing');
 
   document.getElementById('updownSpecialJQ').style.display = 'none';
@@ -3638,24 +3638,38 @@ function renderUpDownView(view) {
   }
 }
 
-function updownCardHTML(card, isFlippable) {
-  if(!card) return '<div class="updown-card-placeholder"></div>';
+function updownCardHTML(card, isCurrent) {
+  if(!card) {
+    return isCurrent
+      ? '<div class="ud-hero-card ud-card-back"><div class="ud-hero-inner"><div class="ud-hero-back-pattern"></div></div></div>'
+      : '<div class="ud-prev-placeholder"></div>';
+  }
 
   const isRed = card.suit === '\u2665' || card.suit === '\u2666';
-  const colorClass = isRed ? 'red' : 'black';
+  const colorClass = isRed ? 'ud-red' : 'ud-black';
 
-  if(isFlippable) {
-    return '<div class="updown-card"><div class="updown-card-inner">' +
-      '<div class="updown-card-front ' + colorClass + '">' +
-      '<span class="updown-card-rank">' + card.rank + '</span>' +
-      '<span class="updown-card-suit">' + card.suit + '</span></div>' +
-      '<div class="updown-card-back-face">\ud83c\udfb4</div></div></div>';
+  if(isCurrent) {
+    return '<div class="ud-hero-card ' + colorClass + '">' +
+      '<div class="ud-hero-inner">' +
+        '<div class="ud-hero-corner">' +
+          '<span class="ud-hero-rank">' + card.rank + '</span>' +
+          '<span class="ud-hero-suit-sm">' + card.suit + '</span>' +
+        '</div>' +
+        '<div class="ud-hero-center">' + card.suit + '</div>' +
+        '<div class="ud-hero-corner ud-corner-bottom">' +
+          '<span class="ud-hero-rank">' + card.rank + '</span>' +
+          '<span class="ud-hero-suit-sm">' + card.suit + '</span>' +
+        '</div>' +
+      '</div></div>';
   } else {
-    return '<div class="updown-card flipped"><div class="updown-card-inner">' +
-      '<div class="updown-card-front ' + colorClass + '">' +
-      '<span class="updown-card-rank">' + card.rank + '</span>' +
-      '<span class="updown-card-suit">' + card.suit + '</span></div>' +
-      '<div class="updown-card-back-face">\ud83c\udfb4</div></div></div>';
+    return '<div class="ud-prev-card ' + colorClass + '">' +
+      '<div class="ud-prev-inner">' +
+        '<div class="ud-prev-corner">' +
+          '<span class="ud-prev-rank">' + card.rank + '</span>' +
+          '<span class="ud-prev-suit-sm">' + card.suit + '</span>' +
+        '</div>' +
+        '<div class="ud-prev-center">' + card.suit + '</div>' +
+      '</div></div>';
   }
 }
 
@@ -3763,13 +3777,13 @@ function udAddBet() {
 
 function showUpDownJQArea(view) {
   const area = document.getElementById('updownSpecialJQ');
-  area.style.display = 'block';
+  area.style.display = 'flex';
 
   const select = document.getElementById('updownJQPlayerSelect');
   select.innerHTML = view.players
     .filter(p => p.id !== state.myId)
     .map((p, i) =>
-      '<div class="updown-player-option" data-pid="' + p.id + '" onclick="selectUpDownPlayer(\'' + p.id + '\', \'jq\')">' +
+      '<div class="ud-player-option" data-pid="' + p.id + '" onclick="selectUpDownPlayer(\'' + p.id + '\', \'jq\')">' +
         '<div class="player-avatar-sm" style="background:' + PLAYER_COLORS[i % PLAYER_COLORS.length] + ';">' + p.avatar + '</div>' +
         '<div>' + p.name + '</div>' +
       '</div>'
@@ -3778,13 +3792,13 @@ function showUpDownJQArea(view) {
 
 function showUpDownKArea(view) {
   const area = document.getElementById('updownSpecialK');
-  area.style.display = 'block';
+  area.style.display = 'flex';
 
   const select = document.getElementById('updownKPlayerSelect');
   select.innerHTML = view.players
     .filter(p => p.id !== state.myId)
     .map((p, i) =>
-      '<div class="updown-player-option" data-pid="' + p.id + '" onclick="selectUpDownPlayer(\'' + p.id + '\', \'k\')">' +
+      '<div class="ud-player-option" data-pid="' + p.id + '" onclick="selectUpDownPlayer(\'' + p.id + '\', \'k\')">' +
         '<div class="player-avatar-sm" style="background:' + PLAYER_COLORS[i % PLAYER_COLORS.length] + ';">' + p.avatar + '</div>' +
         '<div>' + p.name + '</div>' +
       '</div>'
@@ -3796,7 +3810,7 @@ let selectedUpDownPlayers = [];
 function selectUpDownPlayer(pid, type) {
   if(type === 'jq') {
     selectedUpDownPlayers = [pid];
-    document.querySelectorAll('#updownJQPlayerSelect .updown-player-option').forEach(el => {
+    document.querySelectorAll('#updownJQPlayerSelect .ud-player-option').forEach(el => {
       el.classList.toggle('selected', el.dataset.pid === pid);
     });
   } else if(type === 'k') {
@@ -3811,7 +3825,7 @@ function selectUpDownPlayer(pid, type) {
       }
     }
 
-    document.querySelectorAll('#updownKPlayerSelect .updown-player-option').forEach(el => {
+    document.querySelectorAll('#updownKPlayerSelect .ud-player-option').forEach(el => {
       el.classList.toggle('selected', selectedUpDownPlayers.includes(el.dataset.pid));
     });
   }

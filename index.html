@@ -571,92 +571,95 @@
 <!-- UP DOWN GAME -->
 <!-- ========================================= -->
 <div class="screen" id="updownGame">
-  <div class="updown-top-bar">
-    <div class="updown-title">K's Game</div>
-    <div class="updown-turn-name" id="updownTurnName">플레이어</div>
-    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">&#10005;</button>
-  </div>
+  <div class="ud-felt"></div>
 
-  <div class="updown-table">
-    <div class="updown-deck-count" id="updownDeckCount">남은 카드: 52</div>
+  <div class="ud-content">
+    <!-- Top bar: compact -->
+    <div class="ud-top-bar">
+      <div class="ud-turn-name" id="updownTurnName">플레이어</div>
+      <div class="ud-deck-count" id="updownDeckCount">남은 카드: 52</div>
+      <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">&#10005;</button>
+    </div>
 
-    <div class="updown-cards-row">
-      <div class="updown-card-slot" id="updownPrevCard">
-        <div class="updown-card-label">이전 카드</div>
-        <div class="updown-card-placeholder"></div>
+    <!-- Cards area: previous (small) + current (hero) -->
+    <div class="ud-cards-area">
+      <div class="ud-prev-slot" id="updownPrevCard">
+        <div class="ud-card-label">이전</div>
+        <div class="ud-prev-placeholder"></div>
       </div>
 
-      <div class="updown-card-slot updown-current-slot" id="updownCurrentCard">
-        <div class="updown-card-label">현재 카드</div>
-        <div class="updown-card updown-card-back">
-          <div class="updown-card-inner">
-            <div class="updown-card-front"></div>
-            <div class="updown-card-back-face">&#127924;</div>
+      <div class="ud-hero-slot" id="updownCurrentCard">
+        <div class="ud-card-label">현재 카드</div>
+        <div class="ud-hero-card ud-card-back">
+          <div class="ud-hero-inner">
+            <div class="ud-hero-back-pattern"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="updown-result" id="updownResult"></div>
-  </div>
+    <!-- Result text -->
+    <div class="ud-result" id="updownResult"></div>
 
-  <div class="updown-penalty-list" id="updownPenaltyList">
-    <div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;font-weight:700;">벌칙 목록</div>
-    <div id="updownPenaltyItems"></div>
-  </div>
+    <!-- Bottom panel: buttons + bet + penalty -->
+    <div class="ud-bottom-panel">
+      <div class="ud-choice-buttons" id="updownChoiceButtons">
+        <button class="ud-btn ud-btn-up" onclick="udChoice('up')">
+          <span class="ud-btn-arrow">&#9650;</span>
+          <span class="ud-btn-label">UP</span>
+        </button>
+        <button class="ud-btn ud-btn-down" onclick="udChoice('down')">
+          <span class="ud-btn-label">DOWN</span>
+          <span class="ud-btn-arrow">&#9660;</span>
+        </button>
+      </div>
 
-  <div class="updown-action-area" id="updownActionArea">
-    <div class="updown-choice-buttons" id="updownChoiceButtons">
-      <button class="updown-btn updown-btn-up" onclick="udChoice('up')">
-        <span style="font-size:28px;">&#8593;</span>
-        <span>UP</span>
-      </button>
-      <button class="updown-btn updown-btn-down" onclick="udChoice('down')">
-        <span style="font-size:28px;">&#8595;</span>
-        <span>DOWN</span>
-      </button>
-    </div>
+      <div class="ud-bet-area">
+        <input type="text" class="ud-bet-input" id="updownBetInput" placeholder="벌칙 내용 입력..." maxlength="30">
+        <button class="ud-btn-bet" onclick="udAddBet()">+Bet</button>
+      </div>
 
-    <div class="updown-bet-area">
-      <input type="text" class="updown-bet-input" id="updownBetInput" placeholder="벌칙 내용 입력..." maxlength="30">
-      <button class="updown-btn-bet" onclick="udAddBet()">+Bet 벌칙</button>
+      <div class="ud-penalty-list" id="updownPenaltyList">
+        <div class="ud-penalty-header">벌칙 목록</div>
+        <div id="updownPenaltyItems"></div>
+      </div>
     </div>
   </div>
 
   <!-- Special Card Areas -->
-  <div class="updown-special-area updown-special-jq" id="updownSpecialJQ" style="display:none;">
-    <div class="updown-special-title">흑기사 요청</div>
-    <div class="updown-special-desc">다른 플레이어에게 벌칙을 대신 받을 것을 요청할 수 있습니다. 거절하면 나머지 모두가 벌칙!</div>
-    <div class="updown-player-select" id="updownJQPlayerSelect"></div>
-    <button class="updown-btn-special" onclick="udBlackKnight()">흑기사 요청</button>
+  <div class="ud-special-area ud-special-jq" id="updownSpecialJQ" style="display:none;">
+    <div class="ud-special-title">흑기사 요청</div>
+    <div class="ud-special-desc">다른 플레이어에게 벌칙을 대신 받을 것을 요청할 수 있습니다. 거절하면 나머지 모두가 벌칙!</div>
+    <div class="ud-player-select" id="updownJQPlayerSelect"></div>
+    <button class="ud-btn-special" onclick="udBlackKnight()">흑기사 요청</button>
   </div>
 
-  <div class="updown-special-area updown-special-k" id="updownSpecialK" style="display:none;">
-    <div class="updown-special-title">왕의 명령</div>
-    <div class="updown-special-desc">3명에게 벌칙을 내릴 수 있습니다!</div>
-    <div class="updown-player-select" id="updownKPlayerSelect"></div>
-    <button class="updown-btn-special updown-btn-king" onclick="udKingPenalty()">왕 벌칙 부여</button>
+  <div class="ud-special-area ud-special-k" id="updownSpecialK" style="display:none;">
+    <div class="ud-special-title">왕의 명령</div>
+    <div class="ud-special-desc">3명에게 벌칙을 내릴 수 있습니다!</div>
+    <div class="ud-player-select" id="updownKPlayerSelect"></div>
+    <button class="ud-btn-special ud-btn-king" onclick="udKingPenalty()">왕 벌칙 부여</button>
   </div>
 
   <!-- Penalty Modal -->
-  <div class="updown-penalty-modal" id="updownPenaltyModal">
-    <div class="updown-penalty-content">
-      <div class="updown-penalty-title">벌칙!</div>
-      <div class="updown-penalty-text" id="updownPenaltyText">소주 1잔</div>
-      <div class="updown-penalty-who" id="updownPenaltyWho">플레이어님의 차례</div>
-      <button class="updown-btn-accept" onclick="udAcceptPenalty()">수행하기</button>
-      <button class="updown-btn-reject" onclick="udRejectPenalty()">거절 (술 마시기)</button>
+  <div class="ud-penalty-modal" id="updownPenaltyModal">
+    <div class="ud-penalty-content">
+      <div class="ud-penalty-title">벌칙!</div>
+      <div class="ud-penalty-text" id="updownPenaltyText">소주 1잔</div>
+      <div class="ud-penalty-who" id="updownPenaltyWho">플레이어님의 차례</div>
+      <button class="ud-btn-accept" onclick="udAcceptPenalty()">수행하기</button>
+      <button class="ud-btn-reject" onclick="udRejectPenalty()">거절 (술 마시기)</button>
     </div>
   </div>
 
   <!-- Black Knight Request Modal -->
-  <div class="updown-penalty-modal" id="updownBKModal">
-    <div class="updown-penalty-content">
-      <div class="updown-penalty-title">흑기사 요청</div>
-      <div class="updown-penalty-text" id="updownBKText">벌칙 내용</div>
-      <div class="updown-penalty-who" id="updownBKWho">누가 요청했습니다</div>
-      <button class="updown-btn-accept" onclick="udAcceptBK()">수락 (대신 받기)</button>
-      <button class="updown-btn-reject" onclick="udRejectBK()">거절 (나머지 모두 벌칙)</button>
+  <div class="ud-penalty-modal" id="updownBKModal">
+    <div class="ud-penalty-content">
+      <div class="ud-penalty-title">흑기사 요청</div>
+      <div class="ud-penalty-text" id="updownBKText">벌칙 내용</div>
+      <div class="ud-penalty-who" id="updownBKWho">누가 요청했습니다</div>
+      <button class="ud-btn-accept" onclick="udAcceptBK()">수락 (대신 받기)</button>
+      <button class="ud-btn-reject" onclick="udRejectBK()">거절 (나머지 모두 벌칙)</button>
     </div>
   </div>
 </div>
