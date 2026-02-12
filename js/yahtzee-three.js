@@ -752,17 +752,18 @@
 
     else if (cupState === 'shaking') {
       const intensity = cupShakeIntensity;
-      // Cup oscillation
-      const shakeX = Math.sin(elapsed * 25) * 0.08 * intensity;
-      const shakeZ = Math.cos(elapsed * 30) * 0.06 * intensity;
+      // Cup oscillation — vigorous shake
+      const shakeX = Math.sin(elapsed * 30) * 0.15 * intensity;
+      const shakeZ = Math.cos(elapsed * 35) * 0.12 * intensity;
+      const shakeY = Math.abs(Math.sin(elapsed * 20)) * 0.25 * intensity;
 
       cupGroup.position.x = CUP_POS.x + shakeX;
-      cupGroup.position.y = Math.abs(Math.sin(elapsed * 15)) * 0.1 * intensity;
+      cupGroup.position.y = shakeY;
       cupGroup.position.z = CUP_POS.z + shakeZ;
-      cupGroup.rotation.x = Math.sin(elapsed * 20) * 0.05 * intensity;
-      cupGroup.rotation.z = Math.cos(elapsed * 22) * 0.04 * intensity;
+      cupGroup.rotation.x = Math.sin(elapsed * 25) * 0.1 * intensity;
+      cupGroup.rotation.z = Math.cos(elapsed * 28) * 0.08 * intensity;
 
-      // Bounce dice inside cup (physics boundary smaller than visual cup)
+      // Dice physics inside cup — strong forces, low damping
       const dt = 0.016;
       const boundaryR = CUP_PHYSICS_R;
       for (let i = 0; i < 5; i++) {
@@ -772,35 +773,48 @@
         }
         diceMeshes[i].visible = true;
 
-        // Random forces proportional to intensity
-        cupDiceVX[i] += (Math.random() - 0.5) * 20 * intensity * dt;
-        cupDiceVZ[i] += (Math.random() - 0.5) * 20 * intensity * dt;
-        cupDiceVX[i] *= 0.92;
-        cupDiceVZ[i] *= 0.92;
+        // Strong random impulses + cup shake transfer force
+        const shakeForceX = Math.sin(elapsed * 30) * 40 * intensity * dt;
+        const shakeForceZ = Math.cos(elapsed * 35) * 40 * intensity * dt;
+        cupDiceVX[i] += (Math.random() - 0.5) * 60 * intensity * dt + shakeForceX * (Math.random() - 0.5);
+        cupDiceVZ[i] += (Math.random() - 0.5) * 60 * intensity * dt + shakeForceZ * (Math.random() - 0.5);
+        // Lower damping = dice slide further
+        cupDiceVX[i] *= 0.85;
+        cupDiceVZ[i] *= 0.85;
         cupDiceOX[i] += cupDiceVX[i] * dt;
         cupDiceOZ[i] += cupDiceVZ[i] * dt;
 
-        // Circular boundary constraint
+        // Circular boundary — bounce off walls with energy
         const dist = Math.sqrt(cupDiceOX[i] * cupDiceOX[i] + cupDiceOZ[i] * cupDiceOZ[i]);
         if (dist > boundaryR) {
           const nx = cupDiceOX[i] / dist;
           const nz = cupDiceOZ[i] / dist;
-          cupDiceOX[i] = nx * boundaryR;
-          cupDiceOZ[i] = nz * boundaryR;
+          cupDiceOX[i] = nx * boundaryR * 0.95;
+          cupDiceOZ[i] = nz * boundaryR * 0.95;
+          // Reflect velocity + add random kick on bounce
           const dotP = cupDiceVX[i] * nx + cupDiceVZ[i] * nz;
-          cupDiceVX[i] -= 2 * dotP * nx;
-          cupDiceVZ[i] -= 2 * dotP * nz;
+          cupDiceVX[i] -= 2.2 * dotP * nx;
+          cupDiceVZ[i] -= 2.2 * dotP * nz;
+          cupDiceVX[i] += (Math.random() - 0.5) * 3 * intensity;
+          cupDiceVZ[i] += (Math.random() - 0.5) * 3 * intensity;
         }
+
+        // Y-axis: dice bounce up and down vigorously inside cup
+        const bouncePhase = elapsed * 18 + i * 2.3;
+        const bounceH = Math.abs(Math.sin(bouncePhase)) * 0.4 * intensity;
+        // Extra random hop on strong shakes
+        const hop = intensity > 0.6 ? Math.abs(Math.sin(elapsed * 40 + i * 3.7)) * 0.2 * intensity : 0;
 
         diceMeshes[i].position.set(
           CUP_POS.x + shakeX + cupDiceOX[i],
-          CUP_DICE_Y + Math.abs(Math.sin(elapsed * 12 + i * 1.5)) * 0.15 * intensity,
+          CUP_DICE_Y + bounceH + hop,
           CUP_POS.z + shakeZ + cupDiceOZ[i]
         );
-        // Rapid random rotation
-        diceMeshes[i].rotation.x += (Math.random() - 0.5) * 6 * intensity * dt;
-        diceMeshes[i].rotation.y += (Math.random() - 0.5) * 6 * intensity * dt;
-        diceMeshes[i].rotation.z += (Math.random() - 0.5) * 6 * intensity * dt;
+        // Fast tumbling rotation — dice visibly roll
+        const rotSpeed = 12 * intensity;
+        diceMeshes[i].rotation.x += (Math.random() - 0.3) * rotSpeed * dt;
+        diceMeshes[i].rotation.y += (Math.random() - 0.5) * rotSpeed * dt;
+        diceMeshes[i].rotation.z += (Math.random() - 0.3) * rotSpeed * dt;
       }
     }
 
