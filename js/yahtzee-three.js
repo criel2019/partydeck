@@ -20,9 +20,9 @@
   const ROW_Y = 0.35;
   const ROW_Z = 0.8;
 
-  // Dice scale: small in cup/tray, large when on tray for selection
-  const DICE_SCALE_SMALL = 0.55;  // inside cup
-  const DICE_SCALE_NORMAL = 1.0;  // on tray after roll
+  // Dice scale: small in cup, bigger on tray for visibility
+  const DICE_SCALE_SMALL = 0.7;   // inside cup
+  const DICE_SCALE_NORMAL = 1.4;  // on tray after roll — big and readable
 
   // Animation state
   let rollAnimations = [];
@@ -419,9 +419,9 @@
     scene.background = new THREE.Color(0x1a0a0a);
 
     // Camera
-    camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
-    camera.position.set(0, 8, 7);
-    camera.lookAt(0, 0, 0.3);
+    camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
+    camera.position.set(0, 5.5, 5);
+    camera.lookAt(0, 0, 0.2);
 
     // Renderer
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
@@ -1013,7 +1013,7 @@
 
     // Subtle camera sway
     if (camera) {
-      camera.position.x = Math.sin(idleTime * 0.3) * 0.08;
+      camera.position.x = Math.sin(idleTime * 0.3) * 0.05;
     }
 
     renderer.render(scene, camera);
