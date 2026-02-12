@@ -4002,9 +4002,16 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 6px;
-  width: 140px;
+  gap: 10px;
+  width: 160px;
   flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(18, 12, 30, 0.95), rgba(10, 8, 20, 0.98));
+  border-radius: 12px;
+  border: 1px solid rgba(180, 140, 80, 0.35);
+  padding: 12px 10px;
+  box-shadow:
+    0 4px 20px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255, 215, 0, 0.08);
 }
 
 #yahtzeeCanvas {
@@ -4118,13 +4125,49 @@
 .yahtzee-held-die[data-val="6"] { grid-template: 1fr 1fr 1fr / 1fr 1fr; place-items: center; }
 
 .yahtzee-roll-hint {
-  font-size: 12px;
-  color: var(--text-dim);
+  font-size: 11px;
+  color: rgba(255, 215, 0, 0.4);
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.yahtzee-controls-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 11px;
+  color: rgba(255, 215, 0, 0.6);
+  text-align: center;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: -4px;
+}
+
+.yahtzee-rolls-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+.yahtzee-rolls-indicator .roll-pip {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(180, 140, 80, 0.3);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.yahtzee-rolls-indicator .roll-pip.active {
+  background: var(--gold, #ffd700);
+  border-color: var(--gold, #ffd700);
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.5);
+}
+.yahtzee-rolls-indicator .roll-pip.used {
+  background: rgba(255, 68, 0, 0.6);
+  border-color: rgba(255, 68, 0, 0.4);
 }
 
 .yahtzee-roll-btn {
   width: 100%;
-  padding: 10px 8px;
+  padding: 12px 8px;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 16px;
   border-radius: 10px;
@@ -4133,16 +4176,20 @@
   border: none;
   color: white;
   cursor: pointer;
-  transition: transform 0.1s, opacity 0.2s;
+  transition: transform 0.1s, opacity 0.2s, box-shadow 0.2s;
+  box-shadow: 0 3px 12px rgba(255, 107, 53, 0.4);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .yahtzee-roll-btn:active {
   transform: translateY(1px);
+  box-shadow: 0 1px 4px rgba(255, 107, 53, 0.3);
 }
 
 .yahtzee-roll-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .yahtzee-roll-btn.shaking {
@@ -7541,8 +7588,10 @@
 
   /* Controls panel: right side */
   .yahtzee-controls-panel {
-    width: 120px !important;
-    gap: 4px !important;
+    width: 140px !important;
+    gap: 8px !important;
+    padding: 10px 8px !important;
+    border-radius: 10px !important;
   }
 
   /* Hold bar */
@@ -7563,12 +7612,19 @@
   /* Roll hint: hidden in landscape */
   .yahtzee-roll-hint { display: none !important; }
 
+  /* Controls title */
+  .yahtzee-controls-title { font-size: 9px !important; letter-spacing: 2px !important; }
+
+  /* Rolls indicator */
+  .yahtzee-rolls-indicator { gap: 5px !important; padding: 2px 0 !important; }
+  .yahtzee-rolls-indicator .roll-pip { width: 8px !important; height: 8px !important; }
+
   /* Roll button */
   .yahtzee-roll-btn {
     width: 100% !important;
-    padding: 8px 6px !important;
-    font-size: 13px !important;
-    min-height: 34px !important;
+    padding: 10px 6px !important;
+    font-size: 14px !important;
+    min-height: 38px !important;
     border-radius: 8px !important;
     flex-shrink: 0 !important;
   }
@@ -9590,6 +9646,12 @@
 .yahtzee-held-die .held-pip {
   width: 9px;
   height: 9px;
+}
+
+/* 롤 인디케이터 대형화 */
+.yahtzee-rolls-indicator .roll-pip {
+  width: 14px;
+  height: 14px;
 }
 
 /* 굴리기 버튼 대형화 */

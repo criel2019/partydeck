@@ -4586,6 +4586,16 @@ function renderYahtzeeView(view) {
     rollBtn.disabled = !isMyTurn || view.rollsLeft <= 0 || view.phase === 'gameover';
   }
 
+  // Rolls indicator pips
+  const rollsInd = document.getElementById('yahtzeeRollsIndicator');
+  if(rollsInd) {
+    const pips = rollsInd.querySelectorAll('.roll-pip');
+    const used = 3 - view.rollsLeft;
+    pips.forEach((pip, i) => {
+      pip.className = 'roll-pip' + (i < used ? ' used' : ' active');
+    });
+  }
+
   // Dynamic multi-player scorecard
   renderYahtzeeScorecard(view, isMyTurn);
 

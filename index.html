@@ -716,10 +716,16 @@
 
     <!-- Controls panel (right side) -->
     <div class="yahtzee-controls-panel">
+      <div class="yahtzee-controls-title">DICE</div>
       <div class="yahtzee-hold-bar" id="yahtzeeHoldBar">
         <!-- Dynamically populated: clickable held-die elements -->
       </div>
       <div class="yahtzee-roll-hint">탭하여 선택/해제</div>
+      <div class="yahtzee-rolls-indicator" id="yahtzeeRollsIndicator">
+        <span class="roll-pip active"></span>
+        <span class="roll-pip active"></span>
+        <span class="roll-pip active"></span>
+      </div>
       <button class="btn btn-primary yahtzee-roll-btn" id="yahtzeeRollBtn" onclick="yahRoll()">주사위 굴리기</button>
     </div>
   </div>
