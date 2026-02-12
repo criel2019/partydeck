@@ -708,19 +708,20 @@
   </div>
 
   <div class="yahtzee-dice-area">
-    <!-- Three.js 3D viewport -->
+    <!-- Three.js 3D viewport (left) -->
     <div id="yahtzeeThreeContainer">
       <canvas id="yahtzeeCanvas"></canvas>
       <div class="yahtzee-combo-label" id="yahtzeeComboLabel"></div>
     </div>
 
-    <!-- Bottom hold bar: held dice shown as HTML cards -->
-    <div class="yahtzee-hold-bar" id="yahtzeeHoldBar">
-      <!-- Dynamically populated: clickable held-die elements -->
+    <!-- Controls panel (right side) -->
+    <div class="yahtzee-controls-panel">
+      <div class="yahtzee-hold-bar" id="yahtzeeHoldBar">
+        <!-- Dynamically populated: clickable held-die elements -->
+      </div>
+      <div class="yahtzee-roll-hint">탭하여 선택/해제</div>
+      <button class="btn btn-primary yahtzee-roll-btn" id="yahtzeeRollBtn" onclick="yahRoll()">주사위 굴리기</button>
     </div>
-
-    <div class="yahtzee-roll-hint">탭하여 주사위 선택/해제</div>
-    <button class="btn btn-primary yahtzee-roll-btn" id="yahtzeeRollBtn" onclick="yahRoll()">주사위 굴리기</button>
   </div>
 
   <div class="yahtzee-scorecard-area">
