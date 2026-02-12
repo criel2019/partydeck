@@ -392,6 +392,13 @@
 
     // Start render loop
     animate();
+
+    // Notify games.js that Three.js is ready (cup may need to be shown)
+    setTimeout(function() {
+      if (typeof window.onYahtzeeThreeReady === 'function') {
+        window.onYahtzeeThreeReady();
+      }
+    }, 50);
   };
 
   // ===== DESTROY =====

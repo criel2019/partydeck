@@ -4127,6 +4127,26 @@ function yahRollDice() {
 let cupShakeActive = false;
 let cupTapCount = 0;
 let _lastYahHeld = [false, false, false, false, false];
+let _lastYahView = null;
+
+// Called by yahtzee-three.js after Three.js finishes initializing
+window.onYahtzeeThreeReady = function() {
+  if(!_lastYahView) return;
+  const view = _lastYahView;
+  const currentPlayer = view.players[view.turnIdx];
+  const isMyTurn = currentPlayer.id === state.myId;
+  const isHumanTurn = !currentPlayer.id.startsWith('ai-');
+  // Show cup if it's my human turn with rolls remaining
+  if(isMyTurn && isHumanTurn && view.rollsLeft > 0 && view.phase === 'rolling' && !cupShakeActive) {
+    if(typeof showCupReady === 'function') {
+      showCupReady(view.held);
+    }
+  }
+  // Also update dice display
+  if(typeof updateYahtzeeDice === 'function') {
+    updateYahtzeeDice(view.dice, view.held, false);
+  }
+};
 
 function vibrateOnTap(intensity) {
   if(navigator.vibrate) navigator.vibrate(Math.round(20 + intensity * 60));
@@ -4463,6 +4483,7 @@ let _prevRollsLeft = null;
 let _prevTurnIdx = null;
 
 function renderYahtzeeView(view) {
+  _lastYahView = view;
   document.getElementById('yahTurnText').textContent = '\ud134 ' + view.turnNum + '/' + view.maxTurns;
   const currentPlayer = view.players[view.turnIdx];
   document.getElementById('yahCurrentPlayer').textContent =
