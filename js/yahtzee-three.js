@@ -762,7 +762,7 @@
       const shakeY = Math.abs(Math.sin(elapsed * 20)) * 0.25 * intensity;
 
       cupGroup.position.x = CUP_POS.x + shakeX;
-      cupGroup.position.y = shakeY;
+      cupGroup.position.y = 0.3 + shakeY; // base lift to prevent floor clipping
       cupGroup.position.z = CUP_POS.z + shakeZ;
       cupGroup.rotation.x = Math.sin(elapsed * 25) * 0.1 * intensity;
       cupGroup.rotation.z = Math.cos(elapsed * 28) * 0.08 * intensity;
@@ -811,7 +811,7 @@
 
         diceMeshes[i].position.set(
           CUP_POS.x + shakeX + cupDiceOX[i],
-          CUP_DICE_Y + bounceH + hop,
+          0.3 + CUP_DICE_Y + bounceH + hop,
           CUP_POS.z + shakeZ + cupDiceOZ[i]
         );
         // Guaranteed base spin per die (each die spins a unique direction)
@@ -1014,10 +1014,10 @@
 
     if (cupState === 'ready') {
       cupState = 'shaking';
-      cupShakeIntensity = 0.3;
+      cupShakeIntensity = 0.6;
       cupDumpCallback = callback;
     } else if (cupState === 'shaking') {
-      cupShakeIntensity = Math.min(cupShakeIntensity + 0.2, 1.0);
+      cupShakeIntensity = Math.min(cupShakeIntensity + 0.25, 1.0);
     }
 
     // Reset auto-dump timer
