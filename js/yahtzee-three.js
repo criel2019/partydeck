@@ -53,6 +53,10 @@
   let cupDiceVZ = [0, 0, 0, 0, 0];
   let cupDiceOX = [0, 0, 0, 0, 0];
   let cupDiceOZ = [0, 0, 0, 0, 0];
+  // Per-die angular velocity (persistent spin)
+  let cupDiceRVX = [0, 0, 0, 0, 0];
+  let cupDiceRVY = [0, 0, 0, 0, 0];
+  let cupDiceRVZ = [0, 0, 0, 0, 0];
   const CUP_SCATTER = [
     { x: 0, z: 0 },
     { x: -0.28, z: -0.22 },
@@ -810,11 +814,24 @@
           CUP_DICE_Y + bounceH + hop,
           CUP_POS.z + shakeZ + cupDiceOZ[i]
         );
-        // Fast tumbling rotation — dice visibly roll
-        const rotSpeed = 12 * intensity;
-        diceMeshes[i].rotation.x += (Math.random() - 0.3) * rotSpeed * dt;
-        diceMeshes[i].rotation.y += (Math.random() - 0.5) * rotSpeed * dt;
-        diceMeshes[i].rotation.z += (Math.random() - 0.3) * rotSpeed * dt;
+        // Persistent angular velocity — dice tumble continuously
+        // Apply random torque impulses
+        cupDiceRVX[i] += (Math.random() - 0.5) * 30 * intensity * dt;
+        cupDiceRVY[i] += (Math.random() - 0.5) * 20 * intensity * dt;
+        cupDiceRVZ[i] += (Math.random() - 0.5) * 30 * intensity * dt;
+        // On wall bounce, spin harder
+        if (dist > boundaryR * 0.85) {
+          cupDiceRVX[i] += (Math.random() - 0.5) * 15 * intensity;
+          cupDiceRVZ[i] += (Math.random() - 0.5) * 15 * intensity;
+        }
+        // Light damping — keeps spinning
+        cupDiceRVX[i] *= 0.96;
+        cupDiceRVY[i] *= 0.96;
+        cupDiceRVZ[i] *= 0.96;
+        // Apply rotation
+        diceMeshes[i].rotation.x += cupDiceRVX[i] * dt;
+        diceMeshes[i].rotation.y += cupDiceRVY[i] * dt;
+        diceMeshes[i].rotation.z += cupDiceRVZ[i] * dt;
       }
     }
 
@@ -989,6 +1006,9 @@
       cupDiceOZ[i] = CUP_SCATTER[i].z;
       cupDiceVX[i] = 0;
       cupDiceVZ[i] = 0;
+      cupDiceRVX[i] = 0;
+      cupDiceRVY[i] = 0;
+      cupDiceRVZ[i] = 0;
       diceMeshes[i].scale.setScalar(DICE_SCALE_SMALL);
     }
 
