@@ -144,6 +144,7 @@ function updateStats() {
 }
 
 function recordGame(won) {
+  if(typeof practiceMode !== 'undefined' && practiceMode) return;
   const s = JSON.parse(localStorage.getItem('pd_stats') || '{"w":0,"g":0}');
   s.g++;
   if(won) s.w++;
@@ -503,7 +504,10 @@ function leaveLobby() {
   showScreen('mainMenu');
 }
 
-function leaveGame() { leaveLobby(); }
+function leaveGame() {
+  if(typeof practiceMode !== 'undefined' && practiceMode) { leavePracticeMode(); return; }
+  leaveLobby();
+}
 
 function copyRoomCode() {
   const url = location.origin + location.pathname + '?room=' + state.roomCode;

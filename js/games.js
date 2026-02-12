@@ -3718,6 +3718,7 @@ function processUpDownChoice(playerId, choice) {
     broadcastUpDownState();
 
     setTimeout(() => {
+      if(!state.isHost || !udState) return;
       udState.turnIdx = (udState.turnIdx + 1) % udState.players.length;
       udState.phase = 'playing';
       udState.specialData = null;
@@ -3984,6 +3985,7 @@ function processKingPenalty(kingId, targets) {
   showToast('\uc655\uc758 \ubc8c\uce59\uc774 \ub0b4\ub824\uc84c\uc2b5\ub2c8\ub2e4!');
 
   setTimeout(() => {
+    if(!state.isHost || !udState) return;
     udState.turnIdx = (udState.turnIdx + 1) % udState.players.length;
     udState.phase = 'playing';
     udState.specialData = null;
@@ -4209,6 +4211,13 @@ function yahScore() {
     showToast('\uce74\ud14c\uace0\ub9ac\ub97c \uc120\ud0dd\ud558\uc138\uc694');
     return;
   }
+
+  yahConfirmScore();
+}
+
+// Shared scoring logic — called by yahScore() (human) and aiYahtzee() (AI)
+function yahConfirmScore() {
+  if(!yahState || !yahState.selectedCategory) return;
 
   const player = yahState.players[yahState.turnIdx];
   const score = calcYahtzeeScore(yahState.dice, yahState.selectedCategory);

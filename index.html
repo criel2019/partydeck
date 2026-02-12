@@ -50,6 +50,8 @@
     <button class="btn btn-accent2 btn-small" onclick="joinRoom()" style="width:auto; padding:14px 20px;">참가</button>
   </div>
 
+  <button class="btn btn-accent2" onclick="startPracticeMode()" style="max-width:380px;">🤖 연습 모드 (AI 대전)</button>
+
   <button class="btn btn-secondary" onclick="shareApp()" style="max-width:380px;">📱 앱 공유 (QR 코드)</button>
 
   <!-- Debug Preview Toggle -->
@@ -72,6 +74,31 @@
   </div>
 
   <div class="ad-banner">📢 광고 영역 (AdSense / AdMob)</div>
+</div>
+
+<!-- PRACTICE MODE SELECT -->
+<div class="screen" id="practiceSelect">
+  <div class="lobby-header">
+    <button class="back-btn" onclick="leavePracticeMode()">←</button>
+    <div style="font-family:'Black Han Sans'; font-size:20px;">🤖 연습 모드</div>
+    <div style="width:40px;"></div>
+  </div>
+  <div class="practice-content">
+    <div class="practice-desc">AI 상대와 연습 플레이</div>
+    <div class="practice-game-grid">
+      <button class="practice-game-btn" onclick="startPracticeGame('poker')">🃏 포커</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('mafia')">🕵️ 마피아</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('sutda')">🎴 섯다</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('quickdraw')">🤠 총잡이</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('roulette')">🔫 룰렛</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('racing')">🏍️ 레이싱</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('lottery')">🎰 뽑기</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('ecard')">👑 E카드</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('yahtzee')">🎲 야추</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('updown')">🃏 업다운</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('truth')">⭕ 진실게임</button>
+    </div>
+  </div>
 </div>
 
 <!-- LOBBY -->
@@ -1099,6 +1126,7 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="js/core.js"></script>
 <script src="js/games.js"></script>
+<script src="js/ai.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="js/yahtzee-three.js"></script>
 </body>

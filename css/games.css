@@ -9829,3 +9829,46 @@
   }
 }
 
+/* ===== PRACTICE MODE ===== */
+.practice-content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.practice-desc {
+  color: var(--text-dim);
+  font-size: 16px;
+}
+
+.practice-game-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-width: 380px;
+  width: 100%;
+}
+
+.practice-game-btn {
+  background: var(--bg-surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: var(--text);
+  padding: 16px 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, border-color 0.15s;
+  text-align: center;
+}
+
+.practice-game-btn:active {
+  transform: scale(0.95);
+  background: rgba(0, 229, 255, 0.15);
+  border-color: var(--accent2);
+}
+
