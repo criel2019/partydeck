@@ -4106,8 +4106,6 @@ function startYahtzee() {
     phase: 'rolling'
   };
 
-  yahRollDice();
-
   broadcastYahtzeeState();
   showScreen('yahtzeeGame');
   broadcast({ type: 'game-start', game: 'yahtzee', state: createYahtzeeView() });
@@ -4247,8 +4245,6 @@ function yahConfirmScore() {
   yahState.rollsLeft = 3;
   yahState.selectedCategory = null;
   yahState.phase = 'rolling';
-
-  yahRollDice();
 
   broadcastYahtzeeState();
 }
