@@ -42,7 +42,8 @@
   let cupReadyHeld = [false, false, false, false, false];
   const CUP_DUMP_DURATION = 0.8;
   const CUP_SHAKE_TIMEOUT = 1500;
-  const CUP_DICE_Y = 0.4;
+  const CUP_DICE_Y = 0.42;
+  const CUP_PHYSICS_R = 0.45; // physics boundary smaller than visual cup
   // Per-die velocity/offset inside cup during shaking
   let cupDiceVX = [0, 0, 0, 0, 0];
   let cupDiceVZ = [0, 0, 0, 0, 0];
@@ -50,10 +51,10 @@
   let cupDiceOZ = [0, 0, 0, 0, 0];
   const CUP_SCATTER = [
     { x: 0, z: 0 },
-    { x: -0.4, z: -0.3 },
-    { x: 0.4, z: -0.3 },
-    { x: -0.3, z: 0.35 },
-    { x: 0.3, z: 0.35 },
+    { x: -0.28, z: -0.22 },
+    { x: 0.28, z: -0.22 },
+    { x: -0.22, z: 0.26 },
+    { x: 0.22, z: 0.26 },
   ];
   const CUP_POS = { x: 0, z: 0 };
 
@@ -224,59 +225,118 @@
     return group;
   }
 
-  // ===== CUP MESH CREATION =====
+  // ===== CUP MESH CREATION (Premium Yahtzee Dice Cup) =====
   function createCupMesh() {
     const group = new THREE.Group();
 
-    // Cylinder wall (open-ended — no top/bottom caps)
-    const wallGeo = new THREE.CylinderGeometry(1.3, 1.0, 1.8, 32, 1, true);
+    const cupH = 1.1;    // short — dice visible from above
+    const rTop = 1.5;    // wide mouth
+    const rBot = 1.05;   // narrower base
+    const halfH = cupH / 2;
+
+    // === Outer leather wall ===
+    const wallGeo = new THREE.CylinderGeometry(rTop, rBot, cupH, 48, 1, true);
     const wallMat = new THREE.MeshStandardMaterial({
-      color: 0x5C3A1E,
-      roughness: 0.6,
-      metalness: 0.1,
-      side: THREE.DoubleSide,
+      color: 0x4A1A08,       // deep oxblood leather
+      roughness: 0.85,
+      metalness: 0.02,
+      side: THREE.FrontSide,
     });
     const wall = new THREE.Mesh(wallGeo, wallMat);
-    wall.position.y = 0.9; // bottom at y=0, top at y=1.8
+    wall.position.y = halfH;
     wall.castShadow = true;
     wall.receiveShadow = true;
     group.add(wall);
 
-    // Bottom disc
-    const bottomGeo = new THREE.CircleGeometry(1.0, 32);
-    const bottomMat = new THREE.MeshStandardMaterial({
-      color: 0x4A2A12,
-      roughness: 0.7,
-      metalness: 0.05,
-    });
-    const bottom = new THREE.Mesh(bottomGeo, bottomMat);
-    bottom.rotation.x = -Math.PI / 2;
-    bottom.position.y = 0.01;
-    bottom.receiveShadow = true;
-    group.add(bottom);
-
-    // Inner dark surface for depth
-    const innerGeo = new THREE.CylinderGeometry(1.28, 0.98, 1.78, 32, 1, true);
+    // === Inner green felt lining ===
+    const innerGeo = new THREE.CylinderGeometry(rTop - 0.04, rBot - 0.04, cupH - 0.04, 48, 1, true);
     const innerMat = new THREE.MeshStandardMaterial({
-      color: 0x2A1508,
-      roughness: 0.9,
+      color: 0x1B5E20,       // casino green felt
+      roughness: 0.95,
+      metalness: 0.0,
       side: THREE.BackSide,
     });
     const inner = new THREE.Mesh(innerGeo, innerMat);
-    inner.position.y = 0.9;
+    inner.position.y = halfH;
     group.add(inner);
 
-    // Gold rim at top edge
-    const rimGeo = new THREE.TorusGeometry(1.3, 0.04, 8, 32);
+    // === Bottom felt disc ===
+    const bottomGeo = new THREE.CircleGeometry(rBot - 0.04, 48);
+    const bottomMat = new THREE.MeshStandardMaterial({
+      color: 0x145218,       // slightly darker green felt
+      roughness: 0.95,
+      metalness: 0.0,
+    });
+    const bottom = new THREE.Mesh(bottomGeo, bottomMat);
+    bottom.rotation.x = -Math.PI / 2;
+    bottom.position.y = 0.02;
+    bottom.receiveShadow = true;
+    group.add(bottom);
+
+    // === Outer bottom disc (leather underside) ===
+    const outerBottomGeo = new THREE.CircleGeometry(rBot, 48);
+    const outerBottomMat = new THREE.MeshStandardMaterial({
+      color: 0x3A1205,
+      roughness: 0.9,
+      metalness: 0.02,
+    });
+    const outerBottom = new THREE.Mesh(outerBottomGeo, outerBottomMat);
+    outerBottom.rotation.x = Math.PI / 2; // face down
+    outerBottom.position.y = 0.005;
+    group.add(outerBottom);
+
+    // === Polished brass rim (top edge) ===
+    const rimGeo = new THREE.TorusGeometry(rTop, 0.06, 12, 48);
     const rimMat = new THREE.MeshStandardMaterial({
-      color: 0x8B6914,
-      roughness: 0.3,
-      metalness: 0.5,
+      color: 0xD4A017,       // polished brass
+      roughness: 0.2,
+      metalness: 0.7,
     });
     const rim = new THREE.Mesh(rimGeo, rimMat);
     rim.rotation.x = Math.PI / 2;
-    rim.position.y = 1.8;
+    rim.position.y = cupH;
+    rim.castShadow = true;
     group.add(rim);
+
+    // === Brass base ring ===
+    const baseRimGeo = new THREE.TorusGeometry(rBot + 0.02, 0.04, 10, 48);
+    const baseRimMat = new THREE.MeshStandardMaterial({
+      color: 0xB8860B,       // darker brass
+      roughness: 0.25,
+      metalness: 0.65,
+    });
+    const baseRim = new THREE.Mesh(baseRimGeo, baseRimMat);
+    baseRim.rotation.x = Math.PI / 2;
+    baseRim.position.y = 0.04;
+    group.add(baseRim);
+
+    // === Decorative brass band (middle) ===
+    const bandY = cupH * 0.55;
+    const bandR = rBot + (rTop - rBot) * (bandY / cupH); // interpolate radius at band height
+    const bandGeo = new THREE.TorusGeometry(bandR, 0.025, 8, 48);
+    const bandMat = new THREE.MeshStandardMaterial({
+      color: 0xC5960C,
+      roughness: 0.25,
+      metalness: 0.6,
+    });
+    const band = new THREE.Mesh(bandGeo, bandMat);
+    band.rotation.x = Math.PI / 2;
+    band.position.y = bandY;
+    group.add(band);
+
+    // === Leather stitching line near rim ===
+    const stitchY = cupH * 0.85;
+    const stitchR = rBot + (rTop - rBot) * (stitchY / cupH);
+    const stitchGeo = new THREE.TorusGeometry(stitchR + 0.005, 0.012, 6, 48);
+    const stitchMat = new THREE.MeshStandardMaterial({
+      color: 0x8B7355,       // tan stitching
+      roughness: 0.95,
+      metalness: 0.0,
+    });
+    const stitch = new THREE.Mesh(stitchGeo, stitchMat);
+    stitch.rotation.x = Math.PI / 2;
+    stitch.position.y = stitchY;
+    group.add(stitch);
 
     group.position.set(CUP_POS.x, 0, CUP_POS.z);
     group.visible = false;
@@ -697,9 +757,9 @@
       cupGroup.rotation.x = Math.sin(elapsed * 20) * 0.05 * intensity;
       cupGroup.rotation.z = Math.cos(elapsed * 22) * 0.04 * intensity;
 
-      // Bounce dice inside cup
+      // Bounce dice inside cup (physics boundary smaller than visual cup)
       const dt = 0.016;
-      const boundaryR = 0.65;
+      const boundaryR = CUP_PHYSICS_R;
       for (let i = 0; i < 5; i++) {
         if (cupReadyHeld[i]) {
           diceMeshes[i].visible = false;
@@ -759,8 +819,8 @@
       // Cup tips forward and rises
       const et = easeOutCubic(t);
       cupGroup.rotation.x = et * Math.PI;
-      cupGroup.position.y = Math.sin(t * Math.PI) * 1.5;
-      cupGroup.position.z = CUP_POS.z - et * 1.5;
+      cupGroup.position.y = Math.sin(t * Math.PI) * 1.0;
+      cupGroup.position.z = CUP_POS.z - et * 1.2;
 
       // Before callback fires, dice slide inside the tipping cup
       if (t < 0.3) {
@@ -769,8 +829,8 @@
           if (cupReadyHeld[i]) continue;
           diceMeshes[i].position.set(
             CUP_POS.x + cupDiceOX[i],
-            CUP_DICE_Y + slideT * 1.5,
-            CUP_POS.z + cupDiceOZ[i] + slideT * 1.0
+            CUP_DICE_Y + slideT * 0.8,
+            CUP_POS.z + cupDiceOZ[i] + slideT * 0.8
           );
         }
       }
