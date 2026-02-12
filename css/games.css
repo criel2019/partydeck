@@ -8868,3 +8868,964 @@
   #racingGame .racing-result-stat-value { font-size: 14px !important; }
 }
 
+/* =================================================================
+   UI 대형화 — "70대 어르신도 쓸 수 있게"
+   모든 게임의 핵심 UI를 크고 명확하게 만듦
+   ================================================================= */
+
+/* =============================================
+   1. E카드 — 히어로 카드 패턴 (새 HTML 구조)
+   ============================================= */
+
+/* Compact Header */
+.ecard-compact-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #5c3a1e 0%, #4a2e16 50%, #3a2210 100%);
+  border-bottom: 2px solid #8b6914;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 3px 10px rgba(0,0,0,0.5);
+  flex-shrink: 0;
+  z-index: 10;
+  position: relative;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.ecard-compact-header .back-btn {
+  background: rgba(0,0,0,0.3) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  border-radius: 6px !important;
+  color: #d4c4a0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0;
+}
+
+.ecard-header-round {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  color: #ffd700;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  flex-shrink: 0;
+}
+
+.ecard-header-score {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(201,168,76,0.25);
+  flex-shrink: 0;
+}
+
+.ecard-hscore-emperor,
+.ecard-hscore-slave {
+  font-size: 16px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+
+.ecard-hscore-val {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
+}
+
+.ecard-hscore-div {
+  font-size: 16px;
+  color: rgba(255,255,255,0.3);
+  margin: 0 2px;
+}
+
+.ecard-header-role {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.ecard-header-role span:first-child {
+  font-size: 18px;
+}
+
+.ecard-header-role span:last-child {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  color: #ffd700;
+  text-shadow: 0 0 6px rgba(255,215,0,0.3);
+}
+
+.ecard-header-opp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.ecard-header-opp .opponent-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: 1.5px solid rgba(201,168,76,0.4);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+
+.ecard-header-opp .opponent-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: #e8dcc8;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  max-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ecard-header-opp .opponent-cards-count {
+  font-size: 12px;
+  color: rgba(200,190,160,0.6);
+}
+
+.ecard-header-opp .opponent-played-card {
+  flex-shrink: 0;
+}
+
+/* E카드 카드 대형화: 86x124 → 110x160 */
+#ecardGame .ecard-card {
+  width: 110px;
+  height: 160px;
+  border-radius: 12px;
+  margin: 0 -14px;
+}
+
+#ecardGame .ecard-card-icon {
+  font-size: 52px;
+  margin-bottom: 6px;
+}
+
+#ecardGame .ecard-card-name {
+  font-size: 18px;
+}
+
+#ecardGame .ecard-card:hover {
+  transform: translateY(-18px) scale(1.08);
+}
+
+#ecardGame .ecard-card.selected {
+  transform: translateY(-24px) scale(1.12);
+  box-shadow:
+    0 20px 40px rgba(0,0,0,0.6),
+    0 0 35px var(--card-gold-glow),
+    0 0 60px rgba(255,215,0,0.25);
+}
+
+/* My cards area fills screen */
+#ecardGame .ecard-my-cards-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  padding: 0 8px;
+}
+
+#ecardGame .my-cards-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(200,190,160,0.6);
+  text-align: center;
+}
+
+#ecardGame .ecard-cards-hand {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 10px 4px 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Battle Overlay */
+.ecard-battle-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ecard-battle-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+  background: radial-gradient(ellipse at center, rgba(255,215,0,0.08) 0%, rgba(0,0,0,0.5) 70%);
+  border-radius: 20px;
+  border: 2px solid var(--card-gold-border);
+  box-shadow: 0 0 40px var(--card-gold-glow);
+}
+
+.ecard-battle-inner .battle-card {
+  transform: scale(1.15);
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.7));
+}
+
+.ecard-battle-inner .battle-vs {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 30px;
+  color: #ffd700;
+  text-shadow: 0 0 20px rgba(255,215,0,0.7), 0 2px 4px rgba(0,0,0,0.6);
+}
+
+/* E카드 Result text 대형화 */
+#ecardGame .ecard-result-text {
+  font-size: 22px;
+  padding: 6px 12px;
+  min-height: 28px;
+}
+
+/* E카드 action buttons 대형화 */
+#ecardGame .ecard-action-buttons .btn {
+  min-height: 56px;
+  font-size: 18px;
+  padding: 14px 20px;
+}
+
+/* E카드 waiting 대형화 */
+#ecardGame .ecard-waiting {
+  font-size: 16px;
+}
+
+/* E카드 Opponent played card in header */
+.ecard-header-opp .opponent-played-card .ecard-card {
+  width: 36px !important;
+  height: 52px !important;
+  margin: 0 !important;
+  cursor: default !important;
+}
+
+.ecard-header-opp .opponent-played-card .ecard-card-icon {
+  font-size: 18px !important;
+  margin-bottom: 1px !important;
+}
+
+.ecard-header-opp .opponent-played-card .ecard-card-name {
+  font-size: 7px !important;
+}
+
+.ecard-header-opp .opponent-played-card .ecard-card:hover {
+  transform: none !important;
+}
+
+/* E카드 Mobile 375px */
+@media (max-width: 400px) {
+  .ecard-compact-header {
+    padding: 6px 8px;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  #ecardGame .ecard-card {
+    width: 90px;
+    height: 130px;
+    margin: 0 -10px;
+  }
+  #ecardGame .ecard-card-icon {
+    font-size: 42px;
+  }
+  #ecardGame .ecard-card-name {
+    font-size: 15px;
+  }
+  .ecard-header-round { font-size: 14px; }
+  .ecard-hscore-val { font-size: 18px; }
+}
+
+/* =============================================
+   2. 마피아 — 텍스트/플레이어 카드 대형화
+   ============================================= */
+
+/* 역할 이름 대형화 */
+.mf-role-name {
+  font-size: 28px;
+}
+
+/* 역할 설명 대형화 */
+.mf-role-desc {
+  font-size: 17px;
+}
+
+/* 역할 이모지 대형화 */
+.mf-role-emoji {
+  font-size: 60px;
+}
+
+/* 타이머 대형화 */
+.mf-timer-box {
+  font-size: 26px;
+  padding: 10px 20px;
+}
+
+/* 페이즈 뱃지 대형화 */
+.mf-phase-badge {
+  font-size: 20px;
+  padding: 8px 16px;
+}
+
+/* 일수 표시 대형화 */
+.mf-day-counter {
+  font-size: 16px;
+}
+
+/* 플레이어 아바타 대형화 */
+.mf-player-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 28px;
+}
+
+/* 플레이어 이름 대형화 */
+.mf-player-name {
+  font-size: 16px;
+}
+
+/* 메시지 박스 대형화 */
+.mf-message-box {
+  font-size: 18px;
+}
+
+/* 액션 버튼 대형화 */
+.mf-action-btn {
+  min-height: 56px;
+  font-size: 17px;
+  padding: 16px 24px;
+}
+
+/* 야간 패널 대형화 */
+.mf-night-title {
+  font-size: 22px;
+}
+
+.mf-night-desc {
+  font-size: 16px;
+}
+
+/* 투표 바 이름 대형화 */
+.mf-vote-bar-name {
+  font-size: 15px;
+  width: 70px;
+}
+
+/* 채팅 메시지 대형화 */
+.mf-chat-msg {
+  font-size: 15px;
+}
+
+.mf-chat-input {
+  font-size: 15px;
+}
+
+/* =============================================
+   3. 진실게임 — 질문/투표 대형화
+   ============================================= */
+
+/* 질문 텍스트 대형화 */
+.truth-question-text {
+  font-size: 26px;
+}
+
+/* Q. 라벨 대형화 */
+.truth-question-label {
+  font-size: 36px;
+}
+
+/* 투표 버튼 대형화 */
+.truth-vote-btn {
+  width: 160px;
+  height: 160px;
+}
+
+/* 투표 심볼 대형화 */
+.truth-vote-symbol {
+  font-size: 72px;
+}
+
+/* 투표 라벨 대형화 */
+.truth-vote-label {
+  font-size: 20px;
+}
+
+/* 결과 카운트 대형화 */
+.truth-result-count {
+  font-size: 36px;
+}
+
+/* 라운드 뱃지 대형화 */
+.truth-round-badge {
+  font-size: 20px;
+}
+
+/* 질문자 표시 대형화 */
+.truth-questioner-display {
+  font-size: 17px;
+}
+
+/* 플레이어 바 대형화 */
+.truth-player-avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+}
+
+.truth-player-name {
+  font-size: 14px;
+  max-width: 56px;
+}
+
+/* textarea 대형화 */
+.truth-textarea {
+  font-size: 20px;
+}
+
+.truth-textarea::placeholder {
+  font-size: 16px;
+}
+
+/* 결과 타이틀 */
+.truth-result-title {
+  font-size: 22px;
+}
+
+/* =============================================
+   4. 총잡이 — 소폭 조정
+   ============================================= */
+
+/* 순위 항목 텍스트 대형화 */
+.qd-ranking-item {
+  font-size: 20px;
+  padding: 14px;
+}
+
+/* 순위 아바타 대형화 */
+.qd-ranking-avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+}
+
+/* 순위 타이틀 대형화 */
+.qd-rankings-title {
+  font-size: 22px;
+}
+
+/* 라운드 표시 대형화 */
+.qd-round {
+  font-size: 17px;
+}
+
+/* 반응속도 표시 대형화 */
+.qd-reaction-time {
+  font-size: 56px;
+}
+
+/* 다시하기 버튼 */
+.qd-restart-btn {
+  min-height: 56px;
+  font-size: 20px;
+}
+
+/* 순위 이름 대형화 */
+.qd-ranking-name {
+  font-size: 18px;
+}
+
+.qd-ranking-time {
+  font-size: 20px;
+}
+
+/* =============================================
+   5. 룰렛 — 생존자/정보 대형화
+   ============================================= */
+
+/* 생존자 이름 대형화 */
+.survivor-name {
+  font-size: 16px;
+  max-width: 80px;
+}
+
+/* 생존자 아바타 대형화 */
+.survivor-avatar-sm {
+  width: 56px;
+  height: 56px;
+  font-size: 28px;
+}
+
+/* 생존자 수 대형화 */
+.roulette-survivors {
+  font-size: 22px;
+}
+
+/* 현재 턴 표시 대형화 */
+.current-turn-display {
+  font-size: 22px;
+  padding: 10px 24px;
+}
+
+/* 실린더 정보 대형화 */
+.cylinder-info {
+  font-size: 16px;
+}
+
+/* 설정 라벨 대형화 */
+.setup-label {
+  font-size: 18px;
+}
+
+/* 설정 값 대형화 */
+.setup-value {
+  font-size: 28px;
+}
+
+/* 챔버 인디케이터 대형화 */
+.chamber-indicator {
+  width: 40px;
+  height: 40px;
+}
+
+/* 설정 슬라이더 thumb 대형화 */
+.setup-slider::-webkit-slider-thumb {
+  width: 32px;
+  height: 32px;
+}
+
+/* =============================================
+   6. 뽑기 — 그리드/텍스트 대형화
+   ============================================= */
+
+/* 셀 콘텐츠 대형화 */
+.lottery-cell.revealed .cell-content {
+  font-size: clamp(14px, 3vw, 18px);
+}
+
+/* 셀 최소 크기 증가 */
+.lottery-cell {
+  min-height: 40px;
+}
+
+/* 상태 텍스트 대형화 */
+.lottery-status .status-text {
+  font-size: 20px;
+}
+
+/* 뽑은 개수 대형화 */
+.picked-count {
+  font-size: 16px;
+}
+
+/* 결과 라벨 대형화 */
+.my-result-panel .result-label {
+  font-size: 28px;
+}
+
+/* 결과 항목 대형화 */
+.result-item {
+  font-size: 18px;
+  padding: 10px 18px;
+}
+
+/* 모드 탭 대형화 */
+.mode-tab {
+  font-size: 20px;
+  min-height: 52px;
+  padding: 16px 14px;
+}
+
+/* 설정 타이틀/라벨 */
+#lotteryGame .setup-title {
+  font-size: 18px;
+}
+
+/* 물음표 아이콘 대형화 */
+.lottery-cell::after {
+  font-size: clamp(14px, 3.5vw, 20px);
+}
+
+/* 룰렛 돌리기 버튼 대형화 */
+.roulette-spin-btn {
+  font-size: 30px;
+  padding: 20px;
+  min-height: 64px;
+}
+
+/* =============================================
+   7. 야추 — 점수표/주사위 대형화
+   ============================================= */
+
+/* 턴 텍스트 대형화 */
+.yahtzee-turn-text {
+  font-size: 22px;
+}
+
+/* 현재 플레이어 대형화 */
+.yahtzee-current-player {
+  font-size: 16px;
+}
+
+/* 남은 굴리기 대형화 */
+.yahtzee-rolls-left {
+  font-size: 24px;
+  padding: 10px 18px;
+}
+
+/* 미니 플레이어 대형화 */
+.yahtzee-player-mini-avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+}
+
+.yahtzee-player-mini-name {
+  font-size: 14px;
+  max-width: 60px;
+}
+
+.yahtzee-player-mini-score {
+  font-size: 14px;
+}
+
+/* 홀드 다이 대형화 */
+.yahtzee-held-die {
+  width: 60px;
+  height: 60px;
+  padding: 8px;
+}
+
+.yahtzee-held-die .held-pip {
+  width: 9px;
+  height: 9px;
+}
+
+/* 굴리기 버튼 대형화 */
+.yahtzee-roll-btn {
+  font-size: 26px;
+  padding: 16px 24px;
+  min-height: 56px;
+}
+
+/* 점수표 카테고리명 대형화 */
+.yahtzee-cat-name {
+  font-size: 16px;
+}
+
+/* 점수 값 대형화 */
+.yahtzee-score-table {
+  font-size: 16px;
+}
+
+.yahtzee-cat-score {
+  font-size: 18px;
+}
+
+/* 점수표 타이틀 대형화 */
+.yahtzee-scorecard-title {
+  font-size: 24px;
+}
+
+/* 콤보 라벨 대형화 */
+.yahtzee-combo-label {
+  font-size: 24px;
+}
+
+/* 점수 확정 버튼 대형화 */
+.yahtzee-score-btn {
+  font-size: 20px;
+  min-height: 56px;
+  padding: 14px 24px;
+}
+
+/* 홀드 바 */
+.yahtzee-hold-bar {
+  min-height: 74px;
+}
+
+/* 롤 힌트 */
+.yahtzee-roll-hint {
+  font-size: 14px;
+}
+
+/* Total row 대형화 */
+.yahtzee-total-row td {
+  font-size: 18px;
+}
+
+/* =============================================
+   8. 레이싱 — HUD/터치 대형화
+   ============================================= */
+
+/* HUD 라벨 대형화 */
+.racing-speed-label,
+.racing-distance-label,
+.racing-rank-label {
+  font-size: clamp(12px, 3vw, 14px);
+}
+
+/* HUD 값 대형화 */
+.racing-speed-value,
+.racing-distance-value {
+  font-size: clamp(28px, 8vw, 40px);
+}
+
+/* HUD 단위 대형화 */
+.racing-speed-unit,
+.racing-distance-unit {
+  font-size: clamp(10px, 2.5vw, 13px);
+}
+
+/* 모드 카드 설명 대형화 */
+.racing-mode-desc {
+  font-size: 16px;
+}
+
+/* 모드 이름 대형화 */
+.racing-mode-name {
+  font-size: 26px;
+}
+
+/* 터치 버튼 대형화 */
+.racing-touch-btn {
+  width: 68px;
+  height: 68px;
+  font-size: 26px;
+}
+
+/* 결과 통계 라벨 대형화 */
+.racing-result-stat-label {
+  font-size: 14px;
+}
+
+/* 결과 통계 값 대형화 */
+.racing-result-stat-value {
+  font-size: 24px;
+}
+
+/* 순위 이름/거리 대형화 */
+.racing-result-ranking-name {
+  font-size: 18px;
+}
+
+.racing-result-ranking-distance {
+  font-size: 18px;
+}
+
+/* 순위 타이틀 대형화 */
+.racing-result-rankings-title {
+  font-size: 18px;
+}
+
+/* 순위 랭크 대형화 */
+.racing-result-ranking-rank {
+  font-size: 22px;
+}
+
+/* 순위 아바타 대형화 */
+.racing-result-ranking-avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+}
+
+/* =============================================
+   모바일 반응형 보정 (430px)
+   대형화된 값이 모바일에서도 충분히 크게 유지
+   ============================================= */
+@media (max-width: 430px) {
+  /* 마피아 모바일 보정 */
+  .mf-player-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 28px;
+  }
+  .mf-player-name {
+    font-size: 14px;
+  }
+  .mf-timer-box {
+    font-size: 22px;
+    padding: 8px 14px;
+  }
+  .mf-phase-badge {
+    font-size: 18px;
+    padding: 6px 14px;
+  }
+  .mf-day-counter {
+    font-size: 14px;
+  }
+  .mf-action-btn {
+    min-height: 56px;
+    font-size: 16px;
+  }
+  .mf-role-name {
+    font-size: 24px;
+  }
+  .mf-role-desc {
+    font-size: 16px;
+  }
+  .mf-role-emoji {
+    font-size: 52px;
+  }
+  .mf-message-box {
+    font-size: 18px;
+  }
+
+  /* 진실게임 모바일 보정 */
+  .truth-question-text {
+    font-size: 22px;
+  }
+  .truth-question-label {
+    font-size: 30px;
+  }
+  .truth-vote-btn {
+    width: 140px;
+    height: 140px;
+  }
+  .truth-vote-symbol {
+    font-size: 64px;
+  }
+  .truth-vote-label {
+    font-size: 18px;
+  }
+  .truth-result-count {
+    font-size: 32px;
+  }
+  .truth-round-badge {
+    font-size: 18px;
+  }
+  .truth-questioner-display {
+    font-size: 15px;
+  }
+  .truth-player-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  .truth-player-name {
+    font-size: 13px;
+  }
+  .truth-textarea {
+    font-size: 18px;
+  }
+
+  /* 총잡이 모바일 보정 */
+  .qd-ranking-item {
+    font-size: 18px;
+  }
+  .qd-ranking-avatar {
+    width: 40px;
+    height: 40px;
+  }
+  .qd-rankings-title {
+    font-size: 20px;
+  }
+  .qd-round {
+    font-size: 16px;
+  }
+
+  /* 룰렛 모바일 보정 */
+  .survivor-name {
+    font-size: 14px;
+  }
+  .survivor-avatar-sm {
+    width: 52px;
+    height: 52px;
+    font-size: 26px;
+  }
+  .roulette-survivors {
+    font-size: 20px;
+  }
+  .current-turn-display {
+    font-size: 20px;
+  }
+  .cylinder-info {
+    font-size: 15px;
+  }
+  .setup-label {
+    font-size: 16px;
+  }
+  .setup-value {
+    font-size: 24px;
+  }
+
+  /* 뽑기 모바일 보정 */
+  .lottery-status .status-text {
+    font-size: 18px;
+  }
+  .picked-count {
+    font-size: 15px;
+  }
+  .mode-tab {
+    font-size: 18px;
+    min-height: 50px;
+  }
+  .roulette-spin-btn {
+    font-size: 26px;
+  }
+
+  /* 야추 모바일 보정 */
+  .yahtzee-turn-text {
+    font-size: 20px;
+  }
+  .yahtzee-current-player {
+    font-size: 15px;
+  }
+  .yahtzee-rolls-left {
+    font-size: 22px;
+  }
+  .yahtzee-held-die {
+    width: 54px;
+    height: 54px;
+  }
+  .yahtzee-roll-btn {
+    font-size: 24px;
+  }
+  .yahtzee-scorecard-title {
+    font-size: 22px;
+  }
+  .yahtzee-score-btn {
+    font-size: 18px;
+    min-height: 52px;
+  }
+
+  /* 레이싱 모바일 보정 */
+  .racing-touch-btn {
+    width: 62px;
+    height: 62px;
+    font-size: 24px;
+  }
+  .racing-mode-desc {
+    font-size: 14px;
+  }
+  .racing-mode-name {
+    font-size: 22px;
+  }
+}
+

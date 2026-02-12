@@ -793,55 +793,48 @@
 
 <!-- ===== E CARD GAME ===== -->
 <div class="screen" id="ecardGame">
-  <div class="ecard-top-bar">
+  <!-- Compact Header: combines top bar + score + role + opponent -->
+  <div class="ecard-compact-header">
     <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">&#10005;</button>
-    <div class="ecard-title">E카드 (왕과 노예)</div>
-    <div class="ecard-round">라운드 <span id="ecardRound">1</span>/5</div>
-  </div>
-
-  <div class="ecard-score">
-    <div class="score-item score-emperor">
-      <div class="score-icon">&#128081;</div>
-      <div class="score-value" id="ecardScoreEmperor">0</div>
+    <div class="ecard-header-round">R<span id="ecardRound">1</span>/5</div>
+    <div class="ecard-header-score">
+      <span class="ecard-hscore-emperor">&#128081;</span>
+      <span class="ecard-hscore-val" id="ecardScoreEmperor">0</span>
+      <span class="ecard-hscore-div">:</span>
+      <span class="ecard-hscore-val" id="ecardScoreSlave">0</span>
+      <span class="ecard-hscore-slave">&#9939;&#65039;</span>
     </div>
-    <div class="score-divider">:</div>
-    <div class="score-item score-slave">
-      <div class="score-icon">&#9939;&#65039;</div>
-      <div class="score-value" id="ecardScoreSlave">0</div>
+    <div class="ecard-header-role" id="ecardRoleBadge">
+      <span id="ecardRoleIcon">&#128081;</span>
+      <span id="ecardRoleName">황제</span>
     </div>
-  </div>
-
-  <div class="ecard-role-display" id="ecardRoleDisplay">
-    <div class="role-badge" id="ecardRoleBadge">
-      <div class="role-icon" id="ecardRoleIcon">&#128081;</div>
-      <div class="role-text">당신은 <span id="ecardRoleName">황제</span>입니다</div>
-    </div>
-  </div>
-
-  <div class="ecard-opponent-area" id="ecardOpponentArea">
-    <div class="opponent-info">
+    <div class="ecard-header-opp">
       <div class="opponent-avatar" id="ecardOppAvatar" style="background: linear-gradient(135deg, #00e5ff, #00b8d4);">&#128526;</div>
-      <div class="opponent-name" id="ecardOppName">상대방</div>
-      <div class="opponent-cards-count">남은 카드: <span id="ecardOppCardsCount">5</span>장</div>
-    </div>
-    <div class="opponent-played-card" id="ecardOppPlayedCard">
+      <span class="opponent-name" id="ecardOppName">상대</span>
+      <span class="opponent-cards-count"><span id="ecardOppCardsCount">5</span>장</span>
+      <div class="opponent-played-card" id="ecardOppPlayedCard"></div>
     </div>
   </div>
 
-  <div class="ecard-battle-area" id="ecardBattleArea" style="display:none;">
-    <div class="battle-card" id="ecardBattleOpp"></div>
-    <div class="battle-vs">VS</div>
-    <div class="battle-card" id="ecardBattleMy"></div>
-  </div>
-
+  <!-- Result / Status Text -->
   <div class="ecard-result-text" id="ecardResultText"></div>
 
+  <!-- My Cards Area - takes most of the screen -->
   <div class="ecard-my-cards-area">
     <div class="my-cards-label">내 카드 (<span id="ecardMyCardsCount">5</span>장)</div>
-    <div class="ecard-cards-hand" id="ecardMyCards">
+    <div class="ecard-cards-hand" id="ecardMyCards"></div>
+  </div>
+
+  <!-- Battle Overlay (absolute positioned) -->
+  <div class="ecard-battle-overlay" id="ecardBattleArea" style="display:none;">
+    <div class="ecard-battle-inner">
+      <div class="battle-card" id="ecardBattleOpp"></div>
+      <div class="battle-vs">VS</div>
+      <div class="battle-card" id="ecardBattleMy"></div>
     </div>
   </div>
 
+  <!-- Betting Area -->
   <div class="ecard-bet-area" id="ecardBetArea" style="display:none;">
     <div class="bet-label">배팅 금액 제안</div>
     <div class="bet-controls">
@@ -851,6 +844,7 @@
     <button class="btn btn-primary" id="ecardBetSubmit" onclick="ecardSubmitBet()">배팅 제안</button>
   </div>
 
+  <!-- Bet Response -->
   <div class="ecard-bet-response" id="ecardBetResponse" style="display:none;">
     <div class="bet-proposal">상대방이 <span id="ecardBetProposed">100</span> 배팅을 제안했습니다</div>
     <div class="bet-buttons">
@@ -859,10 +853,12 @@
     </div>
   </div>
 
+  <!-- Action Buttons -->
   <div class="ecard-action-buttons" id="ecardActionButtons">
     <button class="btn btn-primary" id="ecardSubmitBtn" onclick="ecardSubmitCard()" disabled>카드 제출</button>
   </div>
 
+  <!-- Waiting -->
   <div class="ecard-waiting" id="ecardWaiting" style="display:none;">
     <div class="spinner"></div>
     <div style="margin-top:8px;font-size:14px;color:var(--text-dim);" id="ecardWaitingText">상대방을 기다리는 중...</div>
