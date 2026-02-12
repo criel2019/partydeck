@@ -814,24 +814,24 @@
           CUP_DICE_Y + bounceH + hop,
           CUP_POS.z + shakeZ + cupDiceOZ[i]
         );
-        // Persistent angular velocity — dice tumble continuously
-        // Apply random torque impulses
-        cupDiceRVX[i] += (Math.random() - 0.5) * 30 * intensity * dt;
-        cupDiceRVY[i] += (Math.random() - 0.5) * 20 * intensity * dt;
-        cupDiceRVZ[i] += (Math.random() - 0.5) * 30 * intensity * dt;
-        // On wall bounce, spin harder
-        if (dist > boundaryR * 0.85) {
-          cupDiceRVX[i] += (Math.random() - 0.5) * 15 * intensity;
-          cupDiceRVZ[i] += (Math.random() - 0.5) * 15 * intensity;
+        // Persistent angular velocity — dice tumble hard
+        // Strong torque impulses (no dt — direct angular velocity in rad/frame)
+        cupDiceRVX[i] += (Math.random() - 0.5) * 0.8 * intensity;
+        cupDiceRVY[i] += (Math.random() - 0.5) * 0.5 * intensity;
+        cupDiceRVZ[i] += (Math.random() - 0.5) * 0.8 * intensity;
+        // Wall bounce = big spin kick
+        if (dist > boundaryR * 0.8) {
+          cupDiceRVX[i] += (Math.random() - 0.5) * 1.5 * intensity;
+          cupDiceRVZ[i] += (Math.random() - 0.5) * 1.5 * intensity;
         }
-        // Light damping — keeps spinning
-        cupDiceRVX[i] *= 0.96;
-        cupDiceRVY[i] *= 0.96;
-        cupDiceRVZ[i] *= 0.96;
-        // Apply rotation
-        diceMeshes[i].rotation.x += cupDiceRVX[i] * dt;
-        diceMeshes[i].rotation.y += cupDiceRVY[i] * dt;
-        diceMeshes[i].rotation.z += cupDiceRVZ[i] * dt;
+        // Damping — keeps spinning but doesn't explode
+        cupDiceRVX[i] *= 0.90;
+        cupDiceRVY[i] *= 0.90;
+        cupDiceRVZ[i] *= 0.90;
+        // Apply rotation directly (values are already per-frame)
+        diceMeshes[i].rotation.x += cupDiceRVX[i];
+        diceMeshes[i].rotation.y += cupDiceRVY[i];
+        diceMeshes[i].rotation.z += cupDiceRVZ[i];
       }
     }
 
