@@ -4137,6 +4137,15 @@
   cursor: not-allowed;
 }
 
+.yahtzee-roll-btn.shaking {
+  animation: btn-shake 0.1s infinite alternate;
+  background: linear-gradient(135deg, #ff4500, #ff8c00);
+}
+@keyframes btn-shake {
+  0% { transform: translateX(-2px) rotate(-1deg); }
+  100% { transform: translateX(2px) rotate(1deg); }
+}
+
 /* ===== Scorecard available pulse ===== */
 .yahtzee-score-row.available {
   animation: scoreAvailablePulse 1.5s ease-in-out infinite;

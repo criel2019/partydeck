@@ -4123,15 +4123,75 @@ function yahRollDice() {
   yahState.selectedCategory = null;
 }
 
+// Cup shake integration state
+let cupShakeActive = false;
+let cupTapCount = 0;
+let _lastYahHeld = [false, false, false, false, false];
+
+function vibrateOnTap(intensity) {
+  if(navigator.vibrate) navigator.vibrate(Math.round(20 + intensity * 60));
+}
+
+function commitCupRoll() {
+  cupShakeActive = false;
+  cupTapCount = 0;
+  const rollBtn = document.getElementById('yahtzeeRollBtn');
+  if(rollBtn) { rollBtn.classList.remove('shaking'); }
+  // Validate it's still our turn before committing
+  if(!yahState || yahState.players[yahState.turnIdx].id !== state.myId || yahState.rollsLeft <= 0) {
+    if(typeof hideCup === 'function') hideCup();
+    return;
+  }
+  yahRollDice();
+  broadcastYahtzeeState();
+}
+
+function commitCupRollNonHost() {
+  cupShakeActive = false;
+  cupTapCount = 0;
+  const rollBtn = document.getElementById('yahtzeeRollBtn');
+  if(rollBtn) { rollBtn.classList.remove('shaking'); }
+  const host = Object.values(state.connections)[0];
+  if(host?.open) {
+    host.send(JSON.stringify({ type: 'yah-action', action: 'roll' }));
+  }
+}
+
+function updateRollBtnShake() {
+  const rollBtn = document.getElementById('yahtzeeRollBtn');
+  if(!rollBtn) return;
+  rollBtn.classList.add('shaking');
+  rollBtn.disabled = false;
+  if(cupTapCount >= 4) rollBtn.textContent = '\ucd5c\ub300 \ud30c\uc6cc!!';
+  else if(cupTapCount >= 2) rollBtn.textContent = '\ub354 \uc138\uac8c!';
+  else rollBtn.textContent = '\ud754\ub4dc\ub294 \uc911...';
+}
+
 function yahRoll() {
+  // Non-host: local cup animation + send roll on dump
   if(!state.isHost) {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({ type: 'yah-action', action: 'roll' }));
+    const cupS = typeof getCupState === 'function' ? getCupState() : 'hidden';
+    if(cupS === 'dumping') return;
+
+    if(cupS === 'hidden' || cupS === 'ready') {
+      if(typeof showCupReady === 'function' && cupS === 'hidden') {
+        showCupReady(_lastYahHeld);
+      }
+      if(typeof startCupShake === 'function') {
+        startCupShake(commitCupRollNonHost);
+        cupShakeActive = true;
+        cupTapCount = 1;
+      }
+    } else if(cupS === 'shaking') {
+      if(typeof startCupShake === 'function') startCupShake();
+      cupTapCount++;
     }
+    vibrateOnTap(Math.min(cupTapCount * 0.2, 1.0));
+    updateRollBtnShake();
     return;
   }
 
+  // Host: check turn & rolls
   if(yahState.players[yahState.turnIdx].id !== state.myId) {
     showToast('\ub2f9\uc2e0\uc758 \ucc28\ub840\uac00 \uc544\ub2d9\ub2c8\ub2e4');
     return;
@@ -4142,8 +4202,25 @@ function yahRoll() {
     return;
   }
 
-  yahRollDice();
-  broadcastYahtzeeState();
+  // Cup mechanic
+  const cupS = typeof getCupState === 'function' ? getCupState() : 'hidden';
+  if(cupS === 'dumping') return;
+
+  if(cupS === 'hidden' || cupS === 'ready') {
+    if(typeof showCupReady === 'function' && cupS === 'hidden') {
+      showCupReady(yahState.held);
+    }
+    if(typeof startCupShake === 'function') {
+      startCupShake(commitCupRoll);
+      cupShakeActive = true;
+      cupTapCount = 1;
+    }
+  } else if(cupS === 'shaking') {
+    if(typeof startCupShake === 'function') startCupShake();
+    cupTapCount++;
+  }
+  vibrateOnTap(Math.min(cupTapCount * 0.2, 1.0));
+  updateRollBtnShake();
 }
 
 function yahToggleHold(idx) {
@@ -4403,13 +4480,40 @@ function renderYahtzeeView(view) {
     '</div>'
   ).join('');
 
+  // Save held state for non-host cup mechanic
+  _lastYahHeld = [...view.held];
+
   // Detect if a roll just happened (rollsLeft decreased or new turn)
   const turnChanged = _prevTurnIdx !== null && _prevTurnIdx !== view.turnIdx;
   const isRolling = (_prevRollsLeft !== null && view.rollsLeft < _prevRollsLeft) || turnChanged;
   _prevRollsLeft = view.rollsLeft;
   _prevTurnIdx = view.turnIdx;
 
-  // Update Three.js dice
+  const isMyTurn = currentPlayer.id === state.myId;
+  const isHumanTurn = !currentPlayer.id.startsWith('ai-');
+
+  // Cup management on turn change
+  if(turnChanged) {
+    if(typeof hideCup === 'function') hideCup();
+    cupShakeActive = false;
+    cupTapCount = 0;
+  }
+
+  // AI turn: hide cup, show dice normally
+  if(!isHumanTurn) {
+    if(typeof hideCup === 'function') hideCup();
+    cupShakeActive = false;
+  }
+
+  // Show cup ready when it's human turn with rolls remaining and cup not active
+  if(isMyTurn && isHumanTurn && view.rollsLeft > 0 && view.phase === 'rolling' && !cupShakeActive) {
+    const cupS = typeof getCupState === 'function' ? getCupState() : 'hidden';
+    if(cupS === 'hidden' && typeof showCupReady === 'function') {
+      showCupReady(view.held);
+    }
+  }
+
+  // Update Three.js dice (cup animation may intercept this)
   if(typeof updateYahtzeeDice === 'function') {
     updateYahtzeeDice(view.dice, view.held, isRolling);
   }
@@ -4450,9 +4554,15 @@ function renderYahtzeeView(view) {
     }
   }
 
+  // Roll button state
   const rollBtn = document.getElementById('yahtzeeRollBtn');
-  const isMyTurn = currentPlayer.id === state.myId;
-  rollBtn.disabled = !isMyTurn || view.rollsLeft <= 0 || view.phase === 'gameover';
+  if(cupShakeActive) {
+    // Don't override button during cup shake (yahRoll sets it)
+  } else {
+    rollBtn.classList.remove('shaking');
+    rollBtn.textContent = '\ud83c\udfb2 \uad74\ub9ac\uae30 (' + view.rollsLeft + '\ud68c)';
+    rollBtn.disabled = !isMyTurn || view.rollsLeft <= 0 || view.phase === 'gameover';
+  }
 
   const myPlayer = view.players.find(p => p.id === state.myId);
   if(myPlayer) {

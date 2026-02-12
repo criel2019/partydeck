@@ -311,7 +311,7 @@ function handleMessage(peerId, raw) {
             if(yahState.turnIdx === 0) yahState.turnNum++;
             yahState.dice = [1,1,1,1,1]; yahState.held = [false,false,false,false,false];
             yahState.rollsLeft = 3; yahState.selectedCategory = null; yahState.phase = 'rolling';
-            yahRollDice(); broadcastYahtzeeState();
+            broadcastYahtzeeState();
           }
         }
       }
@@ -679,7 +679,6 @@ function debugGame(game) {
       selectedCategory: null,
       phase: 'rolling'
     };
-    yahRollDice();
     showScreen('yahtzeeGame');
     renderYahtzeeView(createYahtzeeView());
     return;

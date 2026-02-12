@@ -31,6 +31,32 @@
   // Face rotation map: quaternions that show each face up
   const FACE_ROTATIONS = {};
 
+  // ===== CUP STATE =====
+  let cupGroup = null;
+  let cupState = 'hidden'; // 'hidden' | 'ready' | 'shaking' | 'dumping'
+  let cupShakeIntensity = 0;
+  let cupShakeTimer = null;
+  let cupDumpStartTime = 0;
+  let cupDumpCallback = null;
+  let cupDumpCallbackFired = false;
+  let cupReadyHeld = [false, false, false, false, false];
+  const CUP_DUMP_DURATION = 0.8;
+  const CUP_SHAKE_TIMEOUT = 1500;
+  const CUP_DICE_Y = 0.4;
+  // Per-die velocity/offset inside cup during shaking
+  let cupDiceVX = [0, 0, 0, 0, 0];
+  let cupDiceVZ = [0, 0, 0, 0, 0];
+  let cupDiceOX = [0, 0, 0, 0, 0];
+  let cupDiceOZ = [0, 0, 0, 0, 0];
+  const CUP_SCATTER = [
+    { x: 0, z: 0 },
+    { x: -0.4, z: -0.3 },
+    { x: 0.4, z: -0.3 },
+    { x: -0.3, z: 0.35 },
+    { x: 0.3, z: 0.35 },
+  ];
+  const CUP_POS = { x: 0, z: 0 };
+
   function computeFaceRotations() {
     // Camera is at (0, 8, 7) looking at (0, 0, 0.3) — views primarily from above.
     // The dominant visible face is +Y (top). We rotate so the desired value's
@@ -123,8 +149,6 @@
     const size = 0.78;
     const geometry = new THREE.BoxGeometry(size, size, size);
 
-    // Round edges slightly with bevel (we'll use standard box + materials)
-    // Create 6 face materials (one per face)
     // Three.js box face order: +X, -X, +Y, -Y, +Z, -Z
     // We map: +Z=front=1, -Z=back=2, -X=left=3, +X=right=4, +Y=top=5, -Y=bottom=6
     const faceValues = [4, 3, 5, 6, 1, 2]; // +X, -X, +Y, -Y, +Z, -Z
@@ -197,6 +221,65 @@
     rightWall.castShadow = true;
     group.add(rightWall);
 
+    return group;
+  }
+
+  // ===== CUP MESH CREATION =====
+  function createCupMesh() {
+    const group = new THREE.Group();
+
+    // Cylinder wall (open-ended — no top/bottom caps)
+    const wallGeo = new THREE.CylinderGeometry(1.3, 1.0, 1.8, 32, 1, true);
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: 0x5C3A1E,
+      roughness: 0.6,
+      metalness: 0.1,
+      side: THREE.DoubleSide,
+    });
+    const wall = new THREE.Mesh(wallGeo, wallMat);
+    wall.position.y = 0.9; // bottom at y=0, top at y=1.8
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    group.add(wall);
+
+    // Bottom disc
+    const bottomGeo = new THREE.CircleGeometry(1.0, 32);
+    const bottomMat = new THREE.MeshStandardMaterial({
+      color: 0x4A2A12,
+      roughness: 0.7,
+      metalness: 0.05,
+    });
+    const bottom = new THREE.Mesh(bottomGeo, bottomMat);
+    bottom.rotation.x = -Math.PI / 2;
+    bottom.position.y = 0.01;
+    bottom.receiveShadow = true;
+    group.add(bottom);
+
+    // Inner dark surface for depth
+    const innerGeo = new THREE.CylinderGeometry(1.28, 0.98, 1.78, 32, 1, true);
+    const innerMat = new THREE.MeshStandardMaterial({
+      color: 0x2A1508,
+      roughness: 0.9,
+      side: THREE.BackSide,
+    });
+    const inner = new THREE.Mesh(innerGeo, innerMat);
+    inner.position.y = 0.9;
+    group.add(inner);
+
+    // Gold rim at top edge
+    const rimGeo = new THREE.TorusGeometry(1.3, 0.04, 8, 32);
+    const rimMat = new THREE.MeshStandardMaterial({
+      color: 0x8B6914,
+      roughness: 0.3,
+      metalness: 0.5,
+    });
+    const rim = new THREE.Mesh(rimGeo, rimMat);
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = 1.8;
+    group.add(rim);
+
+    group.position.set(CUP_POS.x, 0, CUP_POS.z);
+    group.visible = false;
     return group;
   }
 
@@ -289,6 +372,10 @@
       diceMeshes.push(die);
     }
 
+    // Cup
+    cupGroup = createCupMesh();
+    scene.add(cupGroup);
+
     // Raycaster
     raycaster = new THREE.Raycaster();
     pointer = new THREE.Vector2();
@@ -320,7 +407,7 @@
     }
     window.removeEventListener('resize', handleYahtzeeResize);
 
-    // Dispose meshes
+    // Dispose dice meshes
     diceMeshes.forEach(mesh => {
       if (mesh.geometry) mesh.geometry.dispose();
       if (Array.isArray(mesh.material)) {
@@ -339,6 +426,18 @@
         if (child.material) child.material.dispose();
       });
     }
+
+    // Dispose cup
+    if (cupGroup) {
+      cupGroup.traverse(child => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) child.material.dispose();
+      });
+      cupGroup = null;
+    }
+    if (cupShakeTimer) { clearTimeout(cupShakeTimer); cupShakeTimer = null; }
+    cupState = 'hidden';
+    cupShakeIntensity = 0;
 
     if (renderer) {
       renderer.dispose();
@@ -369,6 +468,8 @@
   // ===== CLICK DETECTION =====
   function onCanvasPointer(event) {
     if (!isInitialized || !renderer) return;
+    // Don't allow hold toggle during cup animation
+    if (cupState !== 'hidden') return;
 
     const rect = renderer.domElement.getBoundingClientRect();
     pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -395,6 +496,17 @@
 
     currentValues = [...values];
     currentHeld = [...held];
+
+    // During cup dump, start dice roll from cup position
+    if (cupState === 'dumping' && shouldAnimate) {
+      startRollAnimationFromCup(values, held);
+      return;
+    }
+
+    // During cup ready/shaking, don't update dice positions (cup animation handles it)
+    if (cupState === 'ready' || cupState === 'shaking') {
+      return;
+    }
 
     if (shouldAnimate) {
       startRollAnimation(values, held);
@@ -480,6 +592,185 @@
     }
   }
 
+  // ===== ROLL ANIMATION FROM CUP (dice spill from cup position) =====
+  function startRollAnimationFromCup(values, held) {
+    rollAnimations = [];
+    settleAnimations = [];
+
+    for (let i = 0; i < 5; i++) {
+      if (held[i]) {
+        diceMeshes[i].visible = false;
+        animatingDice[i] = false;
+        continue;
+      }
+
+      animatingDice[i] = true;
+      diceMeshes[i].visible = true;
+
+      // Start from near cup area
+      const startX = CUP_POS.x + cupDiceOX[i] + (Math.random() - 0.5) * 0.5;
+      const startY = 2.0 + Math.random() * 1.5;
+      const startZ = CUP_POS.z + cupDiceOZ[i] + 0.5 + Math.random() * 0.5;
+
+      const landX = ROW_X[i] + (Math.random() - 0.5) * 0.5;
+      const landY = 0.4;
+      const landZ = (Math.random() - 0.5) * 1.2 + 0.3;
+
+      const rotVelX = (Math.random() - 0.5) * 18;
+      const rotVelY = (Math.random() - 0.5) * 18;
+      const rotVelZ = (Math.random() - 0.5) * 18;
+
+      diceMeshes[i].position.set(startX, startY, startZ);
+      diceMeshes[i].rotation.set(
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2
+      );
+
+      const delay = i * 40;
+      const rollDuration = 700;
+      const settleDuration = 350;
+
+      rollAnimations.push({
+        dieIdx: i,
+        startPos: new THREE.Vector3(startX, startY, startZ),
+        landPos: new THREE.Vector3(landX, landY, landZ),
+        rotVel: new THREE.Vector3(rotVelX, rotVelY, rotVelZ),
+        startTime: clock.getElapsedTime() + delay / 1000,
+        duration: rollDuration / 1000,
+        targetValue: values[i],
+        phase: 'rolling',
+        settleDuration: settleDuration / 1000,
+        settleStartTime: 0,
+      });
+    }
+  }
+
+  // ===== CUP ANIMATION =====
+  function animateCup(elapsed) {
+    if (!cupGroup || cupState === 'hidden') return;
+
+    if (cupState === 'ready') {
+      // Gentle idle breathing
+      cupGroup.position.y = Math.sin(elapsed * 2) * 0.02;
+      cupGroup.rotation.x = 0;
+      cupGroup.rotation.z = Math.sin(elapsed * 1.5) * 0.01;
+
+      // Position dice inside cup with slight idle wobble
+      for (let i = 0; i < 5; i++) {
+        if (cupReadyHeld[i]) {
+          diceMeshes[i].visible = false;
+          continue;
+        }
+        diceMeshes[i].visible = true;
+        const scatter = CUP_SCATTER[i];
+        diceMeshes[i].position.set(
+          CUP_POS.x + scatter.x + Math.sin(elapsed * 1.2 + i) * 0.02,
+          CUP_DICE_Y + Math.sin(elapsed * 1.8 + i * 0.7) * 0.01,
+          CUP_POS.z + scatter.z + Math.cos(elapsed * 1.4 + i) * 0.02
+        );
+        // Gentle random-looking rotation
+        diceMeshes[i].rotation.set(
+          Math.sin(elapsed * 0.5 + i) * 0.1,
+          elapsed * 0.2 + i,
+          Math.cos(elapsed * 0.4 + i) * 0.1
+        );
+      }
+    }
+
+    else if (cupState === 'shaking') {
+      const intensity = cupShakeIntensity;
+      // Cup oscillation
+      const shakeX = Math.sin(elapsed * 25) * 0.08 * intensity;
+      const shakeZ = Math.cos(elapsed * 30) * 0.06 * intensity;
+
+      cupGroup.position.x = CUP_POS.x + shakeX;
+      cupGroup.position.y = Math.abs(Math.sin(elapsed * 15)) * 0.1 * intensity;
+      cupGroup.position.z = CUP_POS.z + shakeZ;
+      cupGroup.rotation.x = Math.sin(elapsed * 20) * 0.05 * intensity;
+      cupGroup.rotation.z = Math.cos(elapsed * 22) * 0.04 * intensity;
+
+      // Bounce dice inside cup
+      const dt = 0.016;
+      const boundaryR = 0.65;
+      for (let i = 0; i < 5; i++) {
+        if (cupReadyHeld[i]) {
+          diceMeshes[i].visible = false;
+          continue;
+        }
+        diceMeshes[i].visible = true;
+
+        // Random forces proportional to intensity
+        cupDiceVX[i] += (Math.random() - 0.5) * 20 * intensity * dt;
+        cupDiceVZ[i] += (Math.random() - 0.5) * 20 * intensity * dt;
+        cupDiceVX[i] *= 0.92;
+        cupDiceVZ[i] *= 0.92;
+        cupDiceOX[i] += cupDiceVX[i] * dt;
+        cupDiceOZ[i] += cupDiceVZ[i] * dt;
+
+        // Circular boundary constraint
+        const dist = Math.sqrt(cupDiceOX[i] * cupDiceOX[i] + cupDiceOZ[i] * cupDiceOZ[i]);
+        if (dist > boundaryR) {
+          const nx = cupDiceOX[i] / dist;
+          const nz = cupDiceOZ[i] / dist;
+          cupDiceOX[i] = nx * boundaryR;
+          cupDiceOZ[i] = nz * boundaryR;
+          const dotP = cupDiceVX[i] * nx + cupDiceVZ[i] * nz;
+          cupDiceVX[i] -= 2 * dotP * nx;
+          cupDiceVZ[i] -= 2 * dotP * nz;
+        }
+
+        diceMeshes[i].position.set(
+          CUP_POS.x + shakeX + cupDiceOX[i],
+          CUP_DICE_Y + Math.abs(Math.sin(elapsed * 12 + i * 1.5)) * 0.15 * intensity,
+          CUP_POS.z + shakeZ + cupDiceOZ[i]
+        );
+        // Rapid random rotation
+        diceMeshes[i].rotation.x += (Math.random() - 0.5) * 6 * intensity * dt;
+        diceMeshes[i].rotation.y += (Math.random() - 0.5) * 6 * intensity * dt;
+        diceMeshes[i].rotation.z += (Math.random() - 0.5) * 6 * intensity * dt;
+      }
+    }
+
+    else if (cupState === 'dumping') {
+      const t = (elapsed - cupDumpStartTime) / CUP_DUMP_DURATION;
+
+      if (t >= 1) {
+        cupGroup.visible = false;
+        cupState = 'hidden';
+        cupGroup.rotation.set(0, 0, 0);
+        cupGroup.position.set(CUP_POS.x, 0, CUP_POS.z);
+        return;
+      }
+
+      // Fire callback at 30%
+      if (t >= 0.3 && !cupDumpCallbackFired) {
+        cupDumpCallbackFired = true;
+        if (cupDumpCallback) cupDumpCallback();
+      }
+
+      // Cup tips forward and rises
+      const et = easeOutCubic(t);
+      cupGroup.rotation.x = et * Math.PI;
+      cupGroup.position.y = Math.sin(t * Math.PI) * 1.5;
+      cupGroup.position.z = CUP_POS.z - et * 1.5;
+
+      // Before callback fires, dice slide inside the tipping cup
+      if (t < 0.3) {
+        const slideT = t / 0.3;
+        for (let i = 0; i < 5; i++) {
+          if (cupReadyHeld[i]) continue;
+          diceMeshes[i].position.set(
+            CUP_POS.x + cupDiceOX[i],
+            CUP_DICE_Y + slideT * 1.5,
+            CUP_POS.z + cupDiceOZ[i] + slideT * 1.0
+          );
+        }
+      }
+      // After callback, roll animation takes over dice positions
+    }
+  }
+
   // ===== ANIMATE =====
   function animate() {
     rafId = requestAnimationFrame(animate);
@@ -487,6 +778,9 @@
 
     const elapsed = clock.getElapsedTime();
     idleTime = elapsed;
+
+    // Cup animation (may fire dump callback which adds rollAnimations)
+    animateCup(elapsed);
 
     // Process roll animations
     for (let i = rollAnimations.length - 1; i >= 0; i--) {
@@ -540,11 +834,13 @@
       }
     }
 
-    // Idle animation for non-animating, visible dice
-    for (let i = 0; i < 5; i++) {
-      if (!animatingDice[i] && diceMeshes[i] && diceMeshes[i].visible) {
-        // Subtle float
-        diceMeshes[i].position.y = ROW_Y + Math.sin(idleTime * 1.5 + i * 1.2) * 0.015;
+    // Idle animation for non-animating, visible dice (only when cup is hidden)
+    if (cupState === 'hidden') {
+      for (let i = 0; i < 5; i++) {
+        if (!animatingDice[i] && diceMeshes[i] && diceMeshes[i].visible) {
+          // Subtle float
+          diceMeshes[i].position.y = ROW_Y + Math.sin(idleTime * 1.5 + i * 1.2) * 0.015;
+        }
       }
     }
 
@@ -555,5 +851,74 @@
 
     renderer.render(scene, camera);
   }
+
+  // ===== CUP API (exported) =====
+  window.showCupReady = function(held) {
+    if (!isInitialized || !cupGroup) return;
+
+    cupReadyHeld = held ? [...held] : [false, false, false, false, false];
+    cupState = 'ready';
+    cupShakeIntensity = 0;
+    cupDumpCallbackFired = false;
+    cupDumpCallback = null;
+    cupGroup.visible = true;
+    cupGroup.rotation.set(0, 0, 0);
+    cupGroup.position.set(CUP_POS.x, 0, CUP_POS.z);
+
+    // Reset dice offsets to scattered positions
+    for (let i = 0; i < 5; i++) {
+      cupDiceOX[i] = CUP_SCATTER[i].x;
+      cupDiceOZ[i] = CUP_SCATTER[i].z;
+      cupDiceVX[i] = 0;
+      cupDiceVZ[i] = 0;
+    }
+
+    // Cancel any pending roll animations
+    rollAnimations = [];
+    for (let i = 0; i < 5; i++) animatingDice[i] = false;
+  };
+
+  window.startCupShake = function(callback) {
+    if (!isInitialized || !cupGroup) return;
+    if (cupState === 'hidden' || cupState === 'dumping') return;
+
+    if (cupState === 'ready') {
+      cupState = 'shaking';
+      cupShakeIntensity = 0.3;
+      cupDumpCallback = callback;
+    } else if (cupState === 'shaking') {
+      cupShakeIntensity = Math.min(cupShakeIntensity + 0.2, 1.0);
+    }
+
+    // Reset auto-dump timer
+    if (cupShakeTimer) clearTimeout(cupShakeTimer);
+    cupShakeTimer = setTimeout(function() {
+      if (cupState === 'shaking') {
+        beginCupDump();
+      }
+    }, CUP_SHAKE_TIMEOUT);
+  };
+
+  function beginCupDump() {
+    cupState = 'dumping';
+    cupDumpStartTime = clock ? clock.getElapsedTime() : 0;
+    cupDumpCallbackFired = false;
+    if (cupShakeTimer) { clearTimeout(cupShakeTimer); cupShakeTimer = null; }
+  }
+
+  window.hideCup = function() {
+    if (!isInitialized) return;
+    if (cupShakeTimer) { clearTimeout(cupShakeTimer); cupShakeTimer = null; }
+    cupState = 'hidden';
+    if (cupGroup) {
+      cupGroup.visible = false;
+      cupGroup.rotation.set(0, 0, 0);
+      cupGroup.position.set(CUP_POS.x, 0, CUP_POS.z);
+    }
+  };
+
+  window.getCupState = function() {
+    return cupState;
+  };
 
 })();
