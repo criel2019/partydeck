@@ -814,24 +814,15 @@
           CUP_DICE_Y + bounceH + hop,
           CUP_POS.z + shakeZ + cupDiceOZ[i]
         );
-        // Persistent angular velocity — dice tumble hard
-        // Strong torque impulses (no dt — direct angular velocity in rad/frame)
-        cupDiceRVX[i] += (Math.random() - 0.5) * 0.8 * intensity;
-        cupDiceRVY[i] += (Math.random() - 0.5) * 0.5 * intensity;
-        cupDiceRVZ[i] += (Math.random() - 0.5) * 0.8 * intensity;
-        // Wall bounce = big spin kick
-        if (dist > boundaryR * 0.8) {
-          cupDiceRVX[i] += (Math.random() - 0.5) * 1.5 * intensity;
-          cupDiceRVZ[i] += (Math.random() - 0.5) * 1.5 * intensity;
-        }
-        // Damping — keeps spinning but doesn't explode
-        cupDiceRVX[i] *= 0.90;
-        cupDiceRVY[i] *= 0.90;
-        cupDiceRVZ[i] *= 0.90;
-        // Apply rotation directly (values are already per-frame)
-        diceMeshes[i].rotation.x += cupDiceRVX[i];
-        diceMeshes[i].rotation.y += cupDiceRVY[i];
-        diceMeshes[i].rotation.z += cupDiceRVZ[i];
+        // Guaranteed base spin per die (each die spins a unique direction)
+        const spinDir = (i % 2 === 0) ? 1 : -1;
+        const spinSpeed = (6 + i * 1.5) * intensity;
+        diceMeshes[i].rotation.x += spinDir * spinSpeed * dt;
+        diceMeshes[i].rotation.z += -spinDir * (5 + i * 1.2) * intensity * dt;
+        // Random tumble on top for chaotic feel
+        diceMeshes[i].rotation.x += (Math.random() - 0.5) * 0.4 * intensity;
+        diceMeshes[i].rotation.y += (Math.random() - 0.5) * 0.3 * intensity;
+        diceMeshes[i].rotation.z += (Math.random() - 0.5) * 0.4 * intensity;
       }
     }
 
