@@ -17,8 +17,12 @@
 
   // Settled row positions (x positions for 5 dice lined up)
   const ROW_X = [-1.6, -0.8, 0, 0.8, 1.6];
-  const ROW_Y = 0.5;
+  const ROW_Y = 0.35;
   const ROW_Z = 0.8;
+
+  // Dice scale: small in cup/tray, large when on tray for selection
+  const DICE_SCALE_SMALL = 0.55;  // inside cup
+  const DICE_SCALE_NORMAL = 1.0;  // on tray after roll
 
   // Animation state
   let rollAnimations = [];
@@ -147,7 +151,7 @@
 
   // ===== DICE MESH CREATION =====
   function createDieMesh(index) {
-    const size = 0.78;
+    const size = 0.5;
     const geometry = new THREE.BoxGeometry(size, size, size);
 
     // Three.js box face order: +X, -X, +Y, -Y, +Z, -Z
@@ -578,7 +582,7 @@
     if (shouldAnimate) {
       startRollAnimation(values, held);
     } else {
-      // Instant update - place dice at final positions
+      // Instant update - place dice at final positions (normal scale on tray)
       for (let i = 0; i < 5; i++) {
         if (held[i]) {
           // Held dice are invisible in 3D (shown in HTML hold bar)
@@ -586,6 +590,7 @@
         } else {
           diceMeshes[i].visible = true;
           diceMeshes[i].position.set(ROW_X[i], ROW_Y, ROW_Z);
+          diceMeshes[i].scale.setScalar(DICE_SCALE_NORMAL);
           setDieRotation(i, values[i]);
         }
       }
@@ -816,25 +821,49 @@
         if (cupDumpCallback) cupDumpCallback();
       }
 
-      // Cup tips forward and rises — keep y >= 0 to prevent floor clipping
+      // Cup lifts UP then tips to pour dice downward — never goes below y=0
       const et = easeOutCubic(t);
-      cupGroup.rotation.x = et * Math.PI * 0.6; // tilt 108° max (not full flip)
-      cupGroup.position.y = Math.max(0, Math.sin(t * Math.PI) * 1.5);
-      cupGroup.position.z = CUP_POS.z - et * 1.2;
 
-      // Before callback fires, dice slide inside the tipping cup
+      // Phase 1 (0~0.3): lift straight up
+      // Phase 2 (0.3~0.7): tilt forward to pour
+      // Phase 3 (0.7~1.0): move away and fade out
       if (t < 0.3) {
-        const slideT = t / 0.3;
+        // Lift up
+        const liftT = t / 0.3;
+        const liftEt = easeOutCubic(liftT);
+        cupGroup.position.y = liftEt * 3.0;
+        cupGroup.position.z = CUP_POS.z;
+        cupGroup.rotation.x = 0;
+      } else if (t < 0.7) {
+        // Tip forward (pour dice out)
+        const pourT = (t - 0.3) / 0.4;
+        const pourEt = easeOutCubic(pourT);
+        cupGroup.position.y = 3.0 - pourEt * 0.5; // slight dip
+        cupGroup.position.z = CUP_POS.z - pourEt * 0.8;
+        cupGroup.rotation.x = pourEt * Math.PI * 0.55; // tilt ~100°
+      } else {
+        // Move away upward
+        const exitT = (t - 0.7) / 0.3;
+        const exitEt = easeOutCubic(exitT);
+        cupGroup.position.y = 2.5 + exitEt * 2.0;
+        cupGroup.position.z = CUP_POS.z - 0.8 - exitEt * 0.5;
+        cupGroup.rotation.x = Math.PI * 0.55;
+      }
+
+      // Before callback fires, dice lift with cup then fall
+      if (t < 0.3) {
+        const liftT = t / 0.3;
+        const liftEt = easeOutCubic(liftT);
         for (let i = 0; i < 5; i++) {
           if (cupReadyHeld[i]) continue;
           diceMeshes[i].position.set(
             CUP_POS.x + cupDiceOX[i],
-            CUP_DICE_Y + slideT * 0.8,
-            CUP_POS.z + cupDiceOZ[i] + slideT * 0.8
+            CUP_DICE_Y + liftEt * 3.0,
+            CUP_POS.z + cupDiceOZ[i]
           );
         }
       }
-      // After callback, roll animation takes over dice positions
+      // After callback (t>=0.3), roll animation takes over dice positions
     }
   }
 
@@ -867,6 +896,10 @@
           continue;
         }
 
+        // Scale up from small (cup) to normal during roll
+        const scaleT = Math.min(t * 2, 1); // scale up in first half
+        mesh.scale.setScalar(DICE_SCALE_SMALL + (DICE_SCALE_NORMAL - DICE_SCALE_SMALL) * scaleT);
+
         // Position: lerp with bounce
         const et = easeOutBounce(Math.min(t, 1));
         mesh.position.lerpVectors(anim.startPos, anim.landPos, et);
@@ -881,13 +914,17 @@
         const st = (elapsed - anim.settleStartTime) / anim.settleDuration;
 
         if (st >= 1) {
-          // Done settling - set final position and rotation
+          // Done settling - set final position and rotation at normal scale
           mesh.position.set(ROW_X[anim.dieIdx], ROW_Y, ROW_Z);
+          mesh.scale.setScalar(DICE_SCALE_NORMAL);
           setDieRotation(anim.dieIdx, anim.targetValue);
           animatingDice[anim.dieIdx] = false;
           rollAnimations.splice(i, 1);
           continue;
         }
+
+        // Ensure normal scale during settle
+        mesh.scale.setScalar(DICE_SCALE_NORMAL);
 
         // Smooth transition to row position
         const et = easeOutCubic(st);
@@ -932,12 +969,13 @@
     cupGroup.rotation.set(0, 0, 0);
     cupGroup.position.set(CUP_POS.x, 0, CUP_POS.z);
 
-    // Reset dice offsets to scattered positions
+    // Reset dice offsets to scattered positions + small scale inside cup
     for (let i = 0; i < 5; i++) {
       cupDiceOX[i] = CUP_SCATTER[i].x;
       cupDiceOZ[i] = CUP_SCATTER[i].z;
       cupDiceVX[i] = 0;
       cupDiceVZ[i] = 0;
+      diceMeshes[i].scale.setScalar(DICE_SCALE_SMALL);
     }
 
     // Cancel any pending roll animations

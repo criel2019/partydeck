@@ -4205,7 +4205,49 @@
 
 .yahtzee-score-table th:last-child {
   text-align: center;
-  width: 70px;
+}
+
+/* Multi-player scorecard columns */
+.ysc-player {
+  text-align: center !important;
+  font-size: 11px;
+  padding: 4px 2px !important;
+  min-width: 36px;
+  max-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ysc-player.ysc-me {
+  color: #d4a017;
+  font-weight: 900;
+}
+.ysc-player.ysc-turn {
+  background: rgba(255, 215, 0, 0.2);
+  border-bottom: 2px solid #d4a017;
+}
+.ysc-cell {
+  text-align: center;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 2px;
+  color: #5a4a30;
+}
+.ysc-cell.ysc-filled {
+  color: #3d2817;
+  font-weight: 700;
+}
+.ysc-cell.ysc-preview {
+  color: #b8860b;
+}
+.ysc-cell.ysc-selected {
+  color: #d4a017;
+  font-weight: 900;
+  text-shadow: 0 0 4px rgba(255, 215, 0, 0.4);
+}
+.ysc-cell.ysc-me {
+  color: #d4a017;
+  font-weight: 900;
 }
 
 .yahtzee-score-row {
@@ -4232,13 +4274,15 @@
 }
 
 .yahtzee-score-row td {
-  padding: 8px 12px;
+  padding: 5px 4px;
   border-bottom: 1px solid rgba(61, 40, 23, 0.2);
 }
 
 .yahtzee-cat-name {
   font-weight: 600;
   color: #3d2817;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .yahtzee-cat-score {

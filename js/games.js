@@ -4586,67 +4586,113 @@ function renderYahtzeeView(view) {
     rollBtn.disabled = !isMyTurn || view.rollsLeft <= 0 || view.phase === 'gameover';
   }
 
-  const myPlayer = view.players.find(p => p.id === state.myId);
-  if(myPlayer) {
-    const possible = calcPossibleScores(view.dice);
-
-    const updateCatRow = (cat) => {
-      const cell = document.getElementById('yahcat-' + cat);
-      const row = document.querySelector('.yahtzee-score-row[data-cat="' + cat + '"]');
-
-      if(myPlayer.scores[cat] !== null) {
-        cell.textContent = '\u2713 ' + myPlayer.scores[cat];
-        row.classList.add('filled');
-        row.classList.remove('preview', 'selected', 'available');
-        row.onclick = null;
-      } else if(isMyTurn && view.rollsLeft < 3) {
-        row.classList.add('preview');
-        row.classList.remove('filled');
-        // Scorecard navigation: pulse available categories
-        if(possible[cat] > 0) {
-          row.classList.add('available');
-        } else {
-          row.classList.remove('available');
-        }
-        if(view.selectedCategory === cat) {
-          row.classList.add('selected');
-          cell.textContent = '\u25B6 ' + possible[cat];
-        } else {
-          row.classList.remove('selected');
-          cell.textContent = possible[cat];
-        }
-        row.onclick = () => yahSelectCategory(cat);
-      } else {
-        cell.textContent = '-';
-        row.classList.remove('preview', 'filled', 'selected', 'available');
-        row.onclick = null;
-      }
-    };
-
-    ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'].forEach(updateCatRow);
-
-    const upperCats = ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'];
-    let upperSum = 0;
-    upperCats.forEach(cat => {
-      if(myPlayer.scores[cat] !== null) {
-        upperSum += myPlayer.scores[cat];
-      }
-    });
-    document.getElementById('yahcat-upper-subtotal').textContent = upperSum;
-
-    const bonus = upperSum >= 63 ? 35 : 0;
-    document.getElementById('yahcat-bonus').textContent = bonus;
-
-    ['three-kind', 'four-kind', 'full-house', 'small-straight', 'large-straight', 'yahtzee', 'chance'].forEach(updateCatRow);
-
-    document.getElementById('yahcat-total').textContent = myPlayer.total;
-  }
+  // Dynamic multi-player scorecard
+  renderYahtzeeScorecard(view, isMyTurn);
 
   const scoreBtn = document.getElementById('yahtzeeScoreBtn');
   scoreBtn.style.display = (isMyTurn && view.selectedCategory && view.phase === 'scoring') ? 'block' : 'none';
 
   if(view.phase === 'gameover') {
     showYahtzeeGameOver(view);
+  }
+}
+
+const YAH_CATS_UPPER = ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'];
+const YAH_CATS_LOWER = ['three-kind', 'four-kind', 'full-house', 'small-straight', 'large-straight', 'yahtzee', 'chance'];
+const YAH_CAT_LABELS = {
+  ones: '1s', twos: '2s', threes: '3s', fours: '4s', fives: '5s', sixes: '6s',
+  'three-kind': '3Kind', 'four-kind': '4Kind', 'full-house': 'F.House',
+  'small-straight': 'S.Str', 'large-straight': 'L.Str', yahtzee: 'Yahtzee!', chance: 'Chance'
+};
+
+function renderYahtzeeScorecard(view, isMyTurn) {
+  const container = document.getElementById('yahtzeeScorecard');
+  if(!container) return;
+
+  const players = view.players;
+  const myPlayer = players.find(p => p.id === state.myId);
+  const possible = myPlayer ? calcPossibleScores(view.dice) : {};
+  const pCount = players.length;
+
+  // Build table HTML
+  let html = '<table class="yahtzee-score-table"><thead><tr><th></th>';
+  players.forEach((p, idx) => {
+    const isMe = p.id === state.myId;
+    const isTurn = idx === view.turnIdx;
+    const cls = (isMe ? ' ysc-me' : '') + (isTurn ? ' ysc-turn' : '');
+    const name = isMe ? 'ME' : p.name.slice(0, 4);
+    html += '<th class="ysc-player' + cls + '">' + name + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  // Score rows helper
+  const renderCatRows = (cats) => {
+    cats.forEach(cat => {
+      const rowCls = myPlayer && myPlayer.scores[cat] === null && isMyTurn && view.rollsLeft < 3
+        ? (view.selectedCategory === cat ? 'yahtzee-score-row selected' : 'yahtzee-score-row preview')
+        : (myPlayer && myPlayer.scores[cat] !== null ? 'yahtzee-score-row filled' : 'yahtzee-score-row');
+      const available = myPlayer && myPlayer.scores[cat] === null && isMyTurn && view.rollsLeft < 3 && possible[cat] > 0;
+      html += '<tr class="' + rowCls + (available ? ' available' : '') + '" data-cat="' + cat + '">';
+      html += '<td class="yahtzee-cat-name">' + YAH_CAT_LABELS[cat] + '</td>';
+      players.forEach(p => {
+        const isMe = p.id === state.myId;
+        let val = '-';
+        let cls = 'ysc-cell';
+        if(p.scores[cat] !== null) {
+          val = p.scores[cat];
+          cls += ' ysc-filled';
+        } else if(isMe && isMyTurn && view.rollsLeft < 3) {
+          val = possible[cat] || 0;
+          cls += ' ysc-preview';
+          if(view.selectedCategory === cat) cls += ' ysc-selected';
+        }
+        html += '<td class="' + cls + '">' + val + '</td>';
+      });
+      html += '</tr>';
+    });
+  };
+
+  renderCatRows(YAH_CATS_UPPER);
+
+  // Upper subtotal + bonus
+  html += '<tr class="yahtzee-subtotal-row"><td>합계</td>';
+  players.forEach(p => {
+    let sum = 0;
+    YAH_CATS_UPPER.forEach(c => { if(p.scores[c] !== null) sum += p.scores[c]; });
+    html += '<td class="ysc-cell">' + sum + '</td>';
+  });
+  html += '</tr>';
+
+  html += '<tr class="yahtzee-bonus-row"><td>+35</td>';
+  players.forEach(p => {
+    let sum = 0;
+    YAH_CATS_UPPER.forEach(c => { if(p.scores[c] !== null) sum += p.scores[c]; });
+    html += '<td class="ysc-cell">' + (sum >= 63 ? 35 : 0) + '</td>';
+  });
+  html += '</tr>';
+
+  html += '<tr class="yahtzee-divider-row"><td colspan="' + (1 + pCount) + '"></td></tr>';
+
+  renderCatRows(YAH_CATS_LOWER);
+
+  // Total
+  html += '<tr class="yahtzee-total-row"><td><strong>TOTAL</strong></td>';
+  players.forEach(p => {
+    const isMe = p.id === state.myId;
+    html += '<td class="ysc-cell' + (isMe ? ' ysc-me' : '') + '"><strong>' + p.total + '</strong></td>';
+  });
+  html += '</tr></tbody></table>';
+
+  container.innerHTML = html;
+
+  // Attach click handlers to my scorable rows
+  if(myPlayer && isMyTurn && view.rollsLeft < 3) {
+    [...YAH_CATS_UPPER, ...YAH_CATS_LOWER].forEach(cat => {
+      if(myPlayer.scores[cat] === null) {
+        const row = container.querySelector('.yahtzee-score-row[data-cat="' + cat + '"]');
+        if(row) row.onclick = () => yahSelectCategory(cat);
+      }
+    });
   }
 }
 
