@@ -64,7 +64,6 @@
       <button class="debug-game-btn" onclick="debugGame('sutda')">🎴 섯다</button>
       <button class="debug-game-btn" onclick="debugGame('quickdraw')">🤠 총잡이</button>
       <button class="debug-game-btn" onclick="debugGame('roulette')">🔫 룰렛</button>
-      <button class="debug-game-btn" onclick="debugGame('racing')">🏍️ 레이싱</button>
       <button class="debug-game-btn" onclick="debugGame('lottery')">🎰 뽑기</button>
       <button class="debug-game-btn" onclick="debugGame('ecard')">👑 E카드</button>
       <button class="debug-game-btn" onclick="debugGame('yahtzee')">🎲 야추</button>
@@ -91,7 +90,6 @@
       <button class="practice-game-btn" onclick="startPracticeGame('sutda')">🎴 섯다</button>
       <button class="practice-game-btn" onclick="startPracticeGame('quickdraw')">🤠 총잡이</button>
       <button class="practice-game-btn" onclick="startPracticeGame('roulette')">🔫 룰렛</button>
-      <button class="practice-game-btn" onclick="startPracticeGame('racing')">🏍️ 레이싱</button>
       <button class="practice-game-btn" onclick="startPracticeGame('lottery')">🎰 뽑기</button>
       <button class="practice-game-btn" onclick="startPracticeGame('ecard')">👑 E카드</button>
       <button class="practice-game-btn" onclick="startPracticeGame('yahtzee')">🎲 야추</button>
@@ -143,9 +141,6 @@
       </div>
       <div class="game-option" data-game="roulette" onclick="selectGame(this)">
         <span class="game-emoji">🔫</span>룰렛
-      </div>
-      <div class="game-option" data-game="racing" onclick="selectGame(this)">
-        <span class="game-emoji">🏍️</span>레이싱
       </div>
       <div class="game-option" data-game="lottery" onclick="selectGame(this)">
         <span class="game-emoji">🎰</span>뽑기
@@ -901,145 +896,6 @@
   </div>
 </div>
 
-<!-- RACING GAME -->
-<div class="screen" id="racingGame">
-  <!-- 모드 선택 화면 -->
-  <div class="racing-mode-select" id="racingModeSelect">
-    <div class="racing-mode-header">
-      <button class="back-btn" onclick="leaveGame()">←</button>
-      <div class="racing-mode-title">🏍️ 오토바이 레이싱</div>
-      <div style="width:40px;"></div>
-    </div>
-
-    <div class="racing-mode-cards">
-      <div class="racing-mode-card" onclick="selectRacingMode('survival')">
-        <div class="racing-mode-icon">⚡</div>
-        <div class="racing-mode-name">서바이벌</div>
-        <div class="racing-mode-desc">점점 빨라지는 속도<br>최대한 멀리 가기!</div>
-      </div>
-      <div class="racing-mode-card" onclick="selectRacingMode('race')">
-        <div class="racing-mode-icon">🏁</div>
-        <div class="racing-mode-name">레이스</div>
-        <div class="racing-mode-desc">목표 지점까지<br>1000m 완주하기!</div>
-      </div>
-    </div>
-
-    <div class="racing-gyro-permission" id="racingGyroPermission" style="display:none;">
-      <div class="racing-info-box">
-        <div class="racing-info-icon">📱</div>
-        <div class="racing-info-text">
-          이 게임은 휴대폰 기울기를 사용합니다<br>
-          <small style="color:var(--text-dim);">좌우로 기울여서 조종하세요</small>
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="requestGyroPermission()">
-        🎮 기울기 권한 요청
-      </button>
-    </div>
-  </div>
-
-  <!-- 게임 화면 -->
-  <div class="racing-game-area" id="racingGameArea" style="display:none;">
-    <!-- HUD 오버레이 -->
-    <div class="racing-hud">
-      <div class="racing-hud-left">
-        <div class="racing-speed">
-          <div class="racing-speed-label">SPEED</div>
-          <div class="racing-speed-value" id="racingSpeed">0</div>
-          <div class="racing-speed-unit">km/h</div>
-        </div>
-      </div>
-      <div class="racing-hud-center">
-        <div class="racing-distance">
-          <div class="racing-distance-label">DISTANCE</div>
-          <div class="racing-distance-value" id="racingDistance">0</div>
-          <div class="racing-distance-unit">m</div>
-        </div>
-      </div>
-      <div class="racing-hud-right">
-        <div class="racing-rank" id="racingRank" style="display:none;">
-          <div class="racing-rank-label">RANK</div>
-          <div class="racing-rank-value" id="racingRankValue">1위/4명</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 배경 건물 -->
-    <div class="racing-bg-buildings" id="racingBuildings">
-      <!-- 동적 생성 -->
-    </div>
-
-    <!-- 도로 -->
-    <div class="racing-road">
-      <!-- 차선 라인 -->
-      <div class="racing-lane-line" style="left:33.33%;"></div>
-      <div class="racing-lane-line" style="left:66.66%;"></div>
-
-      <!-- 차선 점선 애니메이션 -->
-      <div class="racing-lane-dashes" id="racingDashes">
-        <!-- 동적 생성 -->
-      </div>
-
-      <!-- 장애물 컨테이너 -->
-      <div class="racing-obstacles" id="racingObstacles">
-        <!-- 동적 생성 -->
-      </div>
-
-      <!-- 오토바이 (하단 고정) -->
-      <div class="racing-bike" id="racingBike">
-        <div class="racing-bike-body">🏍️</div>
-      </div>
-    </div>
-
-    <!-- 핸들바 UI -->
-    <div class="racing-handlebar">
-      <div class="racing-handlebar-left"></div>
-      <div class="racing-handlebar-center"></div>
-      <div class="racing-handlebar-right"></div>
-    </div>
-
-    <!-- 터치 컨트롤 폴백 -->
-    <div class="racing-touch-controls" id="racingTouchControls" style="display:none;">
-      <button class="racing-touch-btn racing-touch-left" ontouchstart="racingMoveLane(0)" ontouchend="racingStopMove()">←</button>
-      <button class="racing-touch-btn racing-touch-center" ontouchstart="racingMoveLane(1)" ontouchend="racingStopMove()">↑</button>
-      <button class="racing-touch-btn racing-touch-right" ontouchstart="racingMoveLane(2)" ontouchend="racingStopMove()">→</button>
-    </div>
-
-    <!-- 충돌 효과 오버레이 -->
-    <div class="racing-crash-overlay" id="racingCrashOverlay"></div>
-  </div>
-
-  <!-- 결과 화면 -->
-  <div class="racing-result-screen" id="racingResultScreen" style="display:none;">
-    <div class="racing-result-header">
-      <div class="racing-result-title" id="racingResultTitle">완주!</div>
-      <div class="racing-result-subtitle" id="racingResultSubtitle"></div>
-    </div>
-
-    <div class="racing-result-stats">
-      <div class="racing-result-stat">
-        <div class="racing-result-stat-label">최종 거리</div>
-        <div class="racing-result-stat-value" id="racingResultDistance">0m</div>
-      </div>
-      <div class="racing-result-stat">
-        <div class="racing-result-stat-label">최고 속도</div>
-        <div class="racing-result-stat-value" id="racingResultMaxSpeed">0 km/h</div>
-      </div>
-      <div class="racing-result-stat">
-        <div class="racing-result-stat-label">플레이 시간</div>
-        <div class="racing-result-stat-value" id="racingResultTime">0초</div>
-      </div>
-    </div>
-
-    <div class="racing-result-rankings" id="racingResultRankings">
-      <div class="racing-result-rankings-title">순위</div>
-      <div class="racing-result-rankings-list" id="racingResultRankingsList"></div>
-    </div>
-
-    <button class="btn btn-primary" onclick="restartRacing()">🔁 다시 하기</button>
-    <button class="btn btn-secondary" onclick="leaveGame()" style="margin-top:12px;">← 로비로</button>
-  </div>
-</div>
 
 <!-- RESULT -->
 <div class="result-overlay" id="resultOverlay">

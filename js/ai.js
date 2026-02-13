@@ -29,7 +29,6 @@ const AI_COUNTS = {
   truth: 2,
   mafia: 5,
   lottery: 0,
-  racing: 0,
 };
 
 // ========== ENTRY / EXIT ==========
@@ -189,7 +188,6 @@ function cleanupAI() {
   _truthNextScheduled = false;
   // Clear any game-specific timers
   if (typeof mfTimer !== 'undefined' && mfTimer) clearInterval(mfTimer);
-  if (typeof racingLoop !== 'undefined' && racingLoop) { clearInterval(racingLoop); racingLoop = null; }
   if (typeof qdState !== 'undefined' && qdState) {
     if (qdState.countdownTimeout) clearTimeout(qdState.countdownTimeout);
     if (qdState.fireTimeout) clearTimeout(qdState.fireTimeout);
@@ -289,7 +287,7 @@ function executeAIAction() {
     case 'yahtzee': aiYahtzee(); break;
     case 'truth': aiTruth(); break;
     case 'mafia': aiMafia(); break;
-    // lottery and racing: no AI needed
+    // lottery: no AI needed
   }
 }
 
@@ -755,9 +753,6 @@ function aiMafiaVote() {
     }
   });
 }
-
-// ========== RACING AI ==========
-// Racing is solo gameplay — no AI needed
 
 // ========== LOTTERY AI ==========
 // Lottery is solo (player picks cells) — no AI needed

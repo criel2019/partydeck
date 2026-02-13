@@ -327,9 +327,6 @@ function handleMessage(peerId, raw) {
     'sutda-bet': () => { if(state.isHost) processSutdaAction(peerId, msg.action, msg.amount); },
     'sutda-seryuk': () => { if(state.isHost) processSutdaSeryuk(peerId, msg.choice); },
     'sutda-result': () => handleSutdaResult(msg),
-    // Racing handlers
-    'race-position': () => { if(state.isHost) handleRacePosition(peerId, msg); },
-    'race-result': () => handleRaceResult(msg),
     'player-left': () => {
       state.players = state.players.filter(p => p.id !== msg.playerId);
       updateLobbyUI();
@@ -565,7 +562,6 @@ function startGame() {
   else if(g === 'sutda') startSutda();
   else if(g === 'quickdraw') startQuickDraw();
   else if(g === 'roulette') startRussianRoulette();
-  else if(g === 'racing') startRacing();
   else if(g === 'lottery') startLottery();
   else if(g === 'ecard') startECard();
   else if(g === 'yahtzee') startYahtzee();
@@ -587,7 +583,6 @@ function handleGameStart(msg) {
     showScreen('rouletteGame');
     renderRouletteView(msg.state);
   }
-  else if(msg.game === 'racing') { showScreen('racingGame'); document.getElementById('racingModeSelect').style.display = 'flex'; }
   else if(msg.game === 'lottery') {
     if(msg.state) {
       showScreen('lotteryGame');
@@ -651,7 +646,6 @@ function debugGame(game) {
     sutda: 'sutdaGame',
     quickdraw: 'quickDrawGame',
     roulette: 'rouletteGame',
-    racing: 'racingGame',
     lottery: 'lotteryGame',
     ecard: 'ecardGame',
     yahtzee: 'yahtzeeGame',
