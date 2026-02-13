@@ -1,0 +1,700 @@
+/* ===== E CARD CSS ===== */
+
+/* -- E-Card Design Tokens -- */
+#ecardGame {
+  --felt-green: #1a5c2a;
+  --felt-dark: #0e3a18;
+  --felt-light: #237a38;
+  --wood-frame: #5c3a1e;
+  --wood-highlight: #8b6914;
+  --wood-shadow: #3a2210;
+  --card-gold-border: #c9a84c;
+  --card-gold-glow: rgba(201, 168, 76, 0.5);
+  --velvet-red: #8b1a2b;
+  --velvet-dark: #5c0e1a;
+  --emperor-gold: #d4a520;
+  --emperor-glow: rgba(212, 165, 32, 0.6);
+  --citizen-silver: #8a9bae;
+  --slave-dark: #2a2a3a;
+}
+
+/* -- Felt Table Background -- */
+#ecardGame {
+  background:
+    url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 50% 50%, var(--felt-light) 0%, var(--felt-green) 40%, var(--felt-dark) 100%);
+  padding: 0;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+  border: 6px solid var(--wood-frame);
+  box-shadow:
+    inset 0 0 60px rgba(0,0,0,0.4),
+    inset 0 0 120px rgba(0,0,0,0.15),
+    0 0 0 2px var(--wood-shadow),
+    0 0 0 8px var(--wood-highlight),
+    0 0 0 10px var(--wood-shadow),
+    0 8px 30px rgba(0,0,0,0.7);
+}
+
+/* -- Felt Texture Overlay -- */
+#ecardGame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(0,0,0,0.02) 1px,
+      rgba(0,0,0,0.02) 2px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      rgba(0,0,0,0.015) 1px,
+      rgba(0,0,0,0.015) 2px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+#ecardGame > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* -- Top Bar: Wood Trim -- */
+.ecard-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background:
+    linear-gradient(180deg, #5c3a1e 0%, #4a2e16 50%, #3a2210 100%);
+  border-bottom: 2px solid #8b6914;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 3px 10px rgba(0,0,0,0.5);
+}
+
+.ecard-top-bar .back-btn {
+  background: rgba(0,0,0,0.3) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  border-radius: 6px !important;
+  color: #d4c4a0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ecard-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 19px;
+  color: #ffd700;
+  text-shadow:
+    0 1px 0 #b8860b,
+    0 2px 4px rgba(0,0,0,0.6),
+    0 0 12px rgba(255,215,0,0.3);
+  letter-spacing: 1px;
+}
+
+.ecard-round {
+  font-size: 13px;
+  font-weight: 700;
+  color: #d4c4a0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* -- Score Board: Brass Plaque (compact) -- */
+.ecard-score {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 16px;
+  margin: 4px 12px 2px;
+  background:
+    linear-gradient(135deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.2) 100%);
+  border-radius: 10px;
+  border: 2px solid rgba(201,168,76,0.3);
+  box-shadow:
+    inset 0 2px 8px rgba(0,0,0,0.3),
+    0 1px 0 rgba(255,255,255,0.05);
+}
+
+.score-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.score-icon {
+  font-size: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.score-value {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 26px;
+  color: #ffd700;
+  text-shadow:
+    0 0 10px rgba(255,215,0,0.5),
+    0 2px 4px rgba(0,0,0,0.6);
+}
+
+.score-divider {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 24px;
+  color: rgba(255,255,255,0.25);
+}
+
+/* -- Role Badge: Gold Emblem (compact) -- */
+.ecard-role-display {
+  display: flex;
+  justify-content: center;
+  padding: 2px 12px;
+}
+
+.role-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 16px;
+  background:
+    linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.25) 100%);
+  border-radius: 20px;
+  border: 2px solid var(--card-gold-border);
+  box-shadow:
+    0 3px 10px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 0 12px var(--card-gold-glow);
+}
+
+.role-icon {
+  font-size: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.role-text {
+  font-weight: 700;
+  font-size: 13px;
+  color: #e8dcc8;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.role-text span {
+  color: #ffd700;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 15px;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
+}
+
+/* -- Opponent Area: Compact Horizontal Strip -- */
+.ecard-opponent-area {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  margin: 0 12px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.15);
+  min-height: 0;
+}
+
+.ecard-opponent-area .opponent-info {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.ecard-opponent-area .opponent-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: 1.5px solid rgba(201,168,76,0.4);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+
+.ecard-opponent-area .opponent-name {
+  font-weight: 700;
+  font-size: 12px;
+  color: #e8dcc8;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.opponent-cards-count {
+  font-size: 11px;
+  color: rgba(200,190,160,0.6);
+  margin-left: auto;
+}
+
+.opponent-played-card {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.opponent-played-card .ecard-card {
+  width: 36px !important;
+  height: 52px !important;
+}
+
+.opponent-played-card .ecard-card-icon {
+  font-size: 18px !important;
+}
+
+.opponent-played-card .ecard-card-name {
+  font-size: 7px !important;
+}
+
+/* -- Battle Area: Spotlight Center -- */
+.ecard-battle-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  margin: 4px 12px;
+  background:
+    radial-gradient(ellipse at center, rgba(255,215,0,0.06) 0%, rgba(0,0,0,0.3) 70%);
+  border-radius: 16px;
+  border: 2px solid var(--card-gold-border);
+  box-shadow:
+    inset 0 0 30px rgba(0,0,0,0.4),
+    0 0 20px var(--card-gold-glow);
+  min-height: 120px;
+}
+
+.battle-card {
+  transform: scale(1.1);
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+}
+
+.battle-vs {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 26px;
+  color: #ffd700;
+  text-shadow:
+    0 0 15px rgba(255,215,0,0.7),
+    0 2px 4px rgba(0,0,0,0.6);
+}
+
+/* -- Result Text -- */
+.ecard-result-text {
+  text-align: center;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: #ffd700;
+  padding: 4px 12px;
+  min-height: 24px;
+  text-shadow:
+    0 0 12px rgba(255,215,0,0.5),
+    0 2px 4px rgba(0,0,0,0.6);
+}
+
+/* -- My Cards Area: Maximized -- */
+.ecard-my-cards-area {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  padding: 0 8px;
+  justify-content: center;
+}
+
+.my-cards-label {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(200,190,160,0.5);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+/* -- Card Hand: Fan Layout -- */
+.ecard-cards-hand {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: -20px;
+  padding: 8px 4px 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* -- Card Base: Large -- */
+.ecard-card {
+  width: 86px;
+  height: 124px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.5),
+    0 1px 0 rgba(255,255,255,0.1) inset;
+  margin: 0 -12px;
+  border: 3px solid var(--card-gold-border);
+}
+
+.ecard-card::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.ecard-card:hover {
+  transform: translateY(-15px) scale(1.05);
+  z-index: 10;
+  box-shadow:
+    0 12px 24px rgba(0,0,0,0.6),
+    0 0 15px var(--card-gold-glow);
+}
+
+.ecard-card.selected {
+  transform: translateY(-20px) scale(1.08);
+  z-index: 11;
+  box-shadow:
+    0 16px 32px rgba(0,0,0,0.6),
+    0 0 25px var(--card-gold-glow),
+    0 0 50px rgba(255,215,0,0.2);
+  border-color: #ffd700;
+}
+
+/* -- Emperor Card: Royal Gold -- */
+.ecard-card-emperor {
+  background:
+    linear-gradient(145deg, #fce94f 0%, #d4a520 30%, #b8860b 70%, #d4a520 100%);
+  color: #3a2210;
+}
+
+.ecard-card-emperor::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 10%;
+  width: 80%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  border-radius: 50%;
+}
+
+/* -- Citizen Card: Noble Silver -- */
+.ecard-card-citizen {
+  background:
+    linear-gradient(145deg, #b8c6d0 0%, #8a9bae 40%, #6a7b8e 70%, #8a9bae 100%);
+  color: #1a2030;
+}
+
+/* -- Slave Card: Shadow Depths -- */
+.ecard-card-slave {
+  background:
+    linear-gradient(145deg, #4a4a5e 0%, #2a2a3a 40%, #1a1a28 70%, #2a2a3a 100%);
+  color: #c8c8d8;
+}
+
+/* -- Dummy Card -- */
+.ecard-card-dummy {
+  background:
+    linear-gradient(145deg, #8a8a9a 0%, #6a6a7a 40%, #5a5a6a 70%, #6a6a7a 100%);
+  color: #1a1a2e;
+}
+
+/* -- Card Icon & Name -- */
+.ecard-card-icon {
+  font-size: 42px;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
+}
+
+.ecard-card-name {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* -- Card Back: Red Velvet + Gold Emblem -- */
+.ecard-card-back {
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.08) 0%, transparent 50%),
+    linear-gradient(145deg, #a02040 0%, #8b1a2b 25%, #5c0e1a 60%, #8b1a2b 100%);
+  border-color: var(--card-gold-border);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Velvet Texture */
+.ecard-card-back::before {
+  content: 'E';
+  position: absolute;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 52px;
+  color: #ffd700;
+  opacity: 0.45;
+  text-shadow:
+    0 0 15px rgba(255,215,0,0.6),
+    0 2px 4px rgba(0,0,0,0.5);
+  z-index: 2;
+}
+
+/* Diamond Pattern on Velvet */
+.ecard-card-back::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1.5px solid rgba(201,168,76,0.35);
+  border-radius: 5px;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 6px,
+      rgba(255,215,0,0.04) 6px,
+      rgba(255,215,0,0.04) 7px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 6px,
+      rgba(255,215,0,0.04) 6px,
+      rgba(255,215,0,0.04) 7px
+    );
+  z-index: 1;
+}
+
+/* -- Card Size Variants -- */
+.ecard-card-opp-small {
+  width: 36px !important;
+  height: 52px !important;
+  margin: 0 !important;
+  cursor: default !important;
+}
+
+.ecard-card-opp-small .ecard-card-icon {
+  font-size: 18px !important;
+  margin-bottom: 1px !important;
+}
+
+.ecard-card-opp-small .ecard-card-name {
+  font-size: 7px !important;
+}
+
+.ecard-card-opp-small:hover {
+  transform: none !important;
+}
+
+.ecard-card-battle {
+  width: 80px !important;
+  height: 115px !important;
+  margin: 0 !important;
+  cursor: default !important;
+}
+
+.ecard-card-battle:hover {
+  transform: none !important;
+}
+
+/* -- Betting Area: Wood Panel -- */
+.ecard-bet-area, .ecard-bet-response {
+  padding: 12px;
+  margin: 2px 12px;
+  background:
+    linear-gradient(180deg, #4a3220 0%, #3a2816 50%, #2e1e10 100%);
+  border-radius: 12px;
+  border: 2px solid #8b6914;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 4px 12px rgba(0,0,0,0.5);
+}
+
+.bet-label {
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: #e8dcc8;
+  margin-bottom: 12px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.bet-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.bet-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 8px;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, #1a3a1a 0%, #0d260d 100%);
+  border: 1px solid rgba(201,168,76,0.3);
+  outline: none;
+}
+
+.bet-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 35%, #fce94f, #d4a520, #b8860b);
+  cursor: pointer;
+  border: 2px solid #8b6914;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.5),
+    0 0 10px rgba(255,215,0,0.3);
+}
+
+.bet-amount {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: #ffd700;
+  min-width: 60px;
+  text-align: right;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
+}
+
+.bet-proposal {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #e8dcc8;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.bet-proposal span {
+  color: #ffd700;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
+}
+
+.bet-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* -- Action Buttons: Bottom Wood Bar -- */
+.ecard-action-buttons {
+  display: flex;
+  gap: 8px;
+  padding: 6px 12px 10px;
+}
+
+.ecard-action-buttons .btn {
+  background:
+    linear-gradient(180deg, #3a6a3a 0%, #2a5a2a 50%, #1a4a1a 100%);
+  border: 2px solid #4a8a4a;
+  color: #d4ecd4;
+  font-family: 'Black Han Sans', sans-serif;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    0 3px 8px rgba(0,0,0,0.4);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+.ecard-action-buttons .btn:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.3),
+    0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* -- Waiting Area -- */
+.ecard-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  margin: 4px 12px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(201,168,76,0.15);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* -- Mobile Responsive -- */
+@media (max-width: 400px) {
+  #ecardGame {
+    border-width: 4px;
+  }
+  .ecard-card {
+    width: 72px;
+    height: 104px;
+    margin: 0 -10px;
+  }
+  .ecard-card-icon {
+    font-size: 34px;
+  }
+  .ecard-card-name {
+    font-size: 12px;
+  }
+  .ecard-battle-area {
+    padding: 12px;
+    min-height: 100px;
+  }
+  .score-value {
+    font-size: 22px;
+  }
+  .score-icon {
+    font-size: 18px;
+  }
+  .ecard-title {
+    font-size: 16px;
+  }
+  .role-badge {
+    padding: 4px 12px;
+  }
+  .role-icon {
+    font-size: 18px;
+  }
+  .role-text {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 340px) {
+  .ecard-card {
+    width: 60px;
+    height: 88px;
+    margin: 0 -8px;
+    border-width: 2px;
+  }
+  .ecard-card-icon {
+    font-size: 28px;
+  }
+  .ecard-card-name {
+    font-size: 10px;
+  }
+  .ecard-card-back::before {
+    font-size: 36px;
+  }
+}
+

@@ -1,0 +1,2921 @@
+/* =================================================================
+   MOBILE RESPONSIVE FIXES - Mafia, Sutda, E-Card
+   Based on mockup designs for mobile-first responsive layout
+   ================================================================= */
+
+/* MAFIA GAME MOBILE FIXES */
+@media (max-width: 430px) {
+  /* Ensure content scrolls properly */
+  .mf-content {
+    min-height: 0;
+  }
+
+  /* Compact player grid for 10+ players */
+  .mf-player-grid.many-players {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .mf-player-card {
+    min-height: 100px;
+    padding: 8px 4px;
+    gap: 4px;
+  }
+
+  .mf-player-avatar {
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
+  }
+
+  .mf-player-name {
+    font-size: 11px;
+  }
+
+  /* Night panel compact */
+  .mf-night-panel {
+    padding: 12px;
+  }
+
+  /* Chat panel fixed height with scroll */
+  .mf-chat-panel {
+    max-height: 160px;
+  }
+
+  .mf-chat-messages {
+    max-height: 90px;
+  }
+
+  /* Timer and phase display prominent but compact */
+  .mf-timer-box {
+    padding: 5px 10px;
+    font-size: 16px;
+  }
+
+  .mf-phase-badge {
+    padding: 5px 12px;
+    font-size: 14px;
+  }
+
+  .mf-day-counter {
+    font-size: 10px;
+  }
+
+  /* Vote buttons - min 44px touch target */
+  .mf-vote-btn {
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 14px;
+    touch-action: manipulation;
+  }
+
+  /* Bottom action area */
+  .mf-action-area {
+    padding: 10px 12px;
+  }
+
+  .mf-btn-row {
+    gap: 8px;
+  }
+
+  .mf-btn-row button {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+}
+
+/* SUTDA GAME MOBILE FIXES */
+@media (max-width: 430px) {
+  #sutdaGame {
+    padding: 8px 10px;
+    gap: 4px;
+  }
+
+  /* Compact top bar */
+  .sutda-top-bar {
+    padding: 6px 10px;
+  }
+
+  .sutda-title-text {
+    font-size: 16px;
+  }
+
+  .sutda-pot-badge {
+    font-size: 12px;
+    padding: 2px 8px;
+  }
+
+  .sutda-my-balance {
+    font-size: 13px;
+  }
+
+  /* Opponent area compact */
+  .sutda-opponents {
+    min-height: 80px;
+    padding: 4px 0;
+    gap: 6px;
+  }
+
+  .sutda-opp-slot {
+    min-width: 55px;
+    max-width: 70px;
+  }
+
+  .sutda-opp-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .sutda-opp-name {
+    font-size: 9px;
+    max-width: 60px;
+  }
+
+  .sutda-opp-chips {
+    font-size: 8px;
+  }
+
+  /* Table center - visible green felt theme */
+  .sutda-table {
+    flex: 1;
+    min-height: 120px;
+  }
+
+  .sutda-table-felt {
+    max-width: 100%;
+    padding: 16px;
+    border-radius: 50px;
+  }
+
+  .sutda-pot-label {
+    font-size: 10px;
+  }
+
+  .sutda-pot-amount {
+    font-size: 24px;
+  }
+
+  /* Hwatu cards properly sized for mobile */
+  .hwatu-card {
+    width: 40px;
+    height: 60px;
+    border-radius: 5px;
+  }
+
+  .hwatu-card-big {
+    width: 66px;
+    height: 99px;
+    border-radius: 8px;
+  }
+
+  .hwatu-num {
+    font-size: 20px;
+  }
+
+  .hwatu-card-big .hwatu-num {
+    font-size: 32px;
+  }
+
+  .hwatu-card.gwang::before {
+    width: 11px;
+    height: 11px;
+    top: 3px;
+    right: 3px;
+  }
+
+  .hwatu-card-big.gwang::before {
+    width: 18px;
+    height: 18px;
+    top: 5px;
+    right: 5px;
+  }
+
+  /* My hand area */
+  .sutda-my-area {
+    padding: 8px 10px;
+  }
+
+  .sutda-my-info {
+    margin-bottom: 6px;
+  }
+
+  .sutda-my-name {
+    font-size: 12px;
+  }
+
+  .sutda-my-chips {
+    font-size: 11px;
+  }
+
+  .sutda-my-cards {
+    gap: 4px;
+  }
+
+  .sutda-my-rank {
+    margin-top: 6px;
+    font-size: 13px;
+  }
+
+  /* Betting bar - 44px min touch targets */
+  .sutda-action-bar {
+    padding: 8px;
+    gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sutda-bet-btn {
+    min-height: 44px;
+    padding: 10px 8px;
+    font-size: 13px;
+    touch-action: manipulation;
+  }
+
+  .sutda-bet-btn.sutda-bet-call,
+  .sutda-bet-btn.sutda-bet-die {
+    font-size: 14px;
+  }
+
+  .sutda-bet-btn.sutda-bet-allin {
+    grid-column: span 3;
+    font-size: 15px;
+  }
+
+  /* Seryuk panel */
+  .sutda-seryuk-panel {
+    padding: 14px;
+  }
+
+  .sutda-seryuk-title {
+    font-size: 15px;
+  }
+
+  .sutda-seryuk-desc {
+    font-size: 11px;
+  }
+
+  .sutda-seryuk-btn {
+    min-height: 52px;
+    padding: 10px;
+  }
+
+  .sutda-seryuk-icon {
+    font-size: 26px;
+  }
+
+  /* Result overlay */
+  .sutda-result-overlay {
+    padding: 16px;
+  }
+
+  .sutda-result-box {
+    padding: 20px;
+  }
+
+  .sutda-result-title {
+    font-size: 32px;
+  }
+}
+
+/* E-CARD GAME MOBILE FIXES */
+@media (max-width: 430px) {
+  #ecardGame {
+    padding: 0;
+    gap: 0;
+  }
+
+  /* Compact top bar */
+  .ecard-top-bar {
+    padding: 6px 10px;
+  }
+
+  .ecard-title {
+    font-size: 16px;
+  }
+
+  .ecard-round {
+    font-size: 12px;
+  }
+
+  /* Score display - compact */
+  .ecard-score {
+    padding: 5px 12px;
+    gap: 10px;
+    margin: 2px 8px;
+  }
+
+  .score-icon {
+    font-size: 18px;
+  }
+
+  .score-value {
+    font-size: 22px;
+  }
+
+  .score-divider {
+    font-size: 20px;
+  }
+
+  /* Role badge compact */
+  .ecard-role-display {
+    padding: 2px 8px;
+  }
+
+  .role-badge {
+    padding: 4px 12px;
+  }
+
+  .role-icon {
+    font-size: 18px;
+  }
+
+  .role-text {
+    font-size: 12px;
+  }
+
+  .role-text span {
+    font-size: 13px;
+  }
+
+  /* Opponent area - already compact strip */
+  .ecard-opponent-area {
+    padding: 4px 10px;
+    margin: 0 8px;
+  }
+
+  .ecard-opponent-area .opponent-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+
+  .ecard-opponent-area .opponent-name {
+    font-size: 11px;
+  }
+
+  .opponent-cards-count {
+    font-size: 10px;
+  }
+
+  /* Battle/reveal area proper sizing */
+  .ecard-battle-area {
+    padding: 12px;
+    gap: 12px;
+    min-height: 100px;
+  }
+
+  .battle-card {
+    transform: scale(1);
+  }
+
+  .battle-vs {
+    font-size: 20px;
+  }
+
+  /* Result text */
+  .ecard-result-text {
+    font-size: 16px;
+    padding: 4px;
+  }
+
+  /* Card hand - big cards on mobile */
+  .ecard-my-cards-area {
+    gap: 4px;
+  }
+
+  .my-cards-label {
+    font-size: 11px;
+  }
+
+  .ecard-cards-hand {
+    padding: 8px 4px 14px;
+  }
+
+  .ecard-card {
+    width: 76px;
+    height: 110px;
+    margin: 0 -10px;
+  }
+
+  .ecard-card:hover {
+    transform: translateY(-12px) scale(1.03);
+  }
+
+  .ecard-card.selected {
+    transform: translateY(-16px) scale(1.05);
+  }
+
+  .ecard-card-icon {
+    font-size: 36px;
+  }
+
+  .ecard-card-name {
+    font-size: 12px;
+  }
+
+  /* Betting UI compact */
+  .ecard-bet-area,
+  .ecard-bet-response {
+    padding: 14px;
+  }
+
+  .bet-label {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  .bet-controls {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .bet-amount {
+    font-size: 18px;
+    min-width: 50px;
+  }
+
+  .bet-proposal {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .bet-proposal span {
+    font-size: 16px;
+  }
+
+  .bet-buttons {
+    gap: 6px;
+  }
+
+  /* Action buttons - 44px touch targets */
+  .ecard-action-buttons {
+    gap: 6px;
+  }
+
+  .ecard-action-buttons button {
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 14px;
+    touch-action: manipulation;
+  }
+
+  /* Waiting state */
+  .ecard-waiting {
+    padding: 16px;
+  }
+}
+
+/* Extra small screens (360px and below) */
+@media (max-width: 360px) {
+  /* Mafia even more compact */
+  .mf-player-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+  }
+
+  .mf-player-name {
+    font-size: 10px;
+  }
+
+  .mf-player-card {
+    min-height: 90px;
+  }
+
+  /* Sutda cards smaller */
+  .hwatu-card {
+    width: 36px;
+    height: 54px;
+  }
+
+  .hwatu-card-big {
+    width: 60px;
+    height: 90px;
+  }
+
+  .hwatu-num {
+    font-size: 18px;
+  }
+
+  .hwatu-card-big .hwatu-num {
+    font-size: 28px;
+  }
+
+  .sutda-pot-amount {
+    font-size: 22px;
+  }
+
+  /* E-Card smaller cards */
+  .ecard-card {
+    width: 58px;
+    height: 84px;
+    margin: 0 -6px;
+  }
+
+  .ecard-card-icon {
+    font-size: 28px;
+  }
+
+  .ecard-card-name {
+    font-size: 11px;
+  }
+}
+
+/* Mobile-first fixes for all game screens */
+@media (max-width: 640px) {
+  /* Quick Draw mobile optimizations */
+  .qd-tap-zone {
+    width: min(260px, 75vw);
+    height: min(260px, 75vw);
+  }
+
+  .qd-status-text {
+    font-size: clamp(32px, 10vw, 56px);
+  }
+
+  .qd-tap-zone.fire .qd-status-text {
+    font-size: clamp(42px, 13vw, 72px);
+  }
+
+  /* Russian Roulette mobile */
+  .cylinder-container {
+    width: min(220px, 55vw);
+    height: min(220px, 55vw);
+  }
+
+  .survivors-list {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  }
+
+  /* Lottery grid mobile */
+  .lottery-grid {
+    gap: 2px;
+  }
+
+  .lottery-cell {
+    border-width: 1.5px;
+    border-radius: 4px;
+    min-height: 24px;
+  }
+
+  /* Roulette wheel mobile */
+  .roulette-wheel-container {
+    max-width: min(280px, 75vw);
+  }
+
+  .roulette-wheel {
+    max-width: min(260px, 70vw);
+  }
+}
+
+/* ===================================== */
+/* YAHTZEE, UPDOWN, TRUTH MOBILE FIXES */
+/* ===================================== */
+
+/* YAHTZEE GAME — Landscape layout: scorecard left, dice right */
+@media (orientation: landscape), (min-aspect-ratio: 1/1) {
+  #yahtzeeGame.active {
+    display: grid !important;
+    grid-template-columns: 30% 70%;
+    grid-template-rows: auto 1fr;
+    gap: 0;
+    overflow: hidden !important;
+    padding: 0 !important;
+    height: 100% !important;
+  }
+
+  /* Header: thin top bar spanning both columns */
+  .yahtzee-header {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    padding: 2px 10px !important;
+    min-height: 0 !important;
+  }
+
+  .yahtzee-turn-info { gap: 0 !important; }
+  .yahtzee-turn-text { font-size: 12px !important; }
+  .yahtzee-current-player { font-size: 10px !important; }
+  .yahtzee-rolls-left { font-size: 11px !important; padding: 2px 8px !important; }
+
+  /* Hide players bar in landscape to save space */
+  .yahtzee-players-bar { display: none !important; }
+
+  /* === LEFT: Scorecard (30%) === */
+  .yahtzee-scorecard-area {
+    grid-column: 1;
+    grid-row: 2;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 4px !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    border-radius: 0 !important;
+    border-right: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .yahtzee-scorecard-title { font-size: 10px !important; margin-bottom: 2px !important; padding: 1px 4px !important; }
+  .yahtzee-score-table { font-size: 10px !important; }
+  .yahtzee-score-table th { padding: 2px 3px !important; font-size: 9px !important; }
+  .yahtzee-score-row td { padding: 3px 4px !important; }
+  .yahtzee-cat-name {
+    font-size: 10px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 90px !important;
+  }
+  .yahtzee-cat-score { font-size: 12px !important; min-width: 28px !important; }
+  .yahtzee-subtotal-row td, .yahtzee-bonus-row td, .yahtzee-total-row td { padding: 2px 4px !important; font-size: 9px !important; }
+  .yahtzee-total-row td:last-child { font-size: 13px !important; }
+  .yahtzee-divider-row td { padding: 1px !important; }
+  .yahtzee-score-btn {
+    min-height: 28px !important;
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+    margin-top: 4px !important;
+  }
+
+  /* === RIGHT: Dice area — canvas + controls side by side === */
+  .yahtzee-dice-area {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow: hidden !important;
+    align-items: stretch !important;
+  }
+
+  /* Three.js canvas: fills left side */
+  #yahtzeeThreeContainer {
+    flex: 1 !important;
+    min-width: 0 !important;
+    aspect-ratio: unset !important;
+    border-radius: 8px !important;
+    min-height: 0 !important;
+  }
+
+  /* Controls panel: right side */
+  .yahtzee-controls-panel {
+    width: 140px !important;
+    gap: 8px !important;
+    padding: 10px 8px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Hold bar */
+  .yahtzee-hold-bar {
+    min-height: 40px !important;
+    width: 100% !important;
+    padding: 4px !important;
+    gap: 3px !important;
+    flex-shrink: 0 !important;
+  }
+  .yahtzee-hold-bar::before { font-size: 7px !important; top: -5px !important; }
+  .yahtzee-hold-bar:empty { min-height: 0 !important; height: 0 !important; padding: 0 !important; border: none !important; }
+  .yahtzee-hold-bar:empty::after { display: none !important; }
+
+  .yahtzee-held-die { width: 28px !important; height: 28px !important; padding: 4px !important; }
+  .yahtzee-held-die .held-pip { width: 4px !important; height: 4px !important; }
+
+  /* Roll hint: hidden in landscape */
+  .yahtzee-roll-hint { display: none !important; }
+
+  /* Controls title */
+  .yahtzee-controls-title { font-size: 9px !important; letter-spacing: 2px !important; }
+
+  /* Rolls indicator */
+  .yahtzee-rolls-indicator { gap: 5px !important; padding: 2px 0 !important; }
+  .yahtzee-rolls-indicator .roll-pip { width: 8px !important; height: 8px !important; }
+
+  /* Roll button */
+  .yahtzee-roll-btn {
+    width: 100% !important;
+    padding: 10px 6px !important;
+    font-size: 14px !important;
+    min-height: 38px !important;
+    border-radius: 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .yahtzee-combo-label { font-size: 14px !important; }
+
+  /* Game over overlay */
+  .yahtzee-game-over {
+    grid-column: 1 / 3 !important;
+    grid-row: 1 / 3 !important;
+    z-index: 10 !important;
+  }
+}
+
+/* Portrait fallback: show rotate prompt for Yahtzee */
+@media (orientation: portrait) and (max-width: 430px) {
+  #yahtzeeGame.active::after {
+    content: '📱 화면을 가로로 돌려주세요';
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 107, 53, 0.9);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    z-index: 200;
+    white-space: nowrap;
+    animation: rotatePulse 2s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes rotatePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+}
+
+/* TRUTH GAME MOBILE FIXES */
+@media (max-width: 430px) {
+  .truth-top-bar {
+    padding: 8px 12px !important;
+  }
+
+  .truth-round-badge {
+    font-size: 13px !important;
+  }
+
+  .truth-questioner-display {
+    font-size: 12px !important;
+  }
+
+  .truth-content {
+    padding: 6px 0 !important;
+  }
+
+  .truth-phase-area {
+    gap: 14px !important;
+    padding: 0 12px !important;
+  }
+
+  .truth-your-turn-badge {
+    font-size: 20px !important;
+  }
+
+  .truth-textarea {
+    padding: 14px !important;
+    font-size: 15px !important;
+  }
+
+  .truth-submit-btn {
+    min-height: 48px !important;
+    padding: 14px 24px !important;
+    font-size: 15px !important;
+  }
+
+  .truth-question-display {
+    padding: 16px !important;
+  }
+
+  .truth-question-label {
+    font-size: 24px !important;
+  }
+
+  .truth-question-text {
+    font-size: 18px !important;
+  }
+
+  .truth-question-display-small {
+    padding: 12px !important;
+  }
+
+  .truth-question-display-small .truth-question-text {
+    font-size: 15px !important;
+  }
+
+  .truth-question-display-small .truth-question-label {
+    font-size: 18px !important;
+  }
+
+  .truth-vote-buttons {
+    gap: 16px !important;
+    padding: 8px 0 !important;
+  }
+
+  .truth-vote-btn {
+    width: 120px !important;
+    height: 120px !important;
+    min-width: 110px !important;
+    min-height: 110px !important;
+  }
+
+  .truth-vote-symbol {
+    font-size: 44px !important;
+  }
+
+  .truth-vote-label {
+    font-size: 13px !important;
+  }
+
+  .truth-result-container {
+    padding: 20px 16px !important;
+  }
+
+  .truth-result-title {
+    font-size: 16px !important;
+  }
+
+  .truth-result-row {
+    padding: 10px 14px !important;
+    gap: 14px !important;
+  }
+
+  .truth-result-icon {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 24px !important;
+  }
+
+  .truth-result-count {
+    font-size: 24px !important;
+  }
+
+  .truth-result-dots {
+    gap: 5px !important;
+  }
+
+  .truth-dot {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  .truth-players-bar {
+    padding: 8px 6px !important;
+    gap: 6px !important;
+  }
+
+  .truth-player-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 16px !important;
+  }
+
+  .truth-player-name {
+    font-size: 9px !important;
+    max-width: 45px !important;
+  }
+
+  .truth-player-avatar.has-voted::after {
+    width: 14px !important;
+    height: 14px !important;
+    font-size: 8px !important;
+  }
+
+  .truth-next-btn {
+    min-height: 48px !important;
+    padding: 14px 24px !important;
+    font-size: 15px !important;
+  }
+}
+
+/* UPDOWN GAME MOBILE FIXES */
+@media (max-width: 430px) {
+  .ud-hero-card {
+    width: 140px !important;
+    height: 200px !important;
+  }
+  .ud-hero-corner .ud-hero-rank { font-size: 28px !important; }
+  .ud-hero-corner .ud-hero-suit-sm { font-size: 18px !important; }
+  .ud-hero-center { font-size: 60px !important; }
+  .ud-prev-card {
+    width: 44px !important;
+    height: 64px !important;
+  }
+  .ud-prev-placeholder {
+    width: 44px !important;
+    height: 64px !important;
+  }
+  .ud-prev-corner .ud-prev-rank { font-size: 12px !important; }
+  .ud-prev-center { font-size: 18px !important; }
+  .ud-result { font-size: 22px !important; }
+  .ud-btn {
+    padding: 14px 8px !important;
+  }
+  .ud-btn-arrow { font-size: 22px !important; }
+  .ud-btn-label { font-size: 18px !important; }
+  .ud-bet-input { font-size: 12px !important; }
+  .ud-penalty-list { max-height: 50px !important; }
+  .ud-special-area { padding: 14px !important; }
+  .ud-special-title { font-size: 16px !important; }
+  .ud-player-select { max-height: 100px !important; gap: 6px !important; }
+  .ud-btn-special { padding: 12px !important; font-size: 14px !important; }
+  .ud-penalty-content {
+    max-width: 320px !important;
+    padding: 20px !important;
+  }
+  .ud-penalty-title { font-size: 28px !important; }
+  .ud-penalty-text { font-size: 18px !important; }
+  .ud-btn-accept,
+  .ud-btn-reject {
+    padding: 13px !important;
+    font-size: 15px !important;
+  }
+}
+
+/* Extra small screens for Y/U/T games */
+@media (max-width: 360px) {
+  .yahtzee-score-table {
+    font-size: 8px !important;
+  }
+
+  .truth-vote-btn {
+    width: 105px !important;
+    height: 105px !important;
+  }
+
+  .truth-vote-symbol {
+    font-size: 38px !important;
+  }
+
+  .ud-hero-card {
+    width: 120px !important;
+    height: 174px !important;
+  }
+  .ud-hero-corner .ud-hero-rank { font-size: 24px !important; }
+  .ud-hero-corner .ud-hero-suit-sm { font-size: 16px !important; }
+  .ud-hero-center { font-size: 50px !important; }
+  .ud-prev-card { width: 40px !important; height: 58px !important; }
+  .ud-prev-placeholder { width: 40px !important; height: 58px !important; }
+}
+
+/* =================================================================
+   LANDSCAPE MODE — All Games (except Yahtzee which has its own block)
+   Reference-matched layouts: left-right splits for card games
+   ================================================================= */
+@media (orientation: landscape), (min-aspect-ratio: 1/1) {
+
+  /* ───────────────────────────────────────────────
+     SUTDA — Ref: cards LEFT, info+buttons RIGHT
+     ─────────────────────────────────────────────── */
+  #sutdaGame.active {
+    display: grid !important;
+    grid-template-columns: 3fr 2fr !important;
+    grid-template-rows: auto 1fr !important;
+    gap: 0 !important;
+    padding: 0 !important;
+  }
+  #sutdaGame .sutda-top-bar {
+    grid-column: 1 / -1 !important;
+    padding: 4px 10px !important;
+  }
+  /* Hide opponents in landscape — info moves to right panel */
+  #sutdaGame .sutda-opponents {
+    display: none !important;
+  }
+  /* LEFT: cards + rank (center) */
+  #sutdaGame .sutda-table {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 0 !important;
+    padding: 8px !important;
+    margin: 0 !important;
+  }
+  #sutdaGame .sutda-my-area {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    position: absolute !important;
+    bottom: 8px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 5 !important;
+    width: auto !important;
+    padding: 4px 8px !important;
+    background: rgba(0,0,0,0.5) !important;
+    border-radius: 8px !important;
+  }
+  #sutdaGame .sutda-my-rank {
+    font-size: 24px !important;
+    text-align: center !important;
+  }
+  #sutdaGame .hwatu-card-big {
+    width: min(20vh, 72px) !important;
+    height: min(30vh, 108px) !important;
+  }
+  #sutdaGame .sutda-table-felt {
+    max-width: 100% !important;
+  }
+  /* RIGHT: balance info + vertical betting buttons */
+  #sutdaGame .sutda-action-bar {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 12px 16px !important;
+    overflow-y: auto !important;
+  }
+  #sutdaGame .sutda-bet-btn {
+    width: 100% !important;
+    padding: 10px 8px !important;
+    font-size: 14px !important;
+    min-height: 38px !important;
+  }
+  /* Seryuk panel overlay */
+  #sutdaGame .sutda-seryuk-panel {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    z-index: 10 !important;
+  }
+  /* Result overlay */
+  #sutdaGame .sutda-result-overlay {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 / -1 !important;
+  }
+
+  /* ───────────────────────────────────────────────
+     E-CARD — Ref: cards LEFT (big), action buttons RIGHT
+     Opponent minimized in top info bar
+     ─────────────────────────────────────────────── */
+  #ecardGame.active {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-rows: auto auto auto 1fr !important;
+    gap: 0 !important;
+    padding: 0 !important;
+  }
+  /* Big cards in landscape */
+  #ecardGame .ecard-card {
+    width: min(22vh, 86px) !important;
+    height: min(32vh, 124px) !important;
+    margin: 0 -10px !important;
+  }
+  #ecardGame .ecard-card-icon { font-size: min(12vh, 38px) !important; }
+  #ecardGame .ecard-card-name { font-size: 11px !important; }
+  /* Row 1: Top bar spans full width */
+  #ecardGame .ecard-top-bar {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+    padding: 4px 10px !important;
+  }
+  /* Row 2: Score + Role + Opponent in compact info strip */
+  #ecardGame .ecard-score {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    padding: 3px 8px !important;
+    margin: 0 8px !important;
+    gap: 8px !important;
+  }
+  #ecardGame .score-icon { font-size: 16px !important; }
+  #ecardGame .score-value { font-size: 20px !important; }
+  #ecardGame .score-divider { font-size: 16px !important; }
+  /* Row 3: Role badge - compact inline */
+  #ecardGame .ecard-role-display {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    padding: 1px 8px !important;
+    margin: 0 !important;
+  }
+  #ecardGame .role-badge {
+    padding: 3px 10px !important;
+    gap: 5px !important;
+  }
+  #ecardGame .role-icon { font-size: 16px !important; }
+  #ecardGame .role-text { font-size: 10px !important; }
+  /* Opponent: hidden as separate area in landscape, info is in top bar */
+  #ecardGame .ecard-opponent-area {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    padding: 2px 8px !important;
+    margin: 0 8px !important;
+    min-height: 0 !important;
+    justify-content: flex-end !important;
+  }
+  #ecardGame .opponent-avatar { width: 22px !important; height: 22px !important; font-size: 12px !important; }
+  #ecardGame .opponent-name { font-size: 10px !important; }
+  /* Row 4: Cards area (LEFT) + Action buttons (RIGHT) */
+  #ecardGame .ecard-my-cards-area {
+    grid-column: 1 !important;
+    grid-row: 4 !important;
+    padding: 4px 8px !important;
+  }
+  #ecardGame .my-cards-label { font-size: 10px !important; margin-bottom: 2px !important; }
+  #ecardGame .ecard-cards-hand { gap: 0 !important; padding: 4px 4px 8px !important; }
+  /* RIGHT: vertical action buttons */
+  #ecardGame .ecard-action-buttons {
+    grid-column: 2 !important;
+    grid-row: 4 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 12px !important;
+    min-width: 90px !important;
+  }
+  #ecardGame .ecard-action-buttons .btn {
+    width: 100% !important;
+    min-height: 48px !important;
+    padding: 12px 14px !important;
+    font-size: 15px !important;
+  }
+  /* Bet area slides in on right column */
+  #ecardGame .ecard-bet-area {
+    grid-column: 2 !important;
+    grid-row: 4 !important;
+    padding: 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+  }
+  #ecardGame .ecard-bet-response {
+    grid-column: 1 / -1 !important;
+  }
+  /* Battle area overlay */
+  #ecardGame .ecard-battle-area {
+    grid-column: 1 !important;
+    grid-row: 4 !important;
+    z-index: 10 !important;
+  }
+  #ecardGame .ecard-waiting {
+    grid-column: 1 / -1 !important;
+    grid-row: 4 !important;
+  }
+
+  /* ───────────────────────────────────────────────
+     UP/DOWN — Casino felt, cards LEFT, actions RIGHT
+     ─────────────────────────────────────────────── */
+  #updownGame .ud-content {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+  }
+  #updownGame .ud-top-bar {
+    width: 100% !important;
+    flex-shrink: 0 !important;
+    padding: 3px 10px !important;
+    margin-bottom: 4px !important;
+  }
+  /* LEFT: cards area */
+  #updownGame .ud-cards-area {
+    flex: 2 !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+  #updownGame .ud-hero-card {
+    width: min(32vh, 140px) !important;
+    height: min(46vh, 200px) !important;
+  }
+  #updownGame .ud-hero-corner .ud-hero-rank { font-size: min(7vh, 28px) !important; }
+  #updownGame .ud-hero-corner .ud-hero-suit-sm { font-size: min(5vh, 18px) !important; }
+  #updownGame .ud-hero-center { font-size: min(16vh, 60px) !important; }
+  #updownGame .ud-hero-back-pattern {
+    width: min(14vh, 60px) !important;
+    height: min(14vh, 60px) !important;
+  }
+  #updownGame .ud-prev-card {
+    width: min(10vh, 44px) !important;
+    height: min(14vh, 64px) !important;
+  }
+  #updownGame .ud-prev-placeholder {
+    width: min(10vh, 44px) !important;
+    height: min(14vh, 64px) !important;
+  }
+  #updownGame .ud-result {
+    font-size: 18px !important;
+    min-height: 20px !important;
+    padding: 0 !important;
+  }
+  /* RIGHT: bottom panel becomes right panel */
+  #updownGame .ud-bottom-panel {
+    flex: 3 !important;
+    justify-content: center !important;
+    padding: 0 8px !important;
+    gap: 6px !important;
+  }
+  #updownGame .ud-choice-buttons {
+    display: flex !important;
+    gap: 8px !important;
+  }
+  #updownGame .ud-btn {
+    flex: 1 !important;
+    padding: min(4vh, 14px) !important;
+  }
+  #updownGame .ud-btn-arrow { font-size: min(5vh, 22px) !important; }
+  #updownGame .ud-btn-label { font-size: min(5vh, 18px) !important; }
+  #updownGame .ud-btn-bet {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+  #updownGame .ud-penalty-list {
+    max-height: 50px !important;
+    padding: 4px 10px !important;
+  }
+  #updownGame .ud-card-label { font-size: 9px !important; }
+  #updownGame .ud-deck-count { font-size: 10px !important; padding: 2px 8px !important; }
+  /* Penalty modal */
+  #updownGame .ud-penalty-modal {
+    position: fixed !important;
+    z-index: 150 !important;
+  }
+  #updownGame .ud-penalty-content {
+    max-height: 80vh !important;
+    padding: 14px !important;
+  }
+  #updownGame .ud-penalty-title { font-size: 22px !important; }
+  #updownGame .ud-btn-accept,
+  #updownGame .ud-btn-reject {
+    padding: 10px !important;
+    font-size: 14px !important;
+  }
+
+  /* ───────────────────────────────────────────────
+     MAFIA — Ref: role banner at BOTTOM, compact topbar,
+     4-col player grid, content scrollable
+     ─────────────────────────────────────────────── */
+  #mafiaGame.active {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  #mafiaGame .mf-topbar {
+    padding: 4px 10px !important;
+    order: 0 !important;
+  }
+  #mafiaGame .mf-phase-badge { padding: 2px 8px !important; font-size: 11px !important; }
+  #mafiaGame .mf-day-counter { font-size: 9px !important; }
+  #mafiaGame .mf-timer-box { padding: 2px 8px !important; font-size: 13px !important; }
+  /* Role banner → bottom (ref shows it at bottom) */
+  #mafiaGame .mf-role-banner {
+    order: 10 !important;
+    margin: 0 10px 4px !important;
+    padding: 6px 10px !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+  #mafiaGame .mf-role-emoji { font-size: 24px !important; }
+  #mafiaGame .mf-role-name { font-size: 13px !important; }
+  #mafiaGame .mf-role-desc { font-size: 10px !important; }
+  /* Content: expand to fill */
+  #mafiaGame .mf-content {
+    order: 1 !important;
+    flex: 1 !important;
+    padding: 6px 10px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    min-height: 0 !important;
+  }
+  /* 4-column grid (ref shows 4×2) */
+  #mafiaGame .mf-player-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 6px !important;
+  }
+  #mafiaGame .mf-player-card {
+    min-height: 60px !important;
+    padding: 6px 4px !important;
+    gap: 2px !important;
+  }
+  #mafiaGame .mf-player-avatar { width: 36px !important; height: 36px !important; font-size: 18px !important; }
+  #mafiaGame .mf-player-name { font-size: 10px !important; }
+  /* Action area */
+  #mafiaGame .mf-action-area {
+    order: 5 !important;
+    padding: 4px 10px !important;
+  }
+  #mafiaGame .mf-btn-row { gap: 6px !important; }
+  #mafiaGame .mf-btn-row button {
+    min-height: 34px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  /* ───────────────────────────────────────────────
+     TRUTH — Ref: 3D raised O/X buttons, LED panel results
+     ─────────────────────────────────────────────── */
+  #truthGame .truth-top-bar {
+    padding: 4px 10px !important;
+  }
+  #truthGame .truth-round-badge { font-size: 11px !important; padding: 2px 8px !important; }
+  #truthGame .truth-questioner-display { font-size: 10px !important; }
+  #truthGame .truth-content {
+    padding: 4px 0 !important;
+    overflow-y: auto !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    gap: 8px !important;
+  }
+  #truthGame {
+    min-height: auto !important;
+  }
+  #truthGame .truth-phase-area { gap: 8px !important; padding: 0 10px !important; }
+  #truthGame .truth-your-turn-badge { font-size: 16px !important; }
+  #truthGame .truth-question-display { padding: 10px !important; }
+  #truthGame .truth-question-label { font-size: 18px !important; }
+  #truthGame .truth-question-text { font-size: 14px !important; }
+  /* O/X buttons — 3D raised look matching ref */
+  #truthGame .truth-vote-buttons {
+    flex-direction: row !important;
+    justify-content: center !important;
+    gap: 24px !important;
+    padding: 8px 0 !important;
+  }
+  #truthGame .truth-vote-btn {
+    width: 100px !important;
+    height: 100px !important;
+    min-width: 90px !important;
+    min-height: 90px !important;
+    box-shadow:
+      0 6px 0 rgba(0,0,0,0.4),
+      0 8px 20px rgba(0,0,0,0.5),
+      inset 0 2px 0 rgba(255,255,255,0.25) !important;
+    transform: translateY(-2px) !important;
+    transition: all 0.1s !important;
+  }
+  #truthGame .truth-vote-btn:active {
+    transform: translateY(2px) !important;
+    box-shadow:
+      0 2px 0 rgba(0,0,0,0.4),
+      0 3px 8px rgba(0,0,0,0.4),
+      inset 0 2px 0 rgba(255,255,255,0.15) !important;
+  }
+  #truthGame .truth-vote-symbol { font-size: 40px !important; }
+  #truthGame .truth-vote-label { font-size: 12px !important; }
+  /* Result: LED panel style (ref: metal frame + circle indicators) */
+  #truthGame .truth-result-container {
+    padding: 10px !important;
+    background: linear-gradient(135deg, rgba(20,20,25,0.9), rgba(30,30,35,0.9)) !important;
+    border: 2px solid #333 !important;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,255,65,0.05) !important;
+  }
+  #truthGame .truth-result-row {
+    padding: 6px 10px !important;
+    gap: 10px !important;
+    background: rgba(0,0,0,0.3) !important;
+    border-radius: 6px !important;
+    border: 1px solid #2a2a2a !important;
+  }
+  #truthGame .truth-result-icon {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 18px !important;
+  }
+  #truthGame .truth-result-count { font-size: 20px !important; }
+  /* Players bar compact */
+  #truthGame .truth-players-bar {
+    padding: 4px 6px !important;
+    gap: 4px !important;
+  }
+  #truthGame .truth-player-avatar { width: 24px !important; height: 24px !important; font-size: 12px !important; }
+  #truthGame .truth-player-name { font-size: 8px !important; max-width: 32px !important; }
+  #truthGame .truth-textarea { padding: 8px !important; font-size: 13px !important; max-height: 15vh !important; }
+  #truthGame .truth-submit-btn,
+  #truthGame .truth-next-btn {
+    min-height: 36px !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+  }
+
+  /* ───────────────────────────────────────────────
+     POKER — Felt casino layout, landscape: side-by-side
+     ─────────────────────────────────────────────── */
+  #pokerGame .pk-content {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+    padding: 8px !important;
+  }
+  #pokerGame .pk-opponent-area {
+    position: absolute !important;
+    top: 8px !important; left: 10px !important;
+    z-index: 10 !important;
+  }
+  #pokerGame .pk-community {
+    position: absolute !important;
+    top: 8px !important; left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 10 !important;
+  }
+  #pokerGame .pk-comm-card {
+    width: min(12vh, 44px) !important;
+    height: min(18vh, 64px) !important;
+  }
+  #pokerGame .pk-comm-card .pk-comm-rank { font-size: min(4vh, 12px) !important; }
+  #pokerGame .pk-comm-card .pk-comm-suit { font-size: min(5vh, 16px) !important; }
+  #pokerGame .pk-comm-placeholder {
+    width: min(12vh, 44px) !important;
+    height: min(18vh, 64px) !important;
+  }
+  #pokerGame .pk-my-area {
+    flex: 1 !important;
+    padding-top: 40px !important;
+  }
+  #pokerGame .pk-hero-card {
+    width: min(42vh, 180px) !important;
+    height: min(60vh, 260px) !important;
+  }
+  #pokerGame .pk-hero-corner .pk-hero-rank { font-size: min(8vh, 36px) !important; }
+  #pokerGame .pk-hero-corner .pk-hero-suit-sm { font-size: min(5vh, 22px) !important; }
+  #pokerGame .pk-hero-center { font-size: min(20vh, 80px) !important; }
+  #pokerGame .pk-hand-name { font-size: min(7vh, 32px) !important; }
+  #pokerGame .pk-right-panel {
+    width: 180px !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    justify-content: center !important;
+    padding-top: 40px !important;
+    gap: 8px !important;
+  }
+  #pokerGame .pk-money-box {
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+  #pokerGame .pk-actions {
+    flex-direction: column !important;
+    gap: 5px !important;
+  }
+  #pokerGame .pk-action-btn {
+    font-size: 14px !important;
+    padding: 10px 6px !important;
+  }
+  #pokerGame .pk-bottom-bar {
+    position: absolute !important;
+    bottom: 8px !important; left: 10px !important; right: 10px !important;
+    padding: 0 !important;
+  }
+
+  /* ───── QUICK DRAW ───── */
+  #quickDrawGame .qd-header { padding: 4px 10px !important; }
+  #quickDrawGame .qd-title { font-size: 16px !important; }
+  #quickDrawGame .qd-round { font-size: 12px !important; }
+  #quickDrawGame .qd-main-area { flex: 1 !important; min-height: 0 !important; }
+  #quickDrawGame .qd-tap-zone {
+    min-height: 0 !important;
+    width: min(200px, 55vh) !important;
+    height: min(200px, 55vh) !important;
+    max-width: none !important;
+    max-height: none !important;
+  }
+  #quickDrawGame .qd-status-text { font-size: clamp(18px, 8vh, 36px) !important; }
+  #quickDrawGame .qd-reaction-time { font-size: clamp(24px, 10vh, 48px) !important; }
+  #quickDrawGame .qd-rankings {
+    max-height: 25vh !important;
+    overflow-y: auto !important;
+    padding: 4px 10px !important;
+  }
+  #quickDrawGame .qd-rankings-title { font-size: 12px !important; margin-bottom: 4px !important; }
+
+  /* ───────────────────────────────────────────────
+     RUSSIAN ROULETTE — Ref: cylinder+actions center, survivors compact
+     ─────────────────────────────────────────────── */
+  #rouletteGame.active {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-rows: auto 1fr auto !important;
+    gap: 0 !important;
+  }
+  #rouletteGame .roulette-header {
+    grid-column: 1 / -1 !important;
+    padding: 4px 10px !important;
+  }
+  #rouletteGame .roulette-title { font-size: 16px !important; }
+  #rouletteGame .roulette-survivors { font-size: 13px !important; }
+  /* LEFT: cylinder area */
+  #rouletteGame .cylinder-area {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    padding: 4px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  #rouletteGame .cylinder-container {
+    width: min(40vh, 180px) !important;
+    height: min(40vh, 180px) !important;
+  }
+  #rouletteGame .current-turn-display { font-size: 12px !important; margin-bottom: 2px !important; }
+  #rouletteGame .cylinder-info { font-size: 11px !important; margin-top: 2px !important; }
+  /* RIGHT: survivors list (vertical) */
+  #rouletteGame .survivors-list {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 6px 10px !important;
+    gap: 4px !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    min-width: 80px !important;
+  }
+  /* BOTTOM: action buttons */
+  #rouletteGame .roulette-actions {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    padding: 4px 10px !important;
+    gap: 6px !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+  #rouletteGame .roulette-actions .btn {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    min-height: 36px !important;
+  }
+  #rouletteGame .roulette-setup {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    padding: 8px 10px !important;
+    margin: 4px 10px !important;
+  }
+
+  /* ───── LOTTERY — compact + wheel vh-based ───── */
+  #lotteryGame .lottery-top-bar { padding: 4px 10px !important; }
+  #lotteryGame .lottery-title { font-size: 16px !important; }
+  #lotteryGame .mode-tab { padding: 6px 12px !important; font-size: 13px !important; }
+  #lotteryGame .lottery-grid-container { padding: 6px !important; }
+  #lotteryGame .lottery-grid {
+    max-height: 55vh !important;
+    overflow-y: auto !important;
+  }
+  #lotteryGame .roulette-wheel-container {
+    max-width: min(50vh, 280px) !important;
+    max-height: min(50vh, 280px) !important;
+    margin: 0 auto !important;
+  }
+  #lotteryGame #rouletteCanvas {
+    width: min(50vh, 280px) !important;
+    height: min(50vh, 280px) !important;
+  }
+  #lotteryGame .roulette-spin-btn { padding: 8px 20px !important; font-size: 14px !important; }
+  #lotteryGame .lottery-setup-panel,
+  #lotteryGame .roulette-setup-panel { padding: 8px 12px !important; }
+  #lotteryGame .lottery-items-input,
+  #lotteryGame .roulette-items-input { max-height: 20vh !important; }
+  #lotteryGame .roulette-display-container { gap: 10px !important; padding: 8px !important; }
+  #lotteryGame .roulette-result-display { padding: 12px !important; }
+  #lotteryGame .result-text { font-size: 20px !important; }
+  #lotteryGame .result-emoji { font-size: 36px !important; margin-bottom: 4px !important; }
+  #lotteryGame .lottery-status { padding: 6px 10px !important; margin-bottom: 4px !important; }
+  #lotteryGame .my-result-panel { padding: 8px !important; margin: 4px 6px !important; }
+}
+
+/* =================================================================
+   PHONE LANDSCAPE — aggressive size reductions for short viewports
+   Targets mobile phones in landscape (height ≤ 450px)
+   ================================================================= */
+@media (orientation: landscape) and (max-height: 450px) {
+
+  /* ── Global: all game screens ── */
+  .screen.active {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* ─── UP/DOWN (small landscape) ─── */
+  #updownGame .ud-hero-card {
+    width: min(26vh, 110px) !important;
+    height: min(38vh, 160px) !important;
+  }
+  #updownGame .ud-hero-corner .ud-hero-rank { font-size: min(6vh, 22px) !important; }
+  #updownGame .ud-hero-corner .ud-hero-suit-sm { font-size: min(4vh, 14px) !important; }
+  #updownGame .ud-hero-center { font-size: min(12vh, 44px) !important; }
+  #updownGame .ud-hero-back-pattern {
+    width: min(10vh, 44px) !important;
+    height: min(10vh, 44px) !important;
+  }
+  #updownGame .ud-prev-card {
+    width: min(8vh, 36px) !important;
+    height: min(12vh, 52px) !important;
+  }
+  #updownGame .ud-prev-placeholder {
+    width: min(8vh, 36px) !important;
+    height: min(12vh, 52px) !important;
+  }
+  #updownGame .ud-top-bar { padding: 2px 8px !important; }
+  #updownGame .ud-turn-name { font-size: 12px !important; }
+  #updownGame .ud-deck-count { font-size: 9px !important; }
+  #updownGame .ud-result { font-size: 16px !important; min-height: 18px !important; }
+  #updownGame .ud-btn {
+    padding: min(3vh, 10px) !important;
+    border-radius: 10px !important;
+  }
+  #updownGame .ud-btn-arrow { font-size: min(4vh, 18px) !important; }
+  #updownGame .ud-btn-label { font-size: min(4vh, 14px) !important; letter-spacing: 2px !important; }
+  #updownGame .ud-bet-input { padding: 5px 8px !important; font-size: 11px !important; }
+  #updownGame .ud-btn-bet { padding: 5px 10px !important; font-size: 11px !important; }
+  #updownGame .ud-penalty-list {
+    max-height: 36px !important;
+    padding: 2px 8px !important;
+  }
+  #updownGame .ud-penalty-item { font-size: 9px !important; }
+  #updownGame .ud-special-area { padding: 8px !important; }
+  #updownGame .ud-special-title { font-size: 14px !important; }
+  #updownGame .ud-special-desc { font-size: 10px !important; }
+  #updownGame .ud-player-select { max-height: 60px !important; gap: 4px !important; }
+  #updownGame .ud-btn-special { padding: 8px !important; font-size: 12px !important; }
+
+  /* ─── TRUTH ─── */
+  #truthGame {
+    padding: 6px 10px !important;
+    gap: 4px !important;
+  }
+  #truthGame .truth-top-bar {
+    padding: 2px 8px !important;
+  }
+  #truthGame .truth-round-badge { font-size: 10px !important; letter-spacing: 1px !important; }
+  #truthGame .truth-content {
+    gap: 6px !important;
+    padding: 2px 0 !important;
+  }
+  #truthGame .truth-phase-area {
+    gap: 6px !important;
+  }
+  #truthGame .truth-your-turn-badge { font-size: 14px !important; }
+  #truthGame .truth-textarea {
+    padding: 6px !important;
+    font-size: 12px !important;
+    max-height: 12vh !important;
+  }
+  #truthGame .truth-question-display {
+    padding: 8px !important;
+  }
+  #truthGame .truth-question-label {
+    font-size: 14px !important;
+    margin-bottom: 4px !important;
+    letter-spacing: 2px !important;
+  }
+  #truthGame .truth-question-text {
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+  }
+  #truthGame .truth-vote-buttons {
+    gap: 16px !important;
+    padding: 4px 0 !important;
+  }
+  #truthGame .truth-vote-btn {
+    width: min(24vh, 85px) !important;
+    height: min(24vh, 85px) !important;
+    min-width: 70px !important;
+    min-height: 70px !important;
+    box-shadow:
+      0 4px 0 rgba(0,0,0,0.4),
+      0 6px 14px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.25) !important;
+  }
+  #truthGame .truth-vote-btn:active {
+    transform: translateY(2px) !important;
+    box-shadow:
+      0 1px 0 rgba(0,0,0,0.4),
+      0 2px 6px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.15) !important;
+  }
+  #truthGame .truth-vote-symbol { font-size: 30px !important; }
+  #truthGame .truth-vote-label { font-size: 10px !important; }
+  #truthGame .truth-result-container {
+    padding: 8px !important;
+  }
+  #truthGame .truth-result-title { font-size: 14px !important; margin-bottom: 8px !important; }
+  #truthGame .truth-result-row {
+    padding: 4px 8px !important;
+    gap: 8px !important;
+    margin-bottom: 6px !important;
+  }
+  #truthGame .truth-result-icon {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 16px !important;
+  }
+  #truthGame .truth-result-count { font-size: 18px !important; }
+  #truthGame .truth-dot {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  #truthGame .truth-players-bar {
+    padding: 3px 4px !important;
+    gap: 3px !important;
+  }
+  #truthGame .truth-player-avatar {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 11px !important;
+  }
+  #truthGame .truth-player-name {
+    font-size: 9px !important;
+    max-width: 32px !important;
+  }
+  #truthGame .truth-submit-btn,
+  #truthGame .truth-next-btn {
+    min-height: 32px !important;
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+  }
+  #truthGame .truth-waiting-icon { font-size: 36px !important; }
+  #truthGame .truth-waiting-text { font-size: 16px !important; }
+
+  /* ─── MAFIA ─── */
+  #mafiaGame.active {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  #mafiaGame .mf-role-banner { order: 10 !important; }
+  #mafiaGame .mf-content { order: 1 !important; flex: 1 !important; min-height: 0 !important; }
+  #mafiaGame .mf-action-area { order: 5 !important; }
+  #mafiaGame .mf-topbar {
+    padding: 2px 8px !important;
+  }
+  #mafiaGame .mf-phase-badge { padding: 2px 6px !important; font-size: 10px !important; }
+  #mafiaGame .mf-phase-badge span:first-child { font-size: 14px !important; }
+  #mafiaGame .mf-timer-box { padding: 2px 6px !important; font-size: 12px !important; }
+  #mafiaGame .mf-day-counter { font-size: 8px !important; }
+  #mafiaGame .mf-role-banner {
+    margin: 0 6px 2px !important;
+    padding: 4px 8px !important;
+    gap: 6px !important;
+  }
+  #mafiaGame .mf-role-emoji { font-size: 20px !important; }
+  #mafiaGame .mf-role-name { font-size: 11px !important; }
+  #mafiaGame .mf-role-desc { font-size: 9px !important; }
+  #mafiaGame .mf-content {
+    padding: 4px 8px !important;
+    gap: 6px !important;
+  }
+  #mafiaGame .mf-player-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 4px !important;
+  }
+  #mafiaGame .mf-player-card {
+    min-height: 54px !important;
+    padding: 4px 2px !important;
+    gap: 1px !important;
+  }
+  #mafiaGame .mf-player-avatar {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 16px !important;
+    border-radius: 10px !important;
+  }
+  #mafiaGame .mf-player-name { font-size: 9px !important; }
+  #mafiaGame .mf-night-panel { padding: 8px !important; }
+  #mafiaGame .mf-night-title { font-size: 14px !important; }
+  #mafiaGame .mf-night-desc { font-size: 12px !important; }
+  #mafiaGame .mf-action-area { padding: 2px 8px !important; }
+  #mafiaGame .mf-btn-row button {
+    min-height: 30px !important;
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+  #mafiaGame .mf-vote-btn {
+    min-height: 32px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  /* ─── POKER (small landscape) ─── */
+  #pokerGame .pk-content { padding: 6px !important; }
+  #pokerGame .pk-right-panel { width: 150px !important; gap: 6px !important; }
+  #pokerGame .pk-hero-card {
+    width: min(36vh, 150px) !important;
+    height: min(52vh, 216px) !important;
+  }
+  #pokerGame .pk-hero-corner .pk-hero-rank { font-size: min(7vh, 30px) !important; }
+  #pokerGame .pk-hero-corner .pk-hero-suit-sm { font-size: min(4.5vh, 18px) !important; }
+  #pokerGame .pk-hero-center { font-size: min(16vh, 64px) !important; }
+  #pokerGame .pk-hand-name { font-size: min(6vh, 26px) !important; }
+  #pokerGame .pk-comm-card {
+    width: min(10vh, 36px) !important;
+    height: min(14vh, 52px) !important;
+  }
+  #pokerGame .pk-comm-placeholder {
+    width: min(10vh, 36px) !important;
+    height: min(14vh, 52px) !important;
+  }
+  #pokerGame .pk-action-btn { padding: 8px 4px !important; font-size: 12px !important; min-height: 32px !important; }
+  #pokerGame .pk-money-value { font-size: 13px !important; }
+  #pokerGame .pk-money-label { font-size: 10px !important; }
+  #pokerGame .pk-raise-area { padding: 4px 6px !important; }
+  #pokerGame .pk-raise-amount { font-size: 12px !important; }
+
+  /* ─── QUICK DRAW ─── */
+  #quickDrawGame .qd-header { padding: 2px 10px !important; }
+  #quickDrawGame .qd-title { font-size: 14px !important; }
+  #quickDrawGame .qd-main-area { padding: 4px !important; }
+  #quickDrawGame .qd-tap-zone {
+    width: min(160px, 45vh) !important;
+    height: min(160px, 45vh) !important;
+  }
+  #quickDrawGame .qd-tap-zone.fire .qd-status-text {
+    font-size: clamp(20px, 10vh, 40px) !important;
+  }
+  #quickDrawGame .qd-reaction-time { font-size: clamp(20px, 8vh, 36px) !important; }
+  #quickDrawGame .qd-rankings {
+    max-height: 20vh !important;
+    padding: 4px 8px !important;
+    margin: 0 8px !important;
+  }
+  #quickDrawGame .qd-rankings-title { font-size: 11px !important; margin-bottom: 3px !important; }
+  #quickDrawGame .qd-ranking-item { padding: 6px 8px !important; font-size: 12px !important; }
+  #quickDrawGame .qd-ranking-avatar { width: 24px !important; height: 24px !important; font-size: 12px !important; }
+  #quickDrawGame .qd-restart-btn { margin: 4px 8px !important; min-height: 36px !important; font-size: 14px !important; }
+
+  /* ─── RUSSIAN ROULETTE ─── */
+  #rouletteGame .roulette-header { padding: 2px 8px !important; }
+  #rouletteGame .roulette-title { font-size: 14px !important; }
+  #rouletteGame .roulette-survivors { font-size: 12px !important; }
+  #rouletteGame .cylinder-container {
+    width: min(35vh, 150px) !important;
+    height: min(35vh, 150px) !important;
+  }
+  #rouletteGame .cylinder-center { width: 30px !important; height: 30px !important; font-size: 14px !important; }
+  #rouletteGame .chamber-indicator { width: 22px !important; height: 22px !important; }
+  #rouletteGame .current-turn-display { font-size: 11px !important; padding: 4px 12px !important; }
+  #rouletteGame .cylinder-info { font-size: 10px !important; }
+  #rouletteGame .survivors-list {
+    min-width: 70px !important;
+    gap: 3px !important;
+  }
+  #rouletteGame .survivor-item { padding: 4px 3px !important; }
+  #rouletteGame .survivor-avatar-sm { width: 32px !important; height: 32px !important; font-size: 16px !important; }
+  #rouletteGame .survivor-name { font-size: 9px !important; }
+  #rouletteGame .roulette-actions { padding: 2px 8px 4px !important; }
+  #rouletteGame .btn-danger {
+    padding: 10px 24px !important;
+    font-size: 18px !important;
+    min-height: 40px !important;
+  }
+  #rouletteGame .roulette-setup { padding: 6px 8px !important; margin: 2px 8px !important; }
+  #rouletteGame .setup-card { padding: 8px !important; margin-bottom: 6px !important; }
+
+  /* ─── E-CARD (short landscape) ─── */
+  #ecardGame { border-width: 3px !important; }
+  #ecardGame .ecard-top-bar { padding: 2px 8px !important; }
+  #ecardGame .ecard-title { font-size: 14px !important; }
+  #ecardGame .ecard-score {
+    padding: 2px 6px !important;
+    margin: 0 4px !important;
+    gap: 6px !important;
+  }
+  #ecardGame .score-icon { font-size: 14px !important; }
+  #ecardGame .score-value { font-size: 16px !important; }
+  #ecardGame .score-divider { font-size: 14px !important; }
+  #ecardGame .ecard-role-display { padding: 0 4px !important; }
+  #ecardGame .role-badge { padding: 2px 6px !important; gap: 4px !important; }
+  #ecardGame .role-icon { font-size: 14px !important; }
+  #ecardGame .role-text { font-size: 9px !important; }
+  #ecardGame .ecard-opponent-area {
+    padding: 2px 6px !important;
+    margin: 0 4px !important;
+    min-height: 0 !important;
+  }
+  #ecardGame .opponent-avatar { width: 18px !important; height: 18px !important; font-size: 10px !important; }
+  #ecardGame .opponent-name { font-size: 9px !important; }
+  #ecardGame .opponent-cards-count { font-size: 9px !important; }
+  /* Cards still as large as possible relative to viewport height */
+  #ecardGame .ecard-card {
+    width: min(20vh, 72px) !important;
+    height: min(30vh, 104px) !important;
+    margin: 0 -8px !important;
+  }
+  #ecardGame .ecard-card-icon { font-size: min(11vh, 32px) !important; }
+  #ecardGame .ecard-card-name { font-size: 9px !important; }
+  #ecardGame .ecard-battle-area {
+    padding: 8px !important;
+    min-height: 70px !important;
+    margin: 2px 4px !important;
+  }
+  #ecardGame .battle-vs { font-size: 18px !important; }
+  #ecardGame .ecard-result-text { font-size: 14px !important; padding: 2px 8px !important; }
+  #ecardGame .ecard-bet-area, #ecardGame .ecard-bet-response {
+    padding: 6px !important;
+    margin: 2px 4px !important;
+  }
+  #ecardGame .bet-label { font-size: 11px !important; margin-bottom: 6px !important; }
+  #ecardGame .bet-amount { font-size: 14px !important; }
+  #ecardGame .ecard-action-buttons {
+    padding: 4px 8px !important;
+    gap: 4px !important;
+    min-width: 80px !important;
+  }
+  #ecardGame .ecard-action-buttons .btn {
+    min-height: min(10vh, 38px) !important;
+    padding: min(2.5vh, 8px) min(3vh, 10px) !important;
+    font-size: min(4vh, 14px) !important;
+  }
+
+  /* ─── SUTDA ─── */
+  #sutdaGame { border-width: 3px !important; grid-template-columns: 55% 45% !important; }
+  #sutdaGame .sutda-top-bar { padding: 2px 8px !important; }
+  #sutdaGame .sutda-title-text { font-size: 14px !important; }
+  #sutdaGame .sutda-pot-badge { font-size: 11px !important; padding: 2px 8px !important; }
+  #sutdaGame .sutda-my-balance { font-size: 11px !important; }
+  #sutdaGame .sutda-table { padding: 4px !important; }
+  #sutdaGame .sutda-table-felt {
+    padding: 8px !important;
+    border-radius: 30px !important;
+  }
+  #sutdaGame .sutda-pot-label { font-size: 9px !important; }
+  #sutdaGame .sutda-pot-amount { font-size: 18px !important; }
+  #sutdaGame .sutda-turn-indicator { font-size: 11px !important; }
+  #sutdaGame .hwatu-card-big {
+    width: min(18vh, 64px) !important;
+    height: min(27vh, 96px) !important;
+  }
+  #sutdaGame .hwatu-card-big .hwatu-num { font-size: min(9vh, 28px) !important; }
+  #sutdaGame .sutda-my-area {
+    padding: 2px 6px !important;
+  }
+  #sutdaGame .sutda-my-name { font-size: 10px !important; }
+  #sutdaGame .sutda-my-chips { font-size: 14px !important; }
+  #sutdaGame .sutda-my-rank { font-size: min(6vh, 22px) !important; letter-spacing: 3px !important; }
+  #sutdaGame .sutda-action-bar {
+    padding: 6px 10px !important;
+    gap: 4px !important;
+  }
+  #sutdaGame .sutda-bet-btn {
+    min-height: 32px !important;
+    padding: 6px 6px !important;
+    font-size: 12px !important;
+  }
+  #sutdaGame .sutda-seryuk-panel { padding: 12px !important; }
+  #sutdaGame .sutda-seryuk-title { font-size: 18px !important; }
+  #sutdaGame .sutda-seryuk-btn {
+    padding: 12px 20px !important;
+    font-size: 16px !important;
+  }
+  #sutdaGame .sutda-seryuk-icon { font-size: 24px !important; }
+
+  /* ─── LOTTERY ─── */
+  #lotteryGame .lottery-top-bar { padding: 2px 8px !important; }
+  #lotteryGame .lottery-title { font-size: 14px !important; }
+  #lotteryGame .mode-tab { padding: 4px 8px !important; font-size: 12px !important; min-height: 32px !important; }
+  #lotteryGame .lottery-grid-container { padding: 4px !important; }
+  #lotteryGame .lottery-grid {
+    max-height: 65vh !important;
+    padding: 4px !important;
+  }
+  #lotteryGame .lottery-status { padding: 4px 8px !important; margin-bottom: 4px !important; }
+  #lotteryGame .lottery-status .status-text { font-size: 12px !important; }
+  #lotteryGame .roulette-wheel-container {
+    max-width: min(40vh, 200px) !important;
+  }
+  #lotteryGame .roulette-wheel {
+    max-width: min(38vh, 190px) !important;
+  }
+  #lotteryGame #rouletteCanvas {
+    width: min(38vh, 190px) !important;
+    height: min(38vh, 190px) !important;
+  }
+  #lotteryGame .roulette-pointer { font-size: clamp(24px, 8vh, 36px) !important; }
+  #lotteryGame .roulette-spin-btn {
+    padding: 6px 16px !important;
+    font-size: 14px !important;
+    min-height: 36px !important;
+  }
+  #lotteryGame .roulette-display-container { gap: 6px !important; padding: 6px !important; }
+  #lotteryGame .roulette-result-display {
+    padding: 10px !important;
+    min-height: 60px !important;
+  }
+  #lotteryGame .result-emoji { font-size: 28px !important; margin-bottom: 2px !important; }
+  #lotteryGame .result-text { font-size: 18px !important; }
+  #lotteryGame .lottery-setup-panel,
+  #lotteryGame .roulette-setup-panel {
+    padding: 6px 8px !important;
+    margin: 4px 6px !important;
+  }
+  #lotteryGame .lottery-items-input,
+  #lotteryGame .roulette-items-input {
+    min-height: 60px !important;
+    max-height: 15vh !important;
+  }
+  #lotteryGame .my-result-panel {
+    padding: 6px !important;
+    margin: 2px 4px !important;
+  }
+  #lotteryGame .my-result-panel .result-label { font-size: 16px !important; margin-bottom: 6px !important; }
+}
+
+/* =================================================================
+   UI 대형화 — "70대 어르신도 쓸 수 있게"
+   모든 게임의 핵심 UI를 크고 명확하게 만듦
+   ================================================================= */
+
+/* =============================================
+   1. E카드 — 히어로 카드 패턴 (새 HTML 구조)
+   ============================================= */
+
+/* Compact Header */
+.ecard-compact-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #5c3a1e 0%, #4a2e16 50%, #3a2210 100%);
+  border-bottom: 2px solid #8b6914;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 3px 10px rgba(0,0,0,0.5);
+  flex-shrink: 0;
+  z-index: 10;
+  position: relative;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.ecard-compact-header .back-btn {
+  background: rgba(0,0,0,0.3) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  border-radius: 6px !important;
+  color: #d4c4a0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0;
+}
+
+.ecard-header-round {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  color: #ffd700;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  flex-shrink: 0;
+}
+
+.ecard-header-score {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(201,168,76,0.25);
+  flex-shrink: 0;
+}
+
+.ecard-hscore-emperor,
+.ecard-hscore-slave {
+  font-size: 16px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+
+.ecard-hscore-val {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
+}
+
+.ecard-hscore-div {
+  font-size: 16px;
+  color: rgba(255,255,255,0.3);
+  margin: 0 2px;
+}
+
+.ecard-header-role {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.ecard-header-role span:first-child {
+  font-size: 18px;
+}
+
+.ecard-header-role span:last-child {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  color: #ffd700;
+  text-shadow: 0 0 6px rgba(255,215,0,0.3);
+}
+
+.ecard-header-opp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.ecard-header-opp .opponent-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: 1.5px solid rgba(201,168,76,0.4);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+
+.ecard-header-opp .opponent-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: #e8dcc8;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  max-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ecard-header-opp .opponent-cards-count {
+  font-size: 12px;
+  color: rgba(200,190,160,0.6);
+}
+
+.ecard-header-opp .opponent-played-card {
+  flex-shrink: 0;
+}
+
+/* E카드 카드 대형화: 86x124 → 110x160 */
+#ecardGame .ecard-card {
+  width: 110px;
+  height: 160px;
+  border-radius: 12px;
+  margin: 0 -14px;
+}
+
+#ecardGame .ecard-card-icon {
+  font-size: 52px;
+  margin-bottom: 6px;
+}
+
+#ecardGame .ecard-card-name {
+  font-size: 18px;
+}
+
+#ecardGame .ecard-card:hover {
+  transform: translateY(-18px) scale(1.08);
+}
+
+#ecardGame .ecard-card.selected {
+  transform: translateY(-24px) scale(1.12);
+  box-shadow:
+    0 20px 40px rgba(0,0,0,0.6),
+    0 0 35px var(--card-gold-glow),
+    0 0 60px rgba(255,215,0,0.25);
+}
+
+/* My cards area fills screen */
+#ecardGame .ecard-my-cards-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  padding: 0 8px;
+}
+
+#ecardGame .my-cards-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(200,190,160,0.6);
+  text-align: center;
+}
+
+#ecardGame .ecard-cards-hand {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 10px 4px 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Battle Overlay */
+.ecard-battle-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ecard-battle-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+  background: radial-gradient(ellipse at center, rgba(255,215,0,0.08) 0%, rgba(0,0,0,0.5) 70%);
+  border-radius: 20px;
+  border: 2px solid var(--card-gold-border);
+  box-shadow: 0 0 40px var(--card-gold-glow);
+}
+
+.ecard-battle-inner .battle-card {
+  transform: scale(1.15);
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.7));
+}
+
+.ecard-battle-inner .battle-vs {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 30px;
+  color: #ffd700;
+  text-shadow: 0 0 20px rgba(255,215,0,0.7), 0 2px 4px rgba(0,0,0,0.6);
+}
+
+/* E카드 Result text 대형화 */
+#ecardGame .ecard-result-text {
+  font-size: 22px;
+  padding: 6px 12px;
+  min-height: 28px;
+}
+
+/* E카드 action buttons 대형화 */
+#ecardGame .ecard-action-buttons .btn {
+  min-height: 56px;
+  font-size: 18px;
+  padding: 14px 20px;
+}
+
+/* E카드 waiting 대형화 */
+#ecardGame .ecard-waiting {
+  font-size: 16px;
+}
+
+/* E카드 Opponent played card in header */
+.ecard-header-opp .opponent-played-card .ecard-card {
+  width: 36px !important;
+  height: 52px !important;
+  margin: 0 !important;
+  cursor: default !important;
+}
+
+.ecard-header-opp .opponent-played-card .ecard-card-icon {
+  font-size: 18px !important;
+  margin-bottom: 1px !important;
+}
+
+.ecard-header-opp .opponent-played-card .ecard-card-name {
+  font-size: 7px !important;
+}
+
+.ecard-header-opp .opponent-played-card .ecard-card:hover {
+  transform: none !important;
+}
+
+/* E카드 Mobile 375px */
+@media (max-width: 400px) {
+  .ecard-compact-header {
+    padding: 6px 8px;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  #ecardGame .ecard-card {
+    width: 90px;
+    height: 130px;
+    margin: 0 -10px;
+  }
+  #ecardGame .ecard-card-icon {
+    font-size: 42px;
+  }
+  #ecardGame .ecard-card-name {
+    font-size: 15px;
+  }
+  .ecard-header-round { font-size: 14px; }
+  .ecard-hscore-val { font-size: 18px; }
+}
+
+/* =============================================
+   2. 마피아 — 텍스트/플레이어 카드 대형화
+   ============================================= */
+
+/* 역할 이름 대형화 */
+.mf-role-name {
+  font-size: 28px;
+}
+
+/* 역할 설명 대형화 */
+.mf-role-desc {
+  font-size: 17px;
+}
+
+/* 역할 이모지 대형화 */
+.mf-role-emoji {
+  font-size: 60px;
+}
+
+/* 타이머 대형화 */
+.mf-timer-box {
+  font-size: 26px;
+  padding: 10px 20px;
+}
+
+/* 페이즈 뱃지 대형화 */
+.mf-phase-badge {
+  font-size: 20px;
+  padding: 8px 16px;
+}
+
+/* 일수 표시 대형화 */
+.mf-day-counter {
+  font-size: 16px;
+}
+
+/* 플레이어 아바타 대형화 */
+.mf-player-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 28px;
+}
+
+/* 플레이어 이름 대형화 */
+.mf-player-name {
+  font-size: 16px;
+}
+
+/* 메시지 박스 대형화 */
+.mf-message-box {
+  font-size: 18px;
+}
+
+/* 액션 버튼 대형화 */
+.mf-action-btn {
+  min-height: 56px;
+  font-size: 17px;
+  padding: 16px 24px;
+}
+
+/* 야간 패널 대형화 */
+.mf-night-title {
+  font-size: 22px;
+}
+
+.mf-night-desc {
+  font-size: 16px;
+}
+
+/* 투표 바 이름 대형화 */
+.mf-vote-bar-name {
+  font-size: 15px;
+  width: 70px;
+}
+
+/* 채팅 메시지 대형화 */
+.mf-chat-msg {
+  font-size: 15px;
+}
+
+.mf-chat-input {
+  font-size: 15px;
+}
+
+/* =============================================
+   3. 진실게임 — 질문/투표 대형화
+   ============================================= */
+
+/* 질문 텍스트 대형화 */
+.truth-question-text {
+  font-size: 26px;
+}
+
+/* Q. 라벨 대형화 */
+.truth-question-label {
+  font-size: 36px;
+}
+
+/* 투표 버튼 대형화 */
+.truth-vote-btn {
+  width: 160px;
+  height: 160px;
+}
+
+/* 투표 심볼 대형화 */
+.truth-vote-symbol {
+  font-size: 72px;
+}
+
+/* 투표 라벨 대형화 */
+.truth-vote-label {
+  font-size: 20px;
+}
+
+/* 결과 카운트 대형화 */
+.truth-result-count {
+  font-size: 36px;
+}
+
+/* 라운드 뱃지 대형화 */
+.truth-round-badge {
+  font-size: 20px;
+}
+
+/* 질문자 표시 대형화 */
+.truth-questioner-display {
+  font-size: 17px;
+}
+
+/* 플레이어 바 대형화 */
+.truth-player-avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+}
+
+.truth-player-name {
+  font-size: 14px;
+  max-width: 56px;
+}
+
+/* textarea 대형화 */
+.truth-textarea {
+  font-size: 20px;
+}
+
+.truth-textarea::placeholder {
+  font-size: 16px;
+}
+
+/* 결과 타이틀 */
+.truth-result-title {
+  font-size: 22px;
+}
+
+/* =============================================
+   4. 총잡이 — 소폭 조정
+   ============================================= */
+
+/* 순위 항목 텍스트 대형화 */
+.qd-ranking-item {
+  font-size: 20px;
+  padding: 14px;
+}
+
+/* 순위 아바타 대형화 */
+.qd-ranking-avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+}
+
+/* 순위 타이틀 대형화 */
+.qd-rankings-title {
+  font-size: 22px;
+}
+
+/* 라운드 표시 대형화 */
+.qd-round {
+  font-size: 17px;
+}
+
+/* 반응속도 표시 대형화 */
+.qd-reaction-time {
+  font-size: 56px;
+}
+
+/* 다시하기 버튼 */
+.qd-restart-btn {
+  min-height: 56px;
+  font-size: 20px;
+}
+
+/* 순위 이름 대형화 */
+.qd-ranking-name {
+  font-size: 18px;
+}
+
+.qd-ranking-time {
+  font-size: 20px;
+}
+
+/* =============================================
+   5. 룰렛 — 생존자/정보 대형화
+   ============================================= */
+
+/* 생존자 이름 대형화 */
+.survivor-name {
+  font-size: 16px;
+  max-width: 80px;
+}
+
+/* 생존자 아바타 대형화 */
+.survivor-avatar-sm {
+  width: 56px;
+  height: 56px;
+  font-size: 28px;
+}
+
+/* 생존자 수 대형화 */
+.roulette-survivors {
+  font-size: 22px;
+}
+
+/* 현재 턴 표시 대형화 */
+.current-turn-display {
+  font-size: 22px;
+  padding: 10px 24px;
+}
+
+/* 실린더 정보 대형화 */
+.cylinder-info {
+  font-size: 16px;
+}
+
+/* 설정 라벨 대형화 */
+.setup-label {
+  font-size: 18px;
+}
+
+/* 설정 값 대형화 */
+.setup-value {
+  font-size: 28px;
+}
+
+/* 챔버 인디케이터 대형화 */
+.chamber-indicator {
+  width: 40px;
+  height: 40px;
+}
+
+/* 설정 슬라이더 thumb 대형화 */
+.setup-slider::-webkit-slider-thumb {
+  width: 32px;
+  height: 32px;
+}
+
+/* =============================================
+   6. 뽑기 — 그리드/텍스트 대형화
+   ============================================= */
+
+/* 셀 콘텐츠 대형화 */
+.lottery-cell.revealed .cell-content {
+  font-size: clamp(14px, 3vw, 18px);
+}
+
+/* 셀 최소 크기 증가 */
+.lottery-cell {
+  min-height: 40px;
+}
+
+/* 상태 텍스트 대형화 */
+.lottery-status .status-text {
+  font-size: 20px;
+}
+
+/* 뽑은 개수 대형화 */
+.picked-count {
+  font-size: 16px;
+}
+
+/* 결과 라벨 대형화 */
+.my-result-panel .result-label {
+  font-size: 28px;
+}
+
+/* 결과 항목 대형화 */
+.result-item {
+  font-size: 18px;
+  padding: 10px 18px;
+}
+
+/* 모드 탭 대형화 */
+.mode-tab {
+  font-size: 20px;
+  min-height: 52px;
+  padding: 16px 14px;
+}
+
+/* 설정 타이틀/라벨 */
+#lotteryGame .setup-title {
+  font-size: 18px;
+}
+
+/* 물음표 아이콘 대형화 */
+.lottery-cell::after {
+  font-size: clamp(14px, 3.5vw, 20px);
+}
+
+/* 룰렛 돌리기 버튼 대형화 */
+.roulette-spin-btn {
+  font-size: 30px;
+  padding: 20px;
+  min-height: 64px;
+}
+
+/* =============================================
+   7. 야추 — 점수표/주사위 대형화
+   ============================================= */
+
+/* 턴 텍스트 대형화 */
+.yahtzee-turn-text {
+  font-size: 22px;
+}
+
+/* 현재 플레이어 대형화 */
+.yahtzee-current-player {
+  font-size: 16px;
+}
+
+/* 남은 굴리기 대형화 */
+.yahtzee-rolls-left {
+  font-size: 24px;
+  padding: 10px 18px;
+}
+
+/* 미니 플레이어 대형화 */
+.yahtzee-player-mini-avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+}
+
+.yahtzee-player-mini-name {
+  font-size: 14px;
+  max-width: 60px;
+}
+
+.yahtzee-player-mini-score {
+  font-size: 14px;
+}
+
+/* 홀드 다이 대형화 */
+.yahtzee-held-die {
+  width: 60px;
+  height: 60px;
+  padding: 8px;
+}
+
+.yahtzee-held-die .held-pip {
+  width: 9px;
+  height: 9px;
+}
+
+/* 롤 인디케이터 대형화 */
+.yahtzee-rolls-indicator .roll-pip {
+  width: 14px;
+  height: 14px;
+}
+
+/* 굴리기 버튼 대형화 */
+.yahtzee-roll-btn {
+  font-size: 26px;
+  padding: 16px 24px;
+  min-height: 56px;
+}
+
+/* 점수표 카테고리명 대형화 */
+.yahtzee-cat-name {
+  font-size: 16px;
+}
+
+/* 점수 값 대형화 */
+.yahtzee-score-table {
+  font-size: 16px;
+}
+
+.yahtzee-cat-score {
+  font-size: 18px;
+}
+
+/* 점수표 타이틀 대형화 */
+.yahtzee-scorecard-title {
+  font-size: 24px;
+}
+
+/* 콤보 라벨 대형화 */
+.yahtzee-combo-label {
+  font-size: 24px;
+}
+
+/* 점수 확정 버튼 대형화 */
+.yahtzee-score-btn {
+  font-size: 20px;
+  min-height: 56px;
+  padding: 14px 24px;
+}
+
+/* 홀드 바 */
+.yahtzee-hold-bar {
+  min-height: 74px;
+}
+
+/* 롤 힌트 */
+.yahtzee-roll-hint {
+  font-size: 14px;
+}
+
+/* Total row 대형화 */
+.yahtzee-total-row td {
+  font-size: 18px;
+}
+
+/* =============================================
+   모바일 반응형 보정 (430px)
+   대형화된 값이 모바일에서도 충분히 크게 유지
+   ============================================= */
+@media (max-width: 430px) {
+  /* 마피아 모바일 보정 */
+  .mf-player-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 28px;
+  }
+  .mf-player-name {
+    font-size: 14px;
+  }
+  .mf-timer-box {
+    font-size: 22px;
+    padding: 8px 14px;
+  }
+  .mf-phase-badge {
+    font-size: 18px;
+    padding: 6px 14px;
+  }
+  .mf-day-counter {
+    font-size: 14px;
+  }
+  .mf-action-btn {
+    min-height: 56px;
+    font-size: 16px;
+  }
+  .mf-role-name {
+    font-size: 24px;
+  }
+  .mf-role-desc {
+    font-size: 16px;
+  }
+  .mf-role-emoji {
+    font-size: 52px;
+  }
+  .mf-message-box {
+    font-size: 18px;
+  }
+
+  /* 진실게임 모바일 보정 */
+  .truth-question-text {
+    font-size: 22px;
+  }
+  .truth-question-label {
+    font-size: 30px;
+  }
+  .truth-vote-btn {
+    width: 140px;
+    height: 140px;
+  }
+  .truth-vote-symbol {
+    font-size: 64px;
+  }
+  .truth-vote-label {
+    font-size: 18px;
+  }
+  .truth-result-count {
+    font-size: 32px;
+  }
+  .truth-round-badge {
+    font-size: 18px;
+  }
+  .truth-questioner-display {
+    font-size: 15px;
+  }
+  .truth-player-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  .truth-player-name {
+    font-size: 13px;
+  }
+  .truth-textarea {
+    font-size: 18px;
+  }
+
+  /* 총잡이 모바일 보정 */
+  .qd-ranking-item {
+    font-size: 18px;
+  }
+  .qd-ranking-avatar {
+    width: 40px;
+    height: 40px;
+  }
+  .qd-rankings-title {
+    font-size: 20px;
+  }
+  .qd-round {
+    font-size: 16px;
+  }
+
+  /* 룰렛 모바일 보정 */
+  .survivor-name {
+    font-size: 14px;
+  }
+  .survivor-avatar-sm {
+    width: 52px;
+    height: 52px;
+    font-size: 26px;
+  }
+  .roulette-survivors {
+    font-size: 20px;
+  }
+  .current-turn-display {
+    font-size: 20px;
+  }
+  .cylinder-info {
+    font-size: 15px;
+  }
+  .setup-label {
+    font-size: 16px;
+  }
+  .setup-value {
+    font-size: 24px;
+  }
+
+  /* 뽑기 모바일 보정 */
+  .lottery-status .status-text {
+    font-size: 18px;
+  }
+  .picked-count {
+    font-size: 15px;
+  }
+  .mode-tab {
+    font-size: 18px;
+    min-height: 50px;
+  }
+  .roulette-spin-btn {
+    font-size: 26px;
+  }
+
+  /* 야추 모바일 보정 */
+  .yahtzee-turn-text {
+    font-size: 20px;
+  }
+  .yahtzee-current-player {
+    font-size: 15px;
+  }
+  .yahtzee-rolls-left {
+    font-size: 22px;
+  }
+  .yahtzee-held-die {
+    width: 54px;
+    height: 54px;
+  }
+  .yahtzee-roll-btn {
+    font-size: 24px;
+  }
+  .yahtzee-scorecard-title {
+    font-size: 22px;
+  }
+  .yahtzee-score-btn {
+    font-size: 18px;
+    min-height: 52px;
+  }
+}
+
+/* ===== PRACTICE MODE ===== */
+.practice-content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.practice-desc {
+  color: var(--text-dim);
+  font-size: 16px;
+}
+
+.practice-game-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-width: 380px;
+  width: 100%;
+}
+
+.practice-game-btn {
+  background: var(--bg-surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: var(--text);
+  padding: 16px 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, border-color 0.15s;
+  text-align: center;
+}
+
+.practice-game-btn:active {
+  transform: scale(0.95);
+  background: rgba(0, 229, 255, 0.15);
+  border-color: var(--accent2);
+}
+

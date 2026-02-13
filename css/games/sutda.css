@@ -1,0 +1,1086 @@
+/* SUTDA CSS */
+
+/* -- Sutda Design Tokens (Mockup-matched palette) -- */
+#sutdaGame {
+  --felt-green: #0a4d2e;
+  --felt-dark: #063821;
+  --felt-light: #0a4d2e;
+  --gold: #d4af37;
+  --gold-dark: #aa8a2e;
+  --gold-light: #ffd700;
+  --bronze: #8b6914;
+  --wood-dark: #3d2817;
+  --wood-light: #5c3d2e;
+  --red-bright: #e63946;
+  --red-deep: #a4161a;
+  --blue-bet: #2a9d8f;
+  --green-call: #2d6a4f;
+  --brown-fold: #7f4f24;
+  --card-cream: #fdfbf7;
+  --card-cream-dark: #f5f1e8;
+  --hwatu-red: #cc1a33;
+  --brass-gold: #d4af37;
+  --brass-glow: rgba(212,175,55,0.5);
+}
+
+/* ===== Sutda Full Layout: Green Felt + Wood Frame ===== */
+#sutdaGame {
+  padding: 0;
+  gap: 0;
+  background:
+    radial-gradient(ellipse at center, var(--felt-green) 0%, var(--felt-dark) 100%);
+  position: relative;
+  overflow: hidden;
+  border: 6px solid var(--wood-dark);
+  box-shadow:
+    inset 0 0 60px rgba(0,0,0,0.4),
+    inset 0 0 120px rgba(0,0,0,0.15),
+    0 0 0 2px #3a2210,
+    0 0 0 8px var(--bronze),
+    0 0 0 10px #3a2210,
+    0 8px 30px rgba(0,0,0,0.7);
+}
+
+/* Felt Texture Overlay (diagonal cross-hatch) */
+#sutdaGame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.02) 2px,
+      rgba(255,255,255,0.02) 4px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Noise SVG Texture */
+#sutdaGame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+#sutdaGame > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Top Bar: Dark Wood Trim with Gold ===== */
+.sutda-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background:
+    linear-gradient(180deg, var(--wood-light) 0%, var(--wood-dark) 50%, #2a1a0e 100%);
+  border-bottom: 2px solid var(--bronze);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 3px 10px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+
+.sutda-top-bar .back-btn {
+  background: rgba(0,0,0,0.3) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  border-radius: 6px !important;
+  color: #d4c4a0 !important;
+}
+
+.sutda-title-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sutda-title-text {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: var(--gold-light);
+  text-shadow:
+    0 1px 0 var(--gold-dark),
+    0 2px 4px rgba(0,0,0,0.6),
+    0 0 12px rgba(255,215,0,0.3);
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: unset;
+  background: none;
+}
+
+.sutda-pot-badge {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  color: var(--gold-light);
+  background:
+    linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.2) 100%);
+  padding: 3px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.4);
+  text-shadow: 0 0 6px rgba(255,215,0,0.3);
+}
+
+.sutda-my-balance {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  color: var(--gold-light);
+  text-shadow: 0 0 6px rgba(255,215,0,0.3);
+}
+
+/* ===== Opponents Area ===== */
+.sutda-opponents {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 8px 8px 4px;
+  min-height: 90px;
+}
+
+.sutda-opp-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 60px;
+  max-width: 80px;
+  position: relative;
+}
+
+.sutda-opp-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  position: relative;
+  transition: all 0.3s;
+  border: 2px solid rgba(212,175,55,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.sutda-opp-avatar.active-turn {
+  box-shadow:
+    0 0 0 3px var(--gold-light),
+    0 0 20px rgba(255,215,0,0.5),
+    0 0 40px rgba(255,215,0,0.2);
+  animation: sutda-pulse 1.5s ease infinite;
+}
+
+@keyframes sutda-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px var(--gold-light),
+      0 0 20px rgba(255,215,0,0.4),
+      0 0 40px rgba(255,215,0,0.15);
+  }
+  50% {
+    box-shadow:
+      0 0 0 5px var(--gold-light),
+      0 0 30px rgba(255,215,0,0.6),
+      0 0 50px rgba(255,215,0,0.25);
+  }
+}
+
+.sutda-opp-name {
+  font-size: 10px;
+  font-weight: 700;
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  color: #e8dcc8;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+.sutda-opp-chips {
+  font-size: 9px;
+  color: var(--gold-light);
+  font-weight: 700;
+  text-shadow: 0 0 4px rgba(255,215,0,0.3);
+}
+
+.sutda-opp-status {
+  font-size: 9px;
+  font-weight: 700;
+  min-height: 14px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.sutda-opp-status.die { color: #e57373; }
+.sutda-opp-status.call { color: #81c784; }
+.sutda-opp-status.waiting { color: rgba(200,190,160,0.5); }
+.sutda-opp-status.bet { color: #ffb74d; }
+
+.sutda-opp-cards {
+  display: flex;
+  gap: 2px;
+}
+
+.sutda-opp-slot.died {
+  opacity: 0.3;
+}
+
+/* ===== Table Center: Casino Felt Oval ===== */
+.sutda-table {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 4px 12px;
+}
+
+.sutda-table-felt {
+  width: 100%;
+  max-width: 340px;
+  padding: 20px;
+  background:
+    radial-gradient(ellipse at center, rgba(40,140,70,0.2) 0%, rgba(30,100,50,0.1) 50%, transparent 100%);
+  border-radius: 60px;
+  border: 3px solid rgba(212,175,55,0.25);
+  box-shadow:
+    inset 0 2px 20px rgba(0,0,0,0.35),
+    inset 0 0 40px rgba(0,0,0,0.15),
+    0 0 20px rgba(212,175,55,0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+/* Decorative inner border on felt */
+.sutda-table-felt::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(212,175,55,0.12);
+  border-radius: 52px;
+  pointer-events: none;
+}
+
+.sutda-pot-center {
+  text-align: center;
+}
+
+.sutda-pot-label {
+  font-size: 11px;
+  color: rgba(200,190,160,0.6);
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.sutda-pot-amount {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 30px;
+  color: var(--gold-light);
+  text-shadow:
+    0 0 20px rgba(255,215,0,0.4),
+    0 2px 4px rgba(0,0,0,0.6);
+}
+
+.sutda-turn-indicator {
+  font-size: 13px;
+  color: #e8dcc8;
+  font-weight: 700;
+  min-height: 20px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+/* ===== Hwatu Cards: Cream + Gold Border + Red Seal (Mockup Style) ===== */
+.hwatu-card {
+  width: 42px;
+  height: 62px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.5),
+    0 1px 0 rgba(255,255,255,0.08) inset,
+    0 0 10px rgba(212,175,55,0.2);
+  transition: all 0.3s;
+  overflow: hidden;
+}
+
+.hwatu-card-big {
+  width: 72px;
+  height: 108px;
+  border-radius: 10px;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.8),
+    0 0 20px rgba(212,175,55,0.4);
+}
+
+/* Gwang (Bright) Card: Cream with Red Seal + Gold border (mockup style) */
+.hwatu-card.gwang {
+  background:
+    radial-gradient(circle at 75% 15%, rgba(204,26,51,0.15) 0%, transparent 40%),
+    linear-gradient(135deg, var(--card-cream) 0%, var(--card-cream-dark) 100%);
+  border: 2px solid var(--gold);
+}
+
+/* Gold border for big gwang cards */
+.hwatu-card-big.gwang {
+  border: 4px solid var(--gold);
+}
+
+/* Red seal (circle) on gwang cards - mockup style */
+.hwatu-card.gwang::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--red-bright) 0%, var(--red-deep) 100%);
+  border: 2px solid var(--gold);
+  box-shadow:
+    0 0 10px rgba(230,57,70,0.6),
+    inset 0 1px 2px rgba(255,255,255,0.3);
+  animation: glow 2s ease-in-out infinite;
+}
+
+.hwatu-card-big.gwang::before {
+  width: 22px;
+  height: 22px;
+  top: 6px;
+  right: 6px;
+  border: 3px solid var(--gold);
+  box-shadow:
+    0 0 20px rgba(230,57,70,0.6),
+    inset 0 2px 4px rgba(255,255,255,0.3);
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(230,57,70,0.6), inset 0 1px 2px rgba(255,255,255,0.3); }
+  50% { box-shadow: 0 0 25px rgba(230,57,70,0.9), inset 0 2px 4px rgba(255,255,255,0.5); }
+}
+
+/* Normal Card: Cream Tone with gold-ish border */
+.hwatu-card.normal {
+  background:
+    linear-gradient(135deg, #f0e8d0 0%, #ddd2b8 100%);
+  border: 2px solid var(--gold-dark);
+}
+
+.hwatu-card.normal::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 40%, #8a7a60, #6a5a40);
+}
+
+.hwatu-card-big.normal {
+  border: 3px solid var(--gold-dark);
+}
+
+.hwatu-card-big.normal::before {
+  width: 14px;
+  height: 14px;
+  top: 6px;
+  right: 6px;
+}
+
+/* Card Number - mockup: deep red, large, bold */
+.hwatu-num {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px;
+  line-height: 1;
+  z-index: 1;
+}
+
+.hwatu-card-big .hwatu-num {
+  font-size: 48px;
+}
+
+.hwatu-card.gwang .hwatu-num {
+  color: var(--red-deep);
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+  font-weight: 900;
+}
+
+.hwatu-card.normal .hwatu-num {
+  color: #3a3020;
+}
+
+/* Card Month Label - mockup: bronze color, border-top on big cards */
+.hwatu-month {
+  font-size: 8px;
+  font-weight: 700;
+  z-index: 1;
+  opacity: 0.8;
+}
+
+.hwatu-card-big .hwatu-month {
+  font-size: 12px;
+  width: 100%;
+  text-align: center;
+  border-top: 2px solid var(--gold);
+  padding-top: 4px;
+  margin-top: 2px;
+}
+
+.hwatu-card.gwang .hwatu-month { color: var(--bronze); }
+.hwatu-card.normal .hwatu-month { color: #5a4a30; }
+
+/* Gwang Text Badge */
+.hwatu-gwang-text {
+  position: absolute;
+  bottom: 3px;
+  font-size: 7px;
+  font-weight: 900;
+  color: var(--red-bright);
+  letter-spacing: -0.5px;
+  text-shadow: 0 0 3px rgba(230,57,70,0.3);
+}
+
+.hwatu-card-big .hwatu-gwang-text {
+  bottom: 6px;
+  font-size: 11px;
+}
+
+/* Inner Border Pattern (subtle gold inset) */
+.hwatu-card::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(212,175,55,0.15);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.hwatu-card-big::after {
+  inset: 5px;
+  border-radius: 6px;
+  border-color: rgba(212,175,55,0.2);
+}
+
+/* Subtle horizontal stripe pattern on big cards (like mockup card-inner) */
+.hwatu-card-big {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 10px,
+    rgba(212,175,55,0.05) 10px,
+    rgba(212,175,55,0.05) 20px
+  );
+}
+
+/* Card Back: Red Weave Pattern */
+.hwatu-card.back {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #b71c1c 0px,
+      #b71c1c 4px,
+      #c62828 4px,
+      #c62828 8px
+    );
+  border: 2px solid var(--gold);
+}
+
+.hwatu-card.back::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,215,0,0.15);
+}
+
+.hwatu-card.back::after {
+  inset: 2px;
+  border: 1px solid rgba(255,215,0,0.12);
+}
+
+.hwatu-card-big.back::before {
+  width: 32px;
+  height: 32px;
+}
+
+/* Month-specific gwang tints */
+.hwatu-card.m1.gwang {
+  background:
+    radial-gradient(circle at 75% 15%, rgba(204,26,51,0.12) 0%, transparent 35%),
+    linear-gradient(135deg, var(--card-cream) 0%, #ffe8b0 50%, var(--card-cream) 100%);
+}
+
+.hwatu-card.m3.gwang {
+  background:
+    radial-gradient(circle at 75% 15%, rgba(204,26,51,0.12) 0%, transparent 35%),
+    linear-gradient(135deg, var(--card-cream) 0%, #f0d8d0 50%, var(--card-cream) 100%);
+}
+
+.hwatu-card.m8.gwang {
+  background:
+    radial-gradient(circle at 75% 15%, rgba(204,26,51,0.12) 0%, transparent 35%),
+    linear-gradient(135deg, var(--card-cream) 0%, #e0dce8 50%, var(--card-cream) 100%);
+}
+
+/* ===== My Card Area: Wood Tray (Mockup "info-panel" style) ===== */
+.sutda-my-area {
+  width: 100%;
+  padding: 15px 16px;
+  background:
+    linear-gradient(135deg, var(--wood-dark) 0%, var(--wood-light) 100%);
+  border-top: 2px solid var(--bronze);
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  box-shadow:
+    0 5px 15px rgba(0,0,0,0.6),
+    inset 0 2px 0 rgba(255,255,255,0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Wood grain overlay on my-area */
+.sutda-my-area::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.1) 2px,
+    rgba(0,0,0,0.1) 4px
+  );
+  pointer-events: none;
+}
+
+.sutda-my-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.sutda-my-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold-light);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.sutda-my-chips {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px;
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+.sutda-my-cards {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+/* Rank Name: Bright Red, Large (Mockup rank-display style) */
+.sutda-my-rank {
+  text-align: center;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 36px;
+  color: var(--red-bright);
+  min-height: 26px;
+  text-shadow:
+    3px 3px 0 var(--red-deep),
+    5px 5px 20px rgba(230,57,70,0.8);
+  letter-spacing: 8px;
+  animation: rankPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes rankPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* ===== Seryuk Panel: Dark Overlay ===== */
+.sutda-seryuk-panel {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10,10,18,0.92);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+.sutda-seryuk-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 28px;
+  color: var(--gold-light);
+  text-shadow:
+    0 0 15px rgba(255,215,0,0.5),
+    0 2px 4px rgba(0,0,0,0.6);
+}
+
+.sutda-seryuk-desc {
+  font-size: 13px;
+  color: rgba(200,190,160,0.6);
+  text-align: center;
+}
+
+.sutda-seryuk-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.sutda-seryuk-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 32px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sutda-seryuk-btn:active { transform: scale(0.95); }
+
+.sutda-seryuk-push {
+  background:
+    linear-gradient(135deg, var(--green-call) 0%, #1b4332 100%);
+  color: #a5d6a7;
+  border-color: #4caf50;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    0 4px 12px rgba(0,0,0,0.5);
+}
+
+.sutda-seryuk-chaos {
+  background:
+    linear-gradient(135deg, var(--red-bright) 0%, var(--red-deep) 100%);
+  color: #ef9a9a;
+  border-color: #e53935;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    0 4px 12px rgba(0,0,0,0.5);
+}
+
+.sutda-seryuk-icon {
+  font-size: 36px;
+}
+
+.sutda-seryuk-sub {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* ===== Betting Buttons: Mockup Casino Style ===== */
+.sutda-action-bar {
+  display: flex;
+  gap: 5px;
+  width: 100%;
+  padding: 6px 8px 10px;
+  flex-wrap: wrap;
+  background:
+    linear-gradient(180deg, var(--wood-dark) 0%, #2e1e10 100%);
+  border-top: 1px solid rgba(212,175,55,0.15);
+}
+
+.sutda-bet-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 4px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  box-shadow:
+    0 4px 8px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ripple effect on buttons */
+.sutda-bet-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s, height 0.4s;
+}
+
+.sutda-bet-btn:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+.sutda-bet-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 12px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.4);
+}
+
+.sutda-bet-btn:active {
+  transform: translateY(0);
+}
+
+.sutda-bet-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Amount Buttons: Green (mockup btn-bet / btn-bet-large style) */
+.sutda-bet-10k {
+  background: linear-gradient(135deg, var(--green-call) 0%, #1b4332 100%);
+  color: white;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+.sutda-bet-50k {
+  background: linear-gradient(135deg, var(--green-call) 0%, #1b4332 100%);
+  color: white;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+.sutda-bet-100k {
+  background: linear-gradient(135deg, var(--green-call) 0%, #1b4332 100%);
+  color: white;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+/* Call: Teal/Cyan with Gold Border (mockup btn-call style) */
+.sutda-bet-call {
+  background: linear-gradient(135deg, var(--blue-bet) 0%, #1f7a6f 100%);
+  color: white;
+  padding: 18px 4px;
+  font-size: 16px;
+  border: 3px solid var(--gold);
+  box-shadow:
+    0 6px 12px rgba(0,0,0,0.5),
+    0 0 20px rgba(212,175,55,0.3);
+}
+
+/* Die (Fold): Warm Brown (mockup btn-fold style) */
+.sutda-bet-die {
+  background: linear-gradient(135deg, var(--brown-fold) 0%, #5c3410 100%);
+  color: white;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+/* All-In: Dramatic Red with Gold Border + Pulsing Glow (mockup btn-allin style) */
+.sutda-bet-allin {
+  background: linear-gradient(135deg, var(--red-bright) 0%, var(--red-deep) 100%);
+  color: white;
+  padding: 18px 4px;
+  font-size: 16px;
+  border: 3px solid var(--gold);
+  box-shadow:
+    0 6px 12px rgba(0,0,0,0.5),
+    0 0 30px rgba(230,57,70,0.5);
+  animation: allinPulse 2s ease-in-out infinite;
+}
+
+@keyframes allinPulse {
+  0%, 100% { box-shadow: 0 6px 12px rgba(0,0,0,0.5), 0 0 30px rgba(230,57,70,0.5); }
+  50% { box-shadow: 0 8px 16px rgba(0,0,0,0.6), 0 0 40px rgba(230,57,70,0.8); }
+}
+
+/* ===== Result Overlay ===== */
+.sutda-result-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10,10,18,0.95);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.sutda-result-overlay.active {
+  display: flex;
+}
+
+.sutda-result-box {
+  background:
+    linear-gradient(135deg, var(--wood-dark) 0%, var(--wood-light) 50%, #241a0c 100%);
+  border-radius: 16px;
+  border: 4px solid var(--bronze);
+  padding: 24px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow:
+    0 5px 15px rgba(0,0,0,0.6),
+    inset 0 2px 0 rgba(255,255,255,0.1),
+    0 0 40px rgba(212,175,55,0.15),
+    0 8px 30px rgba(0,0,0,0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Wood grain on result box */
+.sutda-result-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.1) 2px,
+    rgba(0,0,0,0.1) 4px
+  );
+  pointer-events: none;
+}
+
+.sutda-result-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 32px;
+  margin-bottom: 12px;
+  color: var(--red-bright);
+  text-shadow:
+    3px 3px 0 var(--red-deep),
+    5px 5px 20px rgba(230,57,70,0.8);
+  position: relative;
+}
+
+.sutda-result-winner {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #e8dcc8;
+  position: relative;
+}
+
+.sutda-result-rank {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 28px;
+  color: var(--red-bright);
+  margin-bottom: 12px;
+  text-shadow:
+    3px 3px 0 var(--red-deep),
+    5px 5px 20px rgba(230,57,70,0.8);
+  letter-spacing: 6px;
+  position: relative;
+}
+
+.sutda-result-cards {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.sutda-result-pot {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px;
+  color: var(--gold-light);
+  margin-bottom: 16px;
+  text-shadow: 0 0 10px rgba(255,215,0,0.4);
+  position: relative;
+}
+
+.sutda-result-all-hands {
+  text-align: left;
+  font-size: 13px;
+  border-top: 1px solid rgba(212,175,55,0.15);
+  padding-top: 12px;
+  position: relative;
+}
+
+.sutda-result-hand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(212,175,55,0.06);
+}
+
+.sutda-result-hand-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.sutda-result-hand-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 12px;
+  color: #e8dcc8;
+}
+
+.sutda-result-hand-rank {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 13px;
+  color: var(--red-bright);
+  text-shadow: 0 0 6px rgba(230,57,70,0.3);
+}
+
+.sutda-result-hand-cards {
+  display: flex;
+  gap: 3px;
+}
+
+.sutda-result-hand-cards .hwatu-card {
+  width: 28px;
+  height: 42px;
+}
+
+.sutda-result-hand-cards .hwatu-num {
+  font-size: 14px;
+}
+
+.sutda-result-hand-cards .hwatu-month {
+  font-size: 6px;
+}
+
+.sutda-result-hand-cards .hwatu-gwang-text {
+  font-size: 5px;
+  bottom: 1px;
+}
+
+.sutda-result-hand-row.winner-row {
+  background: rgba(212,175,55,0.08);
+  border-radius: 6px;
+  padding: 6px 8px;
+  border: 1px solid rgba(212,175,55,0.15);
+}
+
+.sutda-result-hand-row.died-row {
+  opacity: 0.4;
+}
+
+@keyframes sutdaReveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Card deal animations (from mockup) */
+@keyframes cardDeal1 {
+  from {
+    transform: translateX(-200px) translateY(-100px) rotate(-180deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) translateY(0) rotate(-8deg);
+    opacity: 1;
+  }
+}
+
+@keyframes cardDeal2 {
+  from {
+    transform: translateX(-200px) translateY(-100px) rotate(-180deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) translateY(0) rotate(8deg);
+    opacity: 1;
+  }
+}
+
+/* Gold shine animation for important buttons */
+@keyframes goldShine {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+/* ===== Mobile Responsive ===== */
+@media (max-width: 400px) {
+  #sutdaGame {
+    border-width: 4px;
+  }
+  .sutda-table-felt {
+    padding: 14px;
+    border-radius: 40px;
+  }
+  .sutda-pot-amount {
+    font-size: 24px;
+  }
+  .sutda-bet-btn {
+    padding: 10px 3px;
+    font-size: 11px;
+  }
+  .sutda-my-rank {
+    font-size: 28px;
+    letter-spacing: 4px;
+  }
+}
+
+@media (max-width: 340px) {
+  .sutda-opponents {
+    gap: 4px;
+  }
+  .sutda-opp-slot {
+    min-width: 50px;
+  }
+  .sutda-opp-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+  }
+  .sutda-bet-btn {
+    padding: 8px 2px;
+    font-size: 10px;
+  }
+}
+

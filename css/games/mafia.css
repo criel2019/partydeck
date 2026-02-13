@@ -1,0 +1,1344 @@
+/* ===== MAFIA FULL VERSION - Tavern & Moonlight Theme (Mockup-Enhanced) ===== */
+
+/* ---------- Custom Properties ---------- */
+#mafiaGame {
+  --mf-wood-dark: #2a1810;
+  --mf-wood-mid: #3d2516;
+  --mf-wood-light: #5c3a24;
+  --mf-wood-grain: #4a2e18;
+  --mf-gold: #d4af37;
+  --mf-gold-bright: #f5d576;
+  --mf-gold-dim: #b8941f;
+  --mf-parchment: #f4e8d0;
+  --mf-parchment-dark: #c7b08a;
+  --mf-lantern: #ff8c42;
+  --mf-lantern-glow: rgba(255,140,66,0.35);
+  --mf-night-bg: #1a1f3a;
+  --mf-night-mid: #141a33;
+  --mf-night-accent: #4a5f8f;
+  --mf-night-moon: #d4dff7;
+  --mf-night-star: #a8c4f0;
+  --mf-vote-green: #3d8b40;
+  --mf-vote-green-bright: #4fb052;
+  --mf-mafia-red: #8b0000;
+  --mf-mafia-red-bright: #e03131;
+  --mf-citizen-blue: #5b8dd9;
+  --mf-shadow-deep: rgba(0,0,0,0.6);
+
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  position: relative;
+
+  /* Warm wood-panel tavern background (from mockup body) */
+  background:
+    /* subtle vertical grain lines */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.1) 2px,
+      rgba(0,0,0,0.1) 4px
+    ),
+    /* horizontal grain */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0,0,0,0.05) 3px,
+      rgba(0,0,0,0.05) 6px
+    ),
+    /* wood color gradient */
+    linear-gradient(
+      180deg,
+      #1a0f08 0%,
+      #2a1810 30%,
+      #3d2516 50%,
+      #2a1810 70%,
+      #1a0f08 100%
+    );
+}
+
+/* --- Lantern glow left & right (from mockup lantern decorations) --- */
+#mafiaGame::before,
+#mafiaGame::after {
+  content: '';
+  position: absolute;
+  top: 40px;
+  width: 160px;
+  height: 280px;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 50%;
+  opacity: 0.7;
+  animation: mf-lantern-flicker 3s ease-in-out infinite;
+}
+#mafiaGame::before {
+  left: -60px;
+  background: radial-gradient(ellipse at center, rgba(255,140,66,0.35) 0%, rgba(255,140,30,0.12) 40%, transparent 70%);
+}
+#mafiaGame::after {
+  right: -60px;
+  background: radial-gradient(ellipse at center, rgba(255,140,66,0.35) 0%, rgba(255,140,30,0.12) 40%, transparent 70%);
+  animation-delay: 1.5s;
+}
+@keyframes mf-lantern-flicker {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 20px var(--mf-lantern-glow)); }
+  50% { opacity: 0.85; filter: drop-shadow(0 0 15px var(--mf-lantern-glow)); }
+}
+
+/* ---- Night mode background (from mockup night-mode) ---- */
+#mafiaGame.night-mode {
+  background:
+    /* star field */
+    radial-gradient(1px 1px at 15% 12%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 8%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 18%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 82% 6%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 25%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 22%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 15%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 10% 5%, rgba(255,255,255,0.35) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 72% 10%, rgba(200,220,255,0.7) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 30% 3%, rgba(200,220,255,0.5) 0%, transparent 100%),
+    /* moon glow */
+    radial-gradient(ellipse at 78% 8%, rgba(200,215,240,0.20) 0%, transparent 30%),
+    /* deep navy sky */
+    linear-gradient(180deg, #070a18 0%, #0b1028 30%, #101636 60%, #0d1228 100%);
+}
+
+/* Night mode: change lanterns to cool blue moonlight */
+#mafiaGame.night-mode::before {
+  background: radial-gradient(ellipse at center, rgba(100,140,220,0.20) 0%, rgba(70,100,180,0.08) 40%, transparent 70%);
+  animation-name: mf-moonlight-flicker;
+}
+#mafiaGame.night-mode::after {
+  background: radial-gradient(ellipse at center, rgba(100,140,220,0.20) 0%, rgba(70,100,180,0.08) 40%, transparent 70%);
+  animation-name: mf-moonlight-flicker;
+}
+@keyframes mf-moonlight-flicker {
+  0%   { opacity: 0.4; }
+  50%  { opacity: 0.55; }
+  100% { opacity: 0.45; }
+}
+
+/* ========== TOP BAR (from mockup .header) ========== */
+.mf-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background:
+    linear-gradient(135deg,
+      rgba(212,175,55,0.15),
+      rgba(212,175,55,0.05)
+    );
+  border-bottom: 3px solid var(--mf-gold);
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.4),
+    inset 0 -1px 0 rgba(212,175,55,0.20);
+  flex-shrink: 0;
+  z-index: 20;
+  position: relative;
+}
+/* Mockup header top highlight line */
+.mf-topbar::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+}
+#mafiaGame.night-mode .mf-topbar {
+  background:
+    linear-gradient(135deg,
+      rgba(26,31,58,0.4),
+      rgba(26,31,58,0.15)
+    );
+  border-bottom-color: var(--mf-night-accent);
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.6),
+    inset 0 -1px 0 rgba(80,110,180,0.15);
+}
+
+.mf-topbar-left { display: flex; align-items: center; gap: 10px; }
+
+.mf-back-btn {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(92,58,36,0.4);
+  border: 1px solid var(--mf-gold-dim);
+  border-radius: 10px;
+  color: var(--mf-gold-bright);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mf-back-btn:active {
+  transform: scale(0.92);
+  background: rgba(92,58,36,0.6);
+}
+#mafiaGame.night-mode .mf-back-btn {
+  background: rgba(30,40,80,0.5);
+  border-color: rgba(74,95,143,0.4);
+  color: var(--mf-night-moon);
+}
+
+/* Phase badge (from mockup .phase-title) */
+.mf-phase-badge {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: 'Cinzel', 'Black Han Sans', serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.mf-phase-badge.day {
+  background: linear-gradient(135deg, rgba(212,175,55,0.30), rgba(212,175,55,0.10));
+  color: var(--mf-gold);
+  border: 1px solid rgba(212,175,55,0.5);
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+.mf-phase-badge.night {
+  background: linear-gradient(135deg, rgba(26,31,58,0.40), rgba(26,31,58,0.15));
+  color: #87a6d9;
+  border: 1px solid rgba(74,95,143,0.5);
+  text-shadow: 0 1px 4px rgba(100,140,220,0.3);
+}
+.mf-phase-badge.vote {
+  background: linear-gradient(135deg, rgba(61,139,64,0.25), rgba(61,139,64,0.12));
+  color: #7dcc7d;
+  border: 1px solid rgba(79,176,82,0.4);
+}
+.mf-phase-badge.result {
+  background: linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.12));
+  color: var(--mf-gold-bright);
+  border: 1px solid rgba(212,175,55,0.4);
+}
+
+/* Phase icon animation (from mockup .phase-icon) */
+.mf-phase-badge span:first-child {
+  font-size: 20px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+  animation: mf-phase-icon-pulse 2s ease-in-out infinite;
+}
+@keyframes mf-phase-icon-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Timer box (from mockup .timer - solid gold pill) */
+.mf-timer-box {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--mf-gold), var(--mf-gold-dim));
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 20px;
+  font-family: 'Cinzel', 'Black Han Sans', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--mf-wood-dark);
+  box-shadow:
+    0 4px 8px rgba(0,0,0,0.4),
+    inset 0 1px 2px rgba(255,255,255,0.4);
+  position: relative;
+  animation: mf-timer-pulse 1s ease-in-out infinite;
+}
+.mf-timer-box.urgent {
+  animation: mf-timer-pulse 0.5s ease-in-out infinite;
+  color: white;
+  background: linear-gradient(135deg, var(--mf-mafia-red-bright), var(--mf-mafia-red));
+  border-color: rgba(255,100,100,0.4);
+  box-shadow: 0 0 14px rgba(139,0,0,0.4);
+}
+@keyframes mf-timer-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+#mafiaGame.night-mode .mf-timer-box {
+  background: linear-gradient(135deg, var(--mf-night-accent), #354466);
+  color: #d4e4ff;
+  border-color: rgba(135,166,217,0.3);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+}
+
+.mf-day-counter {
+  font-size: 11px;
+  color: var(--mf-gold);
+  text-align: center;
+  padding: 2px 0;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+#mafiaGame.night-mode .mf-day-counter {
+  color: var(--mf-night-star);
+}
+
+/* ========== ROLE BANNER - Parchment Card (from mockup .role-card) ========== */
+.mf-role-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  margin: 8px 16px 4px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+
+  /* parchment texture */
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(139,109,64,0.04) 4px,
+      rgba(139,109,64,0.04) 5px
+    ),
+    linear-gradient(135deg, rgba(92,58,36,0.6), rgba(42,24,16,0.6));
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.15),
+    inset 0 -1px 0 rgba(0,0,0,0.1);
+}
+.mf-role-banner.team-mafia {
+  border: 2px solid var(--mf-mafia-red);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.6),
+    0 0 8px rgba(139,0,0,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+}
+.mf-role-banner.team-citizen {
+  border: 2px solid var(--mf-gold);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.6),
+    0 0 8px rgba(212,175,55,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+}
+/* Role emoji (from mockup .role-icon: 48px) */
+.mf-role-emoji {
+  font-size: 48px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.8));
+}
+.mf-role-info { flex: 1; min-width: 0; }
+.mf-role-name {
+  font-family: 'Cinzel', 'Black Han Sans', serif;
+  font-size: 20px;
+  font-weight: 900;
+  margin-bottom: 4px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  letter-spacing: 0.5px;
+}
+.mf-role-name.mafia-color { color: var(--mf-mafia-red-bright); }
+.mf-role-name.citizen-color { color: var(--mf-gold); }
+.mf-role-desc {
+  font-size: 13px;
+  color: var(--mf-parchment);
+  line-height: 1.5;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Night mode role banner */
+#mafiaGame.night-mode .mf-role-banner {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(50,60,100,0.06) 4px,
+      rgba(50,60,100,0.06) 5px
+    ),
+    linear-gradient(135deg, rgba(26,31,58,0.6), rgba(20,24,48,0.6));
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(100,140,220,0.08);
+}
+#mafiaGame.night-mode .mf-role-banner.team-citizen {
+  border-color: rgba(74,95,143,0.5);
+}
+#mafiaGame.night-mode .mf-role-banner.team-mafia {
+  border-color: rgba(180,50,40,0.6);
+}
+#mafiaGame.night-mode .mf-role-name.citizen-color { color: #87a6d9; }
+#mafiaGame.night-mode .mf-role-desc { color: rgba(168,196,240,0.6); }
+
+/* ========== SCROLLABLE CONTENT ========== */
+.mf-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  z-index: 5;
+}
+
+/* ========== PLAYER GRID (from mockup .player-grid) ========== */
+.mf-player-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.mf-player-grid.three-col { grid-template-columns: repeat(3, 1fr); }
+
+/* --- Player Card (from mockup .player-card) --- */
+.mf-player-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  position: relative;
+  overflow: hidden;
+
+  /* Wood card face with mockup gradient */
+  background: linear-gradient(135deg, var(--mf-wood-light), var(--mf-wood-mid));
+  border: 2px solid rgba(212,175,55,0.4);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+.mf-player-card::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(212,175,55,0.12);
+  border-radius: 9px;
+  pointer-events: none;
+}
+/* Mockup hover: lift + stronger shadow + gold border */
+.mf-player-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+  border-color: var(--mf-gold);
+}
+.mf-player-card:active { transform: scale(0.96); }
+.mf-player-card.selectable:hover {
+  border-color: var(--mf-gold);
+  box-shadow:
+    0 8px 16px rgba(0,0,0,0.6),
+    0 0 12px rgba(212,175,55,0.15);
+}
+.mf-player-card.selected {
+  border-color: var(--mf-vote-green-bright);
+  background:
+    linear-gradient(135deg, rgba(61,139,64,0.4), rgba(45,100,45,0.5));
+  box-shadow:
+    0 0 14px rgba(79,176,82,0.25),
+    inset 0 1px 0 rgba(79,176,82,0.10);
+}
+.mf-player-card.selected-snipe {
+  border-color: var(--mf-mafia-red-bright);
+  background:
+    linear-gradient(135deg, rgba(139,0,0,0.4), rgba(100,0,0,0.5));
+  box-shadow: 0 0 16px rgba(139,0,0,0.3);
+}
+
+/* Dead player (from mockup .player-card.dead) */
+.mf-player-card.dead {
+  opacity: 0.4;
+  filter: grayscale(1);
+  pointer-events: none;
+  border-color: rgba(100,70,40,0.3);
+}
+.mf-player-card.dead::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(60,20,10,0.4);
+  border-radius: 10px;
+  pointer-events: none;
+}
+.mf-player-card.dead .mf-dead-overlay {
+  display: flex;
+}
+.mf-player-card.voted-on {
+  border-color: var(--mf-gold);
+  box-shadow: 0 0 8px rgba(212,175,55,0.2);
+}
+.mf-player-card.is-me {
+  border-color: var(--mf-gold-bright);
+  box-shadow:
+    0 0 12px rgba(245,213,118,0.15),
+    inset 0 0 8px rgba(245,213,118,0.05);
+}
+
+/* Night mode player cards */
+#mafiaGame.night-mode .mf-player-card {
+  background:
+    linear-gradient(135deg, rgba(26,31,58,0.85), rgba(18,22,44,0.90));
+  border-color: rgba(74,95,143,0.35);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+}
+#mafiaGame.night-mode .mf-player-card::before {
+  border-color: rgba(74,95,143,0.08);
+}
+#mafiaGame.night-mode .mf-player-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(100,140,220,0.5);
+}
+#mafiaGame.night-mode .mf-player-card.selectable:hover {
+  border-color: rgba(100,140,220,0.5);
+}
+#mafiaGame.night-mode .mf-player-card.is-me {
+  border-color: rgba(135,166,217,0.5);
+  box-shadow: 0 0 12px rgba(100,140,220,0.12);
+}
+
+/* Dead overlay (from mockup .player-card.dead::after skull) */
+.mf-dead-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(40,10,5,0.55);
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  z-index: 5;
+  border-radius: 10px;
+  filter: drop-shadow(0 0 8px rgba(0,0,0,0.9));
+}
+
+/* Player avatar (from mockup .avatar: 80px, 16px radius) */
+.mf-player-avatar {
+  width: 64px; height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid rgba(212,175,55,0.3);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+  background: rgba(0,0,0,0.15);
+}
+/* Mockup avatar inner glow overlay */
+.mf-player-avatar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 2px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+#mafiaGame.night-mode .mf-player-avatar {
+  border-color: rgba(74,95,143,0.25);
+}
+
+/* Player name (from mockup .player-name) */
+.mf-player-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mf-parchment);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+/* Role tag */
+.mf-player-role-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.mf-player-role-tag.mafia-tag {
+  background: rgba(139,0,0,0.30);
+  color: #ff6b6b;
+  border: 1px solid rgba(139,0,0,0.3);
+}
+.mf-player-role-tag.citizen-tag {
+  background: rgba(58,91,160,0.20);
+  color: #87ceeb;
+  border: 1px solid rgba(58,91,160,0.2);
+}
+
+/* Vote count badge (from mockup .vote-count: white border, red bg) */
+.mf-vote-count-badge {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  min-width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--mf-mafia-red-bright), #c92a2a);
+  border: 2px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+  color: white;
+  z-index: 10;
+  animation: mf-badge-pop 0.3s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+@keyframes mf-badge-pop {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Host crown (from mockup .crown-badge with float animation) */
+.mf-host-crown {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 24px;
+  z-index: 10;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+  animation: mf-crown-float 2s ease-in-out infinite;
+}
+@keyframes mf-crown-float {
+  0%, 100% { transform: translateY(0) rotate(-10deg); }
+  50% { transform: translateY(-4px) rotate(-10deg); }
+}
+
+/* Lover heart */
+.mf-lover-heart {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 16px;
+  z-index: 10;
+  animation: mf-heart-beat 1.5s ease-in-out infinite;
+}
+@keyframes mf-heart-beat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* Soldier shield */
+.mf-soldier-shield {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  font-size: 14px;
+  z-index: 10;
+}
+
+/* Snipe used badge */
+.mf-snipe-used-badge {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  font-size: 10px;
+  z-index: 10;
+  opacity: 0.5;
+}
+
+/* ========== NIGHT ACTION PANEL ========== */
+.mf-night-panel {
+  background:
+    linear-gradient(135deg, rgba(26,31,58,0.95), rgba(20,24,48,0.98));
+  border-radius: 12px;
+  padding: 16px;
+  border: 2px solid rgba(74,95,143,0.35);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(74,95,143,0.08);
+}
+.mf-night-title {
+  font-family: 'Cinzel', 'Black Han Sans', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #87a6d9;
+  margin-bottom: 10px;
+  text-align: center;
+  text-shadow: 0 0 12px rgba(100,140,220,0.3);
+  letter-spacing: 1px;
+}
+.mf-night-desc {
+  font-size: 14px;
+  color: rgba(168,196,240,0.6);
+  text-align: center;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+.mf-night-waiting {
+  text-align: center;
+  padding: 24px 0;
+}
+.mf-night-waiting-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+  animation: mf-moon-float 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(180,200,240,0.3));
+}
+@keyframes mf-moon-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.mf-night-waiting-text {
+  font-size: 14px;
+  color: rgba(168,196,240,0.5);
+}
+
+/* ========== CHAT PANEL (Mafia / Spy) ========== */
+.mf-chat-panel {
+  background:
+    linear-gradient(180deg, rgba(50,20,15,0.95), rgba(40,16,10,0.98));
+  border-radius: 12px;
+  border: 2px solid rgba(139,0,0,0.35);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 180px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.mf-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(139,0,0,0.20);
+  border-bottom: 1px solid rgba(139,0,0,0.25);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mf-mafia-red-bright);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.mf-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 60px;
+  max-height: 100px;
+  -webkit-overflow-scrolling: touch;
+}
+.mf-chat-msg {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.mf-chat-msg .sender {
+  font-weight: 700;
+  color: #ff6b6b;
+}
+.mf-chat-msg .text {
+  color: var(--mf-parchment);
+}
+.mf-chat-input-row {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(0,0,0,0.3);
+  border-top: 1px solid rgba(139,0,0,0.20);
+}
+.mf-chat-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(139,0,0,0.25);
+  border-radius: 8px;
+  color: var(--mf-parchment);
+  font-size: 13px;
+  font-family: 'Noto Sans KR', sans-serif;
+  outline: none;
+}
+.mf-chat-input::placeholder { color: rgba(244,232,208,0.3); }
+.mf-chat-input:focus { border-color: rgba(139,0,0,0.5); }
+.mf-chat-send-btn {
+  padding: 8px 14px;
+  background: rgba(139,0,0,0.45);
+  border: 1px solid rgba(139,0,0,0.55);
+  border-radius: 8px;
+  color: #ff6b6b;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.mf-chat-send-btn:active { transform: scale(0.95); background: rgba(139,0,0,0.6); }
+
+/* ========== ACTION AREA (Bottom - from mockup .bottom-panel) ========== */
+.mf-action-area {
+  padding: 12px 16px 16px;
+  background:
+    linear-gradient(135deg,
+      rgba(92,58,36,0.5),
+      rgba(42,24,16,0.5)
+    );
+  border-top: 2px solid rgba(212,175,55,0.3);
+  box-shadow:
+    0 -4px 12px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(212,175,55,0.10);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 20;
+  position: relative;
+}
+#mafiaGame.night-mode .mf-action-area {
+  background:
+    linear-gradient(135deg,
+      rgba(26,31,58,0.5),
+      rgba(14,18,38,0.5)
+    );
+  border-top-color: rgba(74,95,143,0.3);
+  box-shadow:
+    0 -4px 12px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(74,95,143,0.08);
+}
+
+.mf-message-box {
+  font-size: 14px;
+  color: var(--mf-parchment);
+  text-align: center;
+  padding: 6px;
+  line-height: 1.5;
+  min-height: 24px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+#mafiaGame.night-mode .mf-message-box {
+  color: var(--mf-night-moon);
+}
+
+.mf-btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* Action buttons (from mockup .extend-button / .vote-button / .ability-button) */
+.mf-action-btn {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 900;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  border: none;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.mf-action-btn:hover {
+  transform: translateY(-2px);
+}
+.mf-action-btn:active { transform: translateY(0); }
+
+/* Primary vote button - GREEN (from mockup .vote-button) */
+.mf-action-btn.primary {
+  background: linear-gradient(135deg, var(--mf-vote-green-bright), var(--mf-vote-green));
+  color: white;
+  border: 2px solid rgba(255,255,255,0.2);
+  box-shadow:
+    0 4px 12px rgba(61,139,64,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+.mf-action-btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(61,139,64,0.45);
+  background: linear-gradient(135deg, #5dbf60, var(--mf-vote-green));
+}
+.mf-action-btn.primary:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.mf-action-btn.secondary {
+  background: rgba(92,58,36,0.40);
+  color: var(--mf-parchment);
+  border: 1px solid rgba(212,175,55,0.25);
+}
+#mafiaGame.night-mode .mf-action-btn.secondary {
+  background: rgba(26,31,58,0.50);
+  color: var(--mf-night-moon);
+  border-color: rgba(74,95,143,0.25);
+}
+.mf-action-btn.danger {
+  background: linear-gradient(135deg, var(--mf-mafia-red-bright), var(--mf-mafia-red));
+  color: white;
+  border: 2px solid rgba(255,100,100,0.3);
+  box-shadow: 0 4px 12px rgba(139,0,0,0.3);
+}
+.mf-action-btn.snipe {
+  background: linear-gradient(135deg, #e03131, #8b0000);
+  color: white;
+  border: 2px solid rgba(224,49,49,0.4);
+  box-shadow: 0 4px 12px rgba(139,0,0,0.3);
+  font-size: 13px;
+}
+.mf-action-btn.snipe:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+/* Extend button (from mockup .extend-button - gold style) */
+.mf-action-btn.extend {
+  background: linear-gradient(135deg, var(--mf-gold), var(--mf-gold-dim));
+  color: var(--mf-wood-dark);
+  border: 2px solid rgba(255,255,255,0.3);
+  font-size: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  text-shadow: 0 1px 2px rgba(255,255,255,0.3);
+}
+.mf-action-btn.extend:hover {
+  box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+  background: linear-gradient(135deg, #e0bf47, var(--mf-gold));
+}
+
+/* ========== VOTE STATUS PANEL (from mockup .bottom-panel .vote-status) ========== */
+.mf-vote-panel {
+  background:
+    linear-gradient(135deg, rgba(92,58,36,0.5), rgba(42,24,16,0.5));
+  border-radius: 12px;
+  padding: 16px;
+  border: 2px solid rgba(212,175,55,0.3);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}
+#mafiaGame.night-mode .mf-vote-panel {
+  background: linear-gradient(135deg, rgba(26,31,58,0.5), rgba(14,18,38,0.5));
+  border-color: rgba(74,95,143,0.25);
+}
+
+.mf-vote-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mf-gold);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+#mafiaGame.night-mode .mf-vote-title {
+  color: var(--mf-night-moon);
+}
+
+.mf-vote-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mf-vote-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mf-vote-bar-name {
+  font-size: 13px;
+  color: var(--mf-parchment);
+  width: 60px;
+  font-weight: 500;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mf-vote-bar-track {
+  flex: 1;
+  height: 24px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(212,175,55,0.2);
+}
+#mafiaGame.night-mode .mf-vote-bar-track {
+  border-color: rgba(74,95,143,0.15);
+}
+.mf-vote-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--mf-vote-green-bright), var(--mf-vote-green));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+  min-width: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.mf-skip-count {
+  font-size: 12px;
+  color: rgba(244,232,208,0.4);
+  text-align: center;
+  margin-top: 8px;
+}
+#mafiaGame.night-mode .mf-skip-count {
+  color: rgba(168,196,240,0.4);
+}
+
+/* ========== EVENTS / ANNOUNCEMENTS (from mockup .night-events / .event-item) ========== */
+.mf-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mf-event-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  animation: mf-event-in 0.6s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+@keyframes mf-event-in {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+/* Death (from mockup .death-notification) */
+.mf-event-item.death {
+  background: linear-gradient(135deg, rgba(139,0,0,0.3), rgba(80,0,0,0.2));
+  border: 2px solid rgba(139,0,0,0.6);
+  color: #ff6b6b;
+  animation: mf-event-in 0.6s cubic-bezier(0.4,0,0.2,1), mf-death-shake 0.5s ease-in-out 0.6s;
+}
+@keyframes mf-death-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+/* Safe */
+.mf-event-item.safe {
+  background: linear-gradient(135deg, rgba(61,139,64,0.25), rgba(45,100,45,0.15));
+  border: 2px solid rgba(61,139,64,0.4);
+  color: #7dcc7d;
+}
+/* Info / Investigation (from mockup .investigation-result) */
+.mf-event-item.info {
+  background: linear-gradient(135deg, rgba(51,154,240,0.2), rgba(24,100,171,0.1));
+  border: 2px solid rgba(51,154,240,0.4);
+  color: #87ceeb;
+}
+/* Snipe */
+.mf-event-item.snipe {
+  background: linear-gradient(135deg, rgba(139,0,0,0.3), rgba(100,0,0,0.2));
+  border: 2px solid rgba(224,49,49,0.5);
+  color: #ff6b6b;
+  animation: mf-event-in 0.6s cubic-bezier(0.4,0,0.2,1), mf-death-shake 0.5s ease-in-out 0.6s;
+}
+@keyframes mf-shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+.mf-event-item.vote-result {
+  background: linear-gradient(135deg, rgba(79,176,82,0.20), rgba(61,139,64,0.12));
+  border: 2px solid rgba(79,176,82,0.4);
+  color: #7dcc7d;
+}
+.mf-event-item.immunity {
+  background: linear-gradient(135deg, rgba(212,175,55,0.20), rgba(184,148,31,0.12));
+  border: 2px solid rgba(212,175,55,0.4);
+  color: var(--mf-gold-bright);
+}
+.mf-event-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+}
+
+/* ========== RESULT SCREEN OVERLAY ========== */
+.mf-result-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(92,58,36,0.3) 0%, transparent 60%),
+    rgba(15,8,3,0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  gap: 16px;
+  padding: 24px;
+  animation: mf-result-fade 0.8s ease-out;
+}
+@keyframes mf-result-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.mf-result-title {
+  font-family: 'Cinzel', 'Black Han Sans', serif;
+  font-size: 36px;
+  text-align: center;
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+  letter-spacing: 2px;
+}
+.mf-result-title.win { color: var(--mf-gold-bright); }
+.mf-result-title.lose { color: #7a6a5a; }
+.mf-result-subtitle {
+  font-size: 16px;
+  color: var(--mf-parchment);
+  text-align: center;
+}
+.mf-result-roles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.mf-result-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  background:
+    linear-gradient(135deg, var(--mf-wood-light), var(--mf-wood-mid));
+  border: 1px solid rgba(212,175,55,0.25);
+  border-radius: 10px;
+  font-size: 11px;
+}
+.mf-result-player.dead-result { opacity: 0.4; filter: grayscale(0.5); }
+.mf-result-player-avatar {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  border: 1px solid rgba(212,175,55,0.2);
+}
+.mf-result-player-name {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--mf-parchment);
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mf-result-player-role {
+  font-size: 10px;
+  font-weight: 700;
+}
+.mf-result-player-role.mafia-text { color: #ff6b6b; }
+.mf-result-player-role.citizen-text { color: #87ceeb; }
+
+.mf-result-close-btn {
+  padding: 14px 40px;
+  background: linear-gradient(135deg, var(--mf-gold), var(--mf-gold-dim));
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 10px;
+  color: var(--mf-wood-dark);
+  font-family: 'Cinzel', 'Black Han Sans', serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.4),
+    inset 0 1px 2px rgba(255,255,255,0.4);
+  text-shadow: 0 1px 2px rgba(255,255,255,0.3);
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.mf-result-close-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+}
+.mf-result-close-btn:active {
+  transform: translateY(0);
+}
+
+/* ========== SPY INFO PANEL ========== */
+.mf-spy-info {
+  background:
+    linear-gradient(135deg, rgba(60,30,60,0.40), rgba(40,16,40,0.50));
+  border-radius: 10px;
+  padding: 12px 14px;
+  border: 2px solid rgba(150,60,150,0.30);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.mf-spy-info-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ce93d8;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.mf-spy-dead-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.mf-spy-dead-tag {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  background: rgba(150,60,150,0.20);
+  color: #e1bee7;
+  border: 1px solid rgba(150,60,150,0.15);
+}
+
+/* ========== UNDERTAKER INFO ========== */
+.mf-undertaker-result {
+  background:
+    linear-gradient(135deg, rgba(50,50,50,0.45), rgba(35,35,35,0.55));
+  border-radius: 10px;
+  padding: 12px 14px;
+  border: 2px solid rgba(120,120,120,0.30);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.mf-undertaker-result-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #90a4ae;
+  margin-bottom: 6px;
+}
+
+/* ========== NIGHT OVERLAY TINT ========== */
+.mf-night-tint {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 78% 8%, rgba(180,200,240,0.06) 0%, transparent 25%),
+    rgba(6,8,20,0.45);
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.5s;
+}
+.mf-night-tint.hidden { opacity: 0; }
+
+/* ========== MISC ========== */
+.mf-divider {
+  height: 1px;
+  background: rgba(212,175,55,0.15);
+  margin: 4px 0;
+}
+#mafiaGame.night-mode .mf-divider {
+  background: rgba(74,95,143,0.12);
+}
+.mf-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mf-gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+#mafiaGame.night-mode .mf-section-label {
+  color: rgba(168,196,240,0.5);
+}
+
+/* ========== LOVER REVEAL ========== */
+.mf-lover-reveal {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(180,80,120,0.03) 4px,
+      rgba(180,80,120,0.03) 5px
+    ),
+    linear-gradient(135deg, rgba(92,58,36,0.8), rgba(60,36,16,0.9));
+  border-radius: 12px;
+  padding: 16px;
+  border: 2px solid rgba(255,105,180,0.4);
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.mf-lover-reveal-title {
+  font-family: 'Cinzel', 'Black Han Sans', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ff69b4;
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px rgba(255,105,180,0.2);
+}
+.mf-lover-reveal-text {
+  font-size: 14px;
+  color: var(--mf-parchment);
+  line-height: 1.5;
+}
+
+/* ========== SPECTATOR BAR ========== */
+.mf-spectator-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(92,58,36,0.40);
+  border: 1px solid rgba(212,175,55,0.15);
+  border-radius: 10px;
+  font-size: 14px;
+  color: rgba(244,232,208,0.5);
+}
+#mafiaGame.night-mode .mf-spectator-bar {
+  background: rgba(26,31,58,0.40);
+  border-color: rgba(74,95,143,0.15);
+  color: rgba(168,196,240,0.4);
+}
+
+/* ========== SCROLLBAR STYLING ========== */
+.mf-content::-webkit-scrollbar { width: 4px; }
+.mf-content::-webkit-scrollbar-track { background: transparent; }
+.mf-content::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.25); border-radius: 2px; }
+#mafiaGame.night-mode .mf-content::-webkit-scrollbar-thumb { background: rgba(74,95,143,0.25); }
+.mf-chat-messages::-webkit-scrollbar { width: 3px; }
+.mf-chat-messages::-webkit-scrollbar-thumb { background: rgba(139,0,0,0.30); border-radius: 2px; }
+
+/* ========== MOBILE RESPONSIVE ========== */
+@media (max-width: 380px) {
+  .mf-player-grid { gap: 8px; }
+  .mf-player-card { padding: 10px; }
+  .mf-player-avatar { width: 56px; height: 56px; font-size: 28px; border-radius: 14px; }
+  .mf-player-name { font-size: 13px; }
+  .mf-topbar { padding: 10px 12px; }
+  .mf-role-banner { margin: 6px 12px 2px; padding: 12px 14px; gap: 12px; }
+  .mf-role-emoji { font-size: 40px; }
+  .mf-role-name { font-size: 18px; }
+  .mf-content { padding: 8px 12px; }
+  .mf-action-area { padding: 10px 12px 12px; }
+  .mf-action-btn { padding: 12px 16px; font-size: 14px; }
+  .mf-result-roles { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+}
+
+@media (max-width: 320px) {
+  .mf-player-grid { grid-template-columns: repeat(2, 1fr); }
+  .mf-player-grid.three-col { grid-template-columns: repeat(2, 1fr); }
+  .mf-player-avatar { width: 48px; height: 48px; font-size: 24px; border-radius: 12px; }
+  .mf-timer-box { font-size: 16px; padding: 6px 12px; }
+  .mf-phase-badge { font-size: 14px; padding: 5px 10px; }
+}
+
+@media (min-width: 500px) {
+  .mf-player-grid { grid-template-columns: repeat(3, 1fr); }
+  .mf-player-avatar { width: 72px; height: 72px; font-size: 36px; }
+  .mf-result-roles { grid-template-columns: repeat(4, 1fr); max-width: 440px; }
+}
+

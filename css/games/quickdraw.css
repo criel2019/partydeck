@@ -1,0 +1,380 @@
+/* ===== QUICK DRAW CSS ===== */
+/* Desert Western theme inspired by mockup */
+
+#quickDrawGame {
+  padding: 0;
+  gap: 0;
+  background: linear-gradient(180deg,
+    #ff8c42 0%,
+    #d97032 30%,
+    #8b5a3c 60%,
+    #5c3a21 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+/* Desert ground texture overlay */
+#quickDrawGame::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    rgba(0,0,0,0.1) 1px,
+    transparent 2px,
+    transparent 60px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+#quickDrawGame > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* -- Header: Dark bar over desert sky -- */
+.qd-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%);
+  border-bottom: 3px solid #d4af37;
+  backdrop-filter: blur(4px);
+}
+
+.qd-header .back-btn {
+  background: rgba(0,0,0,0.4) !important;
+  border: 1px solid rgba(212,175,55,0.3) !important;
+  border-radius: 6px !important;
+  color: #f5f5dc !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.qd-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: #f5f5dc;
+  text-shadow:
+    0 2px 4px rgba(0,0,0,0.6),
+    0 0 12px rgba(255,140,66,0.4);
+  letter-spacing: 1px;
+}
+
+.qd-round {
+  font-size: 13px;
+  font-weight: 700;
+  color: #d4af37;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+/* -- Main Area: Crosshair Target Zone -- */
+.qd-main-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 12px;
+  min-height: 0;
+}
+
+/* -- Tap Zone: Crosshair circle inspired by mockup -- */
+.qd-tap-zone {
+  width: min(280px, 80vw);
+  height: min(280px, 80vw);
+  max-width: 320px;
+  max-height: 320px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  touch-action: manipulation;
+}
+
+/* Crosshair lines */
+.qd-tap-zone::before,
+.qd-tap-zone::after {
+  content: '';
+  position: absolute;
+  background: rgba(0,0,0,0.5);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.qd-tap-zone::before {
+  width: 2px;
+  height: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.qd-tap-zone::after {
+  height: 2px;
+  width: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* -- Waiting State: Dim crosshair -- */
+.qd-tap-zone.waiting {
+  background: radial-gradient(
+    circle,
+    rgba(255,255,255,0.15) 0%,
+    rgba(255,255,255,0.05) 40%,
+    transparent 70%
+  );
+  border: 4px solid rgba(0,0,0,0.6);
+  box-shadow:
+    inset 0 0 40px rgba(0,0,0,0.2),
+    0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* -- Countdown State: Warm up -- */
+.qd-tap-zone.countdown {
+  background: radial-gradient(
+    circle,
+    rgba(255,255,255,0.3) 0%,
+    rgba(200,100,50,0.2) 50%,
+    transparent 70%
+  );
+  border: 4px solid rgba(0,0,0,0.7);
+  box-shadow:
+    inset 0 0 40px rgba(0,0,0,0.3),
+    0 8px 32px rgba(0,0,0,0.5);
+  animation: qd-pulse-countdown 2s ease-in-out infinite;
+}
+
+/* -- Fire State: Red hot center -- */
+.qd-tap-zone.fire {
+  background: radial-gradient(
+    circle,
+    rgba(255,255,255,0.9) 0%,
+    rgba(255,255,255,0.7) 20%,
+    rgba(200,50,50,0.3) 50%,
+    transparent 70%
+  );
+  border: 4px solid rgba(0,0,0,0.8);
+  box-shadow:
+    inset 0 0 40px rgba(0,0,0,0.3),
+    0 0 50px rgba(212,47,47,0.6),
+    0 8px 32px rgba(0,0,0,0.5);
+  animation: qd-fire-pulse 0.5s ease-in-out infinite;
+}
+
+/* Red center dot on fire state */
+.qd-tap-zone.fire::before {
+  background: rgba(0,0,0,0.7);
+}
+
+.qd-tap-zone.fire::after {
+  background: rgba(0,0,0,0.7);
+}
+
+/* -- Cheated State: Gray out -- */
+.qd-tap-zone.cheated {
+  background: radial-gradient(circle, #666 0%, #333 60%, transparent 80%);
+  border: 4px solid #999;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+/* -- Done State: Green success -- */
+.qd-tap-zone.done {
+  background: radial-gradient(
+    circle,
+    rgba(45,138,77,0.5) 0%,
+    rgba(45,138,77,0.2) 50%,
+    transparent 70%
+  );
+  border: 4px solid rgba(45,138,77,0.5);
+  box-shadow:
+    0 0 30px rgba(45,138,77,0.4),
+    0 8px 32px rgba(0,0,0,0.4);
+}
+
+@keyframes qd-pulse-countdown {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes qd-fire-pulse {
+  0%, 100% { transform: scale(1); box-shadow: inset 0 0 40px rgba(0,0,0,0.3), 0 0 50px rgba(212,47,47,0.6), 0 8px 32px rgba(0,0,0,0.5); }
+  50% { transform: scale(1.05); box-shadow: inset 0 0 40px rgba(0,0,0,0.3), 0 0 80px rgba(212,47,47,0.9), 0 8px 40px rgba(0,0,0,0.6); }
+}
+
+/* -- Status Text: Big bold Western font -- */
+.qd-status-text {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: clamp(36px, 12vw, 64px);
+  color: #f5f5dc;
+  text-align: center;
+  text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
+  margin-bottom: 12px;
+  line-height: 1.2;
+  z-index: 2;
+  position: relative;
+}
+
+.qd-tap-zone.fire .qd-status-text {
+  font-size: clamp(48px, 15vw, 80px);
+  color: #d42f2f;
+  text-shadow:
+    4px 4px 8px rgba(0,0,0,0.8),
+    0 0 24px rgba(212,47,47,0.9);
+  animation: qd-fire-text 0.5s ease infinite;
+}
+
+@keyframes qd-fire-text {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+/* -- Reaction Time Display -- */
+.qd-reaction-time {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 48px;
+  font-weight: 900;
+  color: #fff;
+  text-align: center;
+  text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
+  min-height: 40px;
+  z-index: 2;
+  position: relative;
+}
+
+/* -- Rankings: Dark leaderboard panel -- */
+.qd-rankings {
+  padding: 20px 16px;
+  background: rgba(0,0,0,0.6);
+  border: 3px solid #000;
+  border-radius: 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+
+.qd-rankings-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  color: #d4af37;
+  margin-bottom: 12px;
+  text-align: center;
+  text-shadow: 0 0 8px rgba(212,175,55,0.4);
+}
+
+.qd-rankings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qd-ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255,255,255,0.1);
+  border-left: 4px solid #d4af37;
+  border-radius: 0 4px 4px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #f5f5dc;
+  animation: slideIn 0.3s ease;
+}
+
+.qd-ranking-item.winner {
+  background: rgba(212,175,55,0.2);
+  border-left-width: 6px;
+  border-left-color: #d4af37;
+}
+
+.qd-ranking-rank {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: #8b7930;
+  min-width: 28px;
+  text-align: center;
+}
+
+.qd-ranking-item.winner .qd-ranking-rank {
+  color: #d4af37;
+  text-shadow: 0 0 8px rgba(212,175,55,0.5);
+}
+
+.qd-ranking-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  border: 2px solid rgba(212,175,55,0.3);
+}
+
+.qd-ranking-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 14px;
+  color: #f5f5dc;
+}
+
+.qd-ranking-time {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.qd-ranking-item.cheated .qd-ranking-time {
+  color: #d42f2f;
+  font-size: 14px;
+  text-shadow: 0 0 8px rgba(212,47,47,0.5);
+}
+
+/* -- Alert: Mockup-style foul message -- */
+.qd-tap-zone.cheated .qd-status-text {
+  color: #d42f2f;
+  text-shadow:
+    4px 4px 8px rgba(0,0,0,0.8),
+    0 0 16px rgba(212,47,47,0.6);
+}
+
+/* -- Restart Button -- */
+.qd-restart-btn {
+  max-width: 280px;
+  align-self: center;
+  margin: 12px 14px;
+  min-height: 48px;
+  background: linear-gradient(145deg, #2d8a4d 0%, #1f5d35 100%) !important;
+  border: 2px solid #3da869 !important;
+  color: white !important;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+
+.qd-restart-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(45,138,77,0.5);
+}
+
