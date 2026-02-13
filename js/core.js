@@ -309,7 +309,7 @@ function handleMessage(peerId, raw) {
             if(allFinished) { yahState.phase = 'gameover'; broadcastYahtzeeState(); handleYahtzeeGameOver(); return; }
             yahState.turnIdx = (yahState.turnIdx + 1) % yahState.players.length;
             if(yahState.turnIdx === 0) yahState.turnNum++;
-            yahState.dice = [1,1,1,1,1]; yahState.held = [false,false,false,false,false];
+            yahState.dice = [0,0,0,0,0]; yahState.held = [false,false,false,false,false];
             yahState.rollsLeft = 3; yahState.selectedCategory = null; yahState.phase = 'rolling';
             broadcastYahtzeeState();
           }
@@ -671,7 +671,7 @@ function debugGame(game) {
         total: 0
       })),
       turnIdx: 0,
-      dice: [1, 1, 1, 1, 1],
+      dice: [0, 0, 0, 0, 0],
       held: [false, false, false, false, false],
       rollsLeft: 3,
       turnNum: 1,

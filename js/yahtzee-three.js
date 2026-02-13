@@ -10,7 +10,7 @@
   let clock;
 
   // Dice state
-  let currentValues = [1, 1, 1, 1, 1];
+  let currentValues = [0, 0, 0, 0, 0];
   let currentHeld = [false, false, false, false, false];
   let animatingDice = [false, false, false, false, false];
   let diceTargets = []; // target positions/rotations for each die

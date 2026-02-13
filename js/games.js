@@ -4337,7 +4337,7 @@ function yahConfirmScore() {
     yahState.turnNum++;
   }
 
-  yahState.dice = [1, 1, 1, 1, 1];
+  yahState.dice = [0, 0, 0, 0, 0];
   yahState.held = [false, false, false, false, false];
   yahState.rollsLeft = 3;
   yahState.selectedCategory = null;
@@ -4565,15 +4565,19 @@ function renderYahtzeeView(view) {
   // Combo label update
   const comboLabel = document.getElementById('yahtzeeComboLabel');
   if(comboLabel) {
-    if(isRolling) {
+    if(view.rollsLeft === 3) {
+      // New turn — hide combo label
+      comboLabel.classList.remove('visible');
+      comboLabel.textContent = '';
+    } else if(isRolling) {
       comboLabel.classList.remove('visible');
       setTimeout(() => {
         comboLabel.textContent = getYahtzeeComboName(view.dice);
-        comboLabel.classList.add('visible');
+        if(comboLabel.textContent) comboLabel.classList.add('visible');
       }, 900);
-    } else if(view.rollsLeft < 3) {
+    } else {
       comboLabel.textContent = getYahtzeeComboName(view.dice);
-      comboLabel.classList.add('visible');
+      if(comboLabel.textContent) comboLabel.classList.add('visible');
     }
   }
 
