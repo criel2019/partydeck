@@ -620,7 +620,10 @@
     } else {
       // Instant update - place dice at final positions (normal scale on tray)
       for (let i = 0; i < 5; i++) {
-        if (held[i]) {
+        if (values[i] === 0) {
+          // Unrolled dice - hide them
+          diceMeshes[i].visible = false;
+        } else if (held[i]) {
           // Held dice are invisible in 3D (shown in HTML hold bar)
           diceMeshes[i].visible = false;
         } else {

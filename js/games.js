@@ -4063,7 +4063,7 @@ function continueUpDown() {
 let yahState = {
   players: [],
   turnIdx: 0,
-  dice: [1, 1, 1, 1, 1],
+  dice: [0, 0, 0, 0, 0],
   held: [false, false, false, false, false],
   rollsLeft: 3,
   turnNum: 1,
@@ -4097,7 +4097,7 @@ function startYahtzee() {
       total: 0
     })),
     turnIdx: 0,
-    dice: [1, 1, 1, 1, 1],
+    dice: [0, 0, 0, 0, 0],
     held: [false, false, false, false, false],
     rollsLeft: 3,
     turnNum: 1,
@@ -4432,6 +4432,7 @@ function calcPossibleScores(dice) {
 }
 
 function getYahtzeeComboName(dice) {
+  if (dice.some(d => d === 0)) return '';
   const counts = {};
   dice.forEach(d => counts[d] = (counts[d] || 0) + 1);
   const vals = Object.values(counts).sort((a, b) => b - a);
