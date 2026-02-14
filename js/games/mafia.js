@@ -1193,10 +1193,16 @@ function mfAllNightActionsDone() {
   const mafiaActed = mafiaAlive.filter(p => ms.nightActions[p.id]).length;
   const mafiaOk = mafiaAlive.length === 0 || mafiaActed >= 1;
 
+  // Check if there are any dead players (for undertaker)
+  const hasDeadPlayers = ms.players.some(p => !p.alive);
+
   // Check other action roles
   const otherRoles = ['spy', 'police', 'doctor', 'reporter', 'undertaker', 'detective'];
   let othersOk = true;
   for (const role of otherRoles) {
+    // Skip undertaker if no dead players exist (can't act)
+    if (role === 'undertaker' && !hasDeadPlayers) continue;
+
     const p = ms.players.find(pp => pp.alive && pp.activeRole === role);
     if (p && !ms.nightActions[p.id]) {
       othersOk = false;
@@ -1367,9 +1373,20 @@ function mfRenderView() {
         </div>
       `;
 
-      // Undertaker: show dead players only
+      // Undertaker: show dead players only (or waiting if no dead)
       if (v.nightAction.type === 'undertaker') {
-        html += mfRenderPlayerGrid(v, true, 'dead-only');
+        const hasDeadTargets = v.players.some(p => !p.alive);
+        if (hasDeadTargets) {
+          html += mfRenderPlayerGrid(v, true, 'dead-only');
+        } else {
+          html += `
+            <div class="mf-night-waiting">
+              <div class="mf-night-waiting-icon">⚰️</div>
+              <div class="mf-night-waiting-text">확인할 시체가 없습니다</div>
+              <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">다음 밤을 기다리세요</div>
+            </div>
+          `;
+        }
       } else {
         html += mfRenderPlayerGrid(v, true);
       }
@@ -1507,6 +1524,9 @@ function mfRenderView() {
 
   // Attach event listeners for player cards
   mfAttachCardListeners(v);
+
+  // Restore selection state after re-render (fixes disabled button bug)
+  mfRestoreSelection(v);
 
   // Scroll chat to bottom
   const chatMsgs = document.querySelector('.mf-chat-messages');
@@ -1771,6 +1791,25 @@ function mfAttachCardListeners(v) {
       if (voteBtn) voteBtn.disabled = false;
     });
   });
+}
+
+function mfRestoreSelection(v) {
+  // If player had selected a target before re-render, restore it
+  if (!mfSelectedTarget) return;
+  if (v.nightActionDone || (v.phase === 'day-vote' && v.votes[v.myId])) return;
+
+  const card = document.querySelector(`.mf-player-card.selectable[data-pid="${mfSelectedTarget}"]`);
+  if (card) {
+    card.classList.add(mfUseSnipe ? 'selected-snipe' : 'selected');
+    // Re-enable confirm/vote button
+    const confirmBtn = document.getElementById('mfConfirmBtn');
+    const voteBtn = document.getElementById('mfVoteBtn');
+    if (confirmBtn) confirmBtn.disabled = false;
+    if (voteBtn) voteBtn.disabled = false;
+  } else {
+    // Target card no longer selectable (died, etc.) — clear selection
+    mfSelectedTarget = null;
+  }
 }
 
 function mfToggleSnipe() {
