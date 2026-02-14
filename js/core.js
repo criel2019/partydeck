@@ -468,7 +468,7 @@ function handleMessage(peerId, raw) {
     'sutda-seryuk': () => { if(state.isHost) processSutdaSeryuk(peerId, msg.choice); },
     'sutda-result': () => handleSutdaResult(msg),
     // Fortress handlers
-    'fort-state': () => { showScreen('fortressGame'); initFortCanvas(); renderFortressView(msg.state); if(typeof setupFortressKeyboard==='function') setupFortressKeyboard(); },
+    'fort-state': () => { showScreen('fortressGame'); initFortCanvas(); renderFortressView(msg.state); if(typeof setupFortressKeyboard==='function' && !_fortKeyDown) setupFortressKeyboard(); },
     'fort-fire': () => { if(state.isHost) handleFortFire(peerId, msg); },
     'fort-move': () => { if(state.isHost) handleFortMove(peerId, msg); },
     'fort-anim': () => { startFortAnimation(msg); },

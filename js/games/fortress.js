@@ -3,8 +3,8 @@
 // =============================================
 
 // ===== CONSTANTS =====
-const FORT_GRAVITY = 0.12;
-const FORT_AIR_DRAG = 0.998;
+const FORT_GRAVITY = 0.15;
+const FORT_POWER_MULT = 0.13;
 const FORT_TANK_W = 30, FORT_TANK_H = 20;
 const FORT_BARREL_LEN = 25;
 const FORT_MAX_HP = 100;
@@ -360,9 +360,12 @@ function cleanupFortressKeyboard() {
 // ===== TANK MOVEMENT =====
 function fortStartMove(dir) {
   if (fortMoveDir === dir) return;
+  if (fortMoveInterval) {
+    clearInterval(fortMoveInterval);
+    fortMoveInterval = null;
+  }
   fortMoveDir = dir;
-  fortStopMove();
-  fortDoMove(); // immediate first step
+  fortDoMove();
   fortMoveInterval = setInterval(fortDoMove, 50);
 }
 
@@ -528,7 +531,8 @@ function handleFortFire(peerId, msg) {
   fortState.phase = 'animating';
 
   const startX = current.x;
-  const startY = fortState.terrain[Math.floor(Math.max(0, Math.min(startX, FORT_CANVAS_W - 1)))] - FORT_TANK_H;
+  const stx = Math.floor(Math.max(0, Math.min(startX, FORT_CANVAS_W - 1)));
+  const startY = fortState.terrain[stx] - FORT_TANK_H + 2; // turret center
   const pathResult = computeProjectilePath(startX, startY, angle, power, fortState.wind);
 
   const hitResult = checkHit(pathResult.impactX, pathResult.impactY, current.id);
@@ -577,22 +581,23 @@ function handleFortFire(peerId, msg) {
 // ===== PHYSICS =====
 function computeProjectilePath(startX, startY, angleDeg, power, wind) {
   const rad = angleDeg * Math.PI / 180;
-  let vx = power * Math.cos(rad) * 0.18;
-  let vy = -power * Math.sin(rad) * 0.18;
-  let x = startX, y = startY;
+  const speed = power * FORT_POWER_MULT;
+  let vx = speed * Math.cos(rad);
+  let vy = -speed * Math.sin(rad);
+
+  // Start from barrel tip (not tank body)
+  let x = startX + FORT_BARREL_LEN * Math.cos(rad);
+  let y = startY - FORT_BARREL_LEN * Math.sin(rad);
   const path = [{ x, y, vx, vy }];
-  const terrain = fortState ? fortState.terrain : new Array(FORT_CANVAS_W).fill(380);
+  const terrain = fortState ? fortState.terrain :
+    (window._fortView ? window._fortView.terrain : new Array(FORT_CANVAS_W).fill(380));
   const width = fortState ? fortState.canvasW : FORT_CANVAS_W;
 
   for (let i = 0; i < 3000; i++) {
-    // Apply air drag
-    vx *= FORT_AIR_DRAG;
-    vy *= FORT_AIR_DRAG;
+    // Wind — gentle horizontal force
+    vx += wind * 0.004;
 
-    // Wind acceleration (more realistic — continuous force)
-    vx += wind * 0.015;
-
-    // Gravity
+    // Gravity only — clean parabolic arc (no air drag)
     vy += FORT_GRAVITY;
 
     x += vx;
@@ -709,8 +714,11 @@ function startFortAnimation(msg, callback) {
 
   if (fortAnimId) cancelAnimationFrame(fortAnimId);
 
-  // Muzzle flash particles
-  spawnExplosionParticles(msg.startX, msg.startY, 8, false);
+  // Muzzle flash particles at barrel tip
+  const muzzleRad = msg.angle * Math.PI / 180;
+  const muzzleX = msg.startX + FORT_BARREL_LEN * Math.cos(muzzleRad);
+  const muzzleY = msg.startY - FORT_BARREL_LEN * Math.sin(muzzleRad);
+  spawnExplosionParticles(muzzleX, muzzleY, 8, false);
 
   function animLoop() {
     if (!view) { if (callback) callback(); return; }
@@ -1116,15 +1124,16 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
   ctx.arc(x, bodyY + 2, 9, Math.PI, 0);
   ctx.fill();
 
-  // Barrel
+  // Barrel — compensate for terrain slope so visual matches absolute physics angle
   let angle = 45;
   if (isCurrentTurn && player.id === state.myId) {
     angle = fortLocalAngle;
   }
 
-  const rad = angle * Math.PI / 180;
-  const barrelEndX = x + FORT_BARREL_LEN * Math.cos(rad);
-  const barrelEndY = (bodyY + 2) - FORT_BARREL_LEN * Math.sin(rad);
+  const absRad = angle * Math.PI / 180;
+  const localRad = absRad - slope;
+  const barrelEndX = x + FORT_BARREL_LEN * Math.cos(localRad);
+  const barrelEndY = (bodyY + 2) - FORT_BARREL_LEN * Math.sin(localRad);
 
   // Barrel shadow
   ctx.strokeStyle = 'rgba(0,0,0,0.3)';
@@ -1248,6 +1257,15 @@ function renderFortressView(view) {
 
   const isMyTurn = view.players[view.turnIdx]?.id === state.myId;
   const canAct = isMyTurn && view.phase === 'aiming';
+
+  // Sync client-side fuel tracking from server state
+  if (isMyTurn) {
+    const cp = view.players[view.turnIdx];
+    if (cp) {
+      const fuel = cp.moveFuel !== undefined ? cp.moveFuel : FORT_MOVE_FUEL;
+      fortMovedThisTurn = FORT_MOVE_FUEL - fuel;
+    }
+  }
 
   // Round badge
   const roundBadge = document.getElementById('fortRoundBadge');
