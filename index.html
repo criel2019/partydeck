@@ -232,9 +232,11 @@
         <button class="pk-action-btn pk-btn-fold" onclick="pokerAction('fold')">폴드</button>
       </div>
       <div class="pk-raise-area" id="raiseSliderArea">
+        <div class="pk-raise-amount-row">
+          <span class="pk-raise-amount" id="raiseAmountDisplay">100</span>
+        </div>
         <div class="pk-raise-row">
           <input type="range" class="pk-raise-slider" id="raiseSlider" min="0" max="1000" value="100">
-          <span class="pk-raise-amount" id="raiseAmountDisplay">100</span>
         </div>
         <div class="pk-raise-btns">
           <button class="pk-action-btn pk-btn-raise" onclick="confirmRaise()">레이즈 확인</button>
