@@ -21,9 +21,9 @@
  *  Host -> Client:  { type: 'mf-result', winner, message }
  *  Client -> Host:  { type: 'mf-action', action, targetId, extra }
  *  Client -> Host:  { type: 'mf-vote', targetId }
- *  Client -> Host:  { type: 'mf-chat', text }
+ *  Client -> Host:  { type: 'mf-chat', text, partnerId }
  *  Client -> Host:  { type: 'mf-extend' }
- *  Client -> Host:  { type: 'mf-skip-vote' }
+ *  Client -> Host:  { type: 'mf-vote-skip' }
  */
 
 // ========================= CONSTANTS =========================
@@ -69,6 +69,23 @@ let mfTimerTick = 0;   // tick counter for periodic sync
 let mfClientTimer = null; // interval id (client local countdown)
 let mfSelectedTarget = null;
 let mfUseSnipe = false;
+let mfActiveChatPartner = null;
+
+// ========================= CHAT UTILITIES ======================
+
+function mfChatKey(id1, id2) {
+  return [id1, id2].sort().join('_');
+}
+
+function mfCanChat(player, partner, ms) {
+  if (!player.alive || !partner.alive) return false;
+  const myRole = player.activeRole, theirRole = partner.activeRole;
+  if (myRole === 'mafia' && theirRole === 'mafia') return true;
+  if (myRole === 'mafia' && theirRole === 'spy') return partner.spyContactedMafia.includes(player.id);
+  if (myRole === 'spy' && theirRole === 'mafia') return player.spyContactedMafia.includes(partner.id);
+  if (myRole === 'lover' && player.loverPartnerId === partner.id) return true;
+  return false;
+}
 
 // ========================= ROLE CONFIG =========================
 let mfConfig = {
@@ -343,6 +360,7 @@ function mfStartGame() {
       lives: roles[i] === 'soldier' ? 2 : 1,
       snipesLeft: roles[i] === 'mafia' ? 1 : 0,
       spyFoundMafia: false,
+      spyContactedMafia: [],
       baeksuInherited: false,
       senatorRevealed: false,
       loverPartnerId: null,
@@ -350,15 +368,16 @@ function mfStartGame() {
     nightActions: {},
     killLog: [],
     deathOrder: [],
-    chatMessages: [],
+    privateChats: {},
     spyKnownRoles: {},
     votes: {},
     extensionUsed: {},
     extensionAdded: false,
     timer: MF_REVEAL_DURATION,
     announcements: [],
-    discussSkipVotes: {},
-    discussSkipPassed: false,
+    voteSkipVotes: {},
+    voteSkipPassed: false,
+    _discussToVoteScheduled: false,
   };
 
   // Assign lover partners
@@ -369,6 +388,7 @@ function mfStartGame() {
     p1.loverPartnerId = p0.id;
   }
 
+  mfActiveChatPartner = null;
   mfBroadcastState();
   showScreen('mafiaGame');
   mfStartTimer();
@@ -439,13 +459,14 @@ function mfAdvancePhase() {
     mfState.votes = {};
     mfState.extensionUsed = {};
     mfState.extensionAdded = false;
-    mfState.discussSkipVotes = {};
-    mfState.discussSkipPassed = false;
+    mfState.voteSkipVotes = {};
+    mfState.voteSkipPassed = false;
     mfSetPhaseTimer(MF_DISCUSS_DURATION);
   }
   else if (phase === 'day-discuss') {
+    // Votes carry over from discuss phase (don't reset)
+    mfState._discussToVoteScheduled = false;
     mfState.phase = 'day-vote';
-    mfState.votes = {};
     mfSetPhaseTimer(MF_VOTE_DURATION);
   }
   else if (phase === 'day-vote') {
@@ -547,6 +568,9 @@ function mfResolveNight() {
       const isMafia = (target.activeRole === 'mafia');
       if (isMafia) {
         spyPlayer.spyFoundMafia = true;
+        if (!spyPlayer.spyContactedMafia.includes(target.id)) {
+          spyPlayer.spyContactedMafia.push(target.id);
+        }
       }
       spyResult = { targetId: spyTargetId, targetName: target.name, isMafia };
     }
@@ -731,9 +755,7 @@ function mfResolveVote() {
 
   // Count votes
   const counts = {};
-  let skipCount = 0;
   Object.values(votes).forEach(v => {
-    if (v === 'skip') { skipCount++; return; }
     counts[v] = (counts[v] || 0) + 1;
   });
 
@@ -751,7 +773,7 @@ function mfResolveVote() {
 
   const announcements = [];
 
-  if (candidates.length === 1 && maxVotes > skipCount) {
+  if (candidates.length === 1 && maxVotes > 0) {
     const targetId = candidates[0];
     const target = ms.players.find(p => p.id === targetId);
 
@@ -817,7 +839,7 @@ function mfResolveVote() {
     announcements.push({
       type: 'safe',
       icon: '⚖️',
-      text: '과반수 건너뛰기로 아무도 처형되지 않았습니다.'
+      text: '투표가 없어 아무도 처형되지 않았습니다.'
     });
   }
 
@@ -924,8 +946,8 @@ function mfBuildView(playerId) {
       pv.roleName = '마피아';
     }
 
-    // Spy who found mafia can see mafia
-    if (myRole === 'spy' && me.spyFoundMafia && p.activeRole === 'mafia') {
+    // Spy can see mafia they have contacted
+    if (myRole === 'spy' && me.spyContactedMafia.includes(p.id) && p.activeRole === 'mafia') {
       pv.role = 'mafia';
       pv.roleEmoji = '🔪';
       pv.roleName = '마피아';
@@ -956,7 +978,7 @@ function mfBuildView(playerId) {
     }
 
     // Vote counts
-    if (ms.phase === 'day-vote' || ms.phase === 'vote-result') {
+    if (ms.phase === 'day-discuss' || ms.phase === 'day-vote' || ms.phase === 'vote-result') {
       let vc = 0;
       Object.values(ms.votes).forEach(v => { if (v === p.id) vc++; });
       pv.voteCount = vc;
@@ -994,7 +1016,7 @@ function mfBuildView(playerId) {
     personalEvents.push({
       type: 'info',
       icon: '🕵️',
-      text: `${r.targetName}님은 ${r.isMafia ? '마피아입니다! 이제 마피아와 대화할 수 있습니다.' : '마피아가 아닙니다.'}`
+      text: `${r.targetName}님은 ${r.isMafia ? '마피아입니다! 이제 이 마피아와 1:1 대화할 수 있습니다.' : '마피아가 아닙니다.'}`
     });
   }
 
@@ -1029,12 +1051,63 @@ function mfBuildView(playerId) {
     });
   }
 
-  // Can this player chat with mafia team?
-  const canChat = (myRole === 'mafia') ||
-                  (myRole === 'spy' && me.spyFoundMafia);
+  // Build chat partners list
+  const chatPartners = [];
+  const chatData = {};
 
-  // What chat messages to show
-  const chatView = canChat ? ms.chatMessages : [];
+  // Helper: add a contact-based (spy↔mafia) chat partner
+  function addContactPartner(p, contacted, emoji, role) {
+    const key = mfChatKey(playerId, p.id);
+    chatPartners.push({
+      id: p.id,
+      name: contacted ? p.name : '???',
+      avatar: contacted ? p.avatar : '❓',
+      emoji, role,
+      canChat: contacted,
+      reason: contacted ? null : '아직 접선하지 않았습니다',
+      isLover: false, isDead: !p.alive,
+    });
+    chatData[p.id] = contacted ? (ms.privateChats[key] || []) : [];
+  }
+
+  if (myRole === 'mafia') {
+    // Other mafia — always visible
+    ms.players.forEach(p => {
+      if (p.id === playerId || p.activeRole !== 'mafia') return;
+      const key = mfChatKey(playerId, p.id);
+      chatPartners.push({
+        id: p.id, name: p.name, avatar: p.avatar,
+        emoji: MF_ROLES.mafia.emoji, role: '마피아',
+        canChat: true, reason: null, isLover: false, isDead: !p.alive,
+      });
+      chatData[p.id] = ms.privateChats[key] || [];
+    });
+    // Spy — contact required (spy must have found this mafia)
+    ms.players.forEach(p => {
+      if (p.activeRole !== 'spy') return;
+      addContactPartner(p, p.spyContactedMafia.includes(playerId), MF_ROLES.spy.emoji, '스파이');
+    });
+  } else if (myRole === 'spy') {
+    // Each mafia — contact required (spy must have found them)
+    ms.players.forEach(p => {
+      if (p.activeRole !== 'mafia') return;
+      addContactPartner(p, me.spyContactedMafia.includes(p.id), MF_ROLES.mafia.emoji, '마피아');
+    });
+  }
+
+  // Lover partner chat
+  if (myRole === 'lover' && me.loverPartnerId) {
+    const partner = ms.players.find(p => p.id === me.loverPartnerId);
+    if (partner) {
+      const key = mfChatKey(playerId, partner.id);
+      chatPartners.push({
+        id: partner.id, name: partner.name, avatar: partner.avatar,
+        emoji: MF_ROLES.lover.emoji, role: '연인',
+        canChat: me.alive, reason: null, isLover: true, isDead: !partner.alive,
+      });
+      chatData[partner.id] = ms.privateChats[key] || [];
+    }
+  }
 
   // Spy dead role info
   const spyDeadRoles = (myRole === 'spy') ? ms.spyKnownRoles : {};
@@ -1086,15 +1159,15 @@ function mfBuildView(playerId) {
     personalEvents,
     nightAction,
     nightActionDone,
-    canChat,
-    chatMessages: chatView,
+    chatPartners,
+    chatData,
     spyDeadRoles,
     votes: ms.votes,
     mySnipesLeft,
     loverPartnerName,
-    discussSkipVotes: ms.discussSkipVotes || {},
-    discussSkipCount: Object.keys(ms.discussSkipVotes || {}).length,
-    discussSkipPassed: ms.discussSkipPassed || false,
+    voteSkipVotes: ms.voteSkipVotes || {},
+    voteSkipCount: Object.keys(ms.voteSkipVotes || {}).length,
+    voteSkipPassed: ms.voteSkipPassed || false,
     aliveCount: ms.players.filter(p => p.alive).length,
   };
 }
@@ -1132,13 +1205,35 @@ function mfProcessAction(senderId, data) {
     }
   }
   else if (data.action === 'vote') {
-    if (ms.phase !== 'day-vote') return;
+    if (ms.phase !== 'day-vote' && ms.phase !== 'day-discuss') return;
     const player = ms.players.find(p => p.id === senderId && p.alive);
     if (!player) return;
 
+    // Individual skip votes are removed
+    if (data.targetId === 'skip') return;
+
     // Validate vote target
-    if(data.targetId !== 'skip' && !ms.players.find(p => p.id === data.targetId && p.alive)) return;
+    if (!ms.players.find(p => p.id === data.targetId && p.alive)) return;
     ms.votes[senderId] = data.targetId;
+
+    // If voting during discuss phase, transition to vote phase
+    if (ms.phase === 'day-discuss') {
+      // Prevent duplicate transition (use flag to avoid multiple setTimeout)
+      if (!ms._discussToVoteScheduled) {
+        ms._discussToVoteScheduled = true;
+        clearInterval(mfTimer);
+        setTimeout(() => {
+          if (!mfState || mfState.phase !== 'day-discuss') return;
+          ms._discussToVoteScheduled = false;
+          // Carry over existing votes (don't reset)
+          ms.phase = 'day-vote';
+          mfSetPhaseTimer(MF_VOTE_DURATION);
+          mfBroadcastState();
+        }, 1000);
+      }
+      mfBroadcastState();
+      return;
+    }
 
     // Check if all alive players voted
     const aliveCount = ms.players.filter(p => p.alive).length;
@@ -1150,17 +1245,23 @@ function mfProcessAction(senderId, data) {
     }
   }
   else if (data.action === 'chat') {
-    // Mafia team chat
+    // Private 1:1 chat
     const player = ms.players.find(p => p.id === senderId);
     if (!player) return;
-    const role = player.activeRole;
-    const canChat = (role === 'mafia') || (role === 'spy' && player.spyFoundMafia);
-    if (!canChat) return;
+    const partnerId = data.partnerId;
+    if (!partnerId) return;
+    const partner = ms.players.find(p => p.id === partnerId);
+    if (!partner) return;
+
+    // Validate chat permission
+    if (!mfCanChat(player, partner, ms)) return;
 
     const text = (typeof data.text === 'string' ? data.text : '').slice(0, 200);
     if(!text) return;
 
-    ms.chatMessages.push({
+    const key = mfChatKey(senderId, partnerId);
+    if (!ms.privateChats[key]) ms.privateChats[key] = [];
+    ms.privateChats[key].push({
       sender: senderId,
       senderName: player.name,
       text,
@@ -1182,35 +1283,41 @@ function mfProcessAction(senderId, data) {
     const player = ms.players.find(p => p.id === senderId);
     // Broadcast will update timer display
   }
-  else if (data.action === 'discuss-skip') {
-    if (ms.phase !== 'day-discuss') return;
-    if (ms.discussSkipPassed) return; // Already passed, transitioning
+  else if (data.action === 'vote-skip') {
+    if (ms.phase !== 'day-vote') return;
+    if (ms.voteSkipPassed) return; // Already passed, transitioning
     const player = ms.players.find(p => p.id === senderId && p.alive);
     if (!player) return;
 
     // Toggle skip vote
-    if (ms.discussSkipVotes[senderId]) {
-      delete ms.discussSkipVotes[senderId];
+    if (ms.voteSkipVotes[senderId]) {
+      delete ms.voteSkipVotes[senderId];
     } else {
-      ms.discussSkipVotes[senderId] = true;
+      ms.voteSkipVotes[senderId] = true;
     }
 
     // Check majority
     const aliveCount = ms.players.filter(p => p.alive).length;
-    const skipCount = Object.keys(ms.discussSkipVotes).length;
+    const skipCount = Object.keys(ms.voteSkipVotes).length;
 
     if (skipCount > aliveCount / 2) {
-      // Majority skip — show result briefly, then advance to vote
-      ms.discussSkipPassed = true;
+      // Majority vote-skip — cancel vote, go to night
+      ms.voteSkipPassed = true;
       mfBroadcastState();
       clearInterval(mfTimer);
       setTimeout(() => {
-        if (!mfState || mfState.phase !== 'day-discuss') return;
-        ms.phase = 'day-vote';
+        if (!mfState || mfState.phase !== 'day-vote') return;
+        ms.announcements = [{
+          type: 'safe',
+          icon: '⏭️',
+          text: '투표가 스킵되었습니다. 밤으로 넘어갑니다.'
+        }];
+        ms._nightResults = null;
         ms.votes = {};
-        mfSetPhaseTimer(MF_VOTE_DURATION);
+        ms.phase = 'vote-result';
+        mfSetPhaseTimer(MF_VOTE_RESULT_DURATION);
         mfBroadcastState();
-      }, 2000);
+      }, 1500);
     } else {
       mfBroadcastState();
     }
@@ -1328,6 +1435,7 @@ function mfCloseResult() {
   document.getElementById('mfResultOverlay').style.display = 'none';
   mfState = null;
   mfView = null;
+  mfActiveChatPartner = null;
   clearInterval(mfTimer);
   mfStopClientTimer();
   returnToLobby();
@@ -1338,6 +1446,7 @@ function mfLeaveGame() {
   mfStopClientTimer();
   mfState = null;
   mfView = null;
+  mfActiveChatPartner = null;
   leaveGame();
 }
 
@@ -1471,8 +1580,8 @@ function mfRenderView() {
       html += mfRenderPlayerGrid(v, false);
     }
 
-    // Mafia/Spy Chat
-    if (v.canChat) {
+    // Chat panel
+    if (v.chatPartners && v.chatPartners.length > 0) {
       html += mfRenderChat(v);
     }
 
@@ -1526,13 +1635,15 @@ function mfRenderView() {
     if (!v.isAlive) {
       html += `<div class="mf-spectator-bar">👻 당신은 사망했습니다. 관전 중...</div>`;
     }
-    html += mfRenderPlayerGrid(v, false);
+    html += mfRenderPlayerGrid(v, v.isAlive && !v.votes[v.myId]);
 
-    // Skip vote panel (show to everyone for transparency)
-    html += mfRenderSkipVotePanel(v);
+    // Show vote panel if someone has voted
+    if (Object.keys(v.votes).length > 0) {
+      html += mfRenderVotePanel(v);
+    }
 
-    // Mafia/Spy Chat (even during day for coordination)
-    if (v.canChat) {
+    // Chat panel
+    if (v.chatPartners && v.chatPartners.length > 0) {
       html += mfRenderChat(v);
     }
 
@@ -1555,11 +1666,6 @@ function mfRenderView() {
 
   // ============ DAY VOTE PHASE ============
   else if (v.phase === 'day-vote') {
-    // Show skip vote result if discussion was skipped
-    if (v.discussSkipPassed) {
-      html += mfRenderSkipVotePanel(v, true);
-    }
-
     if (!v.isAlive) {
       html += `<div class="mf-spectator-bar">👻 사망한 플레이어는 투표할 수 없습니다.</div>`;
     }
@@ -1567,6 +1673,14 @@ function mfRenderView() {
 
     // Vote status panel
     html += mfRenderVotePanel(v);
+
+    // Vote skip panel
+    html += mfRenderVoteSkipPanel(v);
+
+    // Chat panel
+    if (v.chatPartners && v.chatPartners.length > 0) {
+      html += mfRenderChat(v);
+    }
   }
 
   // ============ VOTE RESULT PHASE ============
@@ -1669,30 +1783,60 @@ function mfRenderPlayerGrid(v, selectable, mode) {
 }
 
 function mfRenderChat(v) {
+  const partners = v.chatPartners || [];
+  if (partners.length === 0) return '';
+
+  // Auto-select first available partner if none selected
+  if (!mfActiveChatPartner || !partners.find(p => p.id === mfActiveChatPartner)) {
+    const firstActive = partners.find(p => p.canChat);
+    mfActiveChatPartner = firstActive ? firstActive.id : partners[0].id;
+  }
+
+  const activePartner = partners.find(p => p.id === mfActiveChatPartner) || partners[0];
+  const messages = (v.chatData && v.chatData[mfActiveChatPartner]) || [];
+
+  // Build tabs
+  let tabsHtml = '';
+  partners.forEach(p => {
+    const isActive = p.id === mfActiveChatPartner;
+    const tabClasses = ['mf-chat-tab'];
+    if (isActive) tabClasses.push('active');
+    if (!p.canChat) tabClasses.push('disabled');
+    if (p.isDead) tabClasses.push('dead');
+    if (p.isLover) tabClasses.push('lover');
+    tabsHtml += `<button class="${tabClasses.join(' ')}" data-partner="${escapeHTML(p.id)}" onclick="mfSelectChatPartner(this.dataset.partner)">${p.emoji} ${escapeHTML(p.name)}</button>`;
+  });
+
+  // Build messages
+  let msgsHtml = '';
+  if (!activePartner.canChat) {
+    msgsHtml = `<div class="mf-chat-disabled-msg">${activePartner.reason || '채팅할 수 없습니다'}</div>`;
+  } else {
+    messages.forEach(m => {
+      const isMe = m.sender === v.myId;
+      msgsHtml += `
+        <div class="mf-chat-msg${isMe ? ' me' : ''}">
+          <span class="sender">${escapeHTML(m.senderName)}:</span>
+          <span class="text"> ${escapeHTML(m.text)}</span>
+        </div>
+      `;
+    });
+  }
+
+  const inputDisabled = (!activePartner.canChat || !v.isAlive || activePartner.isDead) ? 'disabled' : '';
+
   let html = `
     <div class="mf-chat-panel">
       <div class="mf-chat-header">
-        <span>🔪</span>
-        <span>마피아 팀 채팅</span>
+        <span>💬</span>
+        <span>비밀 채팅</span>
       </div>
-      <div class="mf-chat-messages" id="mfChatMessages">
-  `;
-
-  v.chatMessages.forEach(m => {
-    html += `
-      <div class="mf-chat-msg">
-        <span class="sender">${escapeHTML(m.senderName)}:</span>
-        <span class="text"> ${escapeHTML(m.text)}</span>
-      </div>
-    `;
-  });
-
-  html += `
-      </div>
+      <div class="mf-chat-tabs">${tabsHtml}</div>
+      <div class="mf-chat-messages" id="mfChatMessages">${msgsHtml}</div>
       <div class="mf-chat-input-row">
-        <input type="text" class="mf-chat-input" id="mfChatInput" placeholder="메시지 입력..." maxlength="100"
-               onkeydown="if(event.key==='Enter')mfSendChat()">
-        <button class="mf-chat-send-btn" onclick="mfSendChat()">전송</button>
+        <input type="text" class="mf-chat-input" id="mfChatInput" placeholder="${inputDisabled ? '채팅 불가' : '메시지 입력...'}" maxlength="100"
+               ${inputDisabled} onkeydown="if(event.key==='Enter')mfSendChat()">
+        <button class="mf-chat-send-btn" onclick="mfSendChat()" ${inputDisabled}>전송</button>
       </div>
     </div>
   `;
@@ -1702,9 +1846,7 @@ function mfRenderChat(v) {
 function mfRenderVotePanel(v) {
   // Count votes per target
   const counts = {};
-  let skipCount = 0;
   Object.values(v.votes).forEach(t => {
-    if (t === 'skip') { skipCount++; return; }
     counts[t] = (counts[t] || 0) + 1;
   });
 
@@ -1735,41 +1877,24 @@ function mfRenderVotePanel(v) {
   });
 
   html += `</div>`;
-
-  if (skipCount > 0) {
-    html += `<div class="mf-skip-count">건너뛰기: ${skipCount}표</div>`;
-  }
-
   html += `</div>`;
   return html;
 }
 
-function mfRenderSkipVotePanel(v, compact) {
-  const skipCount = v.discussSkipCount || 0;
+function mfRenderVoteSkipPanel(v) {
+  const skipCount = v.voteSkipCount || 0;
   const aliveCount = v.aliveCount || 1;
   const majority = Math.floor(aliveCount / 2) + 1;
   const pct = aliveCount > 0 ? Math.round((skipCount / aliveCount) * 100) : 0;
-  const passed = v.discussSkipPassed;
-
-  if (compact) {
-    // Compact version for vote phase — just a small info bar
-    return `
-      <div class="mf-skip-vote-panel compact passed">
-        <div class="mf-skip-vote-header">
-          <span>⏭️ 토론 스킵 통과</span>
-          <span class="mf-skip-vote-count">${skipCount} / ${aliveCount}명 찬성</span>
-        </div>
-      </div>
-    `;
-  }
+  const passed = v.voteSkipPassed;
 
   const passedClass = passed ? ' passed' : '';
-  const statusText = passed ? '✅ 스킵 통과! 투표로 이동합니다...' : '';
+  const statusText = passed ? '✅ 투표 스킵 통과! 밤으로 넘어갑니다...' : '';
 
   return `
     <div class="mf-skip-vote-panel${passedClass}">
       <div class="mf-skip-vote-header">
-        <span>⏭️ 토론 스킵 투표</span>
+        <span>⏭️ 투표 스킵</span>
         <span class="mf-skip-vote-count">${skipCount} / ${majority} (과반수)</span>
       </div>
       <div class="mf-skip-vote-bar-track">
@@ -1825,14 +1950,9 @@ function mfRenderActionArea(v) {
   else if (v.phase === 'day-discuss') {
     if (!v.isAlive) {
       msg = '👻 관전 모드';
-    } else if (v.discussSkipPassed) {
-      msg = '⏭️ 토론 스킵이 통과되었습니다! 투표로 이동합니다...';
     } else {
-      msg = '☀️ 의심되는 사람에 대해 토론하세요!';
-      const mySkipped = v.discussSkipVotes && v.discussSkipVotes[v.myId];
-      const skipLabel = mySkipped ? '⏭️ 스킵 취소' : '⏭️ 토론 스킵';
-      const skipClass = mySkipped ? 'danger' : 'secondary';
-      btns += `<button class="mf-action-btn ${skipClass}" onclick="mfToggleDiscussSkip()">${skipLabel}</button>`;
+      msg = '☀️ 의심되는 사람에 대해 토론하세요! 투표하면 토론이 즉시 종료됩니다.';
+      btns += `<button class="mf-action-btn primary" id="mfVoteBtn" onclick="mfConfirmVote()" disabled>🗳️ 투표</button>`;
       btns += `<button class="mf-action-btn extend" onclick="mfRequestExtend()">⏰ 연장</button>`;
     }
   }
@@ -1844,7 +1964,13 @@ function mfRenderActionArea(v) {
     } else {
       msg = '🗳️ 처형할 사람을 선택하고 투표하세요!';
       btns += `<button class="mf-action-btn primary" id="mfVoteBtn" onclick="mfConfirmVote()" disabled>🗳️ 투표</button>`;
-      btns += `<button class="mf-action-btn secondary" onclick="mfSkipVote()">건너뛰기</button>`;
+    }
+    // Vote skip toggle (shown even after voting)
+    if (v.isAlive && !v.voteSkipPassed) {
+      const mySkipped = v.voteSkipVotes && v.voteSkipVotes[v.myId];
+      const skipLabel = mySkipped ? '⏭️ 스킵 취소' : '⏭️ 투표 스킵';
+      const skipClass = mySkipped ? 'danger' : 'secondary';
+      btns += `<button class="mf-action-btn ${skipClass}" onclick="mfToggleVoteSkip()">${skipLabel}</button>`;
     }
   }
   else if (v.phase === 'vote-result') {
@@ -1886,7 +2012,7 @@ function mfAttachCardListeners(v) {
 function mfRestoreSelection(v) {
   // If player had selected a target before re-render, restore it
   if (!mfSelectedTarget) return;
-  if (v.nightActionDone || (v.phase === 'day-vote' && v.votes[v.myId])) return;
+  if (v.nightActionDone || ((v.phase === 'day-vote' || v.phase === 'day-discuss') && v.votes[v.myId])) return;
 
   const card = document.querySelector(`.mf-player-card.selectable[data-pid="${mfSelectedTarget}"]`);
   if (card) {
@@ -1980,32 +2106,33 @@ function mfConfirmVote() {
   mfSelectedTarget = null;
 }
 
-function mfSkipVote() {
-  const data = {
-    type: 'mf-action',
-    action: 'vote',
-    targetId: 'skip',
-  };
+function mfSelectChatPartner(partnerId) {
+  // Preserve chat input value across re-render
+  const prevInput = document.getElementById('mfChatInput');
+  const savedText = prevInput ? prevInput.value : '';
 
-  if (state.isHost) {
-    mfProcessAction(state.myId, data);
-  } else {
-    sendToHost(data);
+  mfActiveChatPartner = partnerId;
+  if (mfView) mfRenderView();
+
+  const newInput = document.getElementById('mfChatInput');
+  if (newInput && savedText) {
+    newInput.value = savedText;
+    newInput.focus();
   }
-
-  showToast('건너뛰기 투표 완료');
 }
 
 function mfSendChat() {
   const input = document.getElementById('mfChatInput');
-  if (!input) return;
+  if (!input || input.disabled) return;
   const text = input.value.trim();
   if (!text) return;
+  if (!mfActiveChatPartner) return;
 
   const data = {
     type: 'mf-action',
     action: 'chat',
     text,
+    partnerId: mfActiveChatPartner,
   };
 
   if (state.isHost) {
@@ -2032,10 +2159,10 @@ function mfRequestExtend() {
   showToast('연장 요청!');
 }
 
-function mfToggleDiscussSkip() {
+function mfToggleVoteSkip() {
   const data = {
     type: 'mf-action',
-    action: 'discuss-skip',
+    action: 'vote-skip',
   };
 
   if (state.isHost) {

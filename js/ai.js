@@ -688,7 +688,7 @@ function aiMafia() {
   } else if (mfState.phase === 'day-vote') {
     aiMafiaVote();
   }
-  // Other phases are timer-driven, no AI action needed
+  // day-discuss: AI does NOT vote early (respects human discussion time)
 }
 
 function aiMafiaNight() {
@@ -760,9 +760,9 @@ function aiMafiaVote() {
     if (!p.id.startsWith('ai-')) return;
     if (ms.votes[p.id]) return; // already voted
 
-    // Random vote: either a random alive player or 'skip'
-    if (Math.random() < 0.2) {
-      mfProcessAction(p.id, { action: 'vote', targetId: 'skip' });
+    // 15% chance to vote-skip instead of voting
+    if (Math.random() < 0.15) {
+      mfProcessAction(p.id, { action: 'vote-skip' });
     } else {
       const others = alivePlayers.filter(t => t.id !== p.id);
       if (others.length > 0) {
@@ -793,6 +793,34 @@ function aiFortress() {
     if (d < minDist) { minDist = d; target = e; }
   });
 
+  // AI sometimes moves before firing (30% chance, or if very close to edge)
+  const shouldMove = Math.random() < 0.3 || current.x < 40 || current.x > FORT_CANVAS_W - 40;
+  let moveSteps = 0;
+
+  if (shouldMove && current.moveFuel > 0) {
+    // Decide direction: move away from edge, or towards better position
+    let moveDir = 0;
+    if (current.x < 40) moveDir = 1;
+    else if (current.x > FORT_CANVAS_W - 40) moveDir = -1;
+    else moveDir = Math.random() > 0.5 ? 1 : -1;
+
+    moveSteps = Math.min(
+      Math.floor(Math.random() * 5) + 1,
+      Math.floor(current.moveFuel / FORT_MOVE_SPEED)
+    );
+
+    // Execute moves with delays
+    for (let i = 0; i < moveSteps; i++) {
+      const mt = setTimeout(() => {
+        if (!fortState || fortState.phase !== 'aiming') return;
+        const cp = fortState.players[fortState.turnIdx];
+        if (!cp || cp.id !== current.id) return;
+        handleFortMove(state.myId, { type: 'fort-move', dir: moveDir });
+      }, 300 + i * 80);
+      _aiTimers.push(mt);
+    }
+  }
+
   // Calculate angle: right = ~45, left = ~135
   const dx = target.x - current.x;
   let baseAngle;
@@ -819,7 +847,8 @@ function aiFortress() {
   const angle = Math.round(baseAngle);
   const power = Math.round(basePower);
 
-  // Delay then fire
+  // Delay then fire (wait for moves to complete)
+  const fireDelay = 800 + Math.random() * 600 + moveSteps * 100;
   const t = setTimeout(() => {
     if (!practiceMode || !fortState) return;
     if (fortState.phase !== 'aiming') return;
@@ -831,7 +860,7 @@ function aiFortress() {
       angle: angle,
       power: power,
     });
-  }, 800 + Math.random() * 600);
+  }, fireDelay);
   _aiTimers.push(t);
 }
 
