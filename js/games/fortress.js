@@ -585,9 +585,9 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind) {
   let vx = speed * Math.cos(rad);
   let vy = -speed * Math.sin(rad);
 
-  // Start from barrel tip (not tank body)
-  let x = startX + FORT_BARREL_LEN * Math.cos(rad);
-  let y = startY - FORT_BARREL_LEN * Math.sin(rad);
+  // Start from turret center (consistent regardless of angle)
+  let x = startX;
+  let y = startY;
   const path = [{ x, y, vx, vy }];
   const terrain = fortState ? fortState.terrain :
     (window._fortView ? window._fortView.terrain : new Array(FORT_CANVAS_W).fill(380));
@@ -1126,7 +1126,7 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
 
   // Barrel — compensate for terrain slope so visual matches absolute physics angle
   let angle = 45;
-  if (isCurrentTurn && player.id === state.myId) {
+  if (player.id === state.myId) {
     angle = fortLocalAngle;
   }
 
