@@ -194,11 +194,66 @@
 .fort-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: rgba(0,0,0,0.5);
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.55);
   backdrop-filter: blur(8px);
   z-index: 10;
+}
+
+/* Move buttons group */
+.fort-move-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.fort-move-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+
+.fort-move-btn:active:not(:disabled) {
+  background: rgba(79, 195, 247, 0.4);
+  transform: scale(0.92);
+}
+
+.fort-move-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.fort-fuel-bar {
+  width: 6px;
+  height: 28px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.fort-fuel-fill {
+  width: 100%;
+  border-radius: 3px;
+  background: linear-gradient(0deg, #4fc3f7, #81d4fa);
+  transition: height 0.2s ease;
 }
 
 .fort-slider-group {
@@ -254,18 +309,19 @@
 }
 
 .fort-fire-btn {
-  min-width: 70px;
-  height: 52px;
+  min-width: 64px;
+  height: 48px;
   border: none;
-  border-radius: 14px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #ff4500, #ff6b35);
   color: #fff;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(255,69,0,0.4);
   transition: transform 0.15s, opacity 0.2s;
   flex-shrink: 0;
+  letter-spacing: 1px;
 }
 
 .fort-fire-btn:active:not(:disabled) {

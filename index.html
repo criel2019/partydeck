@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/common.css">
-<link rel="stylesheet" href="css/games/mafia.css">
+<link rel="stylesheet" href="css/games/mafia.css?v=3">
 <link rel="stylesheet" href="css/games/truth.css">
 <link rel="stylesheet" href="css/games/quickdraw.css">
 <link rel="stylesheet" href="css/games/roulette.css">
@@ -987,6 +987,13 @@
     <canvas id="fortressCanvas" width="800" height="500"></canvas>
   </div>
   <div class="fort-controls" id="fortControls">
+    <div class="fort-move-group">
+      <button class="fort-move-btn" id="fortMoveLeft" ontouchstart="fortStartMove(-1)" ontouchend="fortStopMove()" onmousedown="fortStartMove(-1)" onmouseup="fortStopMove()" onmouseleave="fortStopMove()">◀</button>
+      <div class="fort-fuel-bar">
+        <div class="fort-fuel-fill" id="fortFuelFill" style="width:100%"></div>
+      </div>
+      <button class="fort-move-btn" id="fortMoveRight" ontouchstart="fortStartMove(1)" ontouchend="fortStopMove()" onmousedown="fortStartMove(1)" onmouseup="fortStopMove()" onmouseleave="fortStopMove()">▶</button>
+    </div>
     <div class="fort-slider-group">
       <label class="fort-slider-label">각도: <span id="fortAngleValue">45</span>°</label>
       <input type="range" class="fort-slider fort-angle-slider" id="fortAngleSlider"
@@ -997,7 +1004,7 @@
       <input type="range" class="fort-slider fort-power-slider" id="fortPowerSlider"
              min="10" max="100" value="50">
     </div>
-    <button class="btn fort-fire-btn" id="fortFireBtn" onclick="fortFire()">💥 발사!</button>
+    <button class="btn fort-fire-btn" id="fortFireBtn" onclick="fortFire()">발사!</button>
   </div>
   <div class="fort-gameover" id="fortGameOver" style="display:none;">
     <div class="fort-gameover-box">
@@ -1024,7 +1031,7 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="js/core.js?v=2"></script>
 <script src="js/games/poker.js?v=2"></script>
-<script src="js/games/mafia.js?v=2"></script>
+<script src="js/games/mafia.js?v=3"></script>
 <script src="js/games/truth.js?v=2"></script>
 <script src="js/games/quickdraw.js?v=2"></script>
 <script src="js/games/roulette.js?v=2"></script>
@@ -1034,7 +1041,7 @@
 <script src="js/games/ecard.js?v=2"></script>
 <script src="js/games/sutda.js?v=2"></script>
 <script src="js/games/fortress.js?v=2"></script>
-<script src="js/ai.js?v=2"></script>
+<script src="js/ai.js?v=3"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>
 </html>
