@@ -1131,7 +1131,7 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
   }
 
   const absRad = angle * Math.PI / 180;
-  const localRad = absRad - slope;
+  const localRad = absRad + slope;
   const barrelEndX = x + FORT_BARREL_LEN * Math.cos(localRad);
   const barrelEndY = (bodyY + 2) - FORT_BARREL_LEN * Math.sin(localRad);
 
