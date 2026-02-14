@@ -32,9 +32,9 @@ function startPoker() {
   // Deal
   for(let i = 0; i < n; i++) ps.players[i].cards = [deck[ps.deckIdx++], deck[ps.deckIdx++]];
   
-  // Blinds
-  const sbI = (ps.dealerIdx + 1) % n;
-  const bbI = (ps.dealerIdx + 2) % n;
+  // Blinds (heads-up: dealer=SB, opponent=BB)
+  const sbI = n === 2 ? ps.dealerIdx : (ps.dealerIdx + 1) % n;
+  const bbI = n === 2 ? (ps.dealerIdx + 1) % n : (ps.dealerIdx + 2) % n;
   
   const sbAmt = Math.min(ps.sb, ps.players[sbI].chips);
   ps.players[sbI].bet = sbAmt;
@@ -66,7 +66,7 @@ function findNextActive(ps, from) {
     if(!p.folded && !p.allIn && p.chips > 0) return idx;
     idx = (idx + 1) % ps.players.length;
   }
-  return from;
+  return -1; // no active player found
 }
 
 function broadcastPokerState() {
@@ -105,7 +105,7 @@ function renderPokerView(ps) {
     const betStr = p.bet > 0 ? `<span class="pk-opp-bet">${p.bet}</span>` : (p.folded ? '<span class="pk-opp-bet">폴드</span>' : '');
     return `<div class="pk-opp-slot ${p.folded ? 'fold-overlay' : ''}">
       <div class="pk-opp-avatar ${isTurn ? 'active-turn' : ''}" style="background:${PLAYER_COLORS[ci % PLAYER_COLORS.length]};">${p.avatar}</div>
-      <span class="pk-opp-label">${p.name}</span>
+      <span class="pk-opp-label">${escapeHTML(p.name)}</span>
       <span class="pk-opp-chips">${p.chips}</span>${betStr}
       <div class="pk-opp-cards">${cardsHtml}</div>
     </div>`;
@@ -127,6 +127,10 @@ function renderPokerView(ps) {
 
   document.getElementById('myChipsDisplay').textContent = (me?.chips || 0).toLocaleString();
   document.getElementById('potAmount').textContent = ps.pot.toLocaleString();
+
+  // Always hide raise area on state update (reset raise UI)
+  document.getElementById('raiseSliderArea').classList.remove('visible');
+  document.getElementById('actionBar').style.display = '';
 
   const phaseNames = { preflop:'프리플랍', flop:'플랍', turn:'턴', river:'리버', showdown:'쇼다운' };
   document.getElementById('roundDisplay').textContent = phaseNames[ps.phase] || ps.phase;
@@ -207,14 +211,20 @@ function cardHTML(c) {
 
 function pokerAction(action) {
   document.getElementById('raiseSliderArea').classList.remove('visible');
+  document.getElementById('actionBar').style.display = '';
   if(state.isHost) processPokerAction(state.myId, action);
-  else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) host.send(JSON.stringify({ type: 'poker-action', action }));
-  }
+  else sendToHost({ type: 'poker-action', action });
 }
 
-function showRaiseSlider() { document.getElementById('raiseSliderArea').classList.toggle('visible'); }
+function showRaiseSlider() {
+  document.getElementById('actionBar').style.display = 'none';
+  document.getElementById('raiseSliderArea').classList.add('visible');
+}
+
+function cancelRaise() {
+  document.getElementById('raiseSliderArea').classList.remove('visible');
+  document.getElementById('actionBar').style.display = '';
+}
 
 document.getElementById('raiseSlider').addEventListener('input', e => {
   document.getElementById('raiseAmountDisplay').textContent = e.target.value;
@@ -223,11 +233,9 @@ document.getElementById('raiseSlider').addEventListener('input', e => {
 function confirmRaise() {
   const amt = parseInt(document.getElementById('raiseSlider').value);
   document.getElementById('raiseSliderArea').classList.remove('visible');
+  document.getElementById('actionBar').style.display = '';
   if(state.isHost) processPokerAction(state.myId, 'raise', amt);
-  else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) host.send(JSON.stringify({ type: 'poker-action', action: 'raise', amount: amt }));
-  }
+  else sendToHost({ type: 'poker-action', action: 'raise', amount: amt });
 }
 
 function processPokerAction(playerId, action, amount) {
@@ -252,9 +260,13 @@ function processPokerAction(playerId, action, amount) {
       break;
     }
     case 'raise': {
+      if(typeof amount !== 'number' || !Number.isFinite(amount) || amount < 0) return;
       const total = amount || (ps.currentBet + ps.minRaise);
+      const minRequired = ps.currentBet + ps.minRaise;
+      // Must meet minimum raise unless going all-in
+      if(total < minRequired && (total - player.bet) < player.chips) return;
       const a = total - player.bet;
-      if(a > player.chips) return;
+      if(a <= 0 || a > player.chips) return;
       player.chips -= a; player.bet += a; player.totalBet += a; ps.pot += a;
       ps.minRaise = total - ps.currentBet; ps.currentBet = player.bet;
       if(player.chips === 0) player.allIn = true;
@@ -277,7 +289,7 @@ function processPokerAction(playerId, action, amount) {
   
   // Only one left?
   const active = ps.players.filter(p => !p.folded);
-  if(active.length === 1) { endPokerHand(active[0]); return; }
+  if(active.length === 1) { active[0].chips += ps.pot; endPokerHand(active[0], ps.pot); return; }
   
   // Check if betting round complete
   const canAct = ps.players.filter(p => !p.folded && !p.allIn);
@@ -289,7 +301,9 @@ function processPokerAction(playerId, action, amount) {
   }
   
   // Next player
-  ps.turnIdx = findNextActive(ps, (ps.turnIdx + 1) % ps.players.length);
+  const nextIdx = findNextActive(ps, (ps.turnIdx + 1) % ps.players.length);
+  if(nextIdx === -1) { advancePokerPhase(); return; }
+  ps.turnIdx = nextIdx;
   broadcastPokerState();
 }
 
@@ -298,7 +312,8 @@ function advancePokerPhase() {
   
   ps.players.forEach(p => { p.bet = 0; p.acted = false; });
   ps.currentBet = 0;
-  ps.turnIdx = findNextActive(ps, (ps.dealerIdx + 1) % ps.players.length);
+  const nextIdx = findNextActive(ps, (ps.dealerIdx + 1) % ps.players.length);
+  ps.turnIdx = nextIdx === -1 ? 0 : nextIdx;
   
   switch(ps.phase) {
     case 'preflop':
@@ -335,28 +350,77 @@ function advancePokerPhase() {
 function resolveShowdown() {
   const ps = state.poker;
   const active = ps.players.filter(p => !p.folded);
-  
-  let best = -1, winner = null;
+
+  // Evaluate all hands
   active.forEach(p => {
-    const s = evaluateHand([...p.cards, ...ps.community]);
-    p._score = s;
+    p._score = evaluateHand([...p.cards, ...ps.community]);
     p._handName = evaluateHandName([...p.cards, ...ps.community]);
-    if(s > best) { best = s; winner = p; }
   });
-  
-  if(winner) endPokerHand(winner);
+
+  // Build side pots based on totalBet amounts
+  const sidePots = buildSidePots(ps);
+
+  // Distribute each pot to the best hand(s) among eligible players
+  const potWon = {};
+  let totalDistributed = 0;
+  for(const sp of sidePots) {
+    const eligible = sp.eligible.filter(p => !p.folded);
+    if(eligible.length === 0) continue;
+    let best = -1;
+    eligible.forEach(p => { if(p._score > best) best = p._score; });
+    const winners = eligible.filter(p => p._score === best);
+    const share = Math.floor(sp.amount / winners.length);
+    const remainder = sp.amount % winners.length;
+    winners.forEach((w, i) => {
+      const amt = share + (i === 0 ? remainder : 0);
+      w.chips += amt;
+      potWon[w.id] = (potWon[w.id] || 0) + amt;
+    });
+    totalDistributed += sp.amount;
+  }
+
+  // Find overall display winner (most chips won)
+  let displayWinner = active[0];
+  let maxWon = 0;
+  active.forEach(p => {
+    if((potWon[p.id] || 0) > maxWon) { maxWon = potWon[p.id]; displayWinner = p; }
+  });
+
+  endPokerHand(displayWinner, totalDistributed);
 }
 
-function endPokerHand(winner) {
+function buildSidePots(ps) {
+  const active = ps.players.filter(p => !p.folded || p.totalBet > 0);
+  const betLevels = [...new Set(active.map(p => p.totalBet))].sort((a,b) => a - b);
+  const pots = [];
+  let prevLevel = 0;
+
+  for(const level of betLevels) {
+    if(level <= prevLevel) continue;
+    let potAmount = 0;
+    const eligible = [];
+    ps.players.forEach(p => {
+      const contribution = Math.min(p.totalBet, level) - Math.min(p.totalBet, prevLevel);
+      if(contribution > 0) potAmount += contribution;
+      if(!p.folded && p.totalBet >= level) eligible.push(p);
+    });
+    if(potAmount > 0) pots.push({ amount: potAmount, eligible });
+    prevLevel = level;
+  }
+
+  return pots;
+}
+
+function endPokerHand(winner, potAmount) {
   const ps = state.poker;
-  winner.chips += ps.pot;
-  
+
   const result = {
     type: 'poker-result',
     winnerId: winner.id, winnerName: winner.name, winnerAvatar: winner.avatar,
-    winnerCards: winner.cards, handName: winner._handName || '최후의 1인', pot: ps.pot,
+    winnerCards: winner.cards, handName: winner._handName || '최후의 1인',
+    pot: potAmount != null ? potAmount : ps.pot,
   };
-  
+
   ps.phase = 'showdown';
   broadcastPokerState();
   setTimeout(() => { broadcast(result); handlePokerResult(result); }, 1200);
@@ -377,7 +441,13 @@ function handlePokerResult(msg) {
 
 function closeResult() {
   document.getElementById('resultOverlay').classList.remove('active');
-  if(state.isHost) setTimeout(() => startPoker(), 300);
+  if(state.isHost) {
+    const g = state.selectedGame;
+    if (g === 'poker') setTimeout(() => startPoker(), 300);
+    else if (g === 'roulette') setTimeout(() => startRussianRoulette(), 300);
+    else if (g === 'ecard') setTimeout(() => startECard(), 300);
+    else returnToLobby();
+  }
 }
 
 // ===== HAND EVALUATION =====
@@ -412,19 +482,27 @@ function scoreHand(hand) {
   const isFlush = suits.every(s => s === suits[0]);
   const unique = [...new Set(vals)].sort((a,b) => b - a);
   let isStraight = false;
-  
+  let isLowStraight = false;
+
   if(unique.length === 5) {
     if(unique[0] - unique[4] === 4) isStraight = true;
-    if(unique[0] === 14 && unique[1] === 5) isStraight = true;
+    if(unique[0] === 14 && unique[1] === 5) { isStraight = true; isLowStraight = true; }
   }
-  
+
   const counts = {};
   vals.forEach(v => counts[v] = (counts[v]||0)+1);
-  const groups = Object.entries(counts).sort((a,b) => b[1]-a[1] || parseInt(b[0])-parseInt(a[0]));
+  let groups = Object.entries(counts).sort((a,b) => b[1]-a[1] || parseInt(b[0])-parseInt(a[0]));
   const pattern = groups.map(g => g[1]).join('');
-  
+
+  // A-low straight: remap A(14) to 1 for correct sub-score
+  if(isLowStraight) {
+    const lowCounts = {};
+    [5,4,3,2,1].forEach(v => lowCounts[v] = 1);
+    groups = Object.entries(lowCounts).sort((a,b) => b[1]-a[1] || parseInt(b[0])-parseInt(a[0]));
+  }
+
   let cat = 1;
-  if(isStraight && isFlush && vals[0] === 14) cat = 10; // Royal
+  if(isStraight && isFlush && vals[0] === 14 && vals[1] === 13) cat = 10; // Royal (A-K-Q-J-10)
   else if(isStraight && isFlush) cat = 9;
   else if(pattern === '41') cat = 8;
   else if(pattern === '32') cat = 7;
