@@ -442,7 +442,7 @@ function ecardGameOver() {
 
 function handleECardResult(msg) {
   const won = msg.winnerId === state.myId;
-  recordGame(won);
+  recordGame(won, won ? 40 : 5);
 
   document.getElementById('resultTitle').textContent = won ? '\uc2b9\ub9ac!' : (msg.winnerId ? '\ud328\ubc30...' : '\ubb34\uc2b9\ubd80');
   document.getElementById('resultTitle').style.color = won ? 'var(--gold)' : 'var(--text-dim)';

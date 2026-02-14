@@ -1,0 +1,379 @@
+/* ============================== */
+/* FORTRESS (요새) CSS            */
+/* Turn-based artillery game      */
+/* ============================== */
+
+#fortressGame.active {
+  --fort-sky-top: #1a3a6e;
+  --fort-sky-bot: #87CEEB;
+  --fort-ground: #4a8c3f;
+  --fort-fire: #ff4500;
+  --fort-gold: #ffd700;
+
+  padding: 0;
+  gap: 0;
+  background: linear-gradient(180deg, var(--fort-sky-top) 0%, var(--fort-sky-bot) 60%, var(--fort-ground) 80%);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* ===== Header ===== */
+.fort-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px);
+  z-index: 10;
+  min-height: 44px;
+}
+
+.fort-header .back-btn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fort-header-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.fort-round-badge {
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fort-gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.fort-turn-name {
+  font-size: 12px;
+  color: rgba(255,255,255,0.8);
+  font-weight: 600;
+}
+
+.fort-wind-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.12);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+#fortWindArrow {
+  font-size: 16px;
+  transition: transform 0.3s;
+}
+
+/* ===== Players Bar ===== */
+.fort-players-bar {
+  display: flex;
+  gap: 8px;
+  padding: 6px 12px;
+  overflow-x: auto;
+  background: rgba(0,0,0,0.25);
+  z-index: 5;
+  scrollbar-width: none;
+}
+.fort-players-bar::-webkit-scrollbar { display: none; }
+
+.fort-player-hp-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  min-width: 120px;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.fort-player-hp-item.active-turn {
+  background: rgba(255,215,0,0.2);
+  box-shadow: 0 0 8px rgba(255,215,0,0.3);
+}
+
+.fort-player-hp-item.dead {
+  opacity: 0.4;
+}
+
+.fort-player-avatar {
+  font-size: 20px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fort-player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.fort-player-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fort-hp-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.fort-hp-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  background: linear-gradient(90deg, #00e676, #69f0ae);
+}
+
+.fort-hp-fill.low {
+  background: linear-gradient(90deg, #ff1744, #ff5252);
+}
+
+.fort-hp-fill.mid {
+  background: linear-gradient(90deg, #ffab00, #ffd740);
+}
+
+.fort-hp-text {
+  font-size: 10px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 600;
+}
+
+/* ===== Canvas Container ===== */
+.fort-canvas-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+#fortressCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ===== Controls ===== */
+.fort-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+.fort-slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.fort-slider-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.8);
+}
+
+.fort-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.fort-angle-slider {
+  background: linear-gradient(90deg, #00e5ff, #aa00ff);
+}
+
+.fort-power-slider {
+  background: linear-gradient(90deg, #69f0ae, #ff1744);
+}
+
+.fort-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px rgba(0,0,0,0.4);
+  cursor: pointer;
+}
+
+.fort-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  box-shadow: 0 0 6px rgba(0,0,0,0.4);
+  cursor: pointer;
+}
+
+.fort-fire-btn {
+  min-width: 70px;
+  height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ff4500, #ff6b35);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255,69,0,0.4);
+  transition: transform 0.15s, opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.fort-fire-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.fort-fire-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ===== Game Over Overlay ===== */
+.fort-gameover {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.fort-gameover-box {
+  background: var(--bg-card, #14142a);
+  border-radius: 20px;
+  padding: 28px 24px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+
+.fort-gameover-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 28px;
+  color: var(--fort-gold);
+}
+
+.fort-rankings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fort-rank-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+}
+
+.fort-rank-item.rank-1 {
+  background: rgba(255,215,0,0.15);
+  border: 1px solid rgba(255,215,0,0.3);
+}
+
+.fort-rank-item.rank-2 {
+  background: rgba(192,192,192,0.1);
+  border: 1px solid rgba(192,192,192,0.2);
+}
+
+.fort-rank-item.rank-3 {
+  background: rgba(205,127,50,0.1);
+  border: 1px solid rgba(205,127,50,0.2);
+}
+
+.fort-rank-medal {
+  font-size: 22px;
+  width: 30px;
+  text-align: center;
+}
+
+.fort-rank-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text, #e8e8f0);
+  text-align: left;
+}
+
+.fort-rank-gold {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fort-gold);
+}
+
+/* ===== Damage popup (canvas-based but fallback) ===== */
+.fort-dmg-popup {
+  position: absolute;
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ff4444;
+  text-shadow: 0 0 4px rgba(0,0,0,0.8);
+  pointer-events: none;
+  animation: fortDmgFloat 1s ease-out forwards;
+  z-index: 50;
+}
+
+@keyframes fortDmgFloat {
+  0% { opacity: 1; transform: translateY(0) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+}

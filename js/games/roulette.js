@@ -262,7 +262,7 @@ function advanceRouletteTurn() {
 
 function handleRRResult(msg) {
   const won = msg.winnerId === state.myId;
-  recordGame(won);
+  recordGame(won, won ? 50 : 0);
 
   document.getElementById('resultTitle').textContent = won ? '🏆 생존!' : '💀 탈락...';
   document.getElementById('resultTitle').style.color = won ? 'var(--success)' : 'var(--danger)';

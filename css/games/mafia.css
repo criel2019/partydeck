@@ -1789,6 +1789,33 @@
   border-radius: 4px;
   transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
 }
+.mf-skip-vote-panel.passed {
+  border-color: rgba(76,175,80,0.5);
+  background: linear-gradient(135deg, rgba(46,80,46,0.5), rgba(26,50,26,0.5));
+}
+.mf-skip-vote-panel.passed .mf-skip-vote-bar-fill {
+  background: linear-gradient(90deg, #4caf50, #388e3c);
+}
+.mf-skip-vote-panel.compact {
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+.mf-skip-vote-panel.compact .mf-skip-vote-header {
+  margin-bottom: 0;
+  font-size: 12px;
+}
+.mf-skip-vote-status {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4caf50;
+  animation: mfSkipPulse 1s ease-in-out infinite;
+}
+@keyframes mfSkipPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
 
 /* ========== MAFIA LOBBY AREA ========== */
 .mf-lobby-setup-btn {

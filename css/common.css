@@ -864,3 +864,45 @@ body {
 }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
+/* ===== ECONOMY BAR ===== */
+.economy-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  width: 100%;
+}
+.eco-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.eco-item.eco-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 16px;
+}
+.eco-icon { font-size: 16px; }
+.eco-sm .eco-icon { font-size: 13px; }
+.eco-gold .eco-value { color: var(--gold); }
+.eco-energy .eco-value { color: #76ff03; }
+.eco-diamond .eco-value { color: #b388ff; }
+.eco-countdown {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-left: 2px;
+}
+.lobby-currency-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+

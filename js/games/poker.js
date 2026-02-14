@@ -20,7 +20,7 @@ function startPoker() {
     deck, deckIdx: 0,
     players: state.players.map((p, i) => ({
       id: p.id, name: p.name, avatar: p.avatar,
-      cards: [], chips: prevChips ? (prevChips.find(pp => pp.id === p.id)?.chips || 1000) : 1000,
+      cards: [], chips: prevChips ? (prevChips.find(pp => pp.id === p.id)?.chips ?? 1000) : 1000,
       bet: 0, totalBet: 0, folded: false, allIn: false, seatIdx: i, acted: false,
     })),
     community: [], pot: 0, currentBet: 0, minRaise: 20,
@@ -29,9 +29,26 @@ function startPoker() {
     sb: 10, bb: 20,
   };
   
+  // Bankruptcy: fold players with 0 chips
+  ps.players.forEach(p => { if (p.chips <= 0) p.folded = true; });
+  const activePlayers = ps.players.filter(p => !p.folded);
+  if (activePlayers.length < 2) {
+    // Not enough active players — declare winner
+    const winner = ps.players.reduce((a, b) => a.chips >= b.chips ? a : b);
+    const result = {
+      type: 'poker-result',
+      winnerId: winner.id, winnerName: winner.name, winnerAvatar: winner.avatar,
+      winnerCards: [], handName: '최후의 생존자',
+      pot: 0,
+    };
+    state.poker = ps;
+    broadcast(result); handlePokerResult(result);
+    return;
+  }
+
   // Deal
   for(let i = 0; i < n; i++) ps.players[i].cards = [deck[ps.deckIdx++], deck[ps.deckIdx++]];
-  
+
   // Blinds (heads-up: dealer=SB, opponent=BB)
   const sbI = n === 2 ? ps.dealerIdx : (ps.dealerIdx + 1) % n;
   const bbI = n === 2 ? (ps.dealerIdx + 1) % n : (ps.dealerIdx + 2) % n;
@@ -428,7 +445,7 @@ function endPokerHand(winner, potAmount) {
 
 function handlePokerResult(msg) {
   const won = msg.winnerId === state.myId;
-  recordGame(won);
+  recordGame(won, won ? msg.pot : 5);
   
   document.getElementById('resultTitle').textContent = won ? '🏆 승리!' : '😢 패배...';
   document.getElementById('resultTitle').style.color = won ? 'var(--gold)' : 'var(--text-dim)';

@@ -171,7 +171,7 @@ function startSutda() {
       name: p.name,
       avatar: p.avatar,
       cards: [deck[deckIdx++], deck[deckIdx++]],
-      chips: prevHost ? (prevHost.players.find(pp => pp.id === p.id)?.chips || 500000) : 500000,
+      chips: prevHost ? (prevHost.players.find(pp => pp.id === p.id)?.chips ?? 500000) : 500000,
       bet: 0,
       totalBet: 0,
       died: false,
@@ -688,7 +688,7 @@ function endSutdaRound(winner) {
 // =========================
 function handleSutdaResult(msg) {
   const won = msg.winnerId === state.myId;
-  recordGame(won);
+  recordGame(won, won ? Math.min(Math.floor(msg.pot / 1000), 200) : 5);
 
   const overlay = document.getElementById('sutdaResultOverlay');
   document.getElementById('sutdaResultTitle').textContent = won ? '승리!' : '패배...';

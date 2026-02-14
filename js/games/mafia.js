@@ -65,6 +65,7 @@ const MF_VOTE_RESULT_DURATION = 6;
 let mfState = null;    // host-only full state
 let mfView = null;     // local player's current view
 let mfTimer = null;    // interval id
+let mfTimerTick = 0;   // tick counter for periodic sync
 let mfSelectedTarget = null;
 let mfUseSnipe = false;
 
@@ -356,6 +357,7 @@ function mfStartGame() {
     timer: MF_REVEAL_DURATION,
     announcements: [],
     discussSkipVotes: {},
+    discussSkipPassed: false,
   };
 
   // Assign lover partners
@@ -375,9 +377,19 @@ function mfStartGame() {
 
 function mfStartTimer() {
   clearInterval(mfTimer);
+  mfTimerTick = 0;
   mfTimer = setInterval(() => {
     if (!mfState) return;
     mfState.timer--;
+    mfTimerTick++;
+
+    // Broadcast timer to all clients every tick
+    mfBroadcastTimer();
+
+    // Full state sync every 10 seconds to recover missed broadcasts
+    if (mfTimerTick % 10 === 0) {
+      mfBroadcastState();
+    }
 
     // Update local display
     const timerEl = document.getElementById('mfTimer');
@@ -388,6 +400,16 @@ function mfStartTimer() {
       if (state.isHost) mfAdvancePhase();
     }
   }, 1000);
+}
+
+function mfBroadcastTimer() {
+  if (!mfState) return;
+  // Send lightweight timer-only update to all clients
+  mfState.players.forEach(p => {
+    if (p.id !== state.myId) {
+      sendTo(p.id, { type: 'mf-timer', timer: mfState.timer });
+    }
+  });
 }
 
 function mfSetPhaseTimer(duration) {
@@ -417,6 +439,7 @@ function mfAdvancePhase() {
     mfState.extensionUsed = {};
     mfState.extensionAdded = false;
     mfState.discussSkipVotes = {};
+    mfState.discussSkipPassed = false;
     mfSetPhaseTimer(MF_DISCUSS_DURATION);
   }
   else if (phase === 'day-discuss') {
@@ -1070,6 +1093,7 @@ function mfBuildView(playerId) {
     loverPartnerName,
     discussSkipVotes: ms.discussSkipVotes || {},
     discussSkipCount: Object.keys(ms.discussSkipVotes || {}).length,
+    discussSkipPassed: ms.discussSkipPassed || false,
     aliveCount: ms.players.filter(p => p.alive).length,
   };
 }
@@ -1159,6 +1183,7 @@ function mfProcessAction(senderId, data) {
   }
   else if (data.action === 'discuss-skip') {
     if (ms.phase !== 'day-discuss') return;
+    if (ms.discussSkipPassed) return; // Already passed, transitioning
     const player = ms.players.find(p => p.id === senderId && p.alive);
     if (!player) return;
 
@@ -1174,14 +1199,20 @@ function mfProcessAction(senderId, data) {
     const skipCount = Object.keys(ms.discussSkipVotes).length;
 
     if (skipCount > aliveCount / 2) {
-      // Majority skip - advance to vote
+      // Majority skip — show result briefly, then advance to vote
+      ms.discussSkipPassed = true;
+      mfBroadcastState();
       clearInterval(mfTimer);
-      ms.phase = 'day-vote';
-      ms.votes = {};
-      mfSetPhaseTimer(MF_VOTE_DURATION);
+      setTimeout(() => {
+        if (!mfState || mfState.phase !== 'day-discuss') return;
+        ms.phase = 'day-vote';
+        ms.votes = {};
+        mfSetPhaseTimer(MF_VOTE_DURATION);
+        mfBroadcastState();
+      }, 2000);
+    } else {
+      mfBroadcastState();
     }
-
-    mfBroadcastState();
   }
 }
 
@@ -1221,12 +1252,22 @@ function mfHandleState(msg) {
   mfRenderView();
 }
 
+function mfHandleTimer(msg) {
+  if (!mfView) return;
+  mfView.timer = msg.timer;
+  // Update timer display without full re-render
+  const timerEl = document.getElementById('mfTimer');
+  if (timerEl) timerEl.textContent = msg.timer;
+  const timerBox = document.getElementById('mfTimerBox');
+  if (timerBox) timerBox.classList.toggle('urgent', msg.timer <= 10);
+}
+
 function mfHandleResult(msg) {
   clearInterval(mfTimer);
   const myRole = mfView?.myRole;
   const myTeam = mfView?.myTeam;
   const won = (msg.winner === myTeam);
-  recordGame(won);
+  recordGame(won, won ? 40 : 5);
 
   // Show result overlay
   const overlay = document.getElementById('mfResultOverlay');
@@ -1459,10 +1500,8 @@ function mfRenderView() {
     }
     html += mfRenderPlayerGrid(v, false);
 
-    // Skip vote panel
-    if (v.isAlive) {
-      html += mfRenderSkipVotePanel(v);
-    }
+    // Skip vote panel (show to everyone for transparency)
+    html += mfRenderSkipVotePanel(v);
 
     // Mafia/Spy Chat (even during day for coordination)
     if (v.canChat) {
@@ -1488,6 +1527,11 @@ function mfRenderView() {
 
   // ============ DAY VOTE PHASE ============
   else if (v.phase === 'day-vote') {
+    // Show skip vote result if discussion was skipped
+    if (v.discussSkipPassed) {
+      html += mfRenderSkipVotePanel(v, true);
+    }
+
     if (!v.isAlive) {
       html += `<div class="mf-spectator-bar">👻 사망한 플레이어는 투표할 수 없습니다.</div>`;
     }
@@ -1672,15 +1716,30 @@ function mfRenderVotePanel(v) {
   return html;
 }
 
-function mfRenderSkipVotePanel(v) {
+function mfRenderSkipVotePanel(v, compact) {
   const skipCount = v.discussSkipCount || 0;
   const aliveCount = v.aliveCount || 1;
   const majority = Math.floor(aliveCount / 2) + 1;
   const pct = aliveCount > 0 ? Math.round((skipCount / aliveCount) * 100) : 0;
-  const mySkipped = v.discussSkipVotes && v.discussSkipVotes[v.myId];
+  const passed = v.discussSkipPassed;
+
+  if (compact) {
+    // Compact version for vote phase — just a small info bar
+    return `
+      <div class="mf-skip-vote-panel compact passed">
+        <div class="mf-skip-vote-header">
+          <span>⏭️ 토론 스킵 통과</span>
+          <span class="mf-skip-vote-count">${skipCount} / ${aliveCount}명 찬성</span>
+        </div>
+      </div>
+    `;
+  }
+
+  const passedClass = passed ? ' passed' : '';
+  const statusText = passed ? '✅ 스킵 통과! 투표로 이동합니다...' : '';
 
   return `
-    <div class="mf-skip-vote-panel">
+    <div class="mf-skip-vote-panel${passedClass}">
       <div class="mf-skip-vote-header">
         <span>⏭️ 토론 스킵 투표</span>
         <span class="mf-skip-vote-count">${skipCount} / ${majority} (과반수)</span>
@@ -1688,6 +1747,7 @@ function mfRenderSkipVotePanel(v) {
       <div class="mf-skip-vote-bar-track">
         <div class="mf-skip-vote-bar-fill" style="width:${pct}%;"></div>
       </div>
+      ${statusText ? `<div class="mf-skip-vote-status">${statusText}</div>` : ''}
     </div>
   `;
 }
@@ -1737,6 +1797,8 @@ function mfRenderActionArea(v) {
   else if (v.phase === 'day-discuss') {
     if (!v.isAlive) {
       msg = '👻 관전 모드';
+    } else if (v.discussSkipPassed) {
+      msg = '⏭️ 토론 스킵이 통과되었습니다! 투표로 이동합니다...';
     } else {
       msg = '☀️ 의심되는 사람에 대해 토론하세요!';
       const mySkipped = v.discussSkipVotes && v.discussSkipVotes[v.myId];

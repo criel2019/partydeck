@@ -261,7 +261,7 @@ function handleQDResult(msg) {
 
   const won = msg.winnerId === state.myId;
   if(msg.winnerId) {
-    recordGame(won);
+    recordGame(won, won ? 30 : 5);
   }
 
   if(msg.winnerId === state.myId) {

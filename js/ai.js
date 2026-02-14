@@ -9,6 +9,7 @@ let _originalCloseResult = null;
 let _originalCloseSutdaResult = null;
 let _originalMfCloseResult = null;
 let _originalCloseYahtzeeGame = null;
+let _originalCloseFortressGame = null;
 let _aiTimer = null;
 let _aiTimers = []; // tracked timeouts for cleanup on exit
 let _qdTimers = []; // QuickDraw-specific timers (separate to avoid clearing others)
@@ -28,6 +29,7 @@ const AI_COUNTS = {
   yahtzee: 1,
   truth: 2,
   mafia: 5,
+  fortress: 2,
   lottery: 0,
 };
 
@@ -166,6 +168,21 @@ function interceptNetworking() {
     }
     if (_originalCloseYahtzeeGame) _originalCloseYahtzeeGame();
   };
+
+  _originalCloseFortressGame = window.closeFortressGame;
+  window.closeFortressGame = function() {
+    document.getElementById('fortGameOver').style.display = 'none';
+    if (fortAnimId) { cancelAnimationFrame(fortAnimId); fortAnimId = null; }
+    fortState = null;
+    window._fortView = null;
+    fortCtx = null;
+    fortCanvas = null;
+    if (practiceMode) {
+      showScreen('practiceSelect');
+      return;
+    }
+    if (_originalCloseFortressGame) _originalCloseFortressGame();
+  };
 }
 
 function restoreNetworking() {
@@ -175,6 +192,7 @@ function restoreNetworking() {
   if (_originalCloseSutdaResult) { window.closeSutdaResult = _originalCloseSutdaResult; _originalCloseSutdaResult = null; }
   if (_originalMfCloseResult) { window.mfCloseResult = _originalMfCloseResult; _originalMfCloseResult = null; }
   if (_originalCloseYahtzeeGame) { window.closeYahtzeeGame = _originalCloseYahtzeeGame; _originalCloseYahtzeeGame = null; }
+  if (_originalCloseFortressGame) { window.closeFortressGame = _originalCloseFortressGame; _originalCloseFortressGame = null; }
 }
 
 function cleanupAI() {
@@ -287,6 +305,7 @@ function executeAIAction() {
     case 'yahtzee': aiYahtzee(); break;
     case 'truth': aiTruth(); break;
     case 'mafia': aiMafia(); break;
+    case 'fortress': aiFortress(); break;
     // lottery: no AI needed
   }
 }
@@ -752,6 +771,68 @@ function aiMafiaVote() {
       }
     }
   });
+}
+
+// ========== FORTRESS AI ==========
+
+function aiFortress() {
+  if (!fortState || fortState.phase !== 'aiming') return;
+
+  const current = fortState.players[fortState.turnIdx];
+  if (!current || !current.id.startsWith('ai-')) return;
+  if (!current.alive) return;
+
+  // Find closest alive enemy tank
+  const enemies = fortState.players.filter(p => p.alive && p.id !== current.id);
+  if (enemies.length === 0) return;
+
+  let target = enemies[0];
+  let minDist = Math.abs(target.x - current.x);
+  enemies.forEach(e => {
+    const d = Math.abs(e.x - current.x);
+    if (d < minDist) { minDist = d; target = e; }
+  });
+
+  // Calculate angle: right = ~45, left = ~135
+  const dx = target.x - current.x;
+  let baseAngle;
+  if (dx > 0) {
+    baseAngle = 40 + Math.random() * 20; // 40-60
+  } else {
+    baseAngle = 120 + Math.random() * 20; // 120-140
+  }
+
+  // Power based on distance + wind compensation + randomness
+  const dist = Math.abs(dx);
+  let basePower = Math.min(95, Math.max(20, dist * 0.12 + 30));
+  // Wind compensation
+  const windEffect = fortState.wind * 2;
+  if ((dx > 0 && fortState.wind < 0) || (dx < 0 && fortState.wind > 0)) {
+    basePower += Math.abs(windEffect);
+  } else {
+    basePower -= Math.abs(windEffect) * 0.5;
+  }
+  // Add randomness
+  basePower += (Math.random() - 0.5) * 15;
+  basePower = Math.max(15, Math.min(100, Math.round(basePower)));
+
+  const angle = Math.round(baseAngle);
+  const power = Math.round(basePower);
+
+  // Delay then fire
+  const t = setTimeout(() => {
+    if (!practiceMode || !fortState) return;
+    if (fortState.phase !== 'aiming') return;
+    const cp = fortState.players[fortState.turnIdx];
+    if (!cp || cp.id !== current.id) return;
+
+    handleFortFire(state.myId, {
+      type: 'fort-fire',
+      angle: angle,
+      power: power,
+    });
+  }, 800 + Math.random() * 600);
+  _aiTimers.push(t);
 }
 
 // ========== LOTTERY AI ==========

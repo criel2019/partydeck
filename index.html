@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="css/games/yahtzee.css">
 <link rel="stylesheet" href="css/games/ecard.css">
 <link rel="stylesheet" href="css/games/sutda.css">
+<link rel="stylesheet" href="css/games/fortress.css">
 <link rel="stylesheet" href="css/games/mobile.css">
 </head>
 <body>
@@ -50,6 +51,12 @@
         <div class="profile-stats" id="profileStats">전적 로딩 중...</div>
       </div>
     </div>
+
+    <div class="economy-bar">
+      <div class="eco-item eco-gold"><span class="eco-icon">🪙</span><span class="eco-value" id="mmGold">0</span></div>
+      <div class="eco-item eco-energy"><span class="eco-icon">⚡</span><span class="eco-value" id="mmEnergy">0/10</span><span class="eco-countdown" id="energyCountdown">MAX</span></div>
+      <div class="eco-item eco-diamond"><span class="eco-icon">💎</span><span class="eco-value" id="mmDiamond">0</span></div>
+    </div>
   </div>
 
   <button class="btn btn-primary" onclick="createRoom()">🏠 방 만들기</button>
@@ -78,6 +85,7 @@
       <button class="debug-game-btn" onclick="debugGame('yahtzee')">🎲 야추</button>
       <button class="debug-game-btn" onclick="debugGame('updown')">🃏 업다운</button>
       <button class="debug-game-btn" onclick="debugGame('truth')">⭕ 진실게임</button>
+      <button class="debug-game-btn" onclick="debugGame('fortress')">🏰 요새</button>
     </div>
   </div>
 
@@ -104,6 +112,7 @@
       <button class="practice-game-btn" onclick="startPracticeGame('yahtzee')">🎲 야추</button>
       <button class="practice-game-btn" onclick="startPracticeGame('updown')">🃏 업다운</button>
       <button class="practice-game-btn" onclick="startPracticeGame('truth')">⭕ 진실게임</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('fortress')">🏰 요새</button>
     </div>
   </div>
 </div>
@@ -117,6 +126,10 @@
   </div>
 
   <div class="lobby-content">
+    <div class="lobby-currency-bar">
+      <div class="eco-item eco-gold eco-sm"><span class="eco-icon">🪙</span><span class="eco-value" id="lobbyGold">0</span></div>
+      <div class="eco-item eco-energy eco-sm"><span class="eco-icon">⚡</span><span class="eco-value" id="lobbyEnergy">0/10</span></div>
+    </div>
     <div class="room-code-display">
       <div class="room-code-label">방 코드를 친구에게 공유하세요</div>
       <div class="room-code" id="roomCodeDisplay" onclick="copyRoomCode()">------</div>
@@ -165,6 +178,9 @@
       </div>
       <div class="game-option" data-game="truth" onclick="selectGame(this)">
         <span class="game-emoji">⭕</span>진실게임
+      </div>
+      <div class="game-option" data-game="fortress" onclick="selectGame(this)">
+        <span class="game-emoji">🏰</span>요새
       </div>
     </div>
   </div>
@@ -953,6 +969,45 @@
 </div>
 
 
+<!-- FORTRESS GAME -->
+<div class="screen" id="fortressGame">
+  <div class="fort-header">
+    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">&#10005;</button>
+    <div class="fort-header-info">
+      <span class="fort-round-badge" id="fortRoundBadge">ROUND 1</span>
+      <span class="fort-turn-name" id="fortTurnName">플레이어의 차례</span>
+    </div>
+    <div class="fort-wind-badge" id="fortWindBadge">
+      <span id="fortWindArrow">→</span>
+      <span id="fortWindValue">0</span>
+    </div>
+  </div>
+  <div class="fort-players-bar" id="fortPlayersBar"></div>
+  <div class="fort-canvas-container">
+    <canvas id="fortressCanvas" width="800" height="500"></canvas>
+  </div>
+  <div class="fort-controls" id="fortControls">
+    <div class="fort-slider-group">
+      <label class="fort-slider-label">각도: <span id="fortAngleValue">45</span>°</label>
+      <input type="range" class="fort-slider fort-angle-slider" id="fortAngleSlider"
+             min="0" max="180" value="45">
+    </div>
+    <div class="fort-slider-group">
+      <label class="fort-slider-label">파워: <span id="fortPowerValue">50</span>%</label>
+      <input type="range" class="fort-slider fort-power-slider" id="fortPowerSlider"
+             min="10" max="100" value="50">
+    </div>
+    <button class="btn fort-fire-btn" id="fortFireBtn" onclick="fortFire()">💥 발사!</button>
+  </div>
+  <div class="fort-gameover" id="fortGameOver" style="display:none;">
+    <div class="fort-gameover-box">
+      <div class="fort-gameover-title" id="fortGameOverTitle">게임 종료!</div>
+      <div class="fort-rankings" id="fortRankings"></div>
+      <button class="btn btn-primary" onclick="closeFortressGame()" style="max-width:280px;">대기실로</button>
+    </div>
+  </div>
+</div>
+
 <!-- RESULT -->
 <div class="result-overlay" id="resultOverlay">
   <div class="result-title" id="resultTitle">🏆 승리!</div>
@@ -978,6 +1033,7 @@
 <script src="js/games/yahtzee.js?v=2"></script>
 <script src="js/games/ecard.js?v=2"></script>
 <script src="js/games/sutda.js?v=2"></script>
+<script src="js/games/fortress.js?v=2"></script>
 <script src="js/ai.js?v=2"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>

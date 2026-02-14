@@ -55,6 +55,12 @@ const PLAYER_COLORS = [
   'linear-gradient(135deg, #84ffff, #00e5ff)'
 ];
 
+const ENERGY_REGEN_MS = 3 * 60 * 1000; // 3분
+const INITIAL_ECONOMY = { gold: 500, energy: 10, maxEnergy: 10, diamond: 0, lastEnergyTime: Date.now() };
+
+let _economy = null;
+let _energyTimerId = null;
+
 let state = {
   myId: '', myName: '', myAvatar: '😎', avatarIdx: 0,
   isHost: false, roomCode: '',
@@ -77,7 +83,9 @@ async function init() {
     bar.style.width = '80%';
     txt.textContent = '프로필 로딩 중...';
     loadProfile();
-    
+    loadEconomy();
+    startEnergyTimer();
+
     // Check URL for room code
     const params = new URLSearchParams(location.search);
     const code = params.get('room');
@@ -163,7 +171,126 @@ function updateStats() {
   document.getElementById('profileStats').textContent = `${s.g}전 ${s.w}승 (${r}%)`;
 }
 
-function recordGame(won) {
+// ===== ECONOMY =====
+function loadEconomy() {
+  const raw = localStorage.getItem('pd_economy');
+  if (raw) {
+    try { _economy = JSON.parse(raw); } catch(e) { _economy = { ...INITIAL_ECONOMY }; }
+  } else {
+    _economy = { ...INITIAL_ECONOMY };
+  }
+  // Passive energy regen based on elapsed time
+  const now = Date.now();
+  const elapsed = now - (_economy.lastEnergyTime || now);
+  if (elapsed > 0 && _economy.energy < _economy.maxEnergy) {
+    const regenCount = Math.floor(elapsed / ENERGY_REGEN_MS);
+    if (regenCount > 0) {
+      _economy.energy = Math.min(_economy.maxEnergy, _economy.energy + regenCount);
+      _economy.lastEnergyTime = _economy.lastEnergyTime + regenCount * ENERGY_REGEN_MS;
+    }
+  }
+  if (_economy.energy >= _economy.maxEnergy) {
+    _economy.lastEnergyTime = now;
+  }
+  saveEconomy(_economy);
+}
+
+function saveEconomy(eco) {
+  _economy = eco;
+  localStorage.setItem('pd_economy', JSON.stringify(eco));
+  updateEconomyUI(eco);
+}
+
+function getEconomy() {
+  if (!_economy) loadEconomy();
+  return { ..._economy };
+}
+
+function addGold(amount) {
+  if (!_economy) loadEconomy();
+  _economy.gold += amount;
+  if (_economy.gold < 0) _economy.gold = 0;
+  saveEconomy(_economy);
+  if (amount > 0) showToast('🪙 +' + amount + ' 골드');
+  else if (amount < 0) showToast('🪙 ' + amount + ' 골드');
+}
+
+function spendEnergy(amount) {
+  if (typeof practiceMode !== 'undefined' && practiceMode) return true;
+  if (!_economy) loadEconomy();
+  if (_economy.energy < amount) return false;
+  const wasFull = _economy.energy >= _economy.maxEnergy;
+  _economy.energy -= amount;
+  if (wasFull) _economy.lastEnergyTime = Date.now();
+  saveEconomy(_economy);
+  return true;
+}
+
+function addDiamond(amount) {
+  if (!_economy) loadEconomy();
+  _economy.diamond += amount;
+  if (_economy.diamond < 0) _economy.diamond = 0;
+  saveEconomy(_economy);
+}
+
+function startEnergyTimer() {
+  if (_energyTimerId) clearInterval(_energyTimerId);
+  _energyTimerId = setInterval(() => {
+    if (!_economy) return;
+    const now = Date.now();
+    if (_economy.energy < _economy.maxEnergy) {
+      const elapsed = now - _economy.lastEnergyTime;
+      const regenCount = Math.floor(elapsed / ENERGY_REGEN_MS);
+      if (regenCount > 0) {
+        _economy.energy = Math.min(_economy.maxEnergy, _economy.energy + regenCount);
+        _economy.lastEnergyTime = _economy.lastEnergyTime + regenCount * ENERGY_REGEN_MS;
+        if (_economy.energy >= _economy.maxEnergy) _economy.lastEnergyTime = now;
+        saveEconomy(_economy);
+      }
+    }
+    updateEnergyCountdown(_economy);
+  }, 30000);
+  updateEconomyUI(_economy);
+  updateEnergyCountdown(_economy);
+}
+
+function updateEconomyUI(eco) {
+  if (!eco) return;
+  const ids = [
+    ['mmGold', eco.gold],
+    ['lobbyGold', eco.gold],
+    ['mmDiamond', eco.diamond],
+  ];
+  ids.forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  });
+  const energyText = eco.energy + '/' + eco.maxEnergy;
+  const eIds = ['mmEnergy', 'lobbyEnergy'];
+  eIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = energyText;
+  });
+}
+
+function updateEnergyCountdown(eco) {
+  const el = document.getElementById('energyCountdown');
+  if (!el) return;
+  if (eco.energy >= eco.maxEnergy) {
+    el.textContent = 'MAX';
+    return;
+  }
+  const remaining = ENERGY_REGEN_MS - (Date.now() - eco.lastEnergyTime);
+  if (remaining <= 0) {
+    el.textContent = '곧 충전';
+    return;
+  }
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  el.textContent = mins + ':' + String(secs).padStart(2, '0');
+}
+
+function recordGame(won, goldReward) {
   if(typeof practiceMode !== 'undefined' && practiceMode) return;
   let s;
   try { s = JSON.parse(localStorage.getItem('pd_stats') || '{"w":0,"g":0}'); } catch(e) { s = {w:0,g:0}; }
@@ -171,6 +298,7 @@ function recordGame(won) {
   if(won) s.w++;
   localStorage.setItem('pd_stats', JSON.stringify(s));
   updateStats();
+  if(typeof goldReward === 'number' && goldReward !== 0) addGold(goldReward);
 }
 
 function cycleAvatar() {
@@ -248,6 +376,7 @@ function handleMessage(peerId, raw) {
     'poker-action': () => { if(state.isHost) processPokerAction(peerId, msg.action, msg.amount); },
     'poker-result': () => handlePokerResult(msg),
     'mf-state': () => { mfHandleState(msg); },
+    'mf-timer': () => { mfHandleTimer(msg); },
     'mf-action': () => { if(state.isHost) mfProcessAction(peerId, msg); },
     'mf-result': () => { mfHandleResult(msg); },
     'mf-config': () => { mfHandleConfig(msg); },
@@ -261,7 +390,7 @@ function handleMessage(peerId, raw) {
       // Update waiting text
       const waitingText = document.getElementById('waitingText');
       if (waitingText) {
-        const gameNames = { poker:'포커', mafia:'마피아', sutda:'섯다', quickdraw:'총잡이', roulette:'룰렛', lottery:'뽑기', ecard:'E카드', yahtzee:'야추', updown:'업다운', truth:'진실게임' };
+        const gameNames = { poker:'포커', mafia:'마피아', sutda:'섯다', quickdraw:'총잡이', roulette:'룰렛', lottery:'뽑기', ecard:'E카드', yahtzee:'야추', updown:'업다운', truth:'진실게임', fortress:'요새' };
         waitingText.textContent = `${gameNames[msg.game] || msg.game} 게임 대기 중...`;
       }
     },
@@ -338,6 +467,11 @@ function handleMessage(peerId, raw) {
     'sutda-bet': () => { if(state.isHost) processSutdaAction(peerId, msg.action, msg.amount); },
     'sutda-seryuk': () => { if(state.isHost) processSutdaSeryuk(peerId, msg.choice); },
     'sutda-result': () => handleSutdaResult(msg),
+    // Fortress handlers
+    'fort-state': () => { showScreen('fortressGame'); initFortCanvas(); renderFortressView(msg.state); },
+    'fort-fire': () => { if(state.isHost) handleFortFire(peerId, msg); },
+    'fort-anim': () => { startFortAnimation(msg); },
+    'fort-result': () => { showFortressGameOver(msg); },
     'player-left': () => {
       state.players = state.players.filter(p => p.id !== msg.playerId);
       updateLobbyUI();
@@ -530,6 +664,10 @@ function returnToLobby() {
   if (typeof rrState !== 'undefined' && rrState) rrState.phase = 'waiting';
   if (typeof truthState !== 'undefined') truthState = null;
   if (typeof yahState !== 'undefined' && yahState) yahState.phase = 'waiting';
+  if (typeof fortState !== 'undefined' && fortState) {
+    if (fortAnimId) { cancelAnimationFrame(fortAnimId); fortAnimId = null; }
+    fortState = null;
+  }
   showScreen('lobby');
   updateLobbyUI();
 }
@@ -608,6 +746,7 @@ function selectGame(el) {
 function startGame() {
   console.log('[PartyDeck] startGame 호출. isHost:', state.isHost, 'players:', state.players.length, 'game:', state.selectedGame);
   if(!state.isHost || state.players.length < 2) { showToast('최소 2명 필요 (현재 ' + state.players.length + '명)'); return; }
+  if(!spendEnergy(1)) { showToast('⚡ 에너지가 부족합니다! 충전을 기다려주세요'); return; }
   const g = state.selectedGame;
   if(g === 'poker') startPoker();
   else if(g === 'mafia') startMafia();
@@ -619,10 +758,12 @@ function startGame() {
   else if(g === 'yahtzee') startYahtzee();
   else if(g === 'updown') startUpDown();
   else if(g === 'truth') startTruthGame();
+  else if(g === 'fortress') startFortress();
   else showToast('준비 중인 게임입니다');
 }
 
 function handleGameStart(msg) {
+  spendEnergy(1); // Non-host soft spend (proceeds even if 0)
   if(msg.game === 'poker') { showScreen('pokerGame'); renderPokerView(msg.state); }
   else if(msg.game === 'mafia') { showScreen('mafiaGame'); }
   else if(msg.game === 'sutda') { showScreen('sutdaGame'); renderSutdaView(msg.state); }
@@ -661,6 +802,11 @@ function handleGameStart(msg) {
   else if(msg.game === 'truth') {
     showScreen('truthGame');
     renderTruthView(msg.state);
+  }
+  else if(msg.game === 'fortress') {
+    showScreen('fortressGame');
+    initFortCanvas();
+    renderFortressView(msg.state);
   }
 }
 
@@ -702,7 +848,8 @@ function debugGame(game) {
     ecard: 'ecardGame',
     yahtzee: 'yahtzeeGame',
     updown: 'updownGame',
-    truth: 'truthGame'
+    truth: 'truthGame',
+    fortress: 'fortressGame'
   };
 
   if(game === 'yahtzee') {

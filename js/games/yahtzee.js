@@ -685,7 +685,10 @@ function showYahtzeeGameOver(view) {
 
   const winner = sorted[0];
   const won = winner.id === state.myId;
-  recordGame(won);
+  const myRank = sorted.findIndex(p => p.id === state.myId);
+  const rankRewards = [60, 30, 10];
+  const goldReward = myRank >= 0 && myRank < rankRewards.length ? rankRewards[myRank] : 0;
+  recordGame(won, goldReward);
 }
 
 function handleYahtzeeGameOver() {
