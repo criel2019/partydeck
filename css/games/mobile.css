@@ -1388,14 +1388,19 @@
     align-items: stretch !important;
     padding: 8px !important;
   }
+  #pokerGame .pk-top-bar {
+    position: absolute !important;
+    top: 6px !important; left: 8px !important; right: 8px !important;
+    z-index: 12 !important;
+  }
   #pokerGame .pk-opponent-area {
     position: absolute !important;
-    top: 8px !important; left: 10px !important;
+    top: 42px !important; left: 10px !important;
     z-index: 10 !important;
   }
   #pokerGame .pk-community {
     position: absolute !important;
-    top: 8px !important; left: 50% !important;
+    top: 42px !important; left: 50% !important;
     transform: translateX(-50%) !important;
     z-index: 10 !important;
   }
@@ -1421,17 +1426,11 @@
   #pokerGame .pk-hero-corner .pk-hero-suit-sm { font-size: min(5vh, 22px) !important; }
   #pokerGame .pk-hero-center { font-size: min(20vh, 80px) !important; }
   #pokerGame .pk-hand-name { font-size: min(7vh, 32px) !important; }
-  #pokerGame .pk-right-panel {
+  #pokerGame .pk-bottom-panel {
+    position: absolute !important;
+    bottom: 8px !important; right: 8px !important;
     width: 180px !important;
-    flex-direction: column !important;
-    flex-wrap: nowrap !important;
-    justify-content: center !important;
-    padding-top: 40px !important;
-    gap: 8px !important;
-  }
-  #pokerGame .pk-money-box {
-    flex-direction: column !important;
-    gap: 4px !important;
+    z-index: 10 !important;
   }
   #pokerGame .pk-actions {
     flex-direction: column !important;
@@ -1441,10 +1440,9 @@
     font-size: 14px !important;
     padding: 10px 6px !important;
   }
-  #pokerGame .pk-bottom-bar {
-    position: absolute !important;
-    bottom: 8px !important; left: 10px !important; right: 10px !important;
-    padding: 0 !important;
+  #pokerGame .pk-raise-btns {
+    flex-direction: column !important;
+    gap: 5px !important;
   }
 
   /* ───── QUICK DRAW ───── */
@@ -1776,7 +1774,7 @@
 
   /* ─── POKER (small landscape) ─── */
   #pokerGame .pk-content { padding: 6px !important; }
-  #pokerGame .pk-right-panel { width: 150px !important; gap: 6px !important; }
+  #pokerGame .pk-bottom-panel { width: 150px !important; }
   #pokerGame .pk-hero-card {
     width: min(36vh, 150px) !important;
     height: min(52vh, 216px) !important;
@@ -1794,10 +1792,10 @@
     height: min(14vh, 52px) !important;
   }
   #pokerGame .pk-action-btn { padding: 8px 4px !important; font-size: 12px !important; min-height: 32px !important; }
-  #pokerGame .pk-money-value { font-size: 13px !important; }
-  #pokerGame .pk-money-label { font-size: 10px !important; }
-  #pokerGame .pk-raise-area { padding: 4px 6px !important; }
-  #pokerGame .pk-raise-amount { font-size: 12px !important; }
+  #pokerGame .pk-chip-value { font-size: 13px !important; }
+  #pokerGame .pk-pot-value { font-size: 14px !important; }
+  #pokerGame .pk-raise-area { padding: 8px 10px !important; }
+  #pokerGame .pk-raise-amount { font-size: 16px !important; }
 
   /* ─── QUICK DRAW ─── */
   #quickDrawGame .qd-header { padding: 2px 10px !important; }

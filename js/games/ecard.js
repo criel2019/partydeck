@@ -245,8 +245,7 @@ function ecardSubmitBet() {
   if (state.isHost) {
     processECardBet(state.myId, bet);
   } else {
-    const host = Object.values(state.connections)[0];
-    if (host?.open) host.send(JSON.stringify({ type: 'ec-bet', bet }));
+    sendToHost({ type: 'ec-bet', bet });
   }
 }
 
@@ -254,8 +253,7 @@ function ecardAcceptBet() {
   if (state.isHost) {
     processECardBetResponse(state.myId, true);
   } else {
-    const host = Object.values(state.connections)[0];
-    if (host?.open) host.send(JSON.stringify({ type: 'ec-bet-response', accept: true }));
+    sendToHost({ type: 'ec-bet-response', accept: true });
   }
 }
 
@@ -263,8 +261,7 @@ function ecardRejectBet() {
   if (state.isHost) {
     processECardBetResponse(state.myId, false);
   } else {
-    const host = Object.values(state.connections)[0];
-    if (host?.open) host.send(JSON.stringify({ type: 'ec-bet-response', accept: false }));
+    sendToHost({ type: 'ec-bet-response', accept: false });
   }
 }
 
@@ -280,8 +277,7 @@ function ecardSubmitCard() {
   if (state.isHost) {
     processECardPlay(state.myId, cardType, ecState.selectedCard);
   } else {
-    const host = Object.values(state.connections)[0];
-    if (host?.open) host.send(JSON.stringify({ type: 'ec-play', cardType, cardIdx: ecState.selectedCard }));
+    sendToHost({ type: 'ec-play', cardType, cardIdx: ecState.selectedCard });
   }
 
   ecState.selectedCard = null;
@@ -322,8 +318,12 @@ function processECardBetResponse(playerId, accept) {
 function processECardPlay(playerId, cardType, cardIdx) {
   if (!state.isHost) return;
   const ec = state.ecard;
+  const validCards = ['emperor', 'citizen', 'slave'];
+  if(!validCards.includes(cardType)) return;
+  if(typeof cardIdx !== 'number' || cardIdx < 0) return;
 
   const player = ec.player1.id === playerId ? ec.player1 : ec.player2;
+  if(cardIdx >= player.cards.length) return;
 
   if (ec.phase === 'slave-play' && player.role === 'slave') {
     player.played = cardType;

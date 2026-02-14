@@ -126,7 +126,7 @@ function renderRouletteView(data) {
   survivorsList.innerHTML = rs.players.map((p, i) => `
     <div class="survivor-item ${!p.alive ? 'dead' : ''}">
       <div class="survivor-avatar-sm" style="background:${PLAYER_COLORS[i % PLAYER_COLORS.length]};">${p.avatar}</div>
-      <div class="survivor-name">${p.name}</div>
+      <div class="survivor-name">${escapeHTML(p.name)}</div>
     </div>
   `).join('');
 
@@ -158,8 +158,7 @@ function renderRouletteView(data) {
 
 function spinCylinder() {
   if(!state.isHost) {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) host.send(JSON.stringify({ type: 'rr-action', action: 'spin' }));
+    sendToHost({ type: 'rr-action', action: 'spin' });
     return;
   }
 
@@ -178,8 +177,7 @@ function spinCylinder() {
 
 function pullTrigger() {
   if(!state.isHost) {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) host.send(JSON.stringify({ type: 'rr-action', action: 'trigger' }));
+    sendToHost({ type: 'rr-action', action: 'trigger' });
     return;
   }
 

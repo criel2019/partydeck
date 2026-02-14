@@ -352,7 +352,7 @@ function renderSutdaView(vs) {
 
     return '<div class="sutda-opp-slot' + (p.died ? ' died' : '') + '">' +
       '<div class="sutda-opp-avatar' + (isTurn ? ' active-turn' : '') + '" style="background:' + PLAYER_COLORS[pIdx % PLAYER_COLORS.length] + ';">' + p.avatar + '</div>' +
-      '<div class="sutda-opp-name">' + p.name + '</div>' +
+      '<div class="sutda-opp-name">' + escapeHTML(p.name) + '</div>' +
       '<div class="sutda-opp-chips">' + formatChips(p.chips) + '</div>' +
       '<div class="sutda-opp-status ' + statusClass + '">' + statusText + '</div>' +
       '<div class="sutda-opp-cards">' + cardsHTML + '</div>' +
@@ -438,14 +438,7 @@ function sutdaBet(action, amount) {
   if (state.isHost) {
     processSutdaAction(state.myId, action, amount);
   } else {
-    const hostConn = Object.values(state.connections)[0];
-    if (hostConn?.open) {
-      hostConn.send(JSON.stringify({
-        type: 'sutda-bet',
-        action: action,
-        amount: amount,
-      }));
-    }
+    sendToHost({ type: 'sutda-bet', action, amount });
   }
 }
 
@@ -457,13 +450,7 @@ function sutdaSeryukChoice(choice) {
   if (state.isHost) {
     processSutdaSeryuk(state.myId, choice);
   } else {
-    const hostConn = Object.values(state.connections)[0];
-    if (hostConn?.open) {
-      hostConn.send(JSON.stringify({
-        type: 'sutda-seryuk',
-        choice: choice,
-      }));
-    }
+    sendToHost({ type: 'sutda-seryuk', choice });
   }
 }
 
@@ -732,7 +719,7 @@ function handleSutdaResult(msg) {
     const pIdx = h.seatIdx;
     const rowHTML = '<div class="' + rowClass + '" style="opacity:0;animation:sutdaReveal 0.4s ease ' + (idx * 0.6) + 's forwards;">' +
       '<div class="sutda-result-hand-avatar" style="background:' + PLAYER_COLORS[pIdx % PLAYER_COLORS.length] + ';">' + h.avatar + '</div>' +
-      '<div class="sutda-result-hand-name">' + h.name + (isWinner ? ' (승)' : '') + (isDied ? ' (다이)' : '') + (idx === 0 && !isDied ? ' (선공개)' : '') + '</div>' +
+      '<div class="sutda-result-hand-name">' + escapeHTML(h.name) + (isWinner ? ' (승)' : '') + (isDied ? ' (다이)' : '') + (idx === 0 && !isDied ? ' (선공개)' : '') + '</div>' +
       '<div class="sutda-result-hand-rank">' + (h.rank ? h.rank.name : '-') + '</div>' +
       '<div class="sutda-result-hand-cards">' + (h.cards ? h.cards.map(c => hwatuCardHTML(c, false)).join('') : '') + '</div>' +
       '</div>';

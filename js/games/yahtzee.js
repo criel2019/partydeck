@@ -18,11 +18,29 @@ const YAHTZEE_CATEGORIES = [
   'large-straight', 'yahtzee', 'chance'
 ];
 
+// Lazy-load Three.js + yahtzee-three.js on first use
+let _threeLoaded = false;
+function loadYahtzeeThree() {
+  if(_threeLoaded) return;
+  _threeLoaded = true;
+  const s1 = document.createElement('script');
+  s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  s1.onload = () => {
+    const s2 = document.createElement('script');
+    s2.src = 'js/yahtzee-three.js';
+    s2.onerror = () => { _threeLoaded = false; };
+    document.head.appendChild(s2);
+  };
+  s1.onerror = () => { _threeLoaded = false; };
+  document.head.appendChild(s1);
+}
+
 function startYahtzee() {
   if(!state.isHost || state.players.length < 2) {
     showToast('\ucd5c\uc18c 2\uba85 \ud544\uc694');
     return;
   }
+  loadYahtzeeThree();
 
   yahState = {
     players: state.players.map(p => ({
@@ -111,10 +129,7 @@ function commitCupRollNonHost() {
   cupTapCount = 0;
   const rollBtn = document.getElementById('yahtzeeRollBtn');
   if(rollBtn) { rollBtn.classList.remove('shaking'); }
-  const host = Object.values(state.connections)[0];
-  if(host?.open) {
-    host.send(JSON.stringify({ type: 'yah-action', action: 'roll' }));
-  }
+  sendToHost({ type: 'yah-action', action: 'roll' });
 }
 
 function updateRollBtnShake() {
@@ -185,10 +200,7 @@ function yahRoll() {
 
 function yahToggleHold(idx) {
   if(!state.isHost) {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({ type: 'yah-action', action: 'hold', index: idx }));
-    }
+    sendToHost({ type: 'yah-action', action: 'hold', index: idx });
     return;
   }
 
@@ -207,10 +219,7 @@ function yahToggleHold(idx) {
 
 function yahSelectCategory(cat) {
   if(!state.isHost) {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({ type: 'yah-action', action: 'select', category: cat }));
-    }
+    sendToHost({ type: 'yah-action', action: 'select', category: cat });
     return;
   }
 
@@ -231,10 +240,7 @@ function yahSelectCategory(cat) {
 
 function yahScore() {
   if(!state.isHost) {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({ type: 'yah-action', action: 'score' }));
-    }
+    sendToHost({ type: 'yah-action', action: 'score' });
     return;
   }
 
@@ -424,6 +430,7 @@ let _prevRollsLeft = null;
 let _prevTurnIdx = null;
 
 function renderYahtzeeView(view) {
+  loadYahtzeeThree();
   _lastYahView = view;
   document.getElementById('yahTurnText').textContent = '\ud134 ' + view.turnNum + '/' + view.maxTurns;
   const currentPlayer = view.players[view.turnIdx];
@@ -437,7 +444,7 @@ function renderYahtzeeView(view) {
       '<div class="yahtzee-player-mini-avatar" style="background:' + PLAYER_COLORS[idx % PLAYER_COLORS.length] + ';">' +
         p.avatar +
       '</div>' +
-      '<div class="yahtzee-player-mini-name">' + p.name + '</div>' +
+      '<div class="yahtzee-player-mini-name">' + escapeHTML(p.name) + '</div>' +
       '<div class="yahtzee-player-mini-score">' + p.total + '</div>' +
     '</div>'
   ).join('');
@@ -575,7 +582,7 @@ function renderYahtzeeScorecard(view, isMyTurn) {
     const isMe = p.id === state.myId;
     const isTurn = idx === view.turnIdx;
     const cls = (isMe ? ' ysc-me' : '') + (isTurn ? ' ysc-turn' : '');
-    const name = isMe ? 'ME' : p.name.slice(0, 4);
+    const name = isMe ? 'ME' : escapeHTML(p.name.slice(0, 4));
     html += '<th class="ysc-player' + cls + '">' + name + '</th>';
   });
   html += '</tr></thead><tbody>';
@@ -668,7 +675,7 @@ function showYahtzeeGameOver(view) {
         p.avatar +
       '</div>' +
       '<div class="yahtzee-rank-info">' +
-        '<div class="yahtzee-rank-name">' + p.name + (p.id === state.myId ? ' (\ub098)' : '') + '</div>' +
+        '<div class="yahtzee-rank-name">' + escapeHTML(p.name) + (p.id === state.myId ? ' (나)' : '') + '</div>' +
       '</div>' +
       '<div class="yahtzee-rank-score">' + p.total + '\uc810</div>' +
     '</div>';
@@ -689,10 +696,25 @@ function handleYahtzeeGameOver() {
 
 function closeYahtzeeGame() {
   document.getElementById('yahtzeeGameOver').style.display = 'none';
-  if(state.isHost) {
-    showScreen('lobby');
-  } else {
-    leaveLobby();
+  returnToLobby();
+}
+
+function handleYahAction(peerId, msg) {
+  if(!state.isHost) return;
+  if(yahState.players[yahState.turnIdx].id !== peerId) return;
+
+  if(msg.action === 'roll') {
+    if(yahState.rollsLeft > 0) { yahRollDice(); broadcastYahtzeeState(); }
+  } else if(msg.action === 'hold') {
+    const idx = msg.index;
+    if(typeof idx !== 'number' || idx < 0 || idx > 4) return;
+    if(yahState.rollsLeft < 3) { yahState.held[idx] = !yahState.held[idx]; broadcastYahtzeeState(); }
+  } else if(msg.action === 'select') {
+    if(!YAHTZEE_CATEGORIES.includes(msg.category)) return;
+    const player = yahState.players[yahState.turnIdx];
+    if(player.scores[msg.category] === null) { yahState.selectedCategory = msg.category; yahState.phase = 'scoring'; broadcastYahtzeeState(); }
+  } else if(msg.action === 'score') {
+    yahConfirmScore();
   }
 }
 

@@ -107,7 +107,7 @@ function renderUpDownView(view) {
 
   const penaltyItems = document.getElementById('updownPenaltyItems');
   penaltyItems.innerHTML = view.penalties.slice(-5).map(p =>
-    '<div class="ud-penalty-item">\ud83c\udf7a ' + p + '</div>'
+    '<div class="ud-penalty-item">\ud83c\udf7a ' + escapeHTML(p) + '</div>'
   ).join('');
 
   const isMyTurn = currentPlayer.id === state.myId;
@@ -171,15 +171,13 @@ function udChoice(choice) {
   if(state.isHost) {
     processUpDownChoice(state.myId, choice);
   } else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({ type: 'ud-choice', choice }));
-    }
+    sendToHost({ type: 'ud-choice', choice });
   }
 }
 
 function processUpDownChoice(playerId, choice) {
   if(!state.isHost || udState.phase !== 'playing') return;
+  if(choice !== 'up' && choice !== 'down') return;
 
   const playerIdx = udState.players.findIndex(p => p.id === playerId);
   if(playerIdx !== udState.turnIdx) return;
@@ -261,10 +259,7 @@ function udAddBet() {
     showToast('\ubc8c\uce59\uc774 \ucd94\uac00\ub418\uc5c8\uc2b5\ub2c8\ub2e4!');
     broadcastUpDownState();
   } else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({ type: 'ud-addbet', text }));
-    }
+    sendToHost({ type: 'ud-addbet', text });
     input.value = '';
     showToast('\ubc8c\uce59 \ucd94\uac00 \uc694\uccad!');
   }
@@ -280,7 +275,7 @@ function showUpDownJQArea(view) {
     .map((p, i) =>
       '<div class="ud-player-option" data-pid="' + p.id + '" onclick="selectUpDownPlayer(\'' + p.id + '\', \'jq\')">' +
         '<div class="player-avatar-sm" style="background:' + PLAYER_COLORS[i % PLAYER_COLORS.length] + ';">' + p.avatar + '</div>' +
-        '<div>' + p.name + '</div>' +
+        '<div>' + escapeHTML(p.name) + '</div>' +
       '</div>'
     ).join('');
 }
@@ -295,7 +290,7 @@ function showUpDownKArea(view) {
     .map((p, i) =>
       '<div class="ud-player-option" data-pid="' + p.id + '" onclick="selectUpDownPlayer(\'' + p.id + '\', \'k\')">' +
         '<div class="player-avatar-sm" style="background:' + PLAYER_COLORS[i % PLAYER_COLORS.length] + ';">' + p.avatar + '</div>' +
-        '<div>' + p.name + '</div>' +
+        '<div>' + escapeHTML(p.name) + '</div>' +
       '</div>'
     ).join('');
 }
@@ -337,10 +332,7 @@ function udBlackKnight() {
   if(state.isHost) {
     processBlackKnight(state.myId, targetId);
   } else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({ type: 'ud-special', action: 'blackknight', targetId }));
-    }
+    sendToHost({ type: 'ud-special', action: 'blackknight', targetId });
   }
 
   selectedUpDownPlayers = [];
@@ -396,14 +388,11 @@ function udAcceptBK() {
   if(state.isHost) {
     resolveBKAccept(requesterId, state.myId, penaltyText);
   } else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({
-        type: 'ud-bk-response',
-        accepted: true,
-        requesterId
-      }));
-    }
+    sendToHost({
+      type: 'ud-bk-response',
+      accepted: true,
+      requesterId
+    });
   }
 }
 
@@ -417,14 +406,11 @@ function udRejectBK() {
   if(state.isHost) {
     resolveBKReject(requesterId, state.myId, penaltyText);
   } else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({
-        type: 'ud-bk-response',
-        accepted: false,
-        requesterId
-      }));
-    }
+    sendToHost({
+      type: 'ud-bk-response',
+      accepted: false,
+      requesterId
+    });
   }
 }
 
@@ -454,14 +440,11 @@ function udKingPenalty() {
   if(state.isHost) {
     processKingPenalty(state.myId, selectedUpDownPlayers);
   } else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({
-        type: 'ud-special',
-        action: 'king',
-        targets: selectedUpDownPlayers
-      }));
-    }
+    sendToHost({
+      type: 'ud-special',
+      action: 'king',
+      targets: selectedUpDownPlayers
+    });
   }
 
   selectedUpDownPlayers = [];
@@ -519,10 +502,7 @@ function udAcceptPenalty() {
   if(state.isHost) {
     continueUpDown();
   } else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({ type: 'ud-penalty-done' }));
-    }
+    sendToHost({ type: 'ud-penalty-done' });
   }
 }
 
@@ -535,10 +515,7 @@ function udRejectPenalty() {
   if(state.isHost) {
     continueUpDown();
   } else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({ type: 'ud-penalty-done' }));
-    }
+    sendToHost({ type: 'ud-penalty-done' });
   }
 }
 

@@ -140,7 +140,7 @@ function renderQDRankings(qd) {
       <div class="qd-ranking-item ${isWinner ? 'winner' : ''}">
         <div class="qd-ranking-rank">${rank}</div>
         <div class="qd-ranking-avatar" style="background:${PLAYER_COLORS[playerIdx % PLAYER_COLORS.length]};">${r.avatar}</div>
-        <div class="qd-ranking-name">${r.name}</div>
+        <div class="qd-ranking-name">${escapeHTML(r.name)}</div>
         <div class="qd-ranking-time ${r.cheated ? 'cheated' : ''}">${timeStr}</div>
       </div>
     `;
@@ -204,8 +204,7 @@ function sendQDAction(action) {
   if(state.isHost) {
     processQDAction(msg);
   } else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) host.send(JSON.stringify(msg));
+    sendToHost(msg);
   }
 }
 

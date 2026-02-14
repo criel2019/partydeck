@@ -1,3 +1,20 @@
+// ===== HTML SANITIZATION =====
+function escapeHTML(str) {
+  if (typeof str !== 'string') return String(str ?? '');
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ===== ICE SERVER CONFIG =====
+// TURN 서버 자격증명은 프로덕션에서 반드시 서버사이드 API를 통해 임시 발급하세요.
+// 예: Cloudflare Workers, Vercel Edge Function 등에서 metered.ca REST API 호출
+// 현재는 STUN 서버만 사용합니다 (NAT 환경에 따라 P2P 연결 성공률이 낮아질 수 있음).
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun.relay.metered.ca:80' },
+];
+
 // ===== LOAD PEERJS DYNAMICALLY =====
 function loadPeerJS() {
   return new Promise((resolve, reject) => {
@@ -121,10 +138,12 @@ function genCode() {
 function loadProfile() {
   const s = localStorage.getItem('pd_profile');
   if(s) {
-    const p = JSON.parse(s);
-    state.myName = p.name || '';
-    state.myAvatar = p.avatar || '😎';
-    state.avatarIdx = Math.max(0, AVATARS.indexOf(state.myAvatar));
+    try {
+      const p = JSON.parse(s);
+      state.myName = p.name || '';
+      state.myAvatar = p.avatar || '😎';
+      state.avatarIdx = Math.max(0, AVATARS.indexOf(state.myAvatar));
+    } catch(e) { /* corrupt profile, use defaults */ }
   }
   document.getElementById('nameInput').value = state.myName;
   document.getElementById('myAvatar').textContent = state.myAvatar;
@@ -138,14 +157,16 @@ function saveProfile() {
 }
 
 function updateStats() {
-  const s = JSON.parse(localStorage.getItem('pd_stats') || '{"w":0,"g":0}');
+  let s;
+  try { s = JSON.parse(localStorage.getItem('pd_stats') || '{"w":0,"g":0}'); } catch(e) { s = {w:0,g:0}; }
   const r = s.g > 0 ? Math.round((s.w / s.g) * 100) : 0;
   document.getElementById('profileStats').textContent = `${s.g}전 ${s.w}승 (${r}%)`;
 }
 
 function recordGame(won) {
   if(typeof practiceMode !== 'undefined' && practiceMode) return;
-  const s = JSON.parse(localStorage.getItem('pd_stats') || '{"w":0,"g":0}');
+  let s;
+  try { s = JSON.parse(localStorage.getItem('pd_stats') || '{"w":0,"g":0}'); } catch(e) { s = {w:0,g:0}; }
   s.g++;
   if(won) s.w++;
   localStorage.setItem('pd_stats', JSON.stringify(s));
@@ -163,18 +184,7 @@ function cycleAvatar() {
 function initPeer(id) {
   return new Promise((resolve, reject) => {
     const peer = new Peer(id, {
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          { urls: 'stun:stun.relay.metered.ca:80' },
-          { urls: 'turn:global.relay.metered.ca:80', username: 'e8dd65b92f6aee9b1b166122', credential: 'FhMnGasa+JeQChi3' },
-          { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username: 'e8dd65b92f6aee9b1b166122', credential: 'FhMnGasa+JeQChi3' },
-          { urls: 'turn:global.relay.metered.ca:443', username: 'e8dd65b92f6aee9b1b166122', credential: 'FhMnGasa+JeQChi3' },
-          { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: 'e8dd65b92f6aee9b1b166122', credential: 'FhMnGasa+JeQChi3' },
-        ]
-      }
+      config: { iceServers: ICE_SERVERS }
     });
     
     const timeout = setTimeout(() => {
@@ -220,8 +230,14 @@ function sendTo(peerId, data) {
   if(conn?.open) conn.send(JSON.stringify(data));
 }
 
+function sendToHost(data) {
+  const host = Object.values(state.connections)[0];
+  if(host?.open) host.send(JSON.stringify(data));
+}
+
 function handleMessage(peerId, raw) {
-  const msg = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  let msg;
+  try { msg = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch(e) { console.warn('[PartyDeck] 잘못된 메시지:', e); return; }
   console.log('[PartyDeck] 메시지 수신:', msg.type, 'from:', peerId);
 
   const handlers = {
@@ -234,6 +250,21 @@ function handleMessage(peerId, raw) {
     'mf-state': () => { mfHandleState(msg); },
     'mf-action': () => { if(state.isHost) mfProcessAction(peerId, msg); },
     'mf-result': () => { mfHandleResult(msg); },
+    'mf-config': () => { mfHandleConfig(msg); },
+    'game-selected': () => {
+      state.selectedGame = msg.game;
+      // Show mafia lobby area for non-host when mafia is selected
+      const mfLobbyArea = document.getElementById('mfLobbyArea');
+      if (mfLobbyArea) {
+        mfLobbyArea.style.display = msg.game === 'mafia' ? 'block' : 'none';
+      }
+      // Update waiting text
+      const waitingText = document.getElementById('waitingText');
+      if (waitingText) {
+        const gameNames = { poker:'포커', mafia:'마피아', sutda:'섯다', quickdraw:'총잡이', roulette:'룰렛', lottery:'뽑기', ecard:'E카드', yahtzee:'야추', updown:'업다운', truth:'진실게임' };
+        waitingText.textContent = `${gameNames[msg.game] || msg.game} 게임 대기 중...`;
+      }
+    },
     'truth-state': () => {
       showScreen('truthGame');
       renderTruthView(msg);
@@ -270,7 +301,13 @@ function handleMessage(peerId, raw) {
     // UpDown handlers
     'ud-state': () => { showScreen('updownGame'); renderUpDownView(msg.state); },
     'ud-choice': () => { if(state.isHost) processUpDownChoice(peerId, msg.choice); },
-    'ud-addbet': () => { if(state.isHost) { udState.penalties.push(msg.text); udState.currentBet = msg.text; broadcastUpDownState(); } },
+    'ud-addbet': () => {
+      if(state.isHost) {
+        const text = (typeof msg.text === 'string' ? msg.text : '').trim().slice(0, 100);
+        if(!text) return;
+        udState.penalties.push(text); udState.currentBet = text; broadcastUpDownState();
+      }
+    },
     'ud-special': () => {
       if(state.isHost) {
         if(msg.action === 'blackknight') processBlackKnight(peerId, msg.targetId);
@@ -289,33 +326,7 @@ function handleMessage(peerId, raw) {
     'ud-penalty-done': () => { if(state.isHost) continueUpDown(); },
     // Yahtzee handlers
     'yah-state': () => { showScreen('yahtzeeGame'); renderYahtzeeView(msg.state); },
-    'yah-action': () => {
-      if(state.isHost) {
-        if(yahState.players[yahState.turnIdx].id !== peerId) return;
-        if(msg.action === 'roll') {
-          if(yahState.rollsLeft > 0) { yahRollDice(); broadcastYahtzeeState(); }
-        } else if(msg.action === 'hold') {
-          if(yahState.rollsLeft < 3) { yahState.held[msg.index] = !yahState.held[msg.index]; broadcastYahtzeeState(); }
-        } else if(msg.action === 'select') {
-          const player = yahState.players[yahState.turnIdx];
-          if(player.scores[msg.category] === null) { yahState.selectedCategory = msg.category; yahState.phase = 'scoring'; broadcastYahtzeeState(); }
-        } else if(msg.action === 'score') {
-          if(yahState.selectedCategory) {
-            const player = yahState.players[yahState.turnIdx];
-            const score = calcYahtzeeScore(yahState.dice, yahState.selectedCategory);
-            player.scores[yahState.selectedCategory] = score;
-            player.total = calculatePlayerTotal(player);
-            const allFinished = yahState.players.every(p => YAHTZEE_CATEGORIES.every(cat => p.scores[cat] !== null));
-            if(allFinished) { yahState.phase = 'gameover'; broadcastYahtzeeState(); handleYahtzeeGameOver(); return; }
-            yahState.turnIdx = (yahState.turnIdx + 1) % yahState.players.length;
-            if(yahState.turnIdx === 0) yahState.turnNum++;
-            yahState.dice = [0,0,0,0,0]; yahState.held = [false,false,false,false,false];
-            yahState.rollsLeft = 3; yahState.selectedCategory = null; yahState.phase = 'rolling';
-            broadcastYahtzeeState();
-          }
-        }
-      }
-    },
+    'yah-action': () => handleYahAction(peerId, msg),
     // E-Card handlers
     'ec-state': () => { showScreen('ecardGame'); renderECardView(msg); },
     'ec-bet': () => { if(state.isHost) processECardBet(peerId, msg.bet); },
@@ -486,10 +497,12 @@ function handlePlayerJoin(peerId, msg) {
     sendTo(peerId, { type: 'room-full' });
     return;
   }
-  state.players.push({ id: peerId, name: msg.name, avatar: msg.avatar, isHost: false });
+  const name = (typeof msg.name === 'string' ? msg.name : '').trim().slice(0, 20) || '플레이어';
+  const avatar = AVATARS.includes(msg.avatar) ? msg.avatar : '😎';
+  state.players.push({ id: peerId, name, avatar, isHost: false });
   broadcast({ type: 'player-list', players: state.players });
   updateLobbyUI();
-  showToast(msg.name + ' 참가!');
+  showToast(name + ' 참가!');
 }
 
 function leaveLobby() {
@@ -501,9 +514,29 @@ function leaveLobby() {
   showScreen('mainMenu');
 }
 
+function returnToLobby() {
+  // Clean up all game timers
+  if (typeof mfTimer !== 'undefined') clearInterval(mfTimer);
+  if (typeof qdState !== 'undefined' && qdState) {
+    if (qdState.countdownTimeout) { clearTimeout(qdState.countdownTimeout); qdState.countdownTimeout = null; }
+    if (qdState.fireTimeout) { clearTimeout(qdState.fireTimeout); qdState.fireTimeout = null; }
+  }
+  // Clean up all game state without destroying peer connection
+  if (typeof mfState !== 'undefined') { mfState = null; mfView = null; }
+  state.poker = null;
+  state.mafia = null;
+  if (typeof sutdaHost !== 'undefined') sutdaHost = null;
+  if (typeof sutdaView !== 'undefined') sutdaView = null;
+  if (typeof rrState !== 'undefined' && rrState) rrState.phase = 'waiting';
+  if (typeof truthState !== 'undefined') truthState = null;
+  if (typeof yahState !== 'undefined' && yahState) yahState.phase = 'waiting';
+  showScreen('lobby');
+  updateLobbyUI();
+}
+
 function leaveGame() {
   if(typeof practiceMode !== 'undefined' && practiceMode) { leavePracticeMode(); return; }
-  leaveLobby();
+  returnToLobby();
 }
 
 function copyRoomCode() {
@@ -534,7 +567,7 @@ function updateLobbyUI() {
   list.innerHTML = state.players.map((p, i) => `
     <div class="player-item">
       <div class="player-avatar-sm" style="background:${PLAYER_COLORS[i % PLAYER_COLORS.length]};">${p.avatar}</div>
-      <div class="player-name">${p.name}</div>
+      <div class="player-name">${escapeHTML(p.name)}</div>
       ${p.isHost ? '<span class="host-badge">HOST</span>' : ''}
       ${p.id === state.myId ? '<span style="font-size:11px;color:var(--accent2);">나</span>' : ''}
     </div>
@@ -550,6 +583,25 @@ function selectGame(el) {
   document.querySelectorAll('.game-option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
   state.selectedGame = el.dataset.game;
+
+  // Show/hide mafia lobby area (setup button + config display)
+  const mfLobbyArea = document.getElementById('mfLobbyArea');
+  const mfSetupBtn = document.getElementById('mfSetupBtn');
+  const cfgDisplay = document.getElementById('mfConfigDisplay');
+  if (mfLobbyArea) {
+    mfLobbyArea.style.display = state.selectedGame === 'mafia' ? 'block' : 'none';
+  }
+  if (mfSetupBtn) {
+    mfSetupBtn.style.display = (state.selectedGame === 'mafia' && state.isHost) ? 'block' : 'none';
+  }
+  if (cfgDisplay) {
+    cfgDisplay.style.display = (state.selectedGame === 'mafia' && typeof mfSetupDone !== 'undefined' && mfSetupDone) ? 'block' : 'none';
+  }
+
+  // Broadcast game selection so non-host players can see mafia config
+  if (state.isHost) {
+    broadcast({ type: 'game-selected', game: state.selectedGame });
+  }
 }
 
 // ===== GAME START =====

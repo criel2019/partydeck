@@ -133,15 +133,12 @@ function pickLotteryCell(index) {
     broadcast(update);
     handleLotteryPick(update);
   } else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({
-        type: 'lottery-pick-request',
-        index: index,
-        playerId: state.myId,
-        playerName: state.myName
-      }));
-    }
+    sendToHost({
+      type: 'lottery-pick-request',
+      index: index,
+      playerId: state.myId,
+      playerName: state.myName
+    });
   }
 }
 
@@ -162,7 +159,7 @@ function handleLotteryPick(msg) {
   const cellEl = document.querySelector(`[data-cell-index="${msg.index}"]`);
   if(cellEl) {
     cellEl.classList.add('revealed');
-    cellEl.innerHTML = `<div class="cell-content">${msg.item}</div>`;
+    cellEl.innerHTML = `<div class="cell-content">${escapeHTML(msg.item)}</div>`;
   }
 
   const pickedCount = lotteryState.grid.filter(c => c.revealed).length;
@@ -185,7 +182,7 @@ function updateMyLotteryResult() {
     document.getElementById('myLotteryResult').style.display = 'block';
     const list = document.getElementById('myResultList');
     list.innerHTML = myPicks.map((p, i) =>
-      `<div class="result-item">${i + 1}. ${p.item}</div>`
+      `<div class="result-item">${i + 1}. ${escapeHTML(p.item)}</div>`
     ).join('');
   }
 }
@@ -215,14 +212,11 @@ function spinRoulette() {
     broadcast(spinData);
     handleRouletteSpin(spinData);
   } else {
-    const host = Object.values(state.connections)[0];
-    if(host?.open) {
-      host.send(JSON.stringify({
-        type: 'roulette-spin-request',
-        playerId: state.myId,
-        playerName: state.myName
-      }));
-    }
+    sendToHost({
+      type: 'roulette-spin-request',
+      playerId: state.myId,
+      playerName: state.myName
+    });
   }
 }
 

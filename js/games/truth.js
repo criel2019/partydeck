@@ -111,7 +111,9 @@ function processTruthQuestion(peerId, question) {
   const questionerId = truthState.playerOrder[truthState.questionerIdx];
   if (peerId !== questionerId) return;
 
-  truthState.question = question;
+  const q = (typeof question === 'string' ? question : '').trim().slice(0, 200);
+  if(!q) return;
+  truthState.question = q;
   truthState.phase = 'voting';
   truthState.votes = {};
   truthState.votedSet = new Set();
@@ -244,7 +246,7 @@ function renderTruthPlayersBar(players) {
       '<div class="' + avatarClasses + '" style="background:' + PLAYER_COLORS[p.colorIdx % PLAYER_COLORS.length] + ';">' +
         p.avatar +
       '</div>' +
-      '<div class="' + nameClass + '">' + (isMe ? '나' : p.name) + '</div>' +
+      '<div class="' + nameClass + '">' + (isMe ? '나' : escapeHTML(p.name)) + '</div>' +
     '</div>';
   }).join('');
 }
@@ -264,13 +266,7 @@ function submitTruthQuestion() {
   if (state.isHost) {
     processTruthQuestion(state.myId, question);
   } else {
-    const hostConn = Object.values(state.connections)[0];
-    if (hostConn?.open) {
-      hostConn.send(JSON.stringify({
-        type: 'truth-question',
-        question: question,
-      }));
-    }
+    sendToHost({ type: 'truth-question', question });
   }
 }
 
@@ -296,13 +292,7 @@ function castTruthVote(vote) {
   if (state.isHost) {
     processTruthVote(state.myId, vote);
   } else {
-    const hostConn = Object.values(state.connections)[0];
-    if (hostConn?.open) {
-      hostConn.send(JSON.stringify({
-        type: 'truth-vote',
-        vote: vote,
-      }));
-    }
+    sendToHost({ type: 'truth-vote', vote });
   }
 }
 
@@ -310,12 +300,7 @@ function truthNextRound() {
   if (state.isHost) {
     processTruthNext();
   } else {
-    const hostConn = Object.values(state.connections)[0];
-    if (hostConn?.open) {
-      hostConn.send(JSON.stringify({
-        type: 'truth-next',
-      }));
-    }
+    sendToHost({ type: 'truth-next' });
   }
 }
 

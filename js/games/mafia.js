@@ -68,45 +68,221 @@ let mfTimer = null;    // interval id
 let mfSelectedTarget = null;
 let mfUseSnipe = false;
 
+// ========================= ROLE CONFIG =========================
+let mfConfig = {
+  mafia: 1, spy: false, reporter: false, police: false, doctor: false,
+  undertaker: false, detective: false, senator: false, soldier: false,
+  lover: false, baeksu: false,
+};
+let mfSetupDone = false; // tracks if host has configured
+
+// ========================= SETUP UI ============================
+
+function mfOpenSetup() {
+  if (!state.isHost) return;
+  const overlay = document.getElementById('mfSetupOverlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  mfRenderSetup();
+}
+
+function mfCloseSetup() {
+  const overlay = document.getElementById('mfSetupOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function mfConfirmSetup() {
+  // Validate: need at least 1 mafia
+  if (mfConfig.mafia < 1) { showToast('마피아는 최소 1명 필요합니다'); return; }
+
+  mfSetupDone = true;
+  mfCloseSetup();
+
+  // Broadcast config to all players (lobby info sharing)
+  broadcast({ type: 'mf-config', config: mfConfig });
+  mfShowConfigInLobby();
+
+  showToast('직업 설정 완료!');
+}
+
+function mfToggleRole(role) {
+  if (role === 'reporter') {
+    // Reporter is linked to spy - cannot toggle independently
+    return;
+  }
+
+  mfConfig[role] = !mfConfig[role];
+
+  // Spy ↔ Reporter linkage
+  if (role === 'spy') {
+    mfConfig.reporter = mfConfig.spy;
+  }
+
+  mfRenderSetup();
+}
+
+function mfAdjustMafiaCount(delta) {
+  mfConfig.mafia = Math.max(1, Math.min(3, mfConfig.mafia + delta));
+  mfRenderSetup();
+}
+
+function mfGetConfigRoleCount() {
+  let count = mfConfig.mafia;
+  if (mfConfig.spy) count++;
+  if (mfConfig.reporter) count++;
+  if (mfConfig.police) count++;
+  if (mfConfig.doctor) count++;
+  if (mfConfig.undertaker) count++;
+  if (mfConfig.detective) count++;
+  if (mfConfig.senator) count++;
+  if (mfConfig.soldier) count++;
+  if (mfConfig.lover) count += 2;
+  if (mfConfig.baeksu) count++;
+  return count;
+}
+
+function mfRenderSetup() {
+  const content = document.getElementById('mfSetupContent');
+  if (!content) return;
+
+  const totalRoles = mfGetConfigRoleCount();
+  const playerCount = state.players.length;
+  const isOver = totalRoles > playerCount;
+
+  // Update count display
+  const countEl = document.getElementById('mfSetupRoleCount');
+  if (countEl) {
+    countEl.textContent = totalRoles;
+    countEl.style.color = isOver ? '#ff4444' : '#d4af37';
+  }
+  const playerCountEl = document.getElementById('mfSetupPlayerCount');
+  if (playerCountEl) playerCountEl.textContent = `/ ${playerCount}명`;
+
+  const SETUP_ROLES = [
+    { key: 'mafia', name: '마피아', emoji: '🔪', type: 'count',
+      desc: '시민을 모두 탈락시키면 승리. 밤마다 시민 1명을 죽인다.', team: 'mafia' },
+    { key: 'spy', name: '스파이', emoji: '🕵️', type: 'toggle',
+      desc: '스파이 ON 시 기자가 자동 포함됩니다.', team: 'mafia' },
+    { key: 'reporter', name: '기자', emoji: '📰', type: 'toggle', linkedTo: 'spy',
+      desc: '밤마다 스파이를 찾을 수 있다.', team: 'citizen' },
+    { key: 'police', name: '경찰', emoji: '🔍', type: 'toggle',
+      desc: '밤마다 마피아인지 조사한다.', team: 'citizen' },
+    { key: 'doctor', name: '의사', emoji: '💊', type: 'toggle',
+      desc: '밤마다 1명을 치료하여 마피아 공격을 막는다. (저격은 치료 불가)', team: 'citizen' },
+    { key: 'undertaker', name: '장의사', emoji: '⚰️', type: 'toggle',
+      desc: '밤에 죽은 사람이 마피아인지 시민인지 확인한다.', team: 'citizen' },
+    { key: 'detective', name: '탐정', emoji: '🔎', type: 'toggle',
+      desc: '추적 중인 시민이 죽으면 범인을 알 수 있다.', team: 'citizen' },
+    { key: 'lover', name: '연인', emoji: '💕', type: 'toggle',
+      desc: '연인 ON 시 항상 2명으로 배정됩니다. 서로 누구인지 알고 시작합니다.', team: 'citizen' },
+    { key: 'senator', name: '국회의원', emoji: '🏛️', type: 'toggle',
+      desc: '투표로 처형당하지 않는다. (영구 면역)', team: 'citizen' },
+    { key: 'soldier', name: '군인', emoji: '🛡️', type: 'toggle',
+      desc: '마피아 공격을 1회 막을 수 있다. (저격은 즉사)', team: 'citizen' },
+    { key: 'baeksu', name: '백수', emoji: '😴', type: 'toggle',
+      desc: '4명 사망 시 첫 사망자의 직업을 이어받는다.', team: 'citizen' },
+  ];
+
+  let html = '';
+  SETUP_ROLES.forEach(role => {
+    const isLinked = role.linkedTo && !mfConfig[role.linkedTo];
+    const isEnabled = mfConfig[role.key];
+    const isMafia = role.team === 'mafia';
+    const rowClass = `mf-setup-row ${isMafia ? 'mafia-row' : ''} ${isEnabled ? 'active' : ''} ${isLinked ? 'linked-disabled' : ''}`;
+
+    html += `<div class="${rowClass}">`;
+    html += `<div class="mf-setup-role-left">`;
+    html += `<span class="mf-setup-role-emoji">${role.emoji}</span>`;
+    html += `<div class="mf-setup-role-info">`;
+    html += `<div class="mf-setup-role-name ${isMafia ? 'mafia-name' : ''}">${role.name}</div>`;
+    html += `<div class="mf-setup-role-desc">${role.desc}</div>`;
+    html += `</div></div>`;
+
+    html += `<div class="mf-setup-role-right">`;
+    if (role.type === 'count') {
+      html += `<div class="mf-setup-count-ctrl">`;
+      html += `<button class="mf-setup-count-btn plus" onclick="mfAdjustMafiaCount(1)">+</button>`;
+      html += `<span class="mf-setup-count-num">${mfConfig.mafia}</span>`;
+      html += `<button class="mf-setup-count-btn minus" onclick="mfAdjustMafiaCount(-1)">−</button>`;
+      html += `</div>`;
+    } else {
+      const disabled = isLinked ? 'disabled' : '';
+      const checked = isEnabled ? 'checked' : '';
+      html += `<label class="mf-setup-switch">`;
+      html += `<input type="checkbox" ${checked} ${disabled} onchange="mfToggleRole('${role.key}')">`;
+      html += `<span class="mf-setup-slider"></span>`;
+      html += `</label>`;
+    }
+    html += `</div></div>`;
+  });
+
+  content.innerHTML = html;
+}
+
+function mfHandleConfig(msg) {
+  if (msg.config) {
+    mfConfig = { ...mfConfig, ...msg.config };
+    mfSetupDone = true;
+    mfShowConfigInLobby();
+  }
+}
+
+function mfShowConfigInLobby() {
+  const display = document.getElementById('mfConfigDisplay');
+  if (!display) return;
+
+  // Show the mafia lobby area too
+  const mfLobbyArea = document.getElementById('mfLobbyArea');
+  if (mfLobbyArea) mfLobbyArea.style.display = 'block';
+
+  display.style.display = 'block';
+
+  const roles = [];
+  roles.push(`🔪 마피아 x${mfConfig.mafia}`);
+  if (mfConfig.spy) roles.push('🕵️ 스파이');
+  if (mfConfig.reporter) roles.push('📰 기자');
+  if (mfConfig.police) roles.push('🔍 경찰');
+  if (mfConfig.doctor) roles.push('💊 의사');
+  if (mfConfig.undertaker) roles.push('⚰️ 장의사');
+  if (mfConfig.detective) roles.push('🔎 탐정');
+  if (mfConfig.lover) roles.push('💕 연인 x2');
+  if (mfConfig.senator) roles.push('🏛️ 국회의원');
+  if (mfConfig.soldier) roles.push('🛡️ 군인');
+  if (mfConfig.baeksu) roles.push('😴 백수');
+
+  const totalRoles = mfGetConfigRoleCount();
+  const citizens = Math.max(0, state.players.length - totalRoles);
+  if (citizens > 0) roles.push(`👤 시민 x${citizens}`);
+
+  const hostLabel = state.isHost ? '(수정하려면 위 버튼 클릭)' : '';
+
+  display.innerHTML = `
+    <div class="mf-config-title">🎭 직업 구성 (${totalRoles}/${state.players.length}명) ${hostLabel}</div>
+    <div class="mf-config-tags">${roles.map(r => `<span class="mf-config-tag">${r}</span>`).join('')}</div>
+  `;
+}
+
 // ========================= ROLE ASSIGNMENT ====================
 
 function mfAssignRoles(playerCount) {
-  // Role distribution based on player count
   const roles = [];
+  for (let i = 0; i < mfConfig.mafia; i++) roles.push('mafia');
+  if (mfConfig.spy) roles.push('spy');
+  if (mfConfig.reporter) roles.push('reporter');
+  if (mfConfig.police) roles.push('police');
+  if (mfConfig.doctor) roles.push('doctor');
+  if (mfConfig.undertaker) roles.push('undertaker');
+  if (mfConfig.detective) roles.push('detective');
+  if (mfConfig.senator) roles.push('senator');
+  if (mfConfig.soldier) roles.push('soldier');
+  if (mfConfig.lover) { roles.push('lover', 'lover'); }
+  if (mfConfig.baeksu) roles.push('baeksu');
 
-  if (playerCount <= 5) {
-    // Minimum: 1 mafia, doctor, police, citizens
-    roles.push('mafia', 'doctor', 'police');
-    while (roles.length < playerCount) roles.push('citizen');
-  } else if (playerCount <= 7) {
-    // 6-7 players: 2 mafia, doctor, police, citizens
-    roles.push('mafia', 'mafia', 'doctor', 'police');
-    while (roles.length < playerCount) roles.push('citizen');
-  } else if (playerCount <= 9) {
-    // 8-9 players: 2 mafia, spy, doctor, police, reporter, citizens
-    roles.push('mafia', 'mafia', 'spy', 'doctor', 'police', 'reporter');
-    while (roles.length < playerCount) roles.push('citizen');
-  } else if (playerCount <= 10) {
-    // 10 players: core + senator, soldier
-    roles.push('mafia', 'mafia', 'spy', 'doctor', 'police', 'reporter',
-               'senator', 'soldier');
-    while (roles.length < playerCount) roles.push('citizen');
-  } else {
-    // 11+ players: full role set
-    roles.push('mafia', 'mafia', 'spy',
-               'police', 'doctor', 'reporter', 'undertaker', 'detective',
-               'senator', 'soldier');
-    // Add lovers if 11+
-    if (playerCount >= 11) {
-      roles.push('lover', 'lover');
-    }
-    // Add baeksu if 13+
-    if (playerCount >= 13) {
-      roles.push('baeksu');
-    }
-    // Fill remainder with citizens
-    while (roles.length < playerCount) roles.push('citizen');
+  if (roles.length > playerCount) {
+    showToast(`직업 수(${roles.length})가 플레이어 수(${playerCount})보다 많습니다!`);
+    return null;
   }
+  while (roles.length < playerCount) roles.push('citizen');
 
   // Shuffle
   for (let i = roles.length - 1; i > 0; i--) {
@@ -125,8 +301,27 @@ function startMafia() {
     showToast('마피아는 최소 4명이 필요합니다');
     return;
   }
+  if (!mfSetupDone) {
+    showToast('먼저 직업 설정을 해주세요!');
+    return;
+  }
+
+  // Validate role count against current players
+  const totalRoles = mfGetConfigRoleCount();
+  if (totalRoles > n) {
+    showToast(`직업 수(${totalRoles})가 플레이어 수(${n})보다 많습니다! 직업 설정을 수정하세요.`);
+    return;
+  }
+
+  mfStartGame();
+}
+
+function mfStartGame() {
+  if (!state.isHost) return;
+  const n = state.players.length;
 
   const roles = mfAssignRoles(n);
+  if (!roles) return; // validation failed
 
   // Find lover partner IDs
   const loverIndices = [];
@@ -140,41 +335,27 @@ function startMafia() {
       name: p.name,
       avatar: p.avatar,
       isHost: p.isHost || false,
-      role: roles[i],             // original assigned role
-      activeRole: roles[i],       // can change for baeksu
+      role: roles[i],
+      activeRole: roles[i],
       alive: true,
       lives: roles[i] === 'soldier' ? 2 : 1,
       snipesLeft: roles[i] === 'mafia' ? 1 : 0,
-      // Spy tracking
       spyFoundMafia: false,
-      // Baeksu tracking
       baeksuInherited: false,
-      // Senator immunity revealed
       senatorRevealed: false,
-      // Lover partner
       loverPartnerId: null,
     })),
-    // Night action collection
     nightActions: {},
-    // Who killed whom (for detective tracking)
-    killLog: [],     // { victimId, killerId, method:'kill'|'snipe', round }
-    // Death order for baeksu mechanic
-    deathOrder: [],  // ordered list of player IDs who died
-    // Mafia team chat
-    chatMessages: [], // { sender, senderName, text, round }
-    // Spy's discovered info
-    spyKnownRoles: {},  // { deadPlayerId: roleLabel }
-    // Votes
-    votes: {},          // { voterId: targetId | 'skip' }
-    // Extension tracking
-    extensionUsed: {},  // { playerId: true } per day
+    killLog: [],
+    deathOrder: [],
+    chatMessages: [],
+    spyKnownRoles: {},
+    votes: {},
+    extensionUsed: {},
     extensionAdded: false,
-    // Timer
     timer: MF_REVEAL_DURATION,
-    // Announcement messages for day phase
     announcements: [],
-    // For 6-player rule: first night doctor-only scan
-    sixPlayerFirstNight: (n === 6),
+    discussSkipVotes: {},
   };
 
   // Assign lover partners
@@ -226,9 +407,6 @@ function mfAdvancePhase() {
     mfState.phase = 'night';
     mfState.nightActions = {};
     mfSetPhaseTimer(MF_NIGHT_DURATION);
-
-    // For 6-player variant: first night only doctor scans
-    // (handled in night action validation)
   }
   else if (phase === 'night') {
     mfResolveNight();
@@ -238,6 +416,7 @@ function mfAdvancePhase() {
     mfState.votes = {};
     mfState.extensionUsed = {};
     mfState.extensionAdded = false;
+    mfState.discussSkipVotes = {};
     mfSetPhaseTimer(MF_DISCUSS_DURATION);
   }
   else if (phase === 'day-discuss') {
@@ -554,8 +733,7 @@ function mfResolveVote() {
 
     if (target) {
       // Check senator immunity
-      if (target.activeRole === 'senator' && !target.senatorRevealed) {
-        target.senatorRevealed = true;
+      if (target.activeRole === 'senator') {
         announcements.push({
           type: 'immunity',
           icon: '🏛️',
@@ -840,23 +1018,19 @@ function mfBuildView(playerId) {
   // Determine what night action this player can take
   let nightAction = null;
   if (ms.phase === 'night' && isAlive) {
-    // 6-player first night: only doctor scans
-    const isFirstNight = ms.round === 1;
-    const sixPlayerRestrict = ms.sixPlayerFirstNight && isFirstNight;
-
-    if (myRole === 'mafia' && !sixPlayerRestrict) {
+    if (myRole === 'mafia') {
       nightAction = { type: 'mafia', canSnipe: me.snipesLeft > 0, label: '제거할 대상 선택' };
     } else if (myRole === 'spy') {
       nightAction = { type: 'spy', label: '마피아로 의심되는 대상 선택' };
-    } else if (myRole === 'police' && !sixPlayerRestrict) {
+    } else if (myRole === 'police') {
       nightAction = { type: 'police', label: '조사할 대상 선택' };
     } else if (myRole === 'doctor') {
       nightAction = { type: 'doctor', label: '치료할 대상 선택' };
-    } else if (myRole === 'reporter' && !sixPlayerRestrict) {
+    } else if (myRole === 'reporter') {
       nightAction = { type: 'reporter', label: '스파이 의심 대상 선택' };
     } else if (myRole === 'undertaker') {
       nightAction = { type: 'undertaker', label: '확인할 시체 선택' };
-    } else if (myRole === 'detective' && !sixPlayerRestrict) {
+    } else if (myRole === 'detective') {
       nightAction = { type: 'detective', label: '추적할 대상 선택' };
     }
   }
@@ -894,7 +1068,9 @@ function mfBuildView(playerId) {
     votes: ms.votes,
     mySnipesLeft,
     loverPartnerName,
-    sixPlayerFirstNight: ms.sixPlayerFirstNight && ms.round === 1,
+    discussSkipVotes: ms.discussSkipVotes || {},
+    discussSkipCount: Object.keys(ms.discussSkipVotes || {}).length,
+    aliveCount: ms.players.filter(p => p.alive).length,
   };
 }
 
@@ -909,8 +1085,14 @@ function mfProcessAction(senderId, data) {
     const player = ms.players.find(p => p.id === senderId && p.alive);
     if (!player) return;
 
+    // Validate targetId exists in game
+    if(data.targetId && !ms.players.find(p => p.id === data.targetId)) return;
+    // Validate nightAction is a known action type
+    const validNightActions = ['kill', 'snipe', 'heal', 'investigate', 'track'];
+    if(!validNightActions.includes(data.nightAction)) return;
+
     ms.nightActions[senderId] = {
-      action: data.nightAction,   // 'kill', 'snipe', 'heal', 'investigate', etc.
+      action: data.nightAction,
       targetId: data.targetId,
     };
 
@@ -929,7 +1111,9 @@ function mfProcessAction(senderId, data) {
     const player = ms.players.find(p => p.id === senderId && p.alive);
     if (!player) return;
 
-    ms.votes[senderId] = data.targetId; // targetId or 'skip'
+    // Validate vote target
+    if(data.targetId !== 'skip' && !ms.players.find(p => p.id === data.targetId && p.alive)) return;
+    ms.votes[senderId] = data.targetId;
 
     // Check if all alive players voted
     const aliveCount = ms.players.filter(p => p.alive).length;
@@ -948,10 +1132,13 @@ function mfProcessAction(senderId, data) {
     const canChat = (role === 'mafia') || (role === 'spy' && player.spyFoundMafia);
     if (!canChat) return;
 
+    const text = (typeof data.text === 'string' ? data.text : '').slice(0, 200);
+    if(!text) return;
+
     ms.chatMessages.push({
       sender: senderId,
       senderName: player.name,
-      text: data.text,
+      text,
       round: ms.round,
     });
 
@@ -970,54 +1157,46 @@ function mfProcessAction(senderId, data) {
     const player = ms.players.find(p => p.id === senderId);
     // Broadcast will update timer display
   }
+  else if (data.action === 'discuss-skip') {
+    if (ms.phase !== 'day-discuss') return;
+    const player = ms.players.find(p => p.id === senderId && p.alive);
+    if (!player) return;
+
+    // Toggle skip vote
+    if (ms.discussSkipVotes[senderId]) {
+      delete ms.discussSkipVotes[senderId];
+    } else {
+      ms.discussSkipVotes[senderId] = true;
+    }
+
+    // Check majority
+    const aliveCount = ms.players.filter(p => p.alive).length;
+    const skipCount = Object.keys(ms.discussSkipVotes).length;
+
+    if (skipCount > aliveCount / 2) {
+      // Majority skip - advance to vote
+      clearInterval(mfTimer);
+      ms.phase = 'day-vote';
+      ms.votes = {};
+      mfSetPhaseTimer(MF_VOTE_DURATION);
+    }
+
+    mfBroadcastState();
+  }
 }
 
 function mfAllNightActionsDone() {
   const ms = mfState;
-  const isFirstNight = ms.round === 1;
-  const sixRestrict = ms.sixPlayerFirstNight && isFirstNight;
 
-  let needed = 0;
-  ms.players.forEach(p => {
-    if (!p.alive) return;
-    const role = p.activeRole;
-    if (role === 'mafia' && !sixRestrict) needed++;
-    else if (role === 'spy') needed++;
-    else if (role === 'police' && !sixRestrict) needed++;
-    else if (role === 'doctor') needed++;
-    else if (role === 'reporter' && !sixRestrict) needed++;
-    else if (role === 'undertaker') needed++;
-    else if (role === 'detective' && !sixRestrict) needed++;
-  });
-
-  // Only count unique players who have acted
-  let acted = 0;
-  ms.players.forEach(p => {
-    if (!p.alive) return;
-    if (ms.nightActions[p.id]) {
-      const role = p.activeRole;
-      const hasAction = (role === 'mafia' && !sixRestrict) ||
-                        role === 'spy' ||
-                        (role === 'police' && !sixRestrict) ||
-                        role === 'doctor' ||
-                        (role === 'reporter' && !sixRestrict) ||
-                        role === 'undertaker' ||
-                        (role === 'detective' && !sixRestrict);
-      if (hasAction) acted++;
-    }
-  });
-
-  // For mafia: only 1 mafia needs to act (they coordinate)
+  // Check mafia
   const mafiaAlive = ms.players.filter(p => p.alive && p.activeRole === 'mafia');
   const mafiaActed = mafiaAlive.filter(p => ms.nightActions[p.id]).length;
-  // At least 1 mafia must act if not restricted
-  const mafiaOk = sixRestrict ? true : (mafiaAlive.length === 0 || mafiaActed >= 1);
+  const mafiaOk = mafiaAlive.length === 0 || mafiaActed >= 1;
 
-  // Other roles
+  // Check other action roles
   const otherRoles = ['spy', 'police', 'doctor', 'reporter', 'undertaker', 'detective'];
   let othersOk = true;
   for (const role of otherRoles) {
-    if (sixRestrict && role !== 'doctor' && role !== 'spy') continue;
     const p = ms.players.find(pp => pp.alive && pp.activeRole === role);
     if (p && !ms.nightActions[p.id]) {
       othersOk = false;
@@ -1062,7 +1241,7 @@ function mfHandleResult(msg) {
       return `
         <div class="mf-result-player ${deadCls}">
           <div class="mf-result-player-avatar" style="background:${PLAYER_COLORS[i % PLAYER_COLORS.length]};">${p.avatar}</div>
-          <div class="mf-result-player-name">${p.name}</div>
+          <div class="mf-result-player-name">${escapeHTML(p.name)}</div>
           <div class="mf-result-player-role ${teamCls}">${roleInfo.emoji} ${roleInfo.name}</div>
         </div>
       `;
@@ -1077,7 +1256,7 @@ function mfCloseResult() {
   mfState = null;
   mfView = null;
   clearInterval(mfTimer);
-  showScreen('lobby');
+  returnToLobby();
 }
 
 function mfLeaveGame() {
@@ -1155,7 +1334,7 @@ function mfRenderView() {
           html += `
             <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
               <div class="mf-player-avatar" style="background:${PLAYER_COLORS[v.players.indexOf(t) % PLAYER_COLORS.length]};">${t.avatar}</div>
-              <div style="font-size:12px; font-weight:700; color:#ff6b6b;">${t.name}</div>
+              <div style="font-size:12px; font-weight:700; color:#ff6b6b;">${escapeHTML(t.name)}</div>
             </div>
           `;
         });
@@ -1168,7 +1347,7 @@ function mfRenderView() {
       html += `
         <div class="mf-lover-reveal">
           <div class="mf-lover-reveal-title">💕 당신의 연인</div>
-          <div class="mf-lover-reveal-text">${v.loverPartnerName}님이 당신의 연인입니다!</div>
+          <div class="mf-lover-reveal-text">${escapeHTML(v.loverPartnerName)}님이 당신의 연인입니다!</div>
         </div>
       `;
     }
@@ -1221,7 +1400,7 @@ function mfRenderView() {
       Object.entries(v.spyDeadRoles).forEach(([pid, roleName]) => {
         const p = v.players.find(pp => pp.id === pid);
         if (p) {
-          html += `<div class="mf-spy-dead-tag">${p.name}: ${roleName}</div>`;
+          html += `<div class="mf-spy-dead-tag">${escapeHTML(p.name)}: ${escapeHTML(roleName)}</div>`;
         }
       });
       html += `</div></div>`;
@@ -1237,7 +1416,7 @@ function mfRenderView() {
       html += `
         <div class="mf-event-item ${a.type}">
           <span class="mf-event-icon">${a.icon}</span>
-          <span>${a.text}</span>
+          <span>${escapeHTML(a.text)}</span>
         </div>
       `;
     });
@@ -1247,7 +1426,7 @@ function mfRenderView() {
       html += `
         <div class="mf-event-item ${e.type}">
           <span class="mf-event-icon">${e.icon}</span>
-          <span>${e.text}</span>
+          <span>${escapeHTML(e.text)}</span>
         </div>
       `;
     });
@@ -1262,6 +1441,11 @@ function mfRenderView() {
       html += `<div class="mf-spectator-bar">👻 당신은 사망했습니다. 관전 중...</div>`;
     }
     html += mfRenderPlayerGrid(v, false);
+
+    // Skip vote panel
+    if (v.isAlive) {
+      html += mfRenderSkipVotePanel(v);
+    }
 
     // Mafia/Spy Chat (even during day for coordination)
     if (v.canChat) {
@@ -1278,7 +1462,7 @@ function mfRenderView() {
       Object.entries(v.spyDeadRoles).forEach(([pid, roleName]) => {
         const p = v.players.find(pp => pp.id === pid);
         if (p) {
-          html += `<div class="mf-spy-dead-tag">${p.name}: ${roleName}</div>`;
+          html += `<div class="mf-spy-dead-tag">${escapeHTML(p.name)}: ${escapeHTML(roleName)}</div>`;
         }
       });
       html += `</div></div>`;
@@ -1303,7 +1487,7 @@ function mfRenderView() {
       html += `
         <div class="mf-event-item ${a.type}">
           <span class="mf-event-icon">${a.icon}</span>
-          <span>${a.text}</span>
+          <span>${escapeHTML(a.text)}</span>
         </div>
       `;
     });
@@ -1371,7 +1555,7 @@ function mfRenderPlayerGrid(v, selectable, mode) {
     html += `<div class="mf-player-avatar" style="background:${PLAYER_COLORS[i % PLAYER_COLORS.length]};">${p.avatar}</div>`;
 
     // Name
-    html += `<div class="mf-player-name">${p.name}</div>`;
+    html += `<div class="mf-player-name">${escapeHTML(p.name)}</div>`;
 
     // Role tag (if visible)
     if (p.role && (isDeadCard || p.isMe || v.phase === 'result' || p.role === 'mafia')) {
@@ -1405,8 +1589,8 @@ function mfRenderChat(v) {
   v.chatMessages.forEach(m => {
     html += `
       <div class="mf-chat-msg">
-        <span class="sender">${m.senderName}:</span>
-        <span class="text"> ${m.text}</span>
+        <span class="sender">${escapeHTML(m.senderName)}:</span>
+        <span class="text"> ${escapeHTML(m.text)}</span>
       </div>
     `;
   });
@@ -1450,7 +1634,7 @@ function mfRenderVotePanel(v) {
     const pct = totalVoters > 0 ? Math.round((count / totalVoters) * 100) : 0;
     html += `
       <div class="mf-vote-bar">
-        <div class="mf-vote-bar-name">${p.name}</div>
+        <div class="mf-vote-bar-name">${escapeHTML(p.name)}</div>
         <div class="mf-vote-bar-track">
           <div class="mf-vote-bar-fill" style="width:${pct}%;">${count}</div>
         </div>
@@ -1466,6 +1650,26 @@ function mfRenderVotePanel(v) {
 
   html += `</div>`;
   return html;
+}
+
+function mfRenderSkipVotePanel(v) {
+  const skipCount = v.discussSkipCount || 0;
+  const aliveCount = v.aliveCount || 1;
+  const majority = Math.floor(aliveCount / 2) + 1;
+  const pct = aliveCount > 0 ? Math.round((skipCount / aliveCount) * 100) : 0;
+  const mySkipped = v.discussSkipVotes && v.discussSkipVotes[v.myId];
+
+  return `
+    <div class="mf-skip-vote-panel">
+      <div class="mf-skip-vote-header">
+        <span>⏭️ 토론 스킵 투표</span>
+        <span class="mf-skip-vote-count">${skipCount} / ${majority} (과반수)</span>
+      </div>
+      <div class="mf-skip-vote-bar-track">
+        <div class="mf-skip-vote-bar-fill" style="width:${pct}%;"></div>
+      </div>
+    </div>
+  `;
 }
 
 // ========================= ACTION AREA ========================
@@ -1515,7 +1719,11 @@ function mfRenderActionArea(v) {
       msg = '👻 관전 모드';
     } else {
       msg = '☀️ 의심되는 사람에 대해 토론하세요!';
-      btns += `<button class="mf-action-btn extend" onclick="mfRequestExtend()">⏰ 연장 (+1분)</button>`;
+      const mySkipped = v.discussSkipVotes && v.discussSkipVotes[v.myId];
+      const skipLabel = mySkipped ? '⏭️ 스킵 취소' : '⏭️ 토론 스킵';
+      const skipClass = mySkipped ? 'danger' : 'secondary';
+      btns += `<button class="mf-action-btn ${skipClass}" onclick="mfToggleDiscussSkip()">${skipLabel}</button>`;
+      btns += `<button class="mf-action-btn extend" onclick="mfRequestExtend()">⏰ 연장</button>`;
     }
   }
   else if (v.phase === 'day-vote') {
@@ -1610,8 +1818,7 @@ function mfConfirmNightAction() {
   if (state.isHost) {
     mfProcessAction(state.myId, data);
   } else {
-    const host = Object.values(state.connections)[0];
-    if (host?.open) host.send(JSON.stringify(data));
+    sendToHost(data);
   }
 
   showToast('행동 완료!');
@@ -1637,8 +1844,7 @@ function mfConfirmVote() {
   if (state.isHost) {
     mfProcessAction(state.myId, data);
   } else {
-    const host = Object.values(state.connections)[0];
-    if (host?.open) host.send(JSON.stringify(data));
+    sendToHost(data);
   }
 
   showToast('투표 완료!');
@@ -1655,8 +1861,7 @@ function mfSkipVote() {
   if (state.isHost) {
     mfProcessAction(state.myId, data);
   } else {
-    const host = Object.values(state.connections)[0];
-    if (host?.open) host.send(JSON.stringify(data));
+    sendToHost(data);
   }
 
   showToast('건너뛰기 투표 완료');
@@ -1677,8 +1882,7 @@ function mfSendChat() {
   if (state.isHost) {
     mfProcessAction(state.myId, data);
   } else {
-    const host = Object.values(state.connections)[0];
-    if (host?.open) host.send(JSON.stringify(data));
+    sendToHost(data);
   }
 
   input.value = '';
@@ -1693,11 +1897,23 @@ function mfRequestExtend() {
   if (state.isHost) {
     mfProcessAction(state.myId, data);
   } else {
-    const host = Object.values(state.connections)[0];
-    if (host?.open) host.send(JSON.stringify(data));
+    sendToHost(data);
   }
 
   showToast('연장 요청!');
+}
+
+function mfToggleDiscussSkip() {
+  const data = {
+    type: 'mf-action',
+    action: 'discuss-skip',
+  };
+
+  if (state.isHost) {
+    mfProcessAction(state.myId, data);
+  } else {
+    sendToHost(data);
+  }
 }
 
 // ===== GAME STUBS =====

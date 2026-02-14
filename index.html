@@ -169,6 +169,14 @@
     </div>
   </div>
 
+  <!-- Mafia: Host setup button + config display for all players -->
+  <div id="mfLobbyArea" style="display:none;">
+    <button class="btn mf-lobby-setup-btn" id="mfSetupBtn" style="display:none;" onclick="mfOpenSetup()">🎭 직업 설정</button>
+    <div id="mfConfigDisplay" class="mf-config-display" style="display:none;">
+      <!-- Populated dynamically by mfShowConfigInLobby() -->
+    </div>
+  </div>
+
   <div id="waitingMsg" style="text-align:center; color:var(--text-dim); font-size:13px; padding:16px 0;">
     <div class="spinner"></div>
     <div style="margin-top:8px;" id="waitingText">호스트가 게임을 시작하길 대기 중...</div>
@@ -186,6 +194,22 @@
   <div class="pk-felt"></div>
 
   <div class="pk-content">
+    <!-- Top bar: money info + round + close -->
+    <div class="pk-top-bar">
+      <div class="pk-top-info">
+        <div class="pk-chip-display">
+          <span class="pk-chip-icon">🪙</span>
+          <span class="pk-chip-value" id="myChipsDisplay">0</span>
+        </div>
+        <div class="pk-pot-display">
+          <span class="pk-pot-label">POT</span>
+          <span class="pk-pot-value" id="potAmount">0</span>
+        </div>
+      </div>
+      <span class="pk-round-badge" id="roundDisplay">프리플랍</span>
+      <button class="pk-close-btn" onclick="leaveGame()">✕</button>
+    </div>
+
     <!-- Opponent area - top left, small -->
     <div class="pk-opponent-area" id="opponentsArea"></div>
 
@@ -199,37 +223,44 @@
       <div class="pk-hand-name" id="handRankDisplay"></div>
     </div>
 
-    <!-- Right panel: money + actions -->
-    <div class="pk-right-panel">
-      <div class="pk-money-box">
-        <div class="pk-money-row">
-          <span class="pk-money-label">내 금액</span>
-          <span class="pk-money-value" id="myChipsDisplay">0</span>
-        </div>
-        <div class="pk-money-row">
-          <span class="pk-money-label">판돈</span>
-          <span class="pk-money-value" id="potAmount">0</span>
-        </div>
-      </div>
-
-      <div class="pk-raise-area" id="raiseSliderArea">
-        <input type="range" class="pk-raise-slider" id="raiseSlider" min="0" max="1000" value="100">
-        <div class="pk-raise-amount" id="raiseAmountDisplay">100</div>
-        <button class="pk-raise-confirm" onclick="confirmRaise()">확인</button>
-      </div>
-
+    <!-- Bottom: actions / raise -->
+    <div class="pk-bottom-panel">
       <div class="pk-actions" id="actionBar">
         <button class="pk-action-btn pk-btn-call" id="checkCallBtn" onclick="pokerAction('check')">체크</button>
         <button class="pk-action-btn pk-btn-raise" onclick="showRaiseSlider()">레이즈</button>
         <button class="pk-action-btn pk-btn-allin" onclick="pokerAction('allin')">올인</button>
         <button class="pk-action-btn pk-btn-fold" onclick="pokerAction('fold')">폴드</button>
       </div>
+      <div class="pk-raise-area" id="raiseSliderArea">
+        <div class="pk-raise-row">
+          <input type="range" class="pk-raise-slider" id="raiseSlider" min="0" max="1000" value="100">
+          <span class="pk-raise-amount" id="raiseAmountDisplay">100</span>
+        </div>
+        <div class="pk-raise-btns">
+          <button class="pk-action-btn pk-btn-raise" onclick="confirmRaise()">레이즈 확인</button>
+          <button class="pk-action-btn pk-btn-fold" onclick="cancelRaise()">취소</button>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
 
-    <!-- Round info + close -->
-    <div class="pk-bottom-bar">
-      <span class="pk-round-badge" id="roundDisplay">프리플랍</span>
-      <button class="pk-close-btn" onclick="leaveGame()">✕</button>
+<!-- MAFIA SETUP OVERLAY -->
+<div class="mf-setup-overlay" id="mfSetupOverlay" style="display:none;">
+  <div class="mf-setup-modal">
+    <div class="mf-setup-header">
+      <div class="mf-setup-title">마피아 설정</div>
+      <div class="mf-setup-role-counter">
+        <span id="mfSetupRoleCount">1</span>
+        <span id="mfSetupPlayerCount">/ 4명</span>
+      </div>
+    </div>
+    <div class="mf-setup-scroll" id="mfSetupContent">
+      <!-- Role rows rendered dynamically by mfRenderSetup() -->
+    </div>
+    <div class="mf-setup-footer">
+      <button class="mf-setup-btn cancel" onclick="mfCloseSetup()">취소</button>
+      <button class="mf-setup-btn confirm" onclick="mfConfirmSetup()">확인</button>
     </div>
   </div>
 </div>
@@ -920,19 +951,18 @@
 
 <!-- QR Code library -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script src="js/core.js"></script>
-<script src="js/games/poker.js"></script>
-<script src="js/games/mafia.js"></script>
-<script src="js/games/truth.js"></script>
-<script src="js/games/quickdraw.js"></script>
-<script src="js/games/roulette.js"></script>
-<script src="js/games/lottery.js"></script>
-<script src="js/games/updown.js"></script>
-<script src="js/games/yahtzee.js"></script>
-<script src="js/games/ecard.js"></script>
-<script src="js/games/sutda.js"></script>
-<script src="js/ai.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/yahtzee-three.js"></script>
+<script src="js/core.js?v=2"></script>
+<script src="js/games/poker.js?v=2"></script>
+<script src="js/games/mafia.js?v=2"></script>
+<script src="js/games/truth.js?v=2"></script>
+<script src="js/games/quickdraw.js?v=2"></script>
+<script src="js/games/roulette.js?v=2"></script>
+<script src="js/games/lottery.js?v=2"></script>
+<script src="js/games/updown.js?v=2"></script>
+<script src="js/games/yahtzee.js?v=2"></script>
+<script src="js/games/ecard.js?v=2"></script>
+<script src="js/games/sutda.js?v=2"></script>
+<script src="js/ai.js?v=2"></script>
+<!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>
 </html>

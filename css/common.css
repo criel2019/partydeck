@@ -562,54 +562,101 @@ body {
   text-transform: uppercase;
 }
 
-/* ── Right panel: money + actions ── */
-.pk-right-panel {
+/* ── Top bar: money + round + close ── */
+.pk-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  z-index: 10;
+}
+.pk-top-info {
   display: flex;
   gap: 6px;
-  padding: 0 2px;
-  z-index: 5;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex: 1;
 }
-
-.pk-money-box {
-  background: linear-gradient(180deg, rgba(60,40,20,0.85), rgba(30,18,8,0.9));
-  border: 1.5px solid #7a6a40;
-  border-radius: 8px;
-  padding: 6px 10px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+.pk-chip-display, .pk-pot-display {
   display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 5px;
+  background: linear-gradient(180deg, rgba(40,28,14,0.9), rgba(20,12,4,0.95));
+  border: 1.5px solid #8a7a50;
+  border-radius: 20px;
+  padding: 5px 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
 }
-.pk-money-row { display: flex; align-items: center; gap: 6px; }
-.pk-money-label {
-  color: #bba880;
-  font-size: 11px;
-  font-weight: 700;
-}
-.pk-money-value {
+.pk-chip-icon { font-size: 14px; }
+.pk-chip-value {
   color: #ffe680;
   font-family: 'Oswald', 'Black Han Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  font-size: 16px;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.pk-pot-display {
+  border-color: #aa8a30;
+  background: linear-gradient(180deg, rgba(60,40,10,0.9), rgba(30,20,4,0.95));
+}
+.pk-pot-label {
+  color: #dda020;
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.pk-pot-value {
+  color: #ffd700;
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(255,200,0,0.3), 0 1px 3px rgba(0,0,0,0.5);
+}
+.pk-round-badge {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 4px 10px;
+  color: rgba(255,255,255,0.6);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.pk-close-btn {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50%;
+  width: 28px; height: 28px;
+  color: rgba(255,255,255,0.5);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.pk-close-btn:hover {
+  background: rgba(255,50,50,0.3);
+  color: #fff;
 }
 
-/* Action buttons */
+/* ── Bottom panel: actions / raise ── */
+.pk-bottom-panel {
+  z-index: 5;
+  padding: 0 2px 4px;
+}
 .pk-actions {
   display: flex;
   gap: 5px;
-  flex: 1;
-  min-width: 0;
 }
 .pk-action-btn {
   flex: 1;
-  padding: 10px 4px;
+  padding: 12px 4px;
   border: none;
-  border-radius: 7px;
+  border-radius: 8px;
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 900;
   cursor: pointer;
   text-align: center;
@@ -617,7 +664,7 @@ body {
   transition: all 0.12s;
   position: relative;
   overflow: hidden;
-  min-height: 38px;
+  min-height: 44px;
 }
 .pk-action-btn::before {
   content: '';
@@ -664,81 +711,50 @@ body {
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
-/* Raise slider */
+/* Raise panel — replaces action buttons when active */
 .pk-raise-area {
   display: none;
-  width: 100%;
-  padding: 6px 8px;
-  align-items: center;
-  gap: 6px;
-  background: rgba(0,0,0,0.3);
-  border-radius: 6px;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(180deg, rgba(30,40,70,0.95), rgba(15,20,40,0.98));
+  border: 1.5px solid #5a8aca;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5), 0 0 20px rgba(80,120,200,0.15);
 }
 .pk-raise-area.visible { display: flex; }
+.pk-raise-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .pk-raise-slider {
-  flex: 1; -webkit-appearance: none; height: 5px;
+  flex: 1; -webkit-appearance: none; height: 6px;
   border-radius: 3px; background: rgba(255,255,255,0.15); outline: none;
 }
 .pk-raise-slider::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 22px; height: 22px;
+  -webkit-appearance: none; width: 24px; height: 24px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #5a8aca, #3a5a9a);
-  border: 2px solid #7aaaea;
+  background: linear-gradient(180deg, #6a9ada, #3a6aba);
+  border: 2px solid #8abaff;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 .pk-raise-amount {
   font-family: 'Oswald', 'Black Han Sans', sans-serif;
-  font-size: 14px;
-  color: #7aaaea;
-  min-width: 40px;
+  font-size: 20px;
+  color: #8abaff;
+  min-width: 50px;
   text-align: right;
+  text-shadow: 0 0 8px rgba(100,160,255,0.3);
 }
-.pk-raise-confirm {
-  padding: 5px 12px;
-  background: linear-gradient(180deg, #3a6aaa, #2a4a8a);
-  color: white;
-  border: 1.5px solid #5a8aca;
-  border-radius: 5px;
-  font-family: 'Noto Sans KR', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-/* ── Bottom bar: round info + close ── */
-.pk-bottom-bar {
+.pk-raise-btns {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 2px 0;
-  z-index: 5;
+  gap: 6px;
 }
-.pk-round-badge {
-  background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 14px;
-  padding: 3px 10px;
-  color: rgba(255,255,255,0.6);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-.pk-close-btn {
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 50%;
-  width: 28px; height: 28px;
-  color: rgba(255,255,255,0.5);
+.pk-raise-btns .pk-action-btn {
+  min-height: 40px;
   font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-}
-.pk-close-btn:hover {
-  background: rgba(255,50,50,0.3);
-  color: #fff;
 }
 
 /* ===== RESULT OVERLAY ===== */
