@@ -64,8 +64,9 @@ const MF_VOTE_RESULT_DURATION = 6;
 
 let mfState = null;    // host-only full state
 let mfView = null;     // local player's current view
-let mfTimer = null;    // interval id
+let mfTimer = null;    // interval id (host)
 let mfTimerTick = 0;   // tick counter for periodic sync
+let mfClientTimer = null; // interval id (client local countdown)
 let mfSelectedTarget = null;
 let mfUseSnipe = false;
 
@@ -1250,6 +1251,8 @@ function mfHandleState(msg) {
   mfView = msg;
   showScreen('mafiaGame');
   mfRenderView();
+  // Start client-side local timer if not host
+  if (!state.isHost) mfStartClientTimer();
 }
 
 function mfHandleTimer(msg) {
@@ -1260,10 +1263,33 @@ function mfHandleTimer(msg) {
   if (timerEl) timerEl.textContent = msg.timer;
   const timerBox = document.getElementById('mfTimerBox');
   if (timerBox) timerBox.classList.toggle('urgent', msg.timer <= 10);
+  // Ensure client local timer is running
+  if (!state.isHost && !mfClientTimer) mfStartClientTimer();
+}
+
+// Client-side local countdown timer (runs on non-host clients)
+function mfStartClientTimer() {
+  clearInterval(mfClientTimer);
+  mfClientTimer = setInterval(() => {
+    if (!mfView) { clearInterval(mfClientTimer); mfClientTimer = null; return; }
+    if (mfView.timer > 0) {
+      mfView.timer--;
+      const timerEl = document.getElementById('mfTimer');
+      if (timerEl) timerEl.textContent = mfView.timer;
+      const timerBox = document.getElementById('mfTimerBox');
+      if (timerBox) timerBox.classList.toggle('urgent', mfView.timer <= 10);
+    }
+  }, 1000);
+}
+
+function mfStopClientTimer() {
+  clearInterval(mfClientTimer);
+  mfClientTimer = null;
 }
 
 function mfHandleResult(msg) {
   clearInterval(mfTimer);
+  mfStopClientTimer();
   const myRole = mfView?.myRole;
   const myTeam = mfView?.myTeam;
   const won = (msg.winner === myTeam);
@@ -1303,11 +1329,13 @@ function mfCloseResult() {
   mfState = null;
   mfView = null;
   clearInterval(mfTimer);
+  mfStopClientTimer();
   returnToLobby();
 }
 
 function mfLeaveGame() {
   clearInterval(mfTimer);
+  mfStopClientTimer();
   mfState = null;
   mfView = null;
   leaveGame();

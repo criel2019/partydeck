@@ -249,7 +249,7 @@ function startEnergyTimer() {
       }
     }
     updateEnergyCountdown(_economy);
-  }, 30000);
+  }, 1000);
   updateEconomyUI(_economy);
   updateEnergyCountdown(_economy);
 }
@@ -651,6 +651,7 @@ function leaveLobby() {
 function returnToLobby() {
   // Clean up all game timers
   if (typeof mfTimer !== 'undefined') clearInterval(mfTimer);
+  if (typeof mfClientTimer !== 'undefined') { clearInterval(mfClientTimer); mfClientTimer = null; }
   if (typeof qdState !== 'undefined' && qdState) {
     if (qdState.countdownTimeout) { clearTimeout(qdState.countdownTimeout); qdState.countdownTimeout = null; }
     if (qdState.fireTimeout) { clearTimeout(qdState.fireTimeout); qdState.fireTimeout = null; }
