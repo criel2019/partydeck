@@ -277,9 +277,23 @@
       </div>
     </div>
     <div class="mf-day-counter" id="mfDayCounter">1일차</div>
-    <div class="mf-timer-box" id="mfTimerBox">
-      <span>⏱</span>
-      <span id="mfTimer">180</span>
+    <div class="mf-topbar-right">
+      <button class="mf-roles-btn" onclick="mfToggleRolesPanel()">🎭</button>
+      <div class="mf-timer-box" id="mfTimerBox">
+        <span>⏱</span>
+        <span id="mfTimer">180</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Roles Info Panel (toggle overlay) -->
+  <div class="mf-roles-panel" id="mfRolesPanel" style="display:none;">
+    <div class="mf-roles-panel-header">
+      <span>🎭 이번 게임 직업 구성</span>
+      <button class="mf-roles-panel-close" onclick="mfToggleRolesPanel()">✕</button>
+    </div>
+    <div class="mf-roles-panel-body" id="mfRolesPanelBody">
+      <!-- Populated by JS -->
     </div>
   </div>
 

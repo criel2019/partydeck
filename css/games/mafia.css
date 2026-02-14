@@ -164,6 +164,138 @@
 }
 
 .mf-topbar-left { display: flex; align-items: center; gap: 10px; }
+.mf-topbar-right { display: flex; align-items: center; gap: 8px; }
+
+/* Roles info button in topbar */
+.mf-roles-btn {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(92,58,36,0.4);
+  border: 1px solid var(--mf-gold-dim);
+  border-radius: 10px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mf-roles-btn:active {
+  transform: scale(0.92);
+  background: rgba(92,58,36,0.6);
+}
+#mafiaGame.night-mode .mf-roles-btn {
+  background: rgba(30,40,80,0.5);
+  border-color: rgba(74,95,143,0.4);
+}
+
+/* ========== ROLES INFO PANEL ========== */
+.mf-roles-panel {
+  position: absolute;
+  top: 60px;
+  right: 12px;
+  width: 280px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    linear-gradient(180deg, #2a1810 0%, #3d2516 40%, #2a1810 100%);
+  border: 2px solid var(--mf-gold);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7), 0 0 16px rgba(212,175,55,0.1);
+  z-index: 50;
+  overflow: hidden;
+  animation: mf-roles-panel-in 0.2s ease-out;
+}
+@keyframes mf-roles-panel-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+#mafiaGame.night-mode .mf-roles-panel {
+  background: linear-gradient(180deg, #0b1028 0%, #101636 40%, #0b1028 100%);
+  border-color: var(--mf-night-accent);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 16px rgba(74,95,143,0.15);
+}
+.mf-roles-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05));
+  border-bottom: 1px solid rgba(212,175,55,0.3);
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  color: var(--mf-gold-bright);
+  letter-spacing: 1px;
+}
+#mafiaGame.night-mode .mf-roles-panel-header {
+  background: linear-gradient(135deg, rgba(74,95,143,0.2), rgba(74,95,143,0.05));
+  border-bottom-color: rgba(74,95,143,0.3);
+  color: #87a6d9;
+}
+.mf-roles-panel-close {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(92,58,36,0.4);
+  border: 1px solid rgba(212,175,55,0.25);
+  border-radius: 8px;
+  color: var(--mf-parchment-dark);
+  font-size: 14px;
+  cursor: pointer;
+}
+.mf-roles-panel-close:active { transform: scale(0.9); }
+.mf-roles-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+.mf-roles-panel-body::-webkit-scrollbar { width: 3px; }
+.mf-roles-panel-body::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.2); border-radius: 2px; }
+.mf-roles-panel-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(92,58,36,0.35);
+  border: 1px solid rgba(212,175,55,0.12);
+}
+.mf-roles-panel-item.mafia-row {
+  background: rgba(100,20,10,0.35);
+  border-color: rgba(139,0,0,0.25);
+}
+#mafiaGame.night-mode .mf-roles-panel-item {
+  background: rgba(26,31,58,0.5);
+  border-color: rgba(74,95,143,0.15);
+}
+#mafiaGame.night-mode .mf-roles-panel-item.mafia-row {
+  background: rgba(80,15,10,0.4);
+  border-color: rgba(139,0,0,0.2);
+}
+.mf-roles-panel-emoji {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
+}
+.mf-roles-panel-info { flex: 1; min-width: 0; }
+.mf-roles-panel-name {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  color: var(--mf-gold);
+}
+.mf-roles-panel-item.mafia-row .mf-roles-panel-name {
+  color: var(--mf-mafia-red-bright);
+}
+#mafiaGame.night-mode .mf-roles-panel-name { color: #87a6d9; }
+#mafiaGame.night-mode .mf-roles-panel-item.mafia-row .mf-roles-panel-name { color: #ff6b6b; }
+.mf-roles-panel-desc {
+  font-size: 11px;
+  color: var(--mf-parchment-dark);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+#mafiaGame.night-mode .mf-roles-panel-desc { color: rgba(168,196,240,0.5); }
 
 .mf-back-btn {
   width: 36px; height: 36px;

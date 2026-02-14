@@ -1916,6 +1916,58 @@ function mfToggleDiscussSkip() {
   }
 }
 
+// ========================= ROLES INFO PANEL ===================
+
+function mfToggleRolesPanel() {
+  const panel = document.getElementById('mfRolesPanel');
+  if (!panel) return;
+  if (panel.style.display === 'none') {
+    mfRenderRolesPanel();
+    panel.style.display = 'flex';
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function mfRenderRolesPanel() {
+  const body = document.getElementById('mfRolesPanelBody');
+  if (!body) return;
+
+  const roleList = [];
+  roleList.push({ emoji: '🔪', name: '마피아', count: mfConfig.mafia, team: 'mafia', desc: MF_ROLES.mafia.desc });
+  if (mfConfig.spy) roleList.push({ emoji: '🕵️', name: '스파이', count: 1, team: 'mafia', desc: MF_ROLES.spy.desc });
+  if (mfConfig.reporter) roleList.push({ emoji: '📰', name: '기자', count: 1, team: 'citizen', desc: MF_ROLES.reporter.desc });
+  if (mfConfig.police) roleList.push({ emoji: '🔍', name: '경찰', count: 1, team: 'citizen', desc: MF_ROLES.police.desc });
+  if (mfConfig.doctor) roleList.push({ emoji: '💊', name: '의사', count: 1, team: 'citizen', desc: MF_ROLES.doctor.desc });
+  if (mfConfig.undertaker) roleList.push({ emoji: '⚰️', name: '장의사', count: 1, team: 'citizen', desc: MF_ROLES.undertaker.desc });
+  if (mfConfig.detective) roleList.push({ emoji: '🔎', name: '탐정', count: 1, team: 'citizen', desc: MF_ROLES.detective.desc });
+  if (mfConfig.lover) roleList.push({ emoji: '💕', name: '연인', count: 2, team: 'citizen', desc: MF_ROLES.lover.desc });
+  if (mfConfig.senator) roleList.push({ emoji: '🏛️', name: '국회의원', count: 1, team: 'citizen', desc: MF_ROLES.senator.desc });
+  if (mfConfig.soldier) roleList.push({ emoji: '🛡️', name: '군인', count: 1, team: 'citizen', desc: MF_ROLES.soldier.desc });
+  if (mfConfig.baeksu) roleList.push({ emoji: '😴', name: '백수', count: 1, team: 'citizen', desc: MF_ROLES.baeksu.desc });
+
+  const totalSpecial = roleList.reduce((s, r) => s + r.count, 0);
+  const playerCount = mfState ? mfState.players.length : (mfView ? mfView.players.length : state.players.length);
+  const citizenCount = Math.max(0, playerCount - totalSpecial);
+  if (citizenCount > 0) {
+    roleList.push({ emoji: '👤', name: '시민', count: citizenCount, team: 'citizen', desc: MF_ROLES.citizen.desc });
+  }
+
+  body.innerHTML = roleList.map(r => {
+    const teamCls = r.team === 'mafia' ? 'mafia-row' : '';
+    const countLabel = r.count > 1 ? ` x${r.count}` : '';
+    return `
+      <div class="mf-roles-panel-item ${teamCls}">
+        <span class="mf-roles-panel-emoji">${r.emoji}</span>
+        <div class="mf-roles-panel-info">
+          <div class="mf-roles-panel-name">${r.name}${countLabel}</div>
+          <div class="mf-roles-panel-desc">${r.desc}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 // ===== GAME STUBS =====
 // startSutda - 아래 엔진 코드에서 정의됨
 // startECard, startYahtzee, startUpDown - 아래 엔진 코드에서 정의됨
