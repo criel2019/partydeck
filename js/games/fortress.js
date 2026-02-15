@@ -40,6 +40,8 @@ let fortMoveInterval = null;
 let fortMovedThisTurn = 0;
 let _fortKeyDown = null;
 let _fortKeyUp = null;
+let _fortAngleInterval = null;
+let _fortPowerInterval = null;
 
 // ===== TERRAIN GENERATION =====
 function generateFortressTerrain(width, height, playerCount) {
@@ -332,6 +334,18 @@ function setupFortressKeyboard() {
     } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
       e.preventDefault();
       fortStartMove(1);
+    } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+      e.preventDefault();
+      fortAngleStep(1);
+    } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+      e.preventDefault();
+      fortAngleStep(-1);
+    } else if (e.key === 'q' || e.key === 'Q') {
+      e.preventDefault();
+      fortPowerStep(-1);
+    } else if (e.key === 'e' || e.key === 'E') {
+      e.preventDefault();
+      fortPowerStep(1);
     } else if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       fortFire();
@@ -489,6 +503,35 @@ function fortSetPower(val) {
   fortLocalPower = parseInt(val);
   const el = document.getElementById('fortPowerValue');
   if (el) el.textContent = fortLocalPower;
+}
+
+// ===== BUTTON-BASED ANGLE/POWER CONTROLS =====
+function fortAngleStep(dir) {
+  fortSetAngle(Math.max(0, Math.min(180, fortLocalAngle + dir)));
+}
+
+function fortAngleStart(dir) {
+  fortAngleStep(dir);
+  if (_fortAngleInterval) clearInterval(_fortAngleInterval);
+  _fortAngleInterval = setInterval(() => fortAngleStep(dir * 2), 60);
+}
+
+function fortAngleStop() {
+  if (_fortAngleInterval) { clearInterval(_fortAngleInterval); _fortAngleInterval = null; }
+}
+
+function fortPowerStep(dir) {
+  fortSetPower(Math.max(10, Math.min(100, fortLocalPower + dir)));
+}
+
+function fortPowerStart(dir) {
+  fortPowerStep(dir);
+  if (_fortPowerInterval) clearInterval(_fortPowerInterval);
+  _fortPowerInterval = setInterval(() => fortPowerStep(dir * 2), 60);
+}
+
+function fortPowerStop() {
+  if (_fortPowerInterval) { clearInterval(_fortPowerInterval); _fortPowerInterval = null; }
 }
 
 // ===== FIRE =====
@@ -1310,26 +1353,11 @@ function renderFortressView(view) {
     }).join('');
   }
 
-  // Controls
+  // Controls — toggle disabled state via CSS class
+  const controls = document.getElementById('fortControls');
   const fireBtn = document.getElementById('fortFireBtn');
-  const angleSlider = document.getElementById('fortAngleSlider');
-  const powerSlider = document.getElementById('fortPowerSlider');
-  const moveBtnL = document.getElementById('fortMoveLeft');
-  const moveBtnR = document.getElementById('fortMoveRight');
-
+  if (controls) controls.classList.toggle('fort-disabled', !canAct);
   if (fireBtn) fireBtn.disabled = !canAct;
-  if (angleSlider) {
-    angleSlider.disabled = !canAct;
-    angleSlider.value = fortLocalAngle;
-    angleSlider.oninput = function() { fortSetAngle(this.value); };
-  }
-  if (powerSlider) {
-    powerSlider.disabled = !canAct;
-    powerSlider.value = fortLocalPower;
-    powerSlider.oninput = function() { fortSetPower(this.value); };
-  }
-  if (moveBtnL) moveBtnL.disabled = !canAct;
-  if (moveBtnR) moveBtnR.disabled = !canAct;
 
   const angleVal = document.getElementById('fortAngleValue');
   const powerVal = document.getElementById('fortPowerValue');
@@ -1405,6 +1433,8 @@ function closeFortressGame() {
   if (fortAnimId) { cancelAnimationFrame(fortAnimId); fortAnimId = null; }
   cleanupFortressKeyboard();
   fortStopMove();
+  fortAngleStop();
+  fortPowerStop();
   fortState = null;
   window._fortView = null;
   fortCtx = null;

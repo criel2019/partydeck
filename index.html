@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="css/games/yahtzee.css">
 <link rel="stylesheet" href="css/games/ecard.css">
 <link rel="stylesheet" href="css/games/sutda.css">
-<link rel="stylesheet" href="css/games/fortress.css?v=4">
+<link rel="stylesheet" href="css/games/fortress.css?v=5">
 <link rel="stylesheet" href="css/games/mobile.css">
 </head>
 <body>
@@ -987,24 +987,23 @@
     <canvas id="fortressCanvas" width="800" height="500"></canvas>
   </div>
   <div class="fort-controls" id="fortControls">
-    <div class="fort-move-group">
-      <button class="fort-move-btn" id="fortMoveLeft" ontouchstart="fortStartMove(-1)" ontouchend="fortStopMove()" onmousedown="fortStartMove(-1)" onmouseup="fortStopMove()" onmouseleave="fortStopMove()">◀</button>
-      <div class="fort-fuel-bar">
-        <div class="fort-fuel-fill" id="fortFuelFill" style="width:100%"></div>
-      </div>
-      <button class="fort-move-btn" id="fortMoveRight" ontouchstart="fortStartMove(1)" ontouchend="fortStopMove()" onmousedown="fortStartMove(1)" onmouseup="fortStopMove()" onmouseleave="fortStopMove()">▶</button>
+    <div class="fort-ctrl-grp">
+      <button class="fort-ctrl-btn" id="fortMoveLeft" ontouchstart="fortStartMove(-1)" ontouchend="fortStopMove()" onmousedown="fortStartMove(-1)" onmouseup="fortStopMove()" onmouseleave="fortStopMove()">◀</button>
+      <div class="fort-fuel-mini"><div class="fort-fuel-fill" id="fortFuelFill" style="width:100%"></div></div>
+      <button class="fort-ctrl-btn" id="fortMoveRight" ontouchstart="fortStartMove(1)" ontouchend="fortStopMove()" onmousedown="fortStartMove(1)" onmouseup="fortStopMove()" onmouseleave="fortStopMove()">▶</button>
     </div>
-    <div class="fort-slider-group">
-      <label class="fort-slider-label">각도: <span id="fortAngleValue">45</span>°</label>
-      <input type="range" class="fort-slider fort-angle-slider" id="fortAngleSlider"
-             min="0" max="180" value="45">
+    <div class="fort-ctrl-sep"></div>
+    <div class="fort-ctrl-grp">
+      <button class="fort-ctrl-btn" ontouchstart="fortAngleStart(-1)" ontouchend="fortAngleStop()" onmousedown="fortAngleStart(-1)" onmouseup="fortAngleStop()" onmouseleave="fortAngleStop()">‹</button>
+      <div class="fort-val"><span class="fort-val-lbl">각도</span><span id="fortAngleValue" class="fort-val-num">45</span></div>
+      <button class="fort-ctrl-btn" ontouchstart="fortAngleStart(1)" ontouchend="fortAngleStop()" onmousedown="fortAngleStart(1)" onmouseup="fortAngleStop()" onmouseleave="fortAngleStop()">›</button>
     </div>
-    <div class="fort-slider-group">
-      <label class="fort-slider-label">파워: <span id="fortPowerValue">50</span>%</label>
-      <input type="range" class="fort-slider fort-power-slider" id="fortPowerSlider"
-             min="10" max="100" value="50">
+    <div class="fort-ctrl-grp">
+      <button class="fort-ctrl-btn" ontouchstart="fortPowerStart(-1)" ontouchend="fortPowerStop()" onmousedown="fortPowerStart(-1)" onmouseup="fortPowerStop()" onmouseleave="fortPowerStop()">‹</button>
+      <div class="fort-val"><span class="fort-val-lbl">파워</span><span id="fortPowerValue" class="fort-val-num">50</span></div>
+      <button class="fort-ctrl-btn" ontouchstart="fortPowerStart(1)" ontouchend="fortPowerStop()" onmousedown="fortPowerStart(1)" onmouseup="fortPowerStop()" onmouseleave="fortPowerStop()">›</button>
     </div>
-    <button class="btn fort-fire-btn" id="fortFireBtn" onclick="fortFire()">발사!</button>
+    <button class="fort-fire-btn" id="fortFireBtn" onclick="fortFire()">발사</button>
   </div>
   <div class="fort-gameover" id="fortGameOver" style="display:none;">
     <div class="fort-gameover-box">
@@ -1040,7 +1039,7 @@
 <script src="js/games/yahtzee.js?v=2"></script>
 <script src="js/games/ecard.js?v=2"></script>
 <script src="js/games/sutda.js?v=2"></script>
-<script src="js/games/fortress.js?v=6"></script>
+<script src="js/games/fortress.js?v=7"></script>
 <script src="js/ai.js?v=3"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>

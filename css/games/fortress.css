@@ -86,8 +86,8 @@
 /* ===== Players Bar ===== */
 .fort-players-bar {
   display: flex;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: 6px;
+  padding: 4px 10px;
   overflow-x: auto;
   background: rgba(0,0,0,0.25);
   z-index: 5;
@@ -98,11 +98,11 @@
 .fort-player-hp-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
+  gap: 5px;
+  padding: 3px 7px;
   border-radius: 8px;
   background: rgba(255,255,255,0.08);
-  min-width: 120px;
+  min-width: 100px;
   flex-shrink: 0;
   transition: background 0.3s;
 }
@@ -190,138 +190,114 @@
   display: block;
 }
 
-/* ===== Controls ===== */
+/* ===== Controls (compact button-based) ===== */
 .fort-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 6px;
+  padding: 6px 10px;
   background: rgba(0,0,0,0.55);
   backdrop-filter: blur(8px);
   z-index: 10;
 }
 
-/* Move buttons group */
-.fort-move-group {
+.fort-controls.fort-disabled .fort-ctrl-btn,
+.fort-controls.fort-disabled .fort-fire-btn {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.fort-ctrl-grp {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
-.fort-move-btn {
-  width: 36px;
-  height: 36px;
+.fort-ctrl-sep {
+  width: 1px;
+  height: 24px;
+  background: rgba(255,255,255,0.15);
+  flex-shrink: 0;
+}
+
+.fort-ctrl-btn {
+  width: 30px;
+  height: 30px;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   background: rgba(255,255,255,0.12);
   color: #fff;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, transform 0.1s;
+  flex-shrink: 0;
+  touch-action: none;
   -webkit-user-select: none;
   user-select: none;
-  touch-action: none;
+  transition: background 0.1s;
 }
 
-.fort-move-btn:active:not(:disabled) {
-  background: rgba(79, 195, 247, 0.4);
-  transform: scale(0.92);
+.fort-ctrl-btn:active {
+  background: rgba(255,255,255,0.28);
 }
 
-.fort-move-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.fort-fuel-bar {
-  width: 6px;
-  height: 28px;
+.fort-fuel-mini {
+  width: 4px;
+  height: 24px;
   background: rgba(255,255,255,0.1);
-  border-radius: 3px;
+  border-radius: 2px;
   overflow: hidden;
-  position: relative;
   display: flex;
   flex-direction: column-reverse;
 }
 
 .fort-fuel-fill {
   width: 100%;
-  border-radius: 3px;
+  border-radius: 2px;
   background: linear-gradient(0deg, #4fc3f7, #81d4fa);
   transition: height 0.2s ease;
 }
 
-.fort-slider-group {
+.fort-val {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
+  align-items: center;
+  min-width: 32px;
 }
 
-.fort-slider-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.8);
+.fort-val-lbl {
+  font-size: 9px;
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+  line-height: 1;
 }
 
-.fort-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  outline: none;
-  cursor: pointer;
-}
-
-.fort-angle-slider {
-  background: linear-gradient(90deg, #00e5ff, #aa00ff);
-}
-
-.fort-power-slider {
-  background: linear-gradient(90deg, #69f0ae, #ff1744);
-}
-
-.fort-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 6px rgba(0,0,0,0.4);
-  cursor: pointer;
-}
-
-.fort-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #fff;
-  border: none;
-  box-shadow: 0 0 6px rgba(0,0,0,0.4);
-  cursor: pointer;
+.fort-val-num {
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.3;
 }
 
 .fort-fire-btn {
-  min-width: 64px;
-  height: 48px;
+  min-width: 48px;
+  height: 34px;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   background: linear-gradient(135deg, #ff4500, #ff6b35);
   color: #fff;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(255,69,0,0.4);
-  transition: transform 0.15s, opacity 0.2s;
+  box-shadow: 0 2px 8px rgba(255,69,0,0.4);
+  transition: transform 0.1s, opacity 0.2s;
   flex-shrink: 0;
   letter-spacing: 1px;
+  touch-action: none;
 }
 
 .fort-fire-btn:active:not(:disabled) {
