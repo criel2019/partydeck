@@ -34,6 +34,7 @@ let fortLocalPower = 50;
 let fortParticles = [];
 let fortDebris = [];
 let fortSmoke = [];
+let fortWindParticles = [];
 let fortMoveDir = 0; // -1 left, 0 none, 1 right
 let fortMoveInterval = null;
 let fortMovedThisTurn = 0;
@@ -320,6 +321,85 @@ function drawParticles(ctx) {
   ctx.globalAlpha = 1;
 }
 
+// ===== WIND PARTICLE SYSTEM =====
+function updateWindParticles(wind) {
+  // Update existing particles
+  fortWindParticles = fortWindParticles.filter(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= p.decay;
+    return p.life > 0;
+  });
+
+  // Don't spawn if no wind
+  if (wind === 0) return;
+
+  const absWind = Math.abs(wind);
+  // Spawn rate scales with wind strength: 1-2 per frame for light, up to 3-4 for strong
+  const spawnCount = Math.floor(Math.random() * (absWind > 3 ? 3 : 2)) + (absWind > 1 ? 1 : (Math.random() < 0.5 ? 1 : 0));
+
+  for (let i = 0; i < spawnCount; i++) {
+    // Spawn across the full canvas width, in the sky area (upper 60%)
+    const spawnX = Math.random() * FORT_CANVAS_W;
+    const spawnY = Math.random() * FORT_CANVAS_H * 0.6;
+
+    // Speed scales with wind strength
+    const baseSpeed = 0.5 + absWind * 0.8;
+    const speed = baseSpeed + Math.random() * baseSpeed * 0.5;
+    const dir = wind > 0 ? 1 : -1;
+
+    // Length/size scales with wind
+    let length, alpha;
+    if (absWind <= 2) {
+      // Light wind: small dots
+      length = 2 + Math.random() * 3;
+      alpha = 0.15 + Math.random() * 0.1;
+    } else if (absWind <= 4) {
+      // Medium wind: short streaks
+      length = 4 + Math.random() * 6;
+      alpha = 0.2 + Math.random() * 0.15;
+    } else {
+      // Strong wind: long streaks
+      length = 8 + Math.random() * 10;
+      alpha = 0.25 + Math.random() * 0.15;
+    }
+
+    fortWindParticles.push({
+      x: spawnX,
+      y: spawnY,
+      vx: speed * dir,
+      vy: 0.1 + Math.random() * 0.3, // slight downward drift
+      life: 1.0,
+      decay: 0.01 + Math.random() * 0.015,
+      length: length,
+      alpha: alpha,
+    });
+  }
+
+  // Cap particle count
+  if (fortWindParticles.length > 150) {
+    fortWindParticles = fortWindParticles.slice(-150);
+  }
+}
+
+function drawWindParticles(ctx, wind) {
+  if (wind === 0 || fortWindParticles.length === 0) return;
+  const dir = wind > 0 ? 1 : -1;
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  fortWindParticles.forEach(p => {
+    const a = p.alpha * p.life;
+    ctx.strokeStyle = `rgba(255, 255, 255, ${a})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x - p.length * dir, p.y);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
 // ===== HOST: GAME INIT =====
 function startFortress() {
   const n = state.players.length;
@@ -361,6 +441,7 @@ function startFortress() {
   fortParticles = [];
   fortDebris = [];
   fortSmoke = [];
+  fortWindParticles = [];
 
   // Camera: snap to first player
   const firstPlayer = players[0];
@@ -1150,10 +1231,14 @@ function renderFortressScene(view) {
   // Sky: no camera transform (always full screen)
   drawSky(ctx, w, h);
 
+  // Update wind particles each frame
+  updateWindParticles(view.wind || 0);
+
   // Everything else: camera transform
   ctx.save();
   applyCameraTransform(ctx);
   drawClouds(ctx, w);
+  drawWindParticles(ctx, view.wind || 0);
   drawTerrain(ctx, terrain, w, h);
   drawTanks(ctx, view.players, view.turnIdx, terrain);
   drawHPBars(ctx, view.players, terrain);
@@ -1643,6 +1728,7 @@ function closeFortressGame() {
   fortParticles = [];
   fortDebris = [];
   fortSmoke = [];
+  fortWindParticles = [];
   // Reset camera
   fortCam.x = 400; fortCam.y = 250;
   fortCam.targetX = 400; fortCam.targetY = 250;
