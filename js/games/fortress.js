@@ -631,29 +631,74 @@ function initFortCanvas() {
   fortCanvas.style.height = '100%';
   fortCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // Touch pan
+  // Touch pan + pinch zoom
   fortCanvas.ontouchstart = (e) => {
     const view = window._fortView;
     if (!view || view.phase !== 'aiming') return;
-    _fortDrag = {
-      sx: e.touches[0].clientX, sy: e.touches[0].clientY,
-      cx: fortCam.targetX, cy: fortCam.targetY
-    };
+    if (e.touches.length === 2) {
+      // Pinch zoom start
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      _fortDrag = {
+        pinch: true,
+        startDist: Math.sqrt(dx * dx + dy * dy),
+        startZoom: fortCam.zoom,
+        cx: fortCam.targetX, cy: fortCam.targetY,
+        sx: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        sy: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+      };
+    } else if (e.touches.length === 1) {
+      _fortDrag = {
+        pinch: false,
+        sx: e.touches[0].clientX, sy: e.touches[0].clientY,
+        cx: fortCam.targetX, cy: fortCam.targetY
+      };
+    }
   };
 
   fortCanvas.ontouchmove = (e) => {
     if (!_fortDrag) return;
     e.preventDefault();
-    const rect = fortCanvas.getBoundingClientRect();
-    const scaleX = FORT_CANVAS_W / rect.width;
-    const dx = (e.touches[0].clientX - _fortDrag.sx) * scaleX / fortCam.zoom;
-    const dy = (e.touches[0].clientY - _fortDrag.sy) * scaleX / fortCam.zoom;
-    fortCam.targetX = _fortDrag.cx - dx;
-    fortCam.targetY = _fortDrag.cy - dy;
-    clampCamera();
+    if (_fortDrag.pinch && e.touches.length === 2) {
+      // Pinch zoom
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const scale = dist / _fortDrag.startDist;
+      fortCam.zoom = Math.max(1.0, Math.min(3.0, _fortDrag.startZoom * scale));
+      // Also pan with midpoint
+      const rect = fortCanvas.getBoundingClientRect();
+      const scaleX = FORT_CANVAS_W / rect.width;
+      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const pdx = (mx - _fortDrag.sx) * scaleX / fortCam.zoom;
+      const pdy = (my - _fortDrag.sy) * scaleX / fortCam.zoom;
+      fortCam.targetX = _fortDrag.cx - pdx;
+      fortCam.targetY = _fortDrag.cy - pdy;
+      clampCamera();
+    } else if (!_fortDrag.pinch && e.touches.length === 1) {
+      const rect = fortCanvas.getBoundingClientRect();
+      const scaleX = FORT_CANVAS_W / rect.width;
+      const dx = (e.touches[0].clientX - _fortDrag.sx) * scaleX / fortCam.zoom;
+      const dy = (e.touches[0].clientY - _fortDrag.sy) * scaleX / fortCam.zoom;
+      fortCam.targetX = _fortDrag.cx - dx;
+      fortCam.targetY = _fortDrag.cy - dy;
+      clampCamera();
+    }
   };
 
-  fortCanvas.ontouchend = () => { _fortDrag = null; };
+  fortCanvas.ontouchend = (e) => {
+    if (e.touches.length === 0) {
+      _fortDrag = null;
+    } else if (e.touches.length === 1 && _fortDrag && _fortDrag.pinch) {
+      // Transition from pinch to single-finger pan
+      _fortDrag = {
+        pinch: false,
+        sx: e.touches[0].clientX, sy: e.touches[0].clientY,
+        cx: fortCam.targetX, cy: fortCam.targetY
+      };
+    }
+  };
 
   // Mouse pan
   fortCanvas.onmousedown = (e) => {
@@ -1238,11 +1283,11 @@ function renderFortressScene(view) {
   ctx.save();
   applyCameraTransform(ctx);
   drawClouds(ctx, w);
-  drawWindParticles(ctx, view.wind || 0);
   drawTerrain(ctx, terrain, w, h);
   drawTanks(ctx, view.players, view.turnIdx, terrain);
   drawHPBars(ctx, view.players, terrain);
   drawNames(ctx, view.players, terrain);
+  drawWindParticles(ctx, view.wind || 0);
   ctx.restore();
 }
 
@@ -1341,10 +1386,138 @@ function drawTerrain(ctx, terrain, w, h) {
 }
 
 function drawTanks(ctx, players, turnIdx, terrain) {
+  // Draw dead tanks first (behind alive ones)
+  players.forEach(p => {
+    if (p.alive) return;
+    drawDeadTank(ctx, p, terrain);
+  });
+  // Draw alive tanks on top
   players.forEach((p, i) => {
     if (!p.alive) return;
     drawTank(ctx, p, i === turnIdx, terrain);
   });
+}
+
+function drawDeadTank(ctx, player, terrain) {
+  const x = player.x;
+  const tx = Math.floor(Math.max(0, Math.min(x, FORT_CANVAS_W - 1)));
+  const terrainY = terrain[tx] || 380;
+
+  const txL = Math.max(0, tx - 8);
+  const txR = Math.min(terrain.length - 1, tx + 8);
+  const slope = Math.atan2(terrain[txR] - terrain[txL], txR - txL);
+
+  const bodyX = x - FORT_TANK_W / 2;
+  const bodyY = terrainY - FORT_TANK_H;
+
+  ctx.save();
+  ctx.globalAlpha = 0.6;
+  ctx.translate(x, terrainY);
+  ctx.rotate(slope + 0.12); // slight extra tilt
+  ctx.translate(-x, -terrainY);
+
+  // Darkened treads
+  ctx.fillStyle = '#1a1a1a';
+  const treadH = 6;
+  ctx.beginPath();
+  ctx.roundRect(bodyX - 2, terrainY - treadH, FORT_TANK_W + 4, treadH, 3);
+  ctx.fill();
+
+  // Charred body
+  const charColor = darkenColor(player.color, 0.35);
+  ctx.fillStyle = charColor;
+  ctx.beginPath();
+  ctx.roundRect(bodyX, bodyY, FORT_TANK_W, FORT_TANK_H, 4);
+  ctx.fill();
+
+  // Burn/soot overlay
+  ctx.fillStyle = 'rgba(30, 20, 10, 0.45)';
+  ctx.beginPath();
+  ctx.roundRect(bodyX, bodyY, FORT_TANK_W, FORT_TANK_H, 4);
+  ctx.fill();
+
+  // Damage cracks (dark lines)
+  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(bodyX + 5, bodyY + 3);
+  ctx.lineTo(bodyX + 15, bodyY + FORT_TANK_H - 4);
+  ctx.moveTo(bodyX + FORT_TANK_W - 8, bodyY + 5);
+  ctx.lineTo(bodyX + FORT_TANK_W - 14, bodyY + FORT_TANK_H - 2);
+  ctx.stroke();
+
+  // Broken turret dome (offset/cracked)
+  ctx.fillStyle = charColor;
+  ctx.beginPath();
+  ctx.arc(x + 2, bodyY + 3, 8, Math.PI, 0);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(30, 20, 10, 0.4)';
+  ctx.beginPath();
+  ctx.arc(x + 2, bodyY + 3, 8, Math.PI, 0);
+  ctx.fill();
+
+  // Broken wheels
+  ctx.fillStyle = '#222';
+  const wheelY = terrainY - 1;
+  for (let wx = bodyX + 4; wx < bodyX + FORT_TANK_W; wx += 8) {
+    ctx.beginPath();
+    ctx.arc(wx, wheelY, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+
+  // Bent barrel stub (no slope transform, drawn short and drooping)
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.lineCap = 'round';
+  const tH = FORT_TANK_H - 2;
+  const turretSX = x + Math.sin(slope) * tH + 2;
+  const turretSY = terrainY - Math.cos(slope) * tH;
+  const stubLen = FORT_BARREL_LEN * 0.55;
+  // Barrel droops down at ~20 degrees
+  const droopRad = 20 * Math.PI / 180;
+  const stubEndX = turretSX + stubLen * Math.cos(droopRad);
+  const stubEndY = turretSY + stubLen * Math.sin(droopRad);
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(turretSX, turretSY);
+  ctx.lineTo(stubEndX, stubEndY);
+  ctx.stroke();
+  ctx.restore();
+
+  // Smoke wisps from wreck
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = '#888';
+  const t = Date.now() * 0.001;
+  for (let i = 0; i < 3; i++) {
+    const sy = bodyY - 5 - Math.sin(t * 0.8 + i * 2) * 8 - i * 6;
+    const sx = x - 3 + Math.sin(t * 0.5 + i * 3) * 5;
+    const sr = 3 + Math.sin(t + i) * 1.5;
+    ctx.beginPath();
+    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function darkenColor(hex, factor) {
+  // Convert hex to darker version
+  let r, g, b;
+  if (hex.startsWith('#')) {
+    const c = hex.slice(1);
+    r = parseInt(c.substring(0, 2), 16);
+    g = parseInt(c.substring(2, 4), 16);
+    b = parseInt(c.substring(4, 6), 16);
+  } else {
+    return '#333';
+  }
+  r = Math.floor(r * factor);
+  g = Math.floor(g * factor);
+  b = Math.floor(b * factor);
+  return `rgb(${r},${g},${b})`;
 }
 
 function drawTank(ctx, player, isCurrentTurn, terrain) {
