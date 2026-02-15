@@ -977,11 +977,7 @@ function startFortAnimation(msg, callback) {
 
     if (frameIdx >= path.length) {
       const impactPt = path[path.length - 1];
-      // Update terrain in view for subsequent renders
-      if (msg.terrainAfter && view) {
-        view.terrain = msg.terrainAfter;
-      }
-      animateExplosion(impactPt.x, impactPt.y, hitResult, view, callback);
+      animateExplosion(impactPt.x, impactPt.y, hitResult, view, callback, msg.terrainAfter);
       return;
     }
 
@@ -991,10 +987,11 @@ function startFortAnimation(msg, callback) {
   fortAnimId = requestAnimationFrame(animLoop);
 }
 
-function animateExplosion(x, y, hitResult, view, callback) {
+function animateExplosion(x, y, hitResult, view, callback, terrainAfter) {
   let frame = 0;
   const totalFrames = 35;
   const maxRadius = 50;
+  let terrainApplied = false;
 
   // Spawn lots of particles at impact
   spawnExplosionParticles(x, y, 40, true);
@@ -1009,6 +1006,11 @@ function animateExplosion(x, y, hitResult, view, callback) {
   let shakeIntensity = 8;
 
   function explodeLoop() {
+    // Apply terrain destruction after flash fades (frame 5)
+    if (!terrainApplied && frame >= 5 && terrainAfter && view) {
+      view.terrain = terrainAfter;
+      terrainApplied = true;
+    }
     // Camera lerp
     fortCam.x += (fortCam.targetX - fortCam.x) * fortCam.lerp;
     fortCam.y += (fortCam.targetY - fortCam.y) * fortCam.lerp;
