@@ -4,7 +4,6 @@
 
 // ===== CONSTANTS =====
 const FORT_GRAVITY = 0.15;
-const FORT_POWER_MULT = 0.13;
 const FORT_TANK_W = 30, FORT_TANK_H = 20;
 const FORT_BARREL_LEN = 25;
 const FORT_MAX_HP = 100;
@@ -621,44 +620,35 @@ function handleFortFire(peerId, msg) {
   });
 }
 
-// ===== PHYSICS =====
+// ===== PHYSICS (clean rewrite) =====
+// Simple projectile motion: parabolic arc, no drag, gentle wind
+// speed = 1.5 + power * 0.1  →  P50 ≈ 280px range, P100 ≈ 880px range at 45°
 function computeProjectilePath(startX, startY, angleDeg, power, wind) {
   const rad = angleDeg * Math.PI / 180;
-  const speed = power * FORT_POWER_MULT;
+  const speed = 1.5 + power * 0.1;
   let vx = speed * Math.cos(rad);
   let vy = -speed * Math.sin(rad);
-
-  // Start from turret center (consistent regardless of angle)
   let x = startX;
   let y = startY;
-  const path = [{ x, y, vx, vy }];
+  const path = [{ x, y }];
   const terrain = fortState ? fortState.terrain :
     (window._fortView ? window._fortView.terrain : new Array(FORT_CANVAS_W).fill(380));
   const width = fortState ? fortState.canvasW : FORT_CANVAS_W;
 
   for (let i = 0; i < 3000; i++) {
-    // Wind — gentle horizontal force
-    vx += wind * 0.004;
-
-    // Gravity only — clean parabolic arc (no air drag)
+    vx += wind * 0.003;
     vy += FORT_GRAVITY;
-
     x += vx;
     y += vy;
-    path.push({ x, y, vx, vy });
+    path.push({ x, y });
 
-    // Check terrain collision
     const tx = Math.floor(x);
     if (tx < 0 || tx >= width) break;
     if (y >= terrain[tx]) break;
     if (y > FORT_CANVAS_H + 100) break;
   }
 
-  return {
-    path,
-    impactX: x,
-    impactY: y,
-  };
+  return { path, impactX: x, impactY: y };
 }
 
 function checkHit(impactX, impactY, shooterId) {
@@ -1167,42 +1157,6 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
   ctx.arc(x, bodyY + 2, 9, Math.PI, 0);
   ctx.fill();
 
-  // Barrel — compensate for terrain slope so visual matches absolute physics angle
-  let angle = 45;
-  if (player.id === state.myId) {
-    angle = fortLocalAngle;
-  }
-
-  const absRad = angle * Math.PI / 180;
-  const localRad = absRad + slope;
-  const barrelEndX = x + FORT_BARREL_LEN * Math.cos(localRad);
-  const barrelEndY = (bodyY + 2) - FORT_BARREL_LEN * Math.sin(localRad);
-
-  // Barrel shadow
-  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-  ctx.lineWidth = 6;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(x, bodyY + 3);
-  ctx.lineTo(barrelEndX, barrelEndY + 1);
-  ctx.stroke();
-
-  // Barrel main
-  ctx.strokeStyle = '#444';
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(x, bodyY + 2);
-  ctx.lineTo(barrelEndX, barrelEndY);
-  ctx.stroke();
-
-  // Barrel highlight
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(x, bodyY + 1);
-  ctx.lineTo(barrelEndX, barrelEndY - 1);
-  ctx.stroke();
-
   // Wheels
   ctx.fillStyle = '#333';
   const wheelY = terrainY - 1;
@@ -1210,7 +1164,6 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
     ctx.beginPath();
     ctx.arc(wx, wheelY, 3.5, 0, Math.PI * 2);
     ctx.fill();
-    // Wheel hub
     ctx.fillStyle = '#555';
     ctx.beginPath();
     ctx.arc(wx, wheelY, 1.5, 0, Math.PI * 2);
@@ -1218,7 +1171,45 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
     ctx.fillStyle = '#333';
   }
 
-  ctx.restore();
+  ctx.restore(); // END slope rotation
+
+  // === Barrel: drawn in SCREEN coordinates (outside rotation) ===
+  // This guarantees barrel direction = physics direction, no slope math needed
+  let angle = 45;
+  if (player.id === state.myId) {
+    angle = fortLocalAngle;
+  }
+
+  const rad = angle * Math.PI / 180;
+  // Turret center in screen coords (accounting for slope rotation around pivot)
+  const tH = FORT_TANK_H - 2;
+  const turretSX = x + Math.sin(slope) * tH;
+  const turretSY = terrainY - Math.cos(slope) * tH;
+  const barrelEndX = turretSX + FORT_BARREL_LEN * Math.cos(rad);
+  const barrelEndY = turretSY - FORT_BARREL_LEN * Math.sin(rad);
+
+  ctx.lineCap = 'round';
+  // Barrel shadow
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(turretSX, turretSY + 1);
+  ctx.lineTo(barrelEndX, barrelEndY + 1);
+  ctx.stroke();
+  // Barrel main
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(turretSX, turretSY);
+  ctx.lineTo(barrelEndX, barrelEndY);
+  ctx.stroke();
+  // Barrel highlight
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(turretSX, turretSY - 1);
+  ctx.lineTo(barrelEndX, barrelEndY - 1);
+  ctx.stroke();
 
   // Move fuel indicator for current turn player
   if (isCurrentTurn && player.id === state.myId) {
