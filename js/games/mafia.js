@@ -791,13 +791,10 @@ function mfResolveVote() {
         target.lives = 0;
         ms.deathOrder.push(target.id);
 
-        const roleName = MF_ROLES[target.activeRole]?.name || '시민';
-        const teamLabel = MF_ROLES[target.activeRole]?.team === 'mafia' ? '마피아팀' : '시민팀';
-
         announcements.push({
           type: 'vote-result',
           icon: '⚖️',
-          text: `${target.name}님이 처형되었습니다. 정체: ${roleName} (${teamLabel})`
+          text: `${target.name}님이 처형되었습니다.`
         });
 
         // Check baeksu inheritance
@@ -965,12 +962,7 @@ function mfBuildView(playerId) {
       pv.roleName = MF_ROLES[p.activeRole]?.name;
     }
 
-    // Dead player role reveal (public)
-    if (!p.alive && ms.phase !== 'night' && ms.phase !== 'role-reveal') {
-      pv.role = p.activeRole;
-      pv.roleEmoji = MF_ROLES[p.activeRole]?.emoji;
-      pv.roleName = MF_ROLES[p.activeRole]?.name;
-    }
+    // Dead players: no public role reveal (only shown at game result)
 
     // Soldier shield indicator (only for self or result)
     if (p.activeRole === 'soldier' && p.lives > 1 && (p.id === playerId || ms.phase === 'result')) {
