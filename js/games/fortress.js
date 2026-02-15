@@ -42,6 +42,59 @@ let _fortKeyUp = null;
 let _fortAngleInterval = null;
 let _fortPowerInterval = null;
 
+// ===== CAMERA STATE =====
+let fortCam = {
+  x: 400, y: 250,
+  targetX: 400, targetY: 250,
+  zoom: 2.0,
+  lerp: 0.08
+};
+let _fortCamLoopId = null;
+let _fortDrag = null;
+
+function clampCamera() {
+  const vw = FORT_CANVAS_W / fortCam.zoom / 2;
+  const vh = FORT_CANVAS_H / fortCam.zoom / 2;
+  fortCam.x = Math.max(vw, Math.min(FORT_CANVAS_W - vw, fortCam.x));
+  fortCam.y = Math.max(vh, Math.min(FORT_CANVAS_H - vh, fortCam.y));
+  fortCam.targetX = Math.max(vw, Math.min(FORT_CANVAS_W - vw, fortCam.targetX));
+  fortCam.targetY = Math.max(vh, Math.min(FORT_CANVAS_H - vh, fortCam.targetY));
+}
+
+function applyCameraTransform(ctx) {
+  const vw = FORT_CANVAS_W / fortCam.zoom;
+  const vh = FORT_CANVAS_H / fortCam.zoom;
+  ctx.scale(fortCam.zoom, fortCam.zoom);
+  ctx.translate(-fortCam.x + vw / 2, -fortCam.y + vh / 2);
+}
+
+function fortCameraLoop() {
+  // Only lerp + render during aiming phase (animation loops handle their own)
+  const view = window._fortView;
+  if (view && view.phase === 'aiming') {
+    fortCam.x += (fortCam.targetX - fortCam.x) * fortCam.lerp;
+    fortCam.y += (fortCam.targetY - fortCam.y) * fortCam.lerp;
+    clampCamera();
+    renderFortressScene(view);
+  }
+
+  _fortCamLoopId = requestAnimationFrame(fortCameraLoop);
+}
+
+function fortCameraTarget(px, py) {
+  fortCam.targetX = px;
+  fortCam.targetY = py;
+  clampCamera();
+}
+
+function fortCameraSnap(px, py) {
+  fortCam.targetX = px;
+  fortCam.targetY = py;
+  fortCam.x = px;
+  fortCam.y = py;
+  clampCamera();
+}
+
 // ===== TERRAIN GENERATION =====
 function generateFortressTerrain(width, height, playerCount) {
   const terrain = new Array(width);
@@ -309,12 +362,22 @@ function startFortress() {
   fortDebris = [];
   fortSmoke = [];
 
+  // Camera: snap to first player
+  const firstPlayer = players[0];
+  const fpx = firstPlayer.x;
+  const fpy = terrain[Math.floor(Math.max(0, Math.min(fpx, FORT_CANVAS_W - 1)))] - FORT_TANK_H;
+  fortCameraSnap(fpx, fpy);
+
   const view = createFortressView();
   broadcast({ type: 'game-start', game: 'fortress', state: view });
   showScreen('fortressGame');
   initFortCanvas();
   renderFortressView(view);
   setupFortressKeyboard();
+
+  // Start camera loop
+  if (_fortCamLoopId) cancelAnimationFrame(_fortCamLoopId);
+  _fortCamLoopId = requestAnimationFrame(fortCameraLoop);
 }
 
 // ===== KEYBOARD CONTROLS =====
@@ -486,6 +549,54 @@ function initFortCanvas() {
   fortCanvas.style.width = '100%';
   fortCanvas.style.height = '100%';
   fortCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Touch pan
+  fortCanvas.ontouchstart = (e) => {
+    const view = window._fortView;
+    if (!view || view.phase !== 'aiming') return;
+    _fortDrag = {
+      sx: e.touches[0].clientX, sy: e.touches[0].clientY,
+      cx: fortCam.targetX, cy: fortCam.targetY
+    };
+  };
+
+  fortCanvas.ontouchmove = (e) => {
+    if (!_fortDrag) return;
+    e.preventDefault();
+    const rect = fortCanvas.getBoundingClientRect();
+    const scaleX = FORT_CANVAS_W / rect.width;
+    const dx = (e.touches[0].clientX - _fortDrag.sx) * scaleX / fortCam.zoom;
+    const dy = (e.touches[0].clientY - _fortDrag.sy) * scaleX / fortCam.zoom;
+    fortCam.targetX = _fortDrag.cx - dx;
+    fortCam.targetY = _fortDrag.cy - dy;
+    clampCamera();
+  };
+
+  fortCanvas.ontouchend = () => { _fortDrag = null; };
+
+  // Mouse pan
+  fortCanvas.onmousedown = (e) => {
+    const view = window._fortView;
+    if (!view || view.phase !== 'aiming') return;
+    _fortDrag = {
+      sx: e.clientX, sy: e.clientY,
+      cx: fortCam.targetX, cy: fortCam.targetY
+    };
+  };
+
+  fortCanvas.onmousemove = (e) => {
+    if (!_fortDrag) return;
+    const rect = fortCanvas.getBoundingClientRect();
+    const scaleX = FORT_CANVAS_W / rect.width;
+    const dx = (e.clientX - _fortDrag.sx) * scaleX / fortCam.zoom;
+    const dy = (e.clientY - _fortDrag.sy) * scaleX / fortCam.zoom;
+    fortCam.targetX = _fortDrag.cx - dx;
+    fortCam.targetY = _fortDrag.cy - dy;
+    clampCamera();
+  };
+
+  fortCanvas.onmouseup = () => { _fortDrag = null; };
+  fortCanvas.onmouseleave = () => { _fortDrag = null; };
 }
 
 // ===== LOCAL CONTROLS =====
@@ -715,6 +826,13 @@ function advanceFortTurn() {
   if (nextPlayer) nextPlayer.moveFuel = FORT_MOVE_FUEL;
   fortMovedThisTurn = 0;
 
+  // Camera: target next player
+  if (nextPlayer) {
+    const npx = nextPlayer.x;
+    const npy = fortState.terrain[Math.floor(Math.max(0, Math.min(npx, FORT_CANVAS_W - 1)))] - FORT_TANK_H;
+    fortCameraTarget(npx, npy);
+  }
+
   broadcastFortressState();
 }
 
@@ -742,7 +860,7 @@ function startFortAnimation(msg, callback) {
   fortSmoke = [];
 
   let frameIdx = 0;
-  const speed = 4;
+  const speed = 2; // slower projectile (was 4)
   let muzzleFlashFrame = 0;
 
   if (fortAnimId) cancelAnimationFrame(fortAnimId);
@@ -756,17 +874,31 @@ function startFortAnimation(msg, callback) {
   function animLoop() {
     if (!view) { if (callback) callback(); return; }
 
+    // Camera lerp: track projectile
+    if (frameIdx < path.length) {
+      const trackPt = path[Math.min(frameIdx, path.length - 1)];
+      fortCam.targetX = trackPt.x;
+      fortCam.targetY = trackPt.y;
+    }
+    fortCam.x += (fortCam.targetX - fortCam.x) * fortCam.lerp;
+    fortCam.y += (fortCam.targetY - fortCam.y) * fortCam.lerp;
+    clampCamera();
+
     updateParticles();
     renderFortressScene(view);
 
     if (fortCtx) {
       const ctx = fortCtx;
 
+      // Apply camera transform for projectile/trail rendering
+      ctx.save();
+      applyCameraTransform(ctx);
+
       // Draw fading trajectory line (dotted)
       ctx.save();
       ctx.setLineDash([3, 6]);
       ctx.strokeStyle = 'rgba(255, 220, 120, 0.25)';
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1 / fortCam.zoom; // keep line thin at zoom
       ctx.beginPath();
       const trailStart = 0;
       const trailEnd = Math.min(frameIdx, path.length - 1);
@@ -828,6 +960,8 @@ function startFortAnimation(msg, callback) {
 
       // Draw particles on top
       drawParticles(ctx);
+
+      ctx.restore(); // end camera transform
     }
 
     frameIdx += speed;
@@ -858,10 +992,19 @@ function animateExplosion(x, y, hitResult, view, callback) {
   spawnDebris(x, y, 20);
   spawnSmoke(x, y, 12);
 
+  // Camera: target impact point
+  fortCam.targetX = x;
+  fortCam.targetY = y;
+
   // Screen shake state
   let shakeIntensity = 8;
 
   function explodeLoop() {
+    // Camera lerp
+    fortCam.x += (fortCam.targetX - fortCam.x) * fortCam.lerp;
+    fortCam.y += (fortCam.targetY - fortCam.y) * fortCam.lerp;
+    clampCamera();
+
     updateParticles();
 
     // Screen shake
@@ -880,12 +1023,16 @@ function animateExplosion(x, y, hitResult, view, callback) {
       const ctx = fortCtx;
       const progress = frame / totalFrames;
 
-      // Explosion flash (very bright at start)
+      // Explosion flash (very bright at start, no camera transform needed)
       if (frame < 5) {
         const flashAlpha = (1 - frame / 5) * 0.6;
         ctx.fillStyle = `rgba(255, 255, 200, ${flashAlpha})`;
         ctx.fillRect(0, 0, FORT_CANVAS_W, FORT_CANVAS_H);
       }
+
+      // Apply camera transform for explosion effects in world space
+      ctx.save();
+      applyCameraTransform(ctx);
 
       // Multi-layer explosion
       const radius = maxRadius * Math.min(1, progress * 2);
@@ -949,6 +1096,8 @@ function animateExplosion(x, y, hitResult, view, callback) {
         });
       }
 
+      ctx.restore(); // end camera transform
+
       ctx.restore(); // undo screen shake
     }
 
@@ -978,12 +1127,18 @@ function renderFortressScene(view) {
 
   ctx.clearRect(0, 0, w, h);
 
+  // Sky: no camera transform (always full screen)
   drawSky(ctx, w, h);
+
+  // Everything else: camera transform
+  ctx.save();
+  applyCameraTransform(ctx);
   drawClouds(ctx, w);
   drawTerrain(ctx, terrain, w, h);
   drawTanks(ctx, view.players, view.turnIdx, terrain);
   drawHPBars(ctx, view.players, terrain);
   drawNames(ctx, view.players, terrain);
+  ctx.restore();
 }
 
 function drawSky(ctx, w, h) {
@@ -1289,6 +1444,28 @@ function renderFortressView(view) {
 
   if (!fortCtx) initFortCanvas();
 
+  // Start camera loop if not running (for non-host clients)
+  if (!_fortCamLoopId) {
+    // Snap camera to current turn player on first render
+    const cp = view.players[view.turnIdx];
+    if (cp) {
+      const cpx = cp.x;
+      const cpy = (view.terrain || [])[Math.floor(Math.max(0, Math.min(cpx, FORT_CANVAS_W - 1)))] || 250;
+      fortCameraSnap(cpx, cpy - FORT_TANK_H);
+    }
+    _fortCamLoopId = requestAnimationFrame(fortCameraLoop);
+  }
+
+  // Update camera target to current turn player on state updates
+  if (view.phase === 'aiming') {
+    const tp = view.players[view.turnIdx];
+    if (tp) {
+      const tpx = tp.x;
+      const tpy = (view.terrain || [])[Math.floor(Math.max(0, Math.min(tpx, FORT_CANVAS_W - 1)))] || 250;
+      fortCameraTarget(tpx, tpy - FORT_TANK_H);
+    }
+  }
+
   const isMyTurn = view.players[view.turnIdx]?.id === state.myId;
   const canAct = isMyTurn && view.phase === 'aiming';
 
@@ -1422,10 +1599,22 @@ function closeFortressGame() {
   const overlay = document.getElementById('fortGameOver');
   if (overlay) overlay.style.display = 'none';
   if (fortAnimId) { cancelAnimationFrame(fortAnimId); fortAnimId = null; }
+  if (_fortCamLoopId) { cancelAnimationFrame(_fortCamLoopId); _fortCamLoopId = null; }
   cleanupFortressKeyboard();
   fortStopMove();
   fortAngleStop();
   fortPowerStop();
+  // Remove pan event listeners
+  if (fortCanvas) {
+    fortCanvas.ontouchstart = null;
+    fortCanvas.ontouchmove = null;
+    fortCanvas.ontouchend = null;
+    fortCanvas.onmousedown = null;
+    fortCanvas.onmousemove = null;
+    fortCanvas.onmouseup = null;
+    fortCanvas.onmouseleave = null;
+  }
+  _fortDrag = null;
   fortState = null;
   window._fortView = null;
   fortCtx = null;
@@ -1433,5 +1622,8 @@ function closeFortressGame() {
   fortParticles = [];
   fortDebris = [];
   fortSmoke = [];
+  // Reset camera
+  fortCam.x = 400; fortCam.y = 250;
+  fortCam.targetX = 400; fortCam.targetY = 250;
   returnToLobby();
 }
