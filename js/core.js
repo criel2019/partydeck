@@ -390,7 +390,7 @@ function handleMessage(peerId, raw) {
       // Update waiting text
       const waitingText = document.getElementById('waitingText');
       if (waitingText) {
-        const gameNames = { poker:'포커', mafia:'마피아', sutda:'섯다', quickdraw:'총잡이', roulette:'룰렛', lottery:'뽑기', ecard:'E카드', yahtzee:'야추', updown:'업다운', truth:'진실게임', fortress:'요새' };
+        const gameNames = { poker:'포커', mafia:'마피아', sutda:'섯다', quickdraw:'총잡이', roulette:'룰렛', lottery:'뽑기', ecard:'E카드', yahtzee:'야추', updown:'업다운', truth:'진실게임', fortress:'요새', bombshot:'폭탄주' };
         waitingText.textContent = `${gameNames[msg.game] || msg.game} 게임 대기 중...`;
       }
     },
@@ -473,6 +473,12 @@ function handleMessage(peerId, raw) {
     'fort-move': () => { if(state.isHost) handleFortMove(peerId, msg); },
     'fort-anim': () => { startFortAnimation(msg); },
     'fort-result': () => { showFortressGameOver(msg); },
+    // BombShot handlers
+    'bs-state': () => { showScreen('bombshotGame'); initBSCanvas(); renderBSView(msg); },
+    'bs-submit': () => { if(state.isHost) processBSSubmit(peerId, msg.cardIndices); },
+    'bs-liar': () => { if(state.isHost) processBSLiar(peerId); },
+    'bs-anim': () => { handleBSAnim(msg); },
+    'bs-result': () => { handleBSResult(msg); },
     'player-left': () => {
       state.players = state.players.filter(p => p.id !== msg.playerId);
       updateLobbyUI();
@@ -761,6 +767,7 @@ function startGame() {
   else if(g === 'updown') startUpDown();
   else if(g === 'truth') startTruthGame();
   else if(g === 'fortress') startFortress();
+  else if(g === 'bombshot') startBombShot();
   else showToast('준비 중인 게임입니다');
 }
 
@@ -810,6 +817,12 @@ function handleGameStart(msg) {
     initFortCanvas();
     renderFortressView(msg.state);
   }
+  else if(msg.game === 'bombshot') {
+    showScreen('bombshotGame');
+    loadBombShotThree();
+    initBSCanvas();
+    // State will arrive via bs-state message
+  }
 }
 
 // ===== DEBUG / PREVIEW MODE =====
@@ -851,7 +864,8 @@ function debugGame(game) {
     yahtzee: 'yahtzeeGame',
     updown: 'updownGame',
     truth: 'truthGame',
-    fortress: 'fortressGame'
+    fortress: 'fortressGame',
+    bombshot: 'bombshotGame'
   };
 
   if(game === 'yahtzee') {

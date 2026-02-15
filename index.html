@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="css/games/ecard.css">
 <link rel="stylesheet" href="css/games/sutda.css">
 <link rel="stylesheet" href="css/games/fortress.css?v=7">
+<link rel="stylesheet" href="css/games/bombshot.css">
 <link rel="stylesheet" href="css/games/mobile.css">
 </head>
 <body>
@@ -113,6 +114,7 @@
       <button class="practice-game-btn" onclick="startPracticeGame('updown')">🃏 업다운</button>
       <button class="practice-game-btn" onclick="startPracticeGame('truth')">⭕ 진실게임</button>
       <button class="practice-game-btn" onclick="startPracticeGame('fortress')">🏰 요새</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('bombshot')">🍺 폭탄주</button>
     </div>
   </div>
 </div>
@@ -181,6 +183,9 @@
       </div>
       <div class="game-option" data-game="fortress" onclick="selectGame(this)">
         <span class="game-emoji">🏰</span>요새
+      </div>
+      <div class="game-option" data-game="bombshot" onclick="selectGame(this)">
+        <span class="game-emoji">🍺</span>폭탄주
       </div>
     </div>
   </div>
@@ -1014,6 +1019,64 @@
   </div>
 </div>
 
+<!-- BOMB SHOT BLUFF -->
+<div class="screen" id="bombshotGame">
+  <div class="bs-top-bar">
+    <button class="back-btn" onclick="closeBombShotGame()">←</button>
+    <div class="bs-drink-badge beer" id="bsDrinkBadge">
+      <span class="bs-drink-icon" id="bsDrinkIcon">🍺</span>
+      <span id="bsDrinkName">지정: 맥주</span>
+    </div>
+    <div class="bs-glass-info">🥃 <span id="bsGlassCount">0</span>장</div>
+  </div>
+
+  <div class="bs-opponents" id="bsOpponents"></div>
+
+  <div class="bs-last-submit" id="bsLastSubmit" style="display:none;"></div>
+
+  <div class="bs-my-turn-banner" id="bsMyTurnBanner"></div>
+
+  <div class="bs-canvas-wrap">
+    <canvas id="bsCanvas"></canvas>
+  </div>
+
+  <div class="bs-joker-guide">
+    <span class="bs-joker-icon">💧</span>
+    <span>탄산수 = 조커 (어떤 술로든 사용 가능)</span>
+  </div>
+
+  <div class="bs-hand-area">
+    <div class="bs-hand" id="bsMyHand"></div>
+  </div>
+
+  <div class="bs-status" id="bsStatus"></div>
+
+  <div class="bs-action-bar">
+    <button class="bs-btn bs-btn-submit" id="bsSubmitBtn" onclick="bsSubmitCards()" disabled>
+      카드 제출 (<span id="bsSelectedCount">0</span>장)
+    </button>
+    <button class="bs-btn bs-btn-liar" id="bsLiarBtn" onclick="bsCallLiar()" disabled>
+      🚨 라이어!
+    </button>
+  </div>
+
+  <div class="bs-reveal" id="bsReveal" style="display:none;">
+    <div class="bs-reveal-box">
+      <div class="bs-reveal-title" id="bsRevealTitle">카드 공개!</div>
+      <div class="bs-reveal-cards" id="bsRevealCards"></div>
+      <div class="bs-reveal-result" id="bsRevealResult"></div>
+    </div>
+  </div>
+
+  <div class="bs-gameover" id="bsGameOver" style="display:none;">
+    <div class="bs-gameover-box">
+      <div class="bs-gameover-title" id="bsGameOverTitle">게임 종료!</div>
+      <div class="bs-rankings" id="bsRankings"></div>
+      <button class="btn btn-primary" onclick="closeBombShotGame()" style="max-width:280px;">대기실로</button>
+    </div>
+  </div>
+</div>
+
 <!-- RESULT -->
 <div class="result-overlay" id="resultOverlay">
   <div class="result-title" id="resultTitle">🏆 승리!</div>
@@ -1040,6 +1103,7 @@
 <script src="js/games/ecard.js?v=2"></script>
 <script src="js/games/sutda.js?v=2"></script>
 <script src="js/games/fortress.js?v=14"></script>
+<script src="js/games/bombshot.js?v=1"></script>
 <script src="js/ai.js?v=3"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>

@@ -10,6 +10,7 @@ let _originalCloseSutdaResult = null;
 let _originalMfCloseResult = null;
 let _originalCloseYahtzeeGame = null;
 let _originalCloseFortressGame = null;
+let _originalCloseBombShotGame = null;
 let _aiTimer = null;
 let _aiTimers = []; // tracked timeouts for cleanup on exit
 let _qdTimers = []; // QuickDraw-specific timers (separate to avoid clearing others)
@@ -31,6 +32,7 @@ const AI_COUNTS = {
   mafia: 5,
   fortress: 2,
   lottery: 0,
+  bombshot: 3,
 };
 
 // ========== ENTRY / EXIT ==========
@@ -54,6 +56,8 @@ function leavePracticeMode() {
   // Reset game-specific globals (null-safe)
   if (typeof ecState !== 'undefined') ecState = null;
   if (typeof sutdaHost !== 'undefined') sutdaHost = null;
+  if (typeof bsState !== 'undefined') bsState = null;
+  if (typeof destroyBombShotThree === 'function') destroyBombShotThree();
   showScreen('mainMenu');
 }
 
@@ -183,6 +187,25 @@ function interceptNetworking() {
     }
     if (_originalCloseFortressGame) _originalCloseFortressGame();
   };
+
+  _originalCloseBombShotGame = window.closeBombShotGame;
+  window.closeBombShotGame = function() {
+    _bsTimers.forEach(t => clearTimeout(t));
+    _bsTimers = [];
+    _bsSelected = [];
+    _bsView = null;
+    bsState = null;
+    if (typeof destroyBombShotThree === 'function') destroyBombShotThree();
+    var goEl = document.getElementById('bsGameOver');
+    if (goEl) goEl.style.display = 'none';
+    var revEl = document.getElementById('bsReveal');
+    if (revEl) revEl.style.display = 'none';
+    if (practiceMode) {
+      showScreen('practiceSelect');
+      return;
+    }
+    if (_originalCloseBombShotGame) _originalCloseBombShotGame();
+  };
 }
 
 function restoreNetworking() {
@@ -193,6 +216,7 @@ function restoreNetworking() {
   if (_originalMfCloseResult) { window.mfCloseResult = _originalMfCloseResult; _originalMfCloseResult = null; }
   if (_originalCloseYahtzeeGame) { window.closeYahtzeeGame = _originalCloseYahtzeeGame; _originalCloseYahtzeeGame = null; }
   if (_originalCloseFortressGame) { window.closeFortressGame = _originalCloseFortressGame; _originalCloseFortressGame = null; }
+  if (_originalCloseBombShotGame) { window.closeBombShotGame = _originalCloseBombShotGame; _originalCloseBombShotGame = null; }
 }
 
 function cleanupAI() {
@@ -242,6 +266,23 @@ function handleBroadcastForAI(data) {
   if (game === 'quickdraw' && data.type === 'qd-state' && data.phase === 'fire') {
     scheduleQDAIResponses();
     return;
+  }
+
+  // Special: BombShot — non-turn AI players may call liar after human submits
+  if (game === 'bombshot' && data.type === 'bs-anim' && data.anim === 'submit' && bsState && bsState.lastSubmission) {
+    const submitterId = bsState.lastSubmission.playerId;
+    // Each AI (except submitter) has a chance to call liar
+    bsState.players.forEach(p => {
+      if (!p.id.startsWith('ai-') || p.id === submitterId || p.finished) return;
+      const chance = bsState.lastSubmission.count === 3 ? 0.2 : bsState.lastSubmission.count === 2 ? 0.1 : 0.03;
+      if (Math.random() < chance) {
+        const t = setTimeout(() => {
+          if (!practiceMode || !bsState || bsState.phase !== 'playing') return;
+          processBSLiar(p.id);
+        }, 500 + Math.random() * 1500);
+        _aiTimers.push(t);
+      }
+    });
   }
 
   // General AI scheduling
@@ -306,6 +347,7 @@ function executeAIAction() {
     case 'truth': aiTruth(); break;
     case 'mafia': aiMafia(); break;
     case 'fortress': aiFortress(); break;
+    case 'bombshot': aiBombShot(); break;
     // lottery: no AI needed
   }
 }
@@ -863,6 +905,78 @@ function aiFortress() {
   }, fireDelay);
   _aiTimers.push(t);
 }
+
+// ========== BOMB SHOT AI ==========
+
+function aiBombShot() {
+  if (!bsState || bsState.phase !== 'playing') return;
+
+  const currentPlayer = bsState.players[bsState.turnIdx];
+  if (!currentPlayer || !currentPlayer.id.startsWith('ai-')) return;
+  if (currentPlayer.finished) return;
+
+  // AI: decide whether to call liar first (on previous submission)
+  if (bsState.lastSubmission && bsState.lastSubmission.playerId !== currentPlayer.id) {
+    // Call liar based on last submission size (more cards = more suspicious)
+    const liarChance = bsState.lastSubmission.count === 3 ? 0.3 :
+                       bsState.lastSubmission.count === 2 ? 0.15 : 0.05;
+    if (Math.random() < liarChance) {
+      const t = setTimeout(() => {
+        if (!practiceMode || !bsState || bsState.phase !== 'playing') return;
+        processBSLiar(currentPlayer.id);
+      }, 400 + Math.random() * 600);
+      _aiTimers.push(t);
+      return;
+    }
+  }
+
+  // AI: submit cards
+  const hand = currentPlayer.cards;
+  if (hand.length === 0) return;
+
+  const designated = bsState.designatedDrink;
+
+  // Find valid cards (designated or water)
+  const validIndices = [];
+  const invalidIndices = [];
+  hand.forEach((card, i) => {
+    if (card === designated || card === 'water') validIndices.push(i);
+    else invalidIndices.push(i);
+  });
+
+  let submitIndices = [];
+  const submitCount = Math.min(hand.length, 1 + Math.floor(Math.random() * 3)); // 1~3
+
+  if (validIndices.length >= submitCount && Math.random() < 0.7) {
+    // Play honestly (70% if possible)
+    for (let i = 0; i < submitCount && i < validIndices.length; i++) {
+      submitIndices.push(validIndices[i]);
+    }
+  } else {
+    // Bluff: mix valid and invalid, or all invalid
+    const allIdx = [];
+    for (let i = 0; i < hand.length; i++) allIdx.push(i);
+    // Shuffle
+    for (let i = allIdx.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = allIdx[i]; allIdx[i] = allIdx[j]; allIdx[j] = tmp;
+    }
+    submitIndices = allIdx.slice(0, submitCount);
+  }
+
+  if (submitIndices.length === 0) submitIndices = [0];
+
+  const t = setTimeout(() => {
+    if (!practiceMode || !bsState || bsState.phase !== 'playing') return;
+    const cp = bsState.players[bsState.turnIdx];
+    if (!cp || cp.id !== currentPlayer.id) return;
+    processBSSubmit(currentPlayer.id, submitIndices);
+  }, 800 + Math.random() * 1000);
+  _aiTimers.push(t);
+}
+
+// Also: AI liar calls when it's NOT their turn (react to broadcasts)
+// This is handled in handleBroadcastForAI via general scheduleAIAction
 
 // ========== LOTTERY AI ==========
 // Lottery is solo (player picks cells) — no AI needed
