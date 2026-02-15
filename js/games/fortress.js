@@ -597,6 +597,15 @@ function initFortCanvas() {
 
   fortCanvas.onmouseup = () => { _fortDrag = null; };
   fortCanvas.onmouseleave = () => { _fortDrag = null; };
+
+  // Wheel zoom
+  fortCanvas.onwheel = (e) => {
+    e.preventDefault();
+    const zoomSpeed = 0.15;
+    const dir = e.deltaY < 0 ? 1 : -1;
+    fortCam.zoom = Math.max(1.0, Math.min(3.0, fortCam.zoom + dir * zoomSpeed));
+    clampCamera();
+  };
 }
 
 // ===== LOCAL CONTROLS =====
@@ -1613,6 +1622,7 @@ function closeFortressGame() {
     fortCanvas.onmousemove = null;
     fortCanvas.onmouseup = null;
     fortCanvas.onmouseleave = null;
+    fortCanvas.onwheel = null;
   }
   _fortDrag = null;
   fortState = null;
@@ -1625,5 +1635,6 @@ function closeFortressGame() {
   // Reset camera
   fortCam.x = 400; fortCam.y = 250;
   fortCam.targetX = 400; fortCam.targetY = 250;
+  fortCam.zoom = 2.0;
   returnToLobby();
 }
