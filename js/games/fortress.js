@@ -701,6 +701,9 @@ function handleFortFire(peerId, msg) {
 
   applyDamage(hitResult);
 
+  // Save terrain BEFORE destruction for animation
+  const terrainBefore = fortState.terrain.slice();
+
   // Destroy terrain at impact
   destroyTerrain(fortState.terrain, pathResult.impactX, pathResult.impactY, FORT_CRATER_RADIUS);
 
@@ -712,7 +715,8 @@ function handleFortFire(peerId, msg) {
     shooterId: current.id,
     impactX: pathResult.impactX,
     impactY: pathResult.impactY,
-    terrainAfter: fortState.terrain.slice(), // send updated terrain
+    terrainBefore: terrainBefore,
+    terrainAfter: fortState.terrain.slice(),
   };
   broadcast(animMsg);
 
@@ -851,6 +855,11 @@ function startFortAnimation(msg, callback) {
   const path = pathResult.path;
   const hitResult = msg.hitResult;
   const view = window._fortView;
+
+  // Use pre-destruction terrain during projectile flight
+  if (view && msg.terrainBefore) {
+    view.terrain = msg.terrainBefore;
+  }
 
   // Apply damage to local view for post-animation render
   if (view && hitResult && hitResult.targets) {
