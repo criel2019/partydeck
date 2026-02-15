@@ -8,10 +8,19 @@ var _bsThreeLoaded = false;
 function loadBombShotThree() {
   if (_bsThreeLoaded) return;
   _bsThreeLoaded = true;
+
+  function onScriptsReady() {
+    var canvas = document.getElementById('bsCanvas');
+    if (canvas && typeof initBombShotThree === 'function') {
+      initBombShotThree(canvas);
+    }
+  }
+
   // Reuse Three.js if already loaded (e.g. from yahtzee)
   if (window.THREE) {
     var s = document.createElement('script');
     s.src = 'js/bombshot-three.js';
+    s.onload = onScriptsReady;
     s.onerror = function() { _bsThreeLoaded = false; };
     document.head.appendChild(s);
     return;
@@ -21,6 +30,7 @@ function loadBombShotThree() {
   s1.onload = function() {
     var s2 = document.createElement('script');
     s2.src = 'js/bombshot-three.js';
+    s2.onload = onScriptsReady;
     s2.onerror = function() { _bsThreeLoaded = false; };
     document.head.appendChild(s2);
   };
@@ -376,6 +386,12 @@ function renderBSView(view) {
   if (!view) return;
   _bsView = view;
   showScreen('bombshotGame');
+
+  // Ensure 3D is initialized if scripts are ready
+  if (typeof initBombShotThree === 'function' && typeof bsIsInitialized === 'function' && !bsIsInitialized()) {
+    var canvas = document.getElementById('bsCanvas');
+    if (canvas) initBombShotThree(canvas);
+  }
 
   var myPlayer = view.players.find(function(p) { return p.id === state.myId; });
   var isMyTurn = view.turnPlayerId === state.myId;
