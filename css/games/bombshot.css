@@ -709,3 +709,14 @@
 @media (max-height: 500px) {
   .bs-canvas-wrap { min-height: 100px; max-height: 150px; }
 }
+
+/* ===== Slot strip animations ===== */
+@keyframes bs-slot-blink {
+  0% { box-shadow: 0 0 0 3px #fff, 0 0 12px rgba(255,255,255,0.6); }
+  100% { box-shadow: 0 0 0 3px #ffd700, 0 0 20px rgba(255,215,0,0.8); }
+}
+
+@keyframes bs-spin-pulse {
+  0% { transform: scale(1); box-shadow: 0 4px 15px rgba(255,61,0,0.4); }
+  100% { transform: scale(1.06); box-shadow: 0 6px 25px rgba(255,61,0,0.7); }
+}

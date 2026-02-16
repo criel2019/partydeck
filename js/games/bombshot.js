@@ -353,7 +353,7 @@ function processBSLiar(callerId) {
   broadcastBSState();
 
   // === ROULETTE TIMING CHAIN ===
-  // Phase 1: liar-reveal (4s) — show cards
+  // Phase 1: liar-reveal (4s) — show cards, then enter roulette-setup and WAIT for player spin
   var t1 = setTimeout(function() {
     if (!bsState) return;
 
@@ -378,69 +378,90 @@ function processBSLiar(callerId) {
     broadcast({ type: 'bs-anim', anim: 'roulette-setup', slots: slots, targetName: target.name });
     handleBSAnim({ anim: 'roulette-setup', slots: slots, targetName: target.name });
     broadcastBSState();
-
-    // Phase 2: roulette-setup (1.5s) — camera moves, wheel appears
-    var t2 = setTimeout(function() {
-      if (!bsState) return;
-      bsState.phase = 'roulette-spin';
-
-      broadcast({ type: 'bs-anim', anim: 'roulette-spin', slotIndex: slotIndex, slots: slots });
-      handleBSAnim({ anim: 'roulette-spin', slotIndex: slotIndex, slots: slots });
-      broadcastBSState();
-
-      // Phase 3: roulette-spin (5.5s) — ball rolls
-      var t3 = setTimeout(function() {
-        if (!bsState) return;
-        bsState.phase = 'roulette-result';
-
-        broadcast({ type: 'bs-anim', anim: 'roulette-result', result: landedSlot.type, resultLabel: landedSlot.label, targetName: target.name });
-        handleBSAnim({ anim: 'roulette-result', result: landedSlot.type, resultLabel: landedSlot.label, targetName: target.name });
-        broadcastBSState();
-
-        // Phase 4: roulette-result (3s) — show result
-        var t4 = setTimeout(function() {
-          if (!bsState) return;
-
-          bsState.phase = 'camera-return';
-          broadcast({ type: 'bs-anim', anim: 'camera-return' });
-          handleBSAnim({ anim: 'camera-return' });
-          broadcastBSState();
-
-          // Phase 5: camera-return (1s), then apply result
-          var t5 = setTimeout(function() {
-            if (!bsState) return;
-
-            if (landedSlot.type === 'bombshot') {
-              // BOMB SHOT → game over immediately!
-              bsState.phase = 'gameover';
-              var result = {
-                type: 'bs-result',
-                bombshotPlayer: { id: target.id, name: target.name },
-                reason: 'bombshot',
-                rankings: bsState.players.map(function(p) {
-                  return {
-                    id: p.id, name: p.name, avatar: p.avatar,
-                    isBombshot: p.id === target.id,
-                    isWinner: p.id !== target.id
-                  };
-                })
-              };
-              broadcast(result);
-              handleBSResult(result);
-            } else {
-              // penalty or safe → continue game
-              bsResumeAfterRoulette();
-            }
-          }, 1000);
-          _bsTimers.push(t5);
-        }, 3000);
-        _bsTimers.push(t4);
-      }, 5800);
-      _bsTimers.push(t3);
-    }, 1500);
-    _bsTimers.push(t2);
+    // Now WAIT — player must press spin button (or AI auto-spins)
   }, 4000);
   _bsTimers.push(t1);
+}
+
+// ===== HOST: PROCESS SPIN (player pressed spin button) =====
+function processBSSpin(peerId) {
+  if (!state.isHost || !bsState) return;
+  if (bsState.phase !== 'roulette-setup') return;
+  if (!bsState.rouletteTarget || bsState.rouletteTarget.id !== peerId) return;
+
+  var bs = bsState;
+  var slotIndex = bs.rouletteSlotIndex;
+  var slots = bs.rouletteSlots;
+  var landedSlot = slots[slotIndex];
+  var target = bs.rouletteTarget;
+
+  bs.phase = 'roulette-spin';
+
+  broadcast({ type: 'bs-anim', anim: 'roulette-spin', slotIndex: slotIndex, slots: slots });
+  handleBSAnim({ anim: 'roulette-spin', slotIndex: slotIndex, slots: slots });
+  broadcastBSState();
+
+  // Phase 3: roulette-spin (5.5s) — ball rolls
+  var t3 = setTimeout(function() {
+    if (!bsState) return;
+    bsState.phase = 'roulette-result';
+
+    broadcast({ type: 'bs-anim', anim: 'roulette-result', result: landedSlot.type, resultLabel: landedSlot.label, targetName: target.name });
+    handleBSAnim({ anim: 'roulette-result', result: landedSlot.type, resultLabel: landedSlot.label, targetName: target.name });
+    broadcastBSState();
+
+    // Phase 4: roulette-result (3s) — show result
+    var t4 = setTimeout(function() {
+      if (!bsState) return;
+
+      bsState.phase = 'camera-return';
+      broadcast({ type: 'bs-anim', anim: 'camera-return' });
+      handleBSAnim({ anim: 'camera-return' });
+      broadcastBSState();
+
+      // Phase 5: camera-return (1s), then apply result
+      var t5 = setTimeout(function() {
+        if (!bsState) return;
+
+        if (landedSlot.type === 'bombshot') {
+          // BOMB SHOT → game over immediately!
+          bsState.phase = 'gameover';
+          var result = {
+            type: 'bs-result',
+            bombshotPlayer: { id: target.id, name: target.name },
+            reason: 'bombshot',
+            rankings: bsState.players.map(function(p) {
+              return {
+                id: p.id, name: p.name, avatar: p.avatar,
+                isBombshot: p.id === target.id,
+                isWinner: p.id !== target.id
+              };
+            })
+          };
+          broadcast(result);
+          handleBSResult(result);
+        } else {
+          // penalty or safe → continue game
+          bsResumeAfterRoulette();
+        }
+      }, 1000);
+      _bsTimers.push(t5);
+    }, 3000);
+    _bsTimers.push(t4);
+  }, 5800);
+  _bsTimers.push(t3);
+}
+
+// ===== CLIENT: SPIN ROULETTE =====
+function bsSpin() {
+  if (!_bsView || _bsView.phase !== 'roulette-setup') return;
+  if (!_bsView.rouletteTarget || _bsView.rouletteTarget.id !== state.myId) return;
+
+  if (state.isHost) {
+    processBSSpin(state.myId);
+  } else {
+    sendToHost({ type: 'bs-spin' });
+  }
 }
 
 // ===== HOST: RESUME AFTER ROULETTE =====
@@ -618,43 +639,76 @@ function renderBSView(view) {
     }
   }
 
-  // -- Roulette status --
+  // -- Roulette status with 2D slot strip --
   var rouletteStatusEl = document.getElementById('bsRouletteStatus');
   if (rouletteStatusEl) {
     var rPhase = view.phase;
     if (rPhase === 'roulette-setup' || rPhase === 'roulette-spin' || rPhase === 'roulette-result' || rPhase === 'camera-return') {
       rouletteStatusEl.style.display = 'block';
       var targetName = view.rouletteTarget ? view.rouletteTarget.name : '???';
-      // Build slot legend from view data
-      var slotLegend = '';
-      if (view.rouletteSlots && (rPhase === 'roulette-setup' || rPhase === 'roulette-spin')) {
-        var slotIcons = view.rouletteSlots.map(function(s) {
-          if (s.type === 'bombshot') return '<span style="color:#ff3355;">💣</span>';
-          if (s.type === 'penalty') return '<span style="color:#ffaa33;">🔸</span>';
-          return '<span style="color:#33cc66;">✓</span>';
-        });
-        slotLegend = '<div style="font-size:12px;margin-top:4px;opacity:0.85;letter-spacing:2px;">' +
-          slotIcons.join(' ') +
-          '</div>' +
-          '<div style="font-size:10px;margin-top:2px;color:var(--text-dim);">' +
-          '💣폭탄주 · 🔸벌칙 · ✓세이프</div>';
+      var isMyRoulette = view.rouletteTarget && view.rouletteTarget.id === state.myId;
+
+      // Build 2D slot strip
+      var slotStrip = '';
+      if (view.rouletteSlots) {
+        slotStrip = '<div style="display:flex;gap:4px;justify-content:center;margin:8px 0;flex-wrap:wrap;">';
+        for (var si = 0; si < view.rouletteSlots.length; si++) {
+          var slot = view.rouletteSlots[si];
+          var slotBg, slotIcon, slotLabel;
+          if (slot.type === 'bombshot') {
+            slotBg = 'background:linear-gradient(135deg,#ff1744,#d50000);';
+            slotIcon = '💣';
+            slotLabel = '폭탄주';
+          } else if (slot.type === 'penalty') {
+            slotBg = 'background:linear-gradient(135deg,#ff9100,#e65100);';
+            slotIcon = '🔸';
+            slotLabel = slot.label || '벌칙';
+          } else {
+            slotBg = 'background:linear-gradient(135deg,#00c853,#009624);';
+            slotIcon = '✓';
+            slotLabel = '세이프';
+          }
+          var isWinner = rPhase === 'roulette-result' && si === view.rouletteSlotIndex;
+          var slotHighlight = isWinner ? 'box-shadow:0 0 0 3px #fff,0 0 12px rgba(255,255,255,0.6);transform:scale(1.1);animation:bs-slot-blink 0.5s ease-in-out infinite alternate;' : 'opacity:' + (rPhase === 'roulette-result' ? '0.4' : '1') + ';';
+          slotStrip += '<div style="' + slotBg + slotHighlight +
+            'border-radius:8px;padding:6px 8px;min-width:52px;text-align:center;transition:all 0.3s;">' +
+            '<div style="font-size:18px;line-height:1;">' + slotIcon + '</div>' +
+            '<div style="font-size:10px;font-weight:600;margin-top:2px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.5);">' + escapeHtml(slotLabel) + '</div>' +
+            '</div>';
+        }
+        slotStrip += '</div>';
       }
+
+      // Phase-specific content
+      var statusContent = '';
       if (rPhase === 'roulette-setup') {
-        rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🍺💣 ' + escapeHtml(targetName) + '의 폭탄주 룰렛!</span>' + slotLegend;
+        statusContent = '<span class="bs-roulette-status">🍺💣 ' + escapeHtml(targetName) + '의 폭탄주 룰렛!</span>' + slotStrip;
+        if (isMyRoulette) {
+          statusContent += '<button onclick="bsSpin()" style="' +
+            'display:block;margin:8px auto 0;padding:12px 32px;font-size:16px;font-weight:700;' +
+            'background:linear-gradient(135deg,#ff6b35,#ff3d00);color:#fff;border:none;border-radius:12px;' +
+            'cursor:pointer;animation:bs-spin-pulse 1s ease-in-out infinite alternate;' +
+            'box-shadow:0 4px 15px rgba(255,61,0,0.4);' +
+            '">🎰 스핀!</button>';
+        } else {
+          statusContent += '<div style="text-align:center;font-size:13px;color:var(--text-dim);margin-top:6px;">' +
+            escapeHtml(targetName) + '이(가) 스핀 버튼을 누르길 대기 중...</div>';
+        }
       } else if (rPhase === 'roulette-spin') {
-        rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🎰 폭탄주 룰렛 회전 중...</span>' + slotLegend;
+        statusContent = '<span class="bs-roulette-status">🎰 폭탄주 룰렛 회전 중...</span>' + slotStrip;
       } else if (rPhase === 'roulette-result') {
         if (view.rouletteResult === 'bombshot') {
-          rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-hit">🍺💥 ' + escapeHtml(targetName) + ' 폭탄주 당첨! 게임오버!</span>';
+          statusContent = '<span class="bs-roulette-result-hit">🍺💥 ' + escapeHtml(targetName) + ' 폭탄주 당첨! 게임오버!</span>' + slotStrip;
         } else if (view.rouletteResult === 'penalty') {
           var penLabel = view.rouletteResultLabel || '벌칙';
-          rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-hit" style="color:#ffaa33;">🔸 ' + escapeHtml(targetName) + ' 벌칙: <strong>' + escapeHtml(penLabel) + '</strong>!</span>';
+          statusContent = '<span class="bs-roulette-result-hit" style="color:#ffaa33;">🔸 ' + escapeHtml(targetName) + ' 벌칙: <strong>' + escapeHtml(penLabel) + '</strong>!</span>' + slotStrip;
         } else {
-          rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-safe">😮‍💨 ' + escapeHtml(targetName) + ' 세이프! 살았다!</span>';
+          statusContent = '<span class="bs-roulette-result-safe">😮‍💨 ' + escapeHtml(targetName) + ' 세이프! 살았다!</span>' + slotStrip;
         }
       } else {
-        rouletteStatusEl.innerHTML = '';
+        statusContent = '';
       }
+      rouletteStatusEl.innerHTML = statusContent;
     } else {
       rouletteStatusEl.style.display = 'none';
     }

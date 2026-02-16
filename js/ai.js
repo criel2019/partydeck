@@ -274,6 +274,19 @@ function handleBroadcastForAI(data) {
     return;
   }
 
+  // Special: BombShot — AI auto-spin when it's the roulette target
+  if (game === 'bombshot' && data.type === 'bs-anim' && data.anim === 'roulette-setup' && bsState) {
+    if (bsState.rouletteTarget && bsState.rouletteTarget.id.startsWith('ai-')) {
+      var aiSpinId = bsState.rouletteTarget.id;
+      var tSpin = setTimeout(function() {
+        if (!practiceMode || !bsState || bsState.phase !== 'roulette-setup') return;
+        if (!bsState.rouletteTarget || bsState.rouletteTarget.id !== aiSpinId) return;
+        processBSSpin(aiSpinId);
+      }, 1000 + Math.random() * 1000);
+      _aiTimers.push(tSpin);
+    }
+  }
+
   // Special: BombShot — non-turn AI players may call liar after human submits
   if (game === 'bombshot' && data.type === 'bs-anim' && data.anim === 'submit' && bsState && bsState.lastSubmission) {
     const submitterId = bsState.lastSubmission.playerId;

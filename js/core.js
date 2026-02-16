@@ -485,6 +485,7 @@ function handleMessage(peerId, raw) {
     'bs-state': () => { showScreen('bombshotGame'); initBSCanvas(); renderBSView(msg); },
     'bs-submit': () => { if(state.isHost) processBSSubmit(peerId, msg.cardIndices); },
     'bs-liar': () => { if(state.isHost) processBSLiar(peerId); },
+    'bs-spin': () => { if(state.isHost) processBSSpin(peerId); },
     'bs-anim': () => { handleBSAnim(msg); },
     'bs-result': () => { handleBSResult(msg); },
     'player-left': () => {
