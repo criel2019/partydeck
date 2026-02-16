@@ -1,6 +1,6 @@
 // =============================================
-// BOMB SHOT BLUFF — Three.js 3D Scene v3
-// Russian Roulette wheel + Camera transitions
+// BOMB SHOT BLUFF — Three.js 3D Scene v4
+// Premium 3D Roulette, Ball Physics, Dynamic Mixing
 // =============================================
 (function() {
   'use strict';
@@ -34,9 +34,13 @@
   var rouletteEnterTime = 0;
   var rouletteExitTime = 0;
   var rouletteSpinTime = 0;
-  var rouletteSpinDuration = 4.5;
+  var rouletteSpinDuration = 5.5;
   var rouletteTargetSlot = 0;
   var rouletteHitSlots = null;
+  var rouletteDiscGroup = null;
+  var rouletteDividers = [];
+  var rouletteBallSparks = [];
+  var rouletteBaseAngle = 0;
 
   // Camera
   var camState = 'bar'; // bar, to-roulette, roulette, to-bar
@@ -84,8 +88,8 @@
 
     barCamPos = new THREE.Vector3(0, 2.5, 3.2);
     barCamLook = new THREE.Vector3(0, 1.1, -0.2);
-    rouletteCamPos = new THREE.Vector3(0, 3.5, 1.5);
-    rouletteCamLook = new THREE.Vector3(0, BAR_Y + 0.3, 0.15);
+    rouletteCamPos = new THREE.Vector3(0.3, 2.8, 1.8);
+    rouletteCamLook = new THREE.Vector3(0, BAR_Y + 0.18, 0.15);
   }
 
   function initMaterials() {
@@ -445,25 +449,46 @@
     handR.lookAt(handRPos.x, handRPos.y - 0.3, handRPos.z + 0.5);
   }
 
-  // ===== IDLE ANIMATIONS =====
+  // ===== IDLE ANIMATIONS (v4 — natural breathing & polish) =====
   function animateIdle(dt) {
     idleSwitchTimer += dt;
-    if (idleSwitchTimer > 4.0) {
+    if (idleSwitchTimer > 5.0) {
       idleSwitchTimer = 0;
       idleVariant = (idleVariant + 1) % 4;
     }
+
+    // ── Breathing: chest expands, slight shoulder rise ──
     if (bodyMesh) {
-      bodyMesh.scale.x = 1 + Math.sin(animTime * 1.2) * 0.012;
-      bodyMesh.scale.z = 1 + Math.sin(animTime * 1.2) * 0.008;
+      var breathCycle = Math.sin(animTime * 1.0); // slow, natural breathing
+      var breathIn = breathCycle * 0.5 + 0.5; // 0→1
+      bodyMesh.scale.x = 1 + breathIn * 0.018;
+      bodyMesh.scale.z = 1 + breathIn * 0.012;
+      bodyMesh.scale.y = 1 + breathIn * 0.005;
+      // Subtle weight shifting
+      bodyMesh.rotation.z = Math.sin(animTime * 0.25) * 0.008;
+      bodyMesh.position.x = Math.sin(animTime * 0.2) * 0.003;
     }
-    var blink = animTime % 3.8;
-    var eyeY = (blink > 3.6 && blink < 3.72) ? 0.1 : 1;
-    if (eyeL) eyeL.scale.y = eyeY;
-    if (eyeR) eyeR.scale.y = eyeY;
-    var lkX = Math.sin(animTime * 0.6) * 0.012;
-    var lkY = Math.sin(animTime * 0.45) * 0.006;
-    if (pupilL) { pupilL.position.x = lkX; pupilL.position.y = lkY; }
-    if (pupilR) { pupilR.position.x = lkX; pupilR.position.y = lkY; }
+
+    // ── Blinking: variable timing, double-blinks ──
+    var blinkCycle = animTime % 4.2;
+    var blinkOpen = 1;
+    if (blinkCycle > 3.9 && blinkCycle < 3.98) {
+      blinkOpen = 0.08; // first blink
+    } else if (blinkCycle > 4.02 && blinkCycle < 4.08) {
+      blinkOpen = 0.15; // quick double blink (partial)
+    }
+    if (eyeL) eyeL.scale.y = blinkOpen;
+    if (eyeR) eyeR.scale.y = blinkOpen;
+
+    // ── Eye tracking: smooth pursuit with micro-saccades ──
+    var baseGazeX = Math.sin(animTime * 0.5) * 0.012;
+    var baseGazeY = Math.sin(animTime * 0.38) * 0.006;
+    // Micro-saccade every ~2 seconds
+    var saccade = (animTime % 2.1) < 0.05 ? Math.sin(animTime * 60) * 0.005 : 0;
+    var gazeX = baseGazeX + saccade;
+    var gazeY = baseGazeY;
+    if (pupilL) { pupilL.position.x = gazeX; pupilL.position.y = gazeY; }
+    if (pupilR) { pupilR.position.x = gazeX; pupilR.position.y = gazeY; }
 
     switch (idleVariant) {
       case 0: idleRest(dt); break;
@@ -528,173 +553,417 @@
     if (headGroup) { headGroup.rotation.x = reach * 0.08; headGroup.rotation.z = 0; headGroup.rotation.y = 0; }
   }
 
-  // ===== MIXING ANIMATION =====
+  // ===== MIXING ANIMATION (v4 — vigorous multi-axis shaking) =====
+  var mixElapsed = 0;
+  var MIX_TOTAL = 1.4; // total mixing duration
+
   function animateMixing(dt) {
-    var angle = animTime * 4.5;
-    var mixR = 0.2;
-    var topY = GLASS_Y + GLASS_H + 0.08;
-    handLPos.set(0.6 + Math.cos(angle) * mixR, topY + Math.sin(animTime * 8) * 0.03, 0.3 + Math.sin(angle) * mixR);
-    handRPos.set(0.6 + Math.cos(angle + Math.PI) * mixR, topY + Math.sin(animTime * 8 + Math.PI) * 0.03, 0.3 + Math.sin(angle + Math.PI) * mixR);
+    mixElapsed += dt;
+    var mp = Math.min(mixElapsed / MIX_TOTAL, 1); // 0→1 progress
+    var topY = GLASS_Y + GLASS_H + 0.06;
+    var gx = 0.6, gz = 0.3;
+
+    // Intensity envelope: ramp up → peak → taper
+    var intensity;
+    if (mp < 0.15) {
+      intensity = mp / 0.15; // ramp up
+    } else if (mp < 0.75) {
+      intensity = 1.0; // full intensity
+    } else {
+      intensity = 1.0 - (mp - 0.75) / 0.25; // taper off
+    }
+    var I = intensity;
+
+    // ── Phase-based hand motion ──
+    // Multi-frequency vibration for organic feel
+    var shakeX = (Math.sin(animTime * 14) * 0.06 + Math.sin(animTime * 9.3) * 0.03) * I;
+    var shakeZ = (Math.cos(animTime * 11) * 0.04 + Math.cos(animTime * 7.7) * 0.02) * I;
+    var shakeY = Math.abs(Math.sin(animTime * 16)) * 0.04 * I;
+    var tiltAngle = Math.sin(animTime * 6) * 0.12 * I;
+
+    // Hands grip glass top, shaking together
+    var hBaseX = gx + shakeX;
+    var hBaseZ = gz + shakeZ;
+    handLPos.set(hBaseX - 0.08, topY + shakeY, hBaseZ - 0.04);
+    handRPos.set(hBaseX + 0.08, topY + shakeY, hBaseZ + 0.04);
     updateArms();
 
+    // ── Glass motion (dramatic tilt + rock + vibration) ──
     if (glassGroup) {
-      glassGroup.rotation.y = Math.sin(animTime * 6) * 0.025;
-      glassGroup.position.x = 0.6 + Math.sin(animTime * 8) * 0.008;
+      glassGroup.position.x = gx + shakeX * 0.7;
+      glassGroup.position.z = gz + shakeZ * 0.5;
+      glassGroup.rotation.z = tiltAngle;
+      glassGroup.rotation.x = Math.sin(animTime * 8.5) * 0.06 * I;
+      glassGroup.rotation.y = Math.sin(animTime * 5) * 0.08 * I;
+      // Slight lift during vigorous shaking
+      glassGroup.position.y = GLASS_Y + Math.abs(Math.sin(animTime * 12)) * 0.015 * I;
     }
+
+    // ── Body sway (bartender leans into the shake) ──
+    if (bodyMesh) {
+      bodyMesh.rotation.z = Math.sin(animTime * 5) * 0.03 * I;
+      bodyMesh.rotation.x = -0.04 * I; // lean forward
+    }
+
+    // ── Head tracks the glass with focused expression ──
     if (headGroup) {
-      headGroup.rotation.z = Math.sin(animTime * 3) * 0.05;
-      headGroup.rotation.y = Math.sin(animTime * 2) * 0.04;
+      headGroup.rotation.z = Math.sin(animTime * 4.5) * 0.07 * I;
+      headGroup.rotation.y = Math.sin(animTime * 3) * 0.05 * I;
+      headGroup.rotation.x = -0.06 * I; // looking down at glass
     }
-    if (browL) browL.position.y = 0.13;
-    if (browR) browR.position.y = 0.13;
+
+    // ── Focused eyebrows (raised, concentrated) ──
+    if (browL) browL.position.y = 0.11 + 0.025 * I;
+    if (browR) browR.position.y = 0.11 + 0.025 * I;
+
+    // ── Pupils track glass position ──
+    if (pupilL) { pupilL.position.x = shakeX * 0.3; pupilL.position.y = -0.01 * I; }
+    if (pupilR) { pupilR.position.x = shakeX * 0.3; pupilR.position.y = -0.01 * I; }
   }
 
   function endMixing() {
     animState = 'idle';
     idleSwitchTimer = 0;
-    if (glassGroup) { glassGroup.rotation.y = 0; glassGroup.position.x = 0.6; }
+    mixElapsed = 0;
+    if (glassGroup) {
+      glassGroup.rotation.set(0, 0, 0);
+      glassGroup.position.set(0.6, GLASS_Y, 0.3);
+    }
+    if (bodyMesh) { bodyMesh.rotation.set(0, 0, 0); }
     if (browL) browL.position.y = 0.11; if (browR) browR.position.y = 0.11;
     if (headGroup) headGroup.rotation.set(0, 0, 0);
+    if (pupilL) { pupilL.position.x = 0; pupilL.position.y = 0; }
+    if (pupilR) { pupilR.position.x = 0; pupilR.position.y = 0; }
     handLPos.copy(handLRest); handRPos.copy(handRRest);
     updateArms();
     if (mixCallback) { var cb = mixCallback; mixCallback = null; cb(); }
   }
 
-  // ===== BARTENDER REACTIONS =====
+  // ===== BARTENDER REACTIONS (v4 — full body, dramatic) =====
   function animateBtReaction(dt) {
     if (btReaction === 'none') return;
     btReactionTime += dt;
     var t = btReactionTime;
 
     if (btReaction === 'safe') {
-      // Relief sigh — shoulders drop, slight smile
+      // ── Relief: exhale, shoulders drop, lean forward, satisfied nod ──
+      var relief = Math.min(t / 0.4, 1); // quick onset
+      var decay = Math.max(0, 1 - (t - 0.5) / 1.5); // gradual recovery
+
       if (headGroup) {
-        headGroup.rotation.z = Math.sin(t * 2) * 0.06;
-        headGroup.rotation.x = -0.05 + Math.sin(t * 1.5) * 0.02;
+        // Nod down then slowly back up
+        headGroup.rotation.x = -0.08 * relief * decay + Math.sin(t * 1.5) * 0.015 * decay;
+        headGroup.rotation.z = Math.sin(t * 1.8) * 0.04 * decay;
+        headGroup.rotation.y = Math.sin(t * 0.8) * 0.03 * decay;
       }
-      if (browL) browL.position.y = 0.11 - 0.01;
-      if (browR) browR.position.y = 0.11 - 0.01;
-      if (t > 2.0) { btReaction = 'none'; btReactionTime = 0; }
+      if (bodyMesh) {
+        // Lean forward slightly (exhale)
+        bodyMesh.rotation.x = -0.025 * relief * decay;
+        bodyMesh.scale.x = 1 - 0.01 * relief * decay; // chest contracts (exhale)
+      }
+      // Relaxed brows
+      if (browL) browL.position.y = 0.11 - 0.015 * decay;
+      if (browR) browR.position.y = 0.11 - 0.015 * decay;
+      // Slight squint (smile)
+      if (eyeL) eyeL.scale.y = 1 - 0.15 * relief * decay;
+      if (eyeR) eyeR.scale.y = 1 - 0.15 * relief * decay;
+      // Hands gesture relief (one hand up briefly)
+      var gestureUp = Math.max(0, Math.sin(t * 2)) * decay * 0.15;
+      lerpV3(handRPos, { x: handRRest.x, y: handRRest.y + gestureUp, z: handRRest.z - gestureUp * 0.5 }, 6, dt);
+
+      if (t > 2.2) {
+        btReaction = 'none'; btReactionTime = 0;
+        if (bodyMesh) bodyMesh.rotation.x = 0;
+        if (eyeL) eyeL.scale.set(1, 1, 1);
+        if (eyeR) eyeR.scale.set(1, 1, 1);
+      }
+
     } else if (btReaction === 'hit') {
-      // Shock — eyes wide, head back
+      // ── Shock: recoil, wide eyes, trembling, hands up ──
+      var shock = Math.min(t / 0.15, 1); // instant onset
+      var decay = Math.max(0, 1 - (t - 0.5) / 2.0);
+
       if (headGroup) {
-        var shake = Math.sin(t * 20) * Math.max(0, 0.06 - t * 0.02);
-        headGroup.rotation.z = shake;
-        headGroup.rotation.x = -0.1;
+        // Initial jolt back, then trembling
+        var joltBack = shock * 0.14 * decay;
+        var tremble = Math.sin(t * 25) * Math.max(0, 0.08 - t * 0.025) * decay;
+        headGroup.rotation.x = -joltBack;
+        headGroup.rotation.z = tremble;
+        headGroup.rotation.y = Math.sin(t * 18) * 0.03 * decay;
       }
-      if (eyeL) eyeL.scale.set(1.2, 1.3, 1);
-      if (eyeR) eyeR.scale.set(1.2, 1.3, 1);
-      if (browL) browL.position.y = 0.14;
-      if (browR) browR.position.y = 0.14;
-      if (t > 2.5) {
+      if (bodyMesh) {
+        // Lean back in shock
+        bodyMesh.rotation.x = 0.03 * shock * decay;
+        // Body trembles
+        bodyMesh.rotation.z = Math.sin(t * 15) * 0.01 * decay;
+      }
+      // Eyes wide open (gradually)
+      var eyeWide = 1 + 0.35 * shock * decay;
+      if (eyeL) eyeL.scale.set(1 + 0.2 * shock * decay, eyeWide, 1);
+      if (eyeR) eyeR.scale.set(1 + 0.2 * shock * decay, eyeWide, 1);
+      // Brows shoot up
+      if (browL) browL.position.y = 0.11 + 0.04 * shock * decay;
+      if (browR) browR.position.y = 0.11 + 0.04 * shock * decay;
+      // Pupils shrink (fear) — move pupils forward to look more alarmed
+      if (pupilL) pupilL.position.z = 0.032 + 0.008 * shock * decay;
+      if (pupilR) pupilR.position.z = 0.032 + 0.008 * shock * decay;
+      // Hands up in shock
+      var handsUp = shock * decay * 0.3;
+      lerpV3(handLPos, { x: handLRest.x + 0.1, y: handLRest.y + handsUp, z: handLRest.z - 0.15 }, 8, dt);
+      lerpV3(handRPos, { x: handRRest.x - 0.1, y: handRRest.y + handsUp, z: handRRest.z - 0.15 }, 8, dt);
+
+      if (t > 2.8) {
         btReaction = 'none'; btReactionTime = 0;
         if (eyeL) eyeL.scale.set(1, 1, 1);
         if (eyeR) eyeR.scale.set(1, 1, 1);
+        if (bodyMesh) bodyMesh.rotation.set(0, 0, 0);
+        if (pupilL) pupilL.position.z = 0.032;
+        if (pupilR) pupilR.position.z = 0.032;
       }
     }
   }
 
-  // ===== ROULETTE WHEEL =====
+  // ===== ROULETTE WHEEL (v4 — Premium 3D) =====
   function createRouletteWheel(hitSlots) {
     if (rouletteGroup) removeRouletteWheel();
 
     rouletteGroup = new THREE.Group();
-    rouletteGroup.position.set(0, ROULETTE_Y - 0.5, 0.15); // Start below bar
+    rouletteGroup.position.set(0, ROULETTE_Y - 0.5, 0.15);
 
-    var WHEEL_R = 0.45;
-    var WHEEL_H = 0.08;
+    var WR = 0.5, WH = 0.12;
+    var goldMat = new THREE.MeshPhongMaterial({ color: 0xd4a843, shininess: 130, specular: 0xffd700 });
+    var darkWoodMat = new THREE.MeshPhongMaterial({ color: 0x1a0e06, shininess: 55, specular: 0x221108 });
+    var chromeMat = new THREE.MeshPhongMaterial({ color: 0x999999, shininess: 120, specular: 0xffffff });
 
-    // Base cylinder (dark)
-    var baseMat = new THREE.MeshPhongMaterial({ color: 0x1a1a1a, shininess: 50 });
-    var base = new THREE.Mesh(new THREE.CylinderGeometry(WHEEL_R + 0.04, WHEEL_R + 0.06, WHEEL_H + 0.02, 32), baseMat);
-    base.position.y = 0;
-    rouletteGroup.add(base);
+    // ── Outer frame (dark mahogany bowl) ──
+    var outerWall = new THREE.Mesh(
+      new THREE.CylinderGeometry(WR + 0.06, WR + 0.09, WH + 0.05, 48), darkWoodMat
+    );
+    outerWall.castShadow = true;
+    rouletteGroup.add(outerWall);
 
-    // Segment disc (CanvasTexture)
+    // Inner slope (concave dish feel)
+    var slopeMat = new THREE.MeshPhongMaterial({ color: 0x0d0806, shininess: 30 });
+    var slope = new THREE.Mesh(
+      new THREE.CylinderGeometry(WR + 0.02, WR - 0.04, WH * 0.5, 48, 1, true), slopeMat
+    );
+    slope.position.y = WH * 0.15;
+    rouletteGroup.add(slope);
+
+    // Gold outer rim — top
+    var rimOuter = new THREE.Mesh(new THREE.TorusGeometry(WR + 0.065, 0.024, 12, 48), goldMat);
+    rimOuter.rotation.x = Math.PI / 2; rimOuter.position.y = WH / 2 + 0.02;
+    rouletteGroup.add(rimOuter);
+
+    // Gold outer rim — bottom accent
+    var rimBottom = new THREE.Mesh(new THREE.TorusGeometry(WR + 0.075, 0.016, 10, 48), goldMat);
+    rimBottom.rotation.x = Math.PI / 2; rimBottom.position.y = -WH / 2 - 0.02;
+    rouletteGroup.add(rimBottom);
+
+    // Chrome ball track ring
+    var trackRing = new THREE.Mesh(new THREE.TorusGeometry(WR + 0.015, 0.014, 10, 48), chromeMat);
+    trackRing.rotation.x = Math.PI / 2; trackRing.position.y = WH / 2 + 0.008;
+    rouletteGroup.add(trackRing);
+
+    // Ball deflectors (8 diamond shapes around outer track)
+    for (var d = 0; d < 8; d++) {
+      var da = (d / 8) * Math.PI * 2;
+      var dr = WR + 0.015;
+      var defl = new THREE.Mesh(new THREE.OctahedronGeometry(0.02, 0), goldMat);
+      defl.position.set(Math.sin(da) * dr, WH / 2 + 0.02, Math.cos(da) * dr);
+      defl.scale.set(0.5, 1.0, 0.5);
+      defl.rotation.y = da;
+      rouletteGroup.add(defl);
+    }
+
+    // Decorative studs around outer rim (16)
+    var studGeo = new THREE.SphereGeometry(0.008, 6, 4);
+    for (var s = 0; s < 16; s++) {
+      var sa = (s / 16) * Math.PI * 2;
+      var sr = WR + 0.07;
+      var stud = new THREE.Mesh(studGeo, goldMat);
+      stud.position.set(Math.sin(sa) * sr, WH / 2 + 0.022, Math.cos(sa) * sr);
+      rouletteGroup.add(stud);
+    }
+
+    // ── Inner spinning disc ──
+    rouletteDiscGroup = new THREE.Group();
+
+    // Canvas texture for segment colors (enhanced gradients)
     var canvas = document.createElement('canvas');
     canvas.width = 512; canvas.height = 512;
     var ctx = canvas.getContext('2d');
-    var cx = 256, cy = 256, r = 240;
+    var cxC = 256, cyC = 256, rC = 236;
+
+    ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, 512, 512);
 
     for (var i = 0; i < 6; i++) {
-      var startAngle = (i / 6) * Math.PI * 2 - Math.PI / 2;
-      var endAngle = ((i + 1) / 6) * Math.PI * 2 - Math.PI / 2;
+      var sA = (i / 6) * Math.PI * 2 - Math.PI / 2;
+      var eA = ((i + 1) / 6) * Math.PI * 2 - Math.PI / 2;
+      var mA = (sA + eA) / 2;
+      var isHit = hitSlots && hitSlots[i] === 'hit';
 
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.arc(cx, cy, r, startAngle, endAngle);
-      ctx.closePath();
+      ctx.beginPath(); ctx.moveTo(cxC, cyC);
+      ctx.arc(cxC, cyC, rC, sA, eA); ctx.closePath();
 
-      if (hitSlots && hitSlots[i] === 'hit') {
-        ctx.fillStyle = '#cc2244';
+      // Radial gradient per segment
+      var grd = ctx.createRadialGradient(
+        cxC + Math.cos(mA) * 70, cyC + Math.sin(mA) * 70, 5, cxC, cyC, rC
+      );
+      if (isHit) {
+        grd.addColorStop(0, '#ff4466'); grd.addColorStop(0.4, '#cc2244'); grd.addColorStop(1, '#881133');
       } else {
-        ctx.fillStyle = '#228844';
+        grd.addColorStop(0, '#44dd77'); grd.addColorStop(0.4, '#228844'); grd.addColorStop(1, '#0e5528');
       }
-      ctx.fill();
+      ctx.fillStyle = grd; ctx.fill();
 
-      // Border lines
-      ctx.strokeStyle = '#c9a84c';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      // Gold border
+      ctx.strokeStyle = '#d4a843'; ctx.lineWidth = 3; ctx.stroke();
 
-      // Label
-      var midAngle = (startAngle + endAngle) / 2;
-      var labelR = r * 0.65;
-      ctx.save();
-      ctx.translate(cx + Math.cos(midAngle) * labelR, cy + Math.sin(midAngle) * labelR);
-      ctx.rotate(midAngle + Math.PI / 2);
-      ctx.font = 'bold 28px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(hitSlots && hitSlots[i] === 'hit' ? '💥' : '✓', 0, 10);
+      // Inner pattern lines (subtle radial stripes)
+      ctx.save(); ctx.clip();
+      ctx.strokeStyle = isHit ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      for (var ln = 0; ln < 5; ln++) {
+        var lnA = sA + (eA - sA) * ((ln + 1) / 6);
+        ctx.beginPath(); ctx.moveTo(cxC, cyC);
+        ctx.lineTo(cxC + Math.cos(lnA) * rC, cyC + Math.sin(lnA) * rC);
+        ctx.stroke();
+      }
       ctx.restore();
+
+      // Labels with shadow
+      var lR = rC * 0.6;
+      ctx.save();
+      ctx.translate(cxC + Math.cos(mA) * lR, cyC + Math.sin(mA) * lR);
+      ctx.rotate(mA + Math.PI / 2);
+      ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 6;
+      ctx.font = 'bold 36px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(isHit ? '💥' : '✓', 0, 12);
+      ctx.shadowBlur = 0; ctx.restore();
     }
 
-    // Center circle
-    ctx.beginPath();
-    ctx.arc(cx, cy, 30, 0, Math.PI * 2);
-    ctx.fillStyle = '#c9a84c';
-    ctx.fill();
+    // Center decorative circle
+    var cgrd = ctx.createRadialGradient(cxC, cyC, 0, cxC, cyC, 38);
+    cgrd.addColorStop(0, '#ffe066'); cgrd.addColorStop(0.5, '#d4a843'); cgrd.addColorStop(1, '#8b6914');
+    ctx.beginPath(); ctx.arc(cxC, cyC, 38, 0, Math.PI * 2);
+    ctx.fillStyle = cgrd; ctx.fill();
+    ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 2; ctx.stroke();
+    // Inner ring
+    ctx.beginPath(); ctx.arc(cxC, cyC, 28, 0, Math.PI * 2);
+    ctx.strokeStyle = '#8b6914'; ctx.lineWidth = 1.5; ctx.stroke();
 
     var discTex = new THREE.CanvasTexture(canvas);
-    var discMat = new THREE.MeshPhongMaterial({ map: discTex, shininess: 30 });
-    var disc = new THREE.Mesh(new THREE.CylinderGeometry(WHEEL_R, WHEEL_R, 0.02, 32), discMat);
-    disc.position.y = WHEEL_H / 2 + 0.01;
-    rouletteGroup.add(disc);
+    var disc = new THREE.Mesh(
+      new THREE.CylinderGeometry(WR - 0.02, WR - 0.02, 0.03, 48),
+      new THREE.MeshPhongMaterial({ map: discTex, shininess: 45 })
+    );
+    disc.position.y = WH / 2 - 0.005;
+    rouletteDiscGroup.add(disc);
     rouletteWheel = disc;
 
-    // Gold rim (Torus)
-    var rimMat = new THREE.MeshPhongMaterial({ color: 0xc9a84c, shininess: 100, specular: 0xffd700 });
-    var rim = new THREE.Mesh(new THREE.TorusGeometry(WHEEL_R + 0.02, 0.018, 8, 32), rimMat);
-    rim.rotation.x = Math.PI / 2;
-    rim.position.y = WHEEL_H / 2 + 0.01;
-    rouletteGroup.add(rim);
+    // 3D divider walls between segments
+    rouletteDividers = [];
+    var divLen = WR - 0.14;
+    var divGeo = new THREE.BoxGeometry(0.007, 0.045, divLen);
+    for (var di = 0; di < 6; di++) {
+      var divAngle = (di / 6) * Math.PI * 2;
+      var divPivot = new THREE.Group();
+      divPivot.rotation.y = divAngle;
+      var divMesh = new THREE.Mesh(divGeo, goldMat);
+      divMesh.position.set(0, WH / 2 + 0.01, divLen / 2 + 0.07);
+      divMesh.castShadow = true;
+      divPivot.add(divMesh);
+      // Small finial at outer end of each divider
+      var finial = new THREE.Mesh(new THREE.SphereGeometry(0.012, 6, 4), goldMat);
+      finial.position.set(0, WH / 2 + 0.015, divLen + 0.07);
+      divPivot.add(finial);
+      rouletteDiscGroup.add(divPivot);
+      rouletteDividers.push(divPivot);
+    }
 
-    // Center hub
-    var hub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.06, 16), rimMat);
-    hub.position.y = WHEEL_H / 2 + 0.03;
-    rouletteGroup.add(hub);
+    // Gold inner rim (where pockets are)
+    var innerRim = new THREE.Mesh(new THREE.TorusGeometry(WR - 0.03, 0.013, 10, 48), goldMat);
+    innerRim.rotation.x = Math.PI / 2; innerRim.position.y = WH / 2 + 0.008;
+    rouletteDiscGroup.add(innerRim);
 
-    // Pointer (gold triangle) at the edge
-    var pointerGeo = new THREE.ConeGeometry(0.035, 0.08, 4);
-    var pointerMat = new THREE.MeshPhongMaterial({ color: 0xffd700, shininess: 100 });
-    roulettePointer = new THREE.Mesh(pointerGeo, pointerMat);
-    roulettePointer.position.set(0, WHEEL_H / 2 + 0.05, WHEEL_R + 0.06);
-    roulettePointer.rotation.x = Math.PI / 2;
-    rouletteGroup.add(roulettePointer);
+    // Center hub — layered ornate
+    var hubDark = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.07, 0.075, 0.06, 24),
+      new THREE.MeshPhongMaterial({ color: 0x111111, shininess: 60, specular: 0x333333 })
+    );
+    hubDark.position.y = WH / 2 + 0.02;
+    rouletteDiscGroup.add(hubDark);
 
-    // Ball (white porcelain)
-    var ballMat = new THREE.MeshPhongMaterial({ color: 0xfafafa, shininess: 120, specular: 0xffffff });
-    rouletteBall = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 8), ballMat);
-    rouletteBall.position.set(0, WHEEL_H / 2 + 0.05, WHEEL_R * 0.75);
+    var hubGold = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.04, 16), goldMat);
+    hubGold.position.y = WH / 2 + 0.055;
+    rouletteDiscGroup.add(hubGold);
+
+    // Spindle top
+    var spindleMat = new THREE.MeshPhongMaterial({ color: 0xffd700, shininess: 150, specular: 0xffffff });
+    var spindle = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.05, 8), spindleMat);
+    spindle.position.y = WH / 2 + 0.095;
+    rouletteDiscGroup.add(spindle);
+
+    // Red gem on top
+    var gemMat = new THREE.MeshPhongMaterial({
+      color: 0xff2244, shininess: 160, specular: 0xffffff,
+      emissive: 0x550011, emissiveIntensity: 0.4
+    });
+    var gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.018, 0), gemMat);
+    gem.position.y = WH / 2 + 0.12; gem.rotation.y = Math.PI / 4;
+    rouletteDiscGroup.add(gem);
+
+    rouletteGroup.add(rouletteDiscGroup);
+
+    // ── Pointer (enhanced diamond-arrow) ──
+    var ptrGroup = new THREE.Group();
+    var ptrBody = new THREE.Mesh(
+      new THREE.ConeGeometry(0.04, 0.12, 4),
+      new THREE.MeshPhongMaterial({ color: 0xffd700, shininess: 140, specular: 0xffffff })
+    );
+    ptrBody.rotation.x = Math.PI / 2;
+    ptrGroup.add(ptrBody);
+    var ptrBase = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 6), goldMat);
+    ptrBase.position.z = -0.06;
+    ptrGroup.add(ptrBase);
+    // Glow accent ring
+    var ptrGlow = new THREE.Mesh(
+      new THREE.TorusGeometry(0.03, 0.005, 6, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffdd44, transparent: true, opacity: 0.5 })
+    );
+    ptrGlow.rotation.x = Math.PI / 2; ptrGlow.position.z = -0.06;
+    ptrGroup.add(ptrGlow);
+    ptrGroup.position.set(0, WH / 2 + 0.04, WR + 0.07);
+    rouletteGroup.add(ptrGroup);
+    roulettePointer = ptrGroup;
+
+    // ── Ball (higher quality) ──
+    rouletteBall = new THREE.Mesh(
+      new THREE.SphereGeometry(0.028, 20, 14),
+      new THREE.MeshPhongMaterial({
+        color: 0xffffff, shininess: 160, specular: 0xffffff,
+        emissive: 0x333333, emissiveIntensity: 0.08
+      })
+    );
+    rouletteBall.castShadow = true;
+    rouletteBall.position.set(0, WH / 2 + 0.06, WR * 0.85);
     rouletteBall.visible = false;
     rouletteGroup.add(rouletteBall);
 
     scene.add(rouletteGroup);
     rouletteHitSlots = hitSlots;
+    rouletteBaseAngle = 0;
+    rouletteBallSparks = [];
   }
 
   function removeRouletteWheel() {
+    // Clean up spark particles
+    for (var si = rouletteBallSparks.length - 1; si >= 0; si--) {
+      if (rouletteBallSparks[si].mesh) scene.remove(rouletteBallSparks[si].mesh);
+    }
+    rouletteBallSparks = [];
     if (rouletteGroup) {
       rouletteGroup.traverse(function(c) {
         if (c.geometry) c.geometry.dispose();
@@ -708,91 +977,237 @@
       rouletteWheel = null;
       rouletteBall = null;
       roulettePointer = null;
+      rouletteDiscGroup = null;
+      rouletteDividers = [];
     }
   }
 
-  // ===== ROULETTE ENTER/EXIT ANIMATION =====
+  // ===== ROULETTE ENTER/EXIT ANIMATION (v4 — dramatic) =====
   function updateRouletteEnter(dt) {
     if (rouletteState !== 'entering' || !rouletteGroup) return;
     rouletteEnterTime += dt;
-    var t = Math.min(rouletteEnterTime / 0.8, 1);
-    // Ease-out cubic
-    var ease = 1 - Math.pow(1 - t, 3);
+    var dur = 1.1;
+    var t = Math.min(rouletteEnterTime / dur, 1);
+
+    // Overshoot bounce: rise past target, then settle
+    var ease;
+    if (t < 0.6) {
+      // Rise quickly (overshoot target by ~0.06)
+      var p = t / 0.6;
+      ease = (1 - Math.pow(1 - p, 3)) * 1.12;
+    } else if (t < 0.8) {
+      // Settle back down
+      var p = (t - 0.6) / 0.2;
+      ease = 1.12 - smoothstep(p) * 0.15;
+    } else {
+      // Micro-bounce
+      var p = (t - 0.8) / 0.2;
+      ease = 0.97 + smoothstep(p) * 0.03;
+    }
+
     rouletteGroup.position.y = (ROULETTE_Y - 0.5) + ease * 0.5;
+
+    // Slow rotation while rising
+    rouletteGroup.rotation.y = (1 - t) * Math.PI * 0.5;
+
+    // Spotlight intensifies as wheel appears
+    if (rouletteSpotlight) {
+      rouletteSpotlight.intensity = t * 1.3;
+    }
+
     if (t >= 1) {
       rouletteState = 'visible';
       rouletteGroup.position.y = ROULETTE_Y;
+      rouletteGroup.rotation.y = 0;
     }
   }
 
   function updateRouletteExit(dt) {
     if (rouletteState !== 'exiting' || !rouletteGroup) return;
     rouletteExitTime += dt;
-    var t = Math.min(rouletteExitTime / 0.6, 1);
-    var ease = t * t; // ease-in
-    rouletteGroup.position.y = ROULETTE_Y - ease * 0.6;
+    var t = Math.min(rouletteExitTime / 0.8, 1);
+    var ease = t * t * t; // ease-in cubic (accelerating descent)
+    rouletteGroup.position.y = ROULETTE_Y - ease * 0.65;
+    // Spin as it descends
+    rouletteGroup.rotation.y = ease * Math.PI * 0.4;
+    // Fade spotlight
+    if (rouletteSpotlight) rouletteSpotlight.intensity = (1 - t) * 1.3;
     if (t >= 1) {
       rouletteState = 'hidden';
       removeRouletteWheel();
     }
   }
 
-  // ===== ROULETTE SPIN ANIMATION =====
+  // ===== ROULETTE SPIN ANIMATION (v4 — multi-phase physics) =====
+  function spawnBallSpark(px, py, pz) {
+    if (!scene) return;
+    var sparkGeo = new THREE.SphereGeometry(0.008, 4, 3);
+    var sparkMat = new THREE.MeshBasicMaterial({
+      color: 0xffdd44, transparent: true, opacity: 0.9,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    });
+    for (var si = 0; si < 3; si++) {
+      var spark = new THREE.Mesh(sparkGeo, sparkMat.clone());
+      spark.position.set(px, py, pz);
+      scene.add(spark);
+      rouletteBallSparks.push({
+        mesh: spark, time: 0, life: 0.3 + Math.random() * 0.2,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: 0.3 + Math.random() * 0.4,
+        vz: (Math.random() - 0.5) * 0.6
+      });
+    }
+  }
+
+  function updateBallSparks(dt) {
+    for (var si = rouletteBallSparks.length - 1; si >= 0; si--) {
+      var sp = rouletteBallSparks[si];
+      sp.time += dt;
+      var lt = sp.time / sp.life;
+      if (lt >= 1) {
+        scene.remove(sp.mesh);
+        sp.mesh.material.dispose();
+        rouletteBallSparks.splice(si, 1);
+        continue;
+      }
+      sp.mesh.position.x += sp.vx * dt;
+      sp.mesh.position.y += sp.vy * dt;
+      sp.mesh.position.z += sp.vz * dt;
+      sp.vy -= 1.5 * dt; // gravity
+      sp.mesh.material.opacity = (1 - lt) * 0.9;
+      var sc = 1 - lt * 0.5;
+      sp.mesh.scale.set(sc, sc, sc);
+    }
+  }
+
   function updateRouletteSpin(dt) {
     if (rouletteState !== 'spinning' || !rouletteWheel || !rouletteBall) return;
     rouletteSpinTime += dt;
     var t = Math.min(rouletteSpinTime / rouletteSpinDuration, 1);
 
-    // Ball visible
     rouletteBall.visible = true;
 
-    // Total rotation: 3.5 revolutions + offset to target slot
+    var WR = 0.5, WH = 0.12;
+    var outerTrackR = WR + 0.01;   // ball sits on outer chrome track
+    var slotR = WR * 0.55;          // where the slots/pockets are
     var targetAngle = (rouletteTargetSlot / 6) * Math.PI * 2;
-    var totalRot = Math.PI * 2 * 3.5 + targetAngle;
+    var totalRot = Math.PI * 2 * 7 + targetAngle; // 7 full revolutions
 
-    // Custom easing: fast start → dramatic deceleration
-    var ease;
-    if (t < 0.3) {
-      // Fast start
-      ease = t / 0.3 * 0.5;
-    } else if (t < 0.8) {
-      // Gradual slow
-      var mid = (t - 0.3) / 0.5;
-      ease = 0.5 + mid * 0.35;
+    // ── Ball angle (main rotation with multi-phase easing) ──
+    var angEase;
+    if (t < 0.1) {
+      // Ramp up
+      var p = t / 0.1;
+      angEase = p * p * 0.08;
+    } else if (t < 0.4) {
+      // Full speed outer track
+      var p = (t - 0.1) / 0.3;
+      angEase = 0.08 + p * 0.32;
+    } else if (t < 0.6) {
+      // Decelerating, dropping inward
+      var p = (t - 0.4) / 0.2;
+      angEase = 0.4 + p * 0.28;
+    } else if (t < 0.85) {
+      // Slow bounce zone
+      var p = (t - 0.6) / 0.25;
+      angEase = 0.68 + p * 0.22;
     } else {
-      // Final dramatic drag
-      var end = (t - 0.8) / 0.2;
-      ease = 0.85 + smoothstep(end) * 0.15;
+      // Final settle
+      var p = (t - 0.85) / 0.15;
+      angEase = 0.9 + smoothstep(p) * 0.1;
     }
 
-    var currentAngle = totalRot * ease;
+    var ballAngle = totalRot * angEase;
 
-    // Wheel counter-rotates slightly for visual
-    if (rouletteWheel) {
-      rouletteWheel.rotation.y = -currentAngle * 0.1;
+    // ── Ball radial position (distance from center) ──
+    var ballR;
+    if (t < 0.38) {
+      // On outer track
+      ballR = outerTrackR;
+    } else if (t < 0.58) {
+      // Dropping inward (spiral descent)
+      var dp = (t - 0.38) / 0.2;
+      var dropEase = dp * dp; // accelerating drop
+      ballR = outerTrackR + (slotR - outerTrackR) * dropEase;
+    } else {
+      // In the slot zone, with small radial wobble
+      var wp = (t - 0.58) / 0.42;
+      var wobble = Math.sin(wp * Math.PI * 4) * 0.02 * (1 - wp);
+      ballR = slotR + wobble;
     }
 
-    // Ball position around the wheel
-    var WHEEL_R = 0.45;
-    var ballR = WHEEL_R * (0.82 - t * 0.15); // Move inward
-    var ballAngle = currentAngle;
+    // ── Ball height (bounce physics) ──
+    var ballY = WH / 2 + 0.04;
+    if (t >= 0.38 && t < 0.55) {
+      // Initial drop — ball falls from track height to disc level
+      var dp = (t - 0.38) / 0.17;
+      var dropH = 0.04 * (1 - dp); // elevated during drop
+      var dropBounce = Math.abs(Math.sin(dp * Math.PI * 1.5)) * 0.035 * (1 - dp);
+      ballY += dropH + dropBounce;
+    } else if (t >= 0.55 && t < 0.85) {
+      // Divider bounces — ball hops when crossing divider walls
+      var bp = (t - 0.55) / 0.3;
+      // Compute angular velocity for bounce frequency
+      var angSpeed = totalRot * 0.22 / 0.3; // rough angular speed in this phase
+      var crossings = angSpeed / (Math.PI * 2 / 6); // divider crossings
+      var bounceFreq = Math.max(3, Math.min(crossings, 6));
+      var bounceAmp = 0.06 * Math.pow(1 - bp, 1.5); // decaying bounces
+      var bounceH = Math.abs(Math.sin(bp * Math.PI * bounceFreq)) * bounceAmp;
+      ballY += bounceH;
 
-    // Bounce effect: t=0.7~0.95
-    var bounceY = 0;
-    if (t > 0.7 && t < 0.95) {
-      var bt = (t - 0.7) / 0.25;
-      bounceY = Math.abs(Math.sin(bt * Math.PI * 3)) * 0.04 * (1 - bt);
+      // Spawn sparks at bounce peaks
+      if (bounceH > 0.02 && Math.sin(bp * Math.PI * bounceFreq) > 0.9) {
+        var prevSpark = rouletteBallSparks.length;
+        if (prevSpark < 20) {
+          var spx = Math.sin(ballAngle) * ballR;
+          var spz = Math.cos(ballAngle) * ballR;
+          spawnBallSpark(
+            rouletteGroup.position.x + spx,
+            rouletteGroup.position.y + ballY,
+            rouletteGroup.position.z + spz
+          );
+        }
+      }
+    } else if (t >= 0.85) {
+      // Settling — tiny damped oscillation
+      var sp = (t - 0.85) / 0.15;
+      ballY += Math.sin(sp * Math.PI * 3) * 0.012 * (1 - sp);
     }
 
-    var WHEEL_H = 0.08;
     rouletteBall.position.set(
       Math.sin(ballAngle) * ballR,
-      WHEEL_H / 2 + 0.05 + bounceY,
+      ballY,
       Math.cos(ballAngle) * ballR
     );
 
+    // Ball self-rotation (rolling feel)
+    rouletteBall.rotation.x += dt * 15 * (1 - t);
+    rouletteBall.rotation.z += dt * 8 * (1 - t);
+
+    // ── Wheel disc counter-rotation (opposite to ball, slower) ──
+    if (rouletteDiscGroup) {
+      rouletteBaseAngle = -ballAngle * 0.25;
+      rouletteDiscGroup.rotation.y = rouletteBaseAngle;
+    }
+
+    // ── Center gem pulsing during spin ──
+    if (rouletteDiscGroup && rouletteDiscGroup.children) {
+      var gemIdx = rouletteDiscGroup.children.length - 1;
+      var gemMesh = rouletteDiscGroup.children[gemIdx];
+      if (gemMesh && gemMesh.geometry && gemMesh.geometry.type === 'OctahedronGeometry') {
+        gemMesh.rotation.y += dt * 3;
+      }
+    }
+
+    // ── Pointer wobble when ball passes ──
+    if (roulettePointer && t > 0.5) {
+      var pointerWobble = Math.sin(animTime * 20) * 0.05 * Math.max(0, 1 - (t - 0.5) * 3);
+      roulettePointer.rotation.z = pointerWobble;
+    }
+
     if (t >= 1) {
       rouletteState = 'visible';
+      if (roulettePointer) roulettePointer.rotation.z = 0;
     }
   }
 
@@ -888,12 +1303,24 @@
     setTimeout(function() {
       if (!isInitialized || !scene) return;
       var card = createCardPlane(type || 'beer');
-      card.position.set(0, 0.1, 2.5); card.rotation.set(0, Math.PI, 0); card.scale.set(0.7, 0.7, 0.7);
+      // Start from slightly randomized position below camera
+      var sx = (Math.random() - 0.5) * 0.4;
+      card.position.set(sx, -0.2, 2.8);
+      card.rotation.set(0, Math.PI, 0);
+      card.scale.set(0.8, 0.8, 0.8);
       scene.add(card);
       flyingCards.push({
-        mesh: card, time: 0, duration: 0.65,
+        mesh: card, time: 0, duration: 0.75,
         startPos: card.position.clone(),
-        endPos: new THREE.Vector3(0.6 + (Math.random() - 0.5) * 0.15, GLASS_Y + GLASS_H * 0.6 + Math.random() * 0.1, 0.3 + (Math.random() - 0.5) * 0.1)
+        endPos: new THREE.Vector3(
+          0.6 + (Math.random() - 0.5) * 0.12,
+          GLASS_Y + GLASS_H * 0.65 + Math.random() * 0.08,
+          0.3 + (Math.random() - 0.5) * 0.08
+        ),
+        // Control point for bezier curve (arc height)
+        arcHeight: 0.6 + Math.random() * 0.4,
+        spinSpeed: 2.0 + Math.random() * 1.5,
+        wobble: (Math.random() - 0.5) * 2
       });
     }, delay);
   }
@@ -902,11 +1329,33 @@
     for (var i = flyingCards.length - 1; i >= 0; i--) {
       var fc = flyingCards[i]; fc.time += dt;
       var t = Math.min(fc.time / fc.duration, 1);
-      var ease = 1 - Math.pow(1 - t, 3);
-      fc.mesh.position.lerpVectors(fc.startPos, fc.endPos, ease);
-      fc.mesh.rotation.x = t * Math.PI * 2.5; fc.mesh.rotation.z = t * Math.PI * 0.4;
-      fc.mesh.position.y += Math.sin(t * Math.PI) * 0.5;
-      if (t > 0.65) { var s = 0.7 * (1 - (t - 0.65) / 0.35 * 0.8); fc.mesh.scale.set(s, s, s); }
+
+      // Ease with overshoot for snappy feel
+      var ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+      // Quadratic bezier curve: start → high arc → glass
+      var oneMinusT = 1 - ease;
+      var midY = Math.max(fc.startPos.y, fc.endPos.y) + fc.arcHeight;
+      fc.mesh.position.x = oneMinusT * oneMinusT * fc.startPos.x + 2 * oneMinusT * ease * (fc.startPos.x * 0.3 + fc.endPos.x * 0.7) + ease * ease * fc.endPos.x;
+      fc.mesh.position.y = oneMinusT * oneMinusT * fc.startPos.y + 2 * oneMinusT * ease * midY + ease * ease * fc.endPos.y;
+      fc.mesh.position.z = oneMinusT * oneMinusT * fc.startPos.z + 2 * oneMinusT * ease * ((fc.startPos.z + fc.endPos.z) * 0.5) + ease * ease * fc.endPos.z;
+
+      // Dynamic rotation: tumbling in flight
+      fc.mesh.rotation.x = t * Math.PI * fc.spinSpeed;
+      fc.mesh.rotation.z = t * Math.PI * 0.5 * fc.wobble;
+      fc.mesh.rotation.y = Math.PI + Math.sin(t * Math.PI) * 0.3;
+
+      // Scale: grow slightly then shrink into glass
+      var sc;
+      if (t < 0.3) {
+        sc = 0.8 + t / 0.3 * 0.15; // grow to 0.95
+      } else if (t < 0.7) {
+        sc = 0.95; // maintain
+      } else {
+        sc = 0.95 * (1 - (t - 0.7) / 0.3 * 0.85); // shrink into glass
+      }
+      fc.mesh.scale.set(sc, sc, sc);
+
       if (t >= 1) {
         scene.remove(fc.mesh);
         fc.mesh.traverse(function(c) {
@@ -938,6 +1387,7 @@
     updateRouletteEnter(dt);
     updateRouletteExit(dt);
     updateRouletteSpin(dt);
+    updateBallSparks(dt);
     updateRouletteSpotlight(dt);
     updateCameraTransition(dt);
 
@@ -1062,7 +1512,10 @@
     animTime = 0; idleVariant = 0; idleSwitchTimer = 0;
     mixCallback = null;
     rouletteState = 'hidden'; camState = 'bar';
+    rouletteDiscGroup = null; rouletteDividers = [];
+    rouletteBallSparks = []; rouletteBaseAngle = 0;
     btReaction = 'none'; btReactionTime = 0;
+    mixElapsed = 0;
     if (bubbleGeo) { bubbleGeo.dispose(); bubbleGeo = null; }
     if (bubbleMat) { bubbleMat.dispose(); bubbleMat = null; }
   };
