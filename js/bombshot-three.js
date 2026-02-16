@@ -792,202 +792,87 @@
     // ── Inner spinning disc ──
     rouletteDiscGroup = new THREE.Group();
 
-    // Canvas texture for segment colors — hand-drawn icons for cross-browser compatibility
-    var canvas = document.createElement('canvas');
-    canvas.width = 1024; canvas.height = 1024;
-    var ctx = canvas.getContext('2d');
-    var cxC = 512, cyC = 512, rC = 480;
-
-    ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, 1024, 1024);
-
-    // Helper: draw outlined text (fill + stroke for maximum readability)
-    function drawOutlinedText(text, x, y, fillColor, fontSize, strokeColor) {
-      ctx.font = 'bold ' + fontSize + 'px sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.lineWidth = Math.max(4, fontSize / 6);
-      ctx.strokeStyle = strokeColor || 'rgba(0,0,0,0.9)';
-      ctx.fillStyle = fillColor;
-      ctx.strokeText(text, x, y);
-      ctx.fillText(text, x, y);
-    }
-
-    // Helper: draw bomb icon (circle + fuse)
-    function drawBombIcon(cx, cy, r) {
-      // Body
-      ctx.beginPath(); ctx.arc(cx, cy + 2, r, 0, Math.PI * 2);
-      ctx.fillStyle = '#1a0000'; ctx.fill();
-      ctx.strokeStyle = '#ff6680'; ctx.lineWidth = 3; ctx.stroke();
-      // Fuse stem
-      ctx.beginPath(); ctx.moveTo(cx + r * 0.5, cy - r * 0.6);
-      ctx.quadraticCurveTo(cx + r * 0.8, cy - r * 1.4, cx + r * 0.3, cy - r * 1.5);
-      ctx.strokeStyle = '#cc8844'; ctx.lineWidth = 4; ctx.stroke();
-      // Spark
-      ctx.beginPath(); ctx.arc(cx + r * 0.3, cy - r * 1.55, 5, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffee44'; ctx.fill();
-      ctx.beginPath(); ctx.arc(cx + r * 0.3, cy - r * 1.55, 8, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,200,50,0.4)'; ctx.fill();
-      // Highlight
-      ctx.beginPath(); ctx.arc(cx - r * 0.25, cy - r * 0.15, r * 0.25, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fill();
-    }
-
-    // Helper: draw diamond/penalty icon
-    function drawPenaltyIcon(cx, cy, r) {
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r * 0.7, cy);
-      ctx.lineTo(cx, cy + r); ctx.lineTo(cx - r * 0.7, cy); ctx.closePath();
-      ctx.fillStyle = '#fff3cc'; ctx.fill();
-      ctx.strokeStyle = '#cc6600'; ctx.lineWidth = 3; ctx.stroke();
-      // Inner diamond
-      var ir = r * 0.5;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - ir); ctx.lineTo(cx + ir * 0.7, cy);
-      ctx.lineTo(cx, cy + ir); ctx.lineTo(cx - ir * 0.7, cy); ctx.closePath();
-      ctx.fillStyle = '#ffaa33'; ctx.fill();
-    }
-
-    // Helper: draw checkmark icon
-    function drawCheckIcon(cx, cy, r) {
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0,80,30,0.5)'; ctx.fill();
-      ctx.strokeStyle = '#66ffaa'; ctx.lineWidth = 3; ctx.stroke();
-      // Checkmark
-      ctx.beginPath();
-      ctx.moveTo(cx - r * 0.5, cy);
-      ctx.lineTo(cx - r * 0.1, cy + r * 0.45);
-      ctx.lineTo(cx + r * 0.55, cy - r * 0.4);
-      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(5, r / 4);
-      ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
-      ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
-    }
+    // ── Colored segment meshes (ShapeGeometry — no texture UV issues) ──
+    var segR = WR - 0.03;
+    var segColorMap = { bombshot: 0xcc1133, penalty: 0xcc7711, safe: 0x1a8844 };
+    var segArcSegs = 24; // smoothness of arc
 
     for (var i = 0; i < 6; i++) {
-      var sA = (i / 6) * Math.PI * 2 - Math.PI / 2;
-      var eA = ((i + 1) / 6) * Math.PI * 2 - Math.PI / 2;
-      var mA = (sA + eA) / 2;
-      var slot = slots && slots[i] ? slots[i] : { type: 'safe', label: '세이프' };
-      var slotType = slot.type; // 'bombshot' | 'penalty' | 'safe'
+      var sA = (i / 6) * Math.PI * 2;
+      var eA = ((i + 1) / 6) * Math.PI * 2;
+      var slot = slots && slots[i] ? slots[i] : { type: 'safe', label: 'SAFE' };
 
-      ctx.beginPath(); ctx.moveTo(cxC, cyC);
-      ctx.arc(cxC, cyC, rC, sA, eA); ctx.closePath();
+      var shape = new THREE.Shape();
+      shape.moveTo(0, 0);
+      for (var a = 0; a <= segArcSegs; a++) {
+        var angle = sA + (eA - sA) * (a / segArcSegs);
+        shape.lineTo(Math.cos(angle) * segR, Math.sin(angle) * segR);
+      }
+      shape.lineTo(0, 0);
 
-      // Radial gradient per segment — 3 distinct colors
-      var grd = ctx.createRadialGradient(
-        cxC + Math.cos(mA) * 130, cyC + Math.sin(mA) * 130, 5, cxC, cyC, rC
+      var segMesh = new THREE.Mesh(
+        new THREE.ShapeGeometry(shape),
+        new THREE.MeshPhongMaterial({
+          color: segColorMap[slot.type] || segColorMap.safe,
+          shininess: 50,
+          side: THREE.DoubleSide
+        })
       );
-      if (slotType === 'bombshot') {
-        grd.addColorStop(0, '#ff3355'); grd.addColorStop(0.35, '#cc1133'); grd.addColorStop(1, '#770022');
-      } else if (slotType === 'penalty') {
-        grd.addColorStop(0, '#ffaa33'); grd.addColorStop(0.35, '#cc7711'); grd.addColorStop(1, '#774400');
-      } else {
-        grd.addColorStop(0, '#33cc66'); grd.addColorStop(0.35, '#1a8844'); grd.addColorStop(1, '#0a4422');
-      }
-      ctx.fillStyle = grd; ctx.fill();
-
-      // Bombshot segments: diagonal warning stripes
-      if (slotType === 'bombshot') {
-        ctx.save();
-        ctx.beginPath(); ctx.moveTo(cxC, cyC); ctx.arc(cxC, cyC, rC, sA, eA); ctx.closePath();
-        ctx.clip();
-        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-        ctx.lineWidth = 5;
-        for (var stripe = -25; stripe < 25; stripe++) {
-          ctx.beginPath();
-          ctx.moveTo(cxC + stripe * 30, cyC - rC);
-          ctx.lineTo(cxC + stripe * 30 + rC, cyC + rC);
-          ctx.stroke();
-        }
-        ctx.restore();
-      }
-
-      // Penalty segments: subtle cross-hatch
-      if (slotType === 'penalty') {
-        ctx.save();
-        ctx.beginPath(); ctx.moveTo(cxC, cyC); ctx.arc(cxC, cyC, rC, sA, eA); ctx.closePath();
-        ctx.clip();
-        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-        ctx.lineWidth = 4;
-        for (var stripe = -25; stripe < 25; stripe++) {
-          ctx.beginPath();
-          ctx.moveTo(cxC + stripe * 35, cyC - rC);
-          ctx.lineTo(cxC + stripe * 35 - rC * 0.5, cyC + rC);
-          ctx.stroke();
-        }
-        ctx.restore();
-      }
-
-      // Gold border
-      ctx.beginPath(); ctx.moveTo(cxC, cyC);
-      ctx.arc(cxC, cyC, rC, sA, eA); ctx.closePath();
-      ctx.strokeStyle = '#d4a843'; ctx.lineWidth = 5; ctx.stroke();
-
-      // ── ICON (hand-drawn, centered in segment) ──
-      var iconR = rC * 0.42;
-      var iconX = cxC + Math.cos(mA) * iconR;
-      var iconY = cyC + Math.sin(mA) * iconR;
-      ctx.save();
-      ctx.translate(iconX, iconY);
-      ctx.rotate(mA + Math.PI / 2);
-
-      if (slotType === 'bombshot') {
-        drawBombIcon(0, -4, 28);
-      } else if (slotType === 'penalty') {
-        drawPenaltyIcon(0, -4, 26);
-      } else {
-        drawCheckIcon(0, -4, 24);
-      }
-      ctx.restore();
-
-      // ── TEXT LABEL (large, outlined for readability) ──
-      var labelR = rC * 0.73;
-      ctx.save();
-      ctx.translate(cxC + Math.cos(mA) * labelR, cyC + Math.sin(mA) * labelR);
-      ctx.rotate(mA + Math.PI / 2);
-
-      if (slotType === 'bombshot') {
-        drawOutlinedText('BOMB', 0, -6, '#ffe066', 32, '#550011');
-      } else if (slotType === 'penalty') {
-        drawOutlinedText(slot.label || 'PENALTY', 0, -6, '#fff0cc', 28, '#553300');
-      } else {
-        drawOutlinedText('SAFE', 0, -6, '#ccffdd', 32, '#003311');
-      }
-      ctx.restore();
+      segMesh.rotation.x = -Math.PI / 2;
+      segMesh.position.y = WH / 2 + 0.005;
+      rouletteDiscGroup.add(segMesh);
+      if (i === 0) rouletteWheel = segMesh;
     }
 
-    // Center decorative circle
-    var cgrd = ctx.createRadialGradient(cxC, cyC, 0, cxC, cyC, 68);
-    cgrd.addColorStop(0, '#ffe066'); cgrd.addColorStop(0.5, '#d4a843'); cgrd.addColorStop(1, '#6b4d14');
-    ctx.beginPath(); ctx.arc(cxC, cyC, 68, 0, Math.PI * 2);
-    ctx.fillStyle = cgrd; ctx.fill();
-    ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 4; ctx.stroke();
-    // Center star icon (no emoji)
-    ctx.beginPath();
-    for (var si = 0; si < 5; si++) {
-      var sa = (si * 2 * Math.PI / 5) - Math.PI / 2;
-      var sx = cxC + Math.cos(sa) * 22;
-      var sy = cyC + Math.sin(sa) * 22;
-      if (si === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
-      var ia = sa + Math.PI / 5;
-      ctx.lineTo(cxC + Math.cos(ia) * 10, cyC + Math.sin(ia) * 10);
-    }
-    ctx.closePath();
-    ctx.fillStyle = '#8b5e14'; ctx.fill();
-    // Inner ring
-    ctx.beginPath(); ctx.arc(cxC, cyC, 52, 0, Math.PI * 2);
-    ctx.strokeStyle = '#8b6914'; ctx.lineWidth = 3; ctx.stroke();
+    // ── Label sprites floating above each segment (always face camera) ──
+    for (var li = 0; li < 6; li++) {
+      var lSlot = slots && slots[li] ? slots[li] : { type: 'safe', label: 'SAFE' };
+      var lmA = ((li + 0.5) / 6) * Math.PI * 2;
+      var labelDist = segR * 0.58;
 
-    var discTex = new THREE.CanvasTexture(canvas);
-    discTex.needsUpdate = true;
-    // Use CircleGeometry — flat disc with correct UV mapping (center=0.5,0.5)
-    var disc = new THREE.Mesh(
-      new THREE.CircleGeometry(WR - 0.02, 48),
-      new THREE.MeshPhongMaterial({ map: discTex, shininess: 45, side: THREE.DoubleSide })
-    );
-    disc.rotation.x = -Math.PI / 2; // lay flat (horizontal)
-    disc.position.y = WH / 2 + 0.005;
-    rouletteDiscGroup.add(disc);
-    rouletteWheel = disc;
+      // Small canvas per label
+      var lc = document.createElement('canvas');
+      lc.width = 256; lc.height = 128;
+      var lctx = lc.getContext('2d');
+      lctx.clearRect(0, 0, 256, 128);
+
+      // Background pill
+      var bgColor = lSlot.type === 'bombshot' ? '#ff2244' :
+                     lSlot.type === 'penalty' ? '#ffaa33' : '#22cc55';
+      lctx.fillStyle = bgColor;
+      lctx.beginPath();
+      if (lctx.roundRect) {
+        lctx.roundRect(16, 16, 224, 96, 20);
+      } else {
+        lctx.rect(16, 16, 224, 96);
+      }
+      lctx.fill();
+      lctx.strokeStyle = '#fff';
+      lctx.lineWidth = 4;
+      lctx.stroke();
+
+      // Text
+      var labelText = lSlot.type === 'bombshot' ? 'BOMB' :
+                       lSlot.type === 'penalty' ? (lSlot.label || 'PENALTY') : 'SAFE';
+      lctx.font = 'bold 44px sans-serif';
+      lctx.textAlign = 'center';
+      lctx.textBaseline = 'middle';
+      lctx.fillStyle = '#fff';
+      lctx.strokeStyle = 'rgba(0,0,0,0.7)';
+      lctx.lineWidth = 5;
+      lctx.strokeText(labelText, 128, 68);
+      lctx.fillText(labelText, 128, 68);
+
+      var spriteTex = new THREE.CanvasTexture(lc);
+      var spriteMat = new THREE.SpriteMaterial({ map: spriteTex, transparent: true, depthTest: false });
+      var sprite = new THREE.Sprite(spriteMat);
+
+      var sx = Math.cos(lmA) * labelDist;
+      var sz = Math.sin(lmA) * labelDist;
+      sprite.position.set(sx, WH / 2 + 0.08, sz);
+      sprite.scale.set(0.22, 0.11, 1);
+      rouletteDiscGroup.add(sprite);
+    }
 
     // 3D divider walls between segments
     rouletteDividers = [];
