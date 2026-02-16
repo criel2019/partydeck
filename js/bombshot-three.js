@@ -978,11 +978,14 @@
     ctx.strokeStyle = '#8b6914'; ctx.lineWidth = 3; ctx.stroke();
 
     var discTex = new THREE.CanvasTexture(canvas);
+    discTex.needsUpdate = true;
+    // Use CircleGeometry — flat disc with correct UV mapping (center=0.5,0.5)
     var disc = new THREE.Mesh(
-      new THREE.CylinderGeometry(WR - 0.02, WR - 0.02, 0.03, 48),
-      new THREE.MeshPhongMaterial({ map: discTex, shininess: 45 })
+      new THREE.CircleGeometry(WR - 0.02, 48),
+      new THREE.MeshPhongMaterial({ map: discTex, shininess: 45, side: THREE.DoubleSide })
     );
-    disc.position.y = WH / 2 - 0.005;
+    disc.rotation.x = -Math.PI / 2; // lay flat (horizontal)
+    disc.position.y = WH / 2 + 0.005;
     rouletteDiscGroup.add(disc);
     rouletteWheel = disc;
 
