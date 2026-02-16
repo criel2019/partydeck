@@ -792,13 +792,75 @@
     // ── Inner spinning disc ──
     rouletteDiscGroup = new THREE.Group();
 
-    // Canvas texture for segment colors — clear 폭탄주/세이프 labels
+    // Canvas texture for segment colors — hand-drawn icons for cross-browser compatibility
     var canvas = document.createElement('canvas');
-    canvas.width = 768; canvas.height = 768;
+    canvas.width = 1024; canvas.height = 1024;
     var ctx = canvas.getContext('2d');
-    var cxC = 384, cyC = 384, rC = 360;
+    var cxC = 512, cyC = 512, rC = 480;
 
-    ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, 768, 768);
+    ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, 1024, 1024);
+
+    // Helper: draw outlined text (fill + stroke for maximum readability)
+    function drawOutlinedText(text, x, y, fillColor, fontSize, strokeColor) {
+      ctx.font = 'bold ' + fontSize + 'px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = Math.max(4, fontSize / 6);
+      ctx.strokeStyle = strokeColor || 'rgba(0,0,0,0.9)';
+      ctx.fillStyle = fillColor;
+      ctx.strokeText(text, x, y);
+      ctx.fillText(text, x, y);
+    }
+
+    // Helper: draw bomb icon (circle + fuse)
+    function drawBombIcon(cx, cy, r) {
+      // Body
+      ctx.beginPath(); ctx.arc(cx, cy + 2, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#1a0000'; ctx.fill();
+      ctx.strokeStyle = '#ff6680'; ctx.lineWidth = 3; ctx.stroke();
+      // Fuse stem
+      ctx.beginPath(); ctx.moveTo(cx + r * 0.5, cy - r * 0.6);
+      ctx.quadraticCurveTo(cx + r * 0.8, cy - r * 1.4, cx + r * 0.3, cy - r * 1.5);
+      ctx.strokeStyle = '#cc8844'; ctx.lineWidth = 4; ctx.stroke();
+      // Spark
+      ctx.beginPath(); ctx.arc(cx + r * 0.3, cy - r * 1.55, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffee44'; ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + r * 0.3, cy - r * 1.55, 8, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,200,50,0.4)'; ctx.fill();
+      // Highlight
+      ctx.beginPath(); ctx.arc(cx - r * 0.25, cy - r * 0.15, r * 0.25, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fill();
+    }
+
+    // Helper: draw diamond/penalty icon
+    function drawPenaltyIcon(cx, cy, r) {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r * 0.7, cy);
+      ctx.lineTo(cx, cy + r); ctx.lineTo(cx - r * 0.7, cy); ctx.closePath();
+      ctx.fillStyle = '#fff3cc'; ctx.fill();
+      ctx.strokeStyle = '#cc6600'; ctx.lineWidth = 3; ctx.stroke();
+      // Inner diamond
+      var ir = r * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - ir); ctx.lineTo(cx + ir * 0.7, cy);
+      ctx.lineTo(cx, cy + ir); ctx.lineTo(cx - ir * 0.7, cy); ctx.closePath();
+      ctx.fillStyle = '#ffaa33'; ctx.fill();
+    }
+
+    // Helper: draw checkmark icon
+    function drawCheckIcon(cx, cy, r) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,80,30,0.5)'; ctx.fill();
+      ctx.strokeStyle = '#66ffaa'; ctx.lineWidth = 3; ctx.stroke();
+      // Checkmark
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 0.5, cy);
+      ctx.lineTo(cx - r * 0.1, cy + r * 0.45);
+      ctx.lineTo(cx + r * 0.55, cy - r * 0.4);
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(5, r / 4);
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+      ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
+    }
 
     for (var i = 0; i < 6; i++) {
       var sA = (i / 6) * Math.PI * 2 - Math.PI / 2;
@@ -812,7 +874,7 @@
 
       // Radial gradient per segment — 3 distinct colors
       var grd = ctx.createRadialGradient(
-        cxC + Math.cos(mA) * 100, cyC + Math.sin(mA) * 100, 5, cxC, cyC, rC
+        cxC + Math.cos(mA) * 130, cyC + Math.sin(mA) * 130, 5, cxC, cyC, rC
       );
       if (slotType === 'bombshot') {
         grd.addColorStop(0, '#ff3355'); grd.addColorStop(0.35, '#cc1133'); grd.addColorStop(1, '#770022');
@@ -825,13 +887,15 @@
 
       // Bombshot segments: diagonal warning stripes
       if (slotType === 'bombshot') {
-        ctx.save(); ctx.clip();
+        ctx.save();
+        ctx.beginPath(); ctx.moveTo(cxC, cyC); ctx.arc(cxC, cyC, rC, sA, eA); ctx.closePath();
+        ctx.clip();
         ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-        ctx.lineWidth = 4;
-        for (var stripe = -20; stripe < 20; stripe++) {
+        ctx.lineWidth = 5;
+        for (var stripe = -25; stripe < 25; stripe++) {
           ctx.beginPath();
-          ctx.moveTo(cxC + stripe * 25, cyC - rC);
-          ctx.lineTo(cxC + stripe * 25 + rC, cyC + rC);
+          ctx.moveTo(cxC + stripe * 30, cyC - rC);
+          ctx.lineTo(cxC + stripe * 30 + rC, cyC + rC);
           ctx.stroke();
         }
         ctx.restore();
@@ -839,82 +903,79 @@
 
       // Penalty segments: subtle cross-hatch
       if (slotType === 'penalty') {
-        ctx.save(); ctx.clip();
+        ctx.save();
+        ctx.beginPath(); ctx.moveTo(cxC, cyC); ctx.arc(cxC, cyC, rC, sA, eA); ctx.closePath();
+        ctx.clip();
         ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-        ctx.lineWidth = 3;
-        for (var stripe = -20; stripe < 20; stripe++) {
+        ctx.lineWidth = 4;
+        for (var stripe = -25; stripe < 25; stripe++) {
           ctx.beginPath();
-          ctx.moveTo(cxC + stripe * 30, cyC - rC);
-          ctx.lineTo(cxC + stripe * 30 - rC * 0.5, cyC + rC);
+          ctx.moveTo(cxC + stripe * 35, cyC - rC);
+          ctx.lineTo(cxC + stripe * 35 - rC * 0.5, cyC + rC);
           ctx.stroke();
         }
         ctx.restore();
       }
 
       // Gold border
-      ctx.strokeStyle = '#d4a843'; ctx.lineWidth = 4; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cxC, cyC);
+      ctx.arc(cxC, cyC, rC, sA, eA); ctx.closePath();
+      ctx.strokeStyle = '#d4a843'; ctx.lineWidth = 5; ctx.stroke();
 
-      // ── ICON (large, centered in segment) ──
-      var iconR = rC * 0.48;
+      // ── ICON (hand-drawn, centered in segment) ──
+      var iconR = rC * 0.42;
+      var iconX = cxC + Math.cos(mA) * iconR;
+      var iconY = cyC + Math.sin(mA) * iconR;
       ctx.save();
-      ctx.translate(cxC + Math.cos(mA) * iconR, cyC + Math.sin(mA) * iconR);
+      ctx.translate(iconX, iconY);
       ctx.rotate(mA + Math.PI / 2);
-      ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 8;
 
       if (slotType === 'bombshot') {
-        ctx.font = 'bold 48px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('💣', 0, -8);
+        drawBombIcon(0, -4, 28);
       } else if (slotType === 'penalty') {
-        ctx.font = 'bold 44px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('🔸', 0, -8);
+        drawPenaltyIcon(0, -4, 26);
       } else {
-        ctx.font = 'bold 52px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#aaffcc';
-        ctx.fillText('✓', 0, -4);
+        drawCheckIcon(0, -4, 24);
       }
-      ctx.shadowBlur = 0; ctx.restore();
+      ctx.restore();
 
-      // ── TEXT LABEL (below icon, large & readable) ──
-      var labelR = rC * 0.72;
+      // ── TEXT LABEL (large, outlined for readability) ──
+      var labelR = rC * 0.73;
       ctx.save();
       ctx.translate(cxC + Math.cos(mA) * labelR, cyC + Math.sin(mA) * labelR);
       ctx.rotate(mA + Math.PI / 2);
-      ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 6;
-      ctx.textAlign = 'center';
 
       if (slotType === 'bombshot') {
-        ctx.font = 'bold 26px "Noto Sans KR", sans-serif';
-        ctx.fillStyle = '#ffe066';
-        ctx.fillText('폭탄주', 0, 8);
+        drawOutlinedText('BOMB', 0, -6, '#ffe066', 32, '#550011');
       } else if (slotType === 'penalty') {
-        ctx.font = 'bold 22px "Noto Sans KR", sans-serif';
-        ctx.fillStyle = '#fff0cc';
-        ctx.fillText(slot.label || '벌칙', 0, 8);
+        drawOutlinedText(slot.label || 'PENALTY', 0, -6, '#fff0cc', 28, '#553300');
       } else {
-        ctx.font = 'bold 24px "Noto Sans KR", sans-serif';
-        ctx.fillStyle = '#ccffdd';
-        ctx.fillText('세이프', 0, 8);
+        drawOutlinedText('SAFE', 0, -6, '#ccffdd', 32, '#003311');
       }
-      ctx.shadowBlur = 0; ctx.restore();
+      ctx.restore();
     }
 
-    // Center decorative circle — 폭탄주 로고
-    var cgrd = ctx.createRadialGradient(cxC, cyC, 0, cxC, cyC, 52);
+    // Center decorative circle
+    var cgrd = ctx.createRadialGradient(cxC, cyC, 0, cxC, cyC, 68);
     cgrd.addColorStop(0, '#ffe066'); cgrd.addColorStop(0.5, '#d4a843'); cgrd.addColorStop(1, '#6b4d14');
-    ctx.beginPath(); ctx.arc(cxC, cyC, 52, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(cxC, cyC, 68, 0, Math.PI * 2);
     ctx.fillStyle = cgrd; ctx.fill();
-    ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 3; ctx.stroke();
-    // Center emoji
-    ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 4;
-    ctx.fillText('🍺', cxC, cyC + 12);
-    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 4; ctx.stroke();
+    // Center star icon (no emoji)
+    ctx.beginPath();
+    for (var si = 0; si < 5; si++) {
+      var sa = (si * 2 * Math.PI / 5) - Math.PI / 2;
+      var sx = cxC + Math.cos(sa) * 22;
+      var sy = cyC + Math.sin(sa) * 22;
+      if (si === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+      var ia = sa + Math.PI / 5;
+      ctx.lineTo(cxC + Math.cos(ia) * 10, cyC + Math.sin(ia) * 10);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#8b5e14'; ctx.fill();
     // Inner ring
-    ctx.beginPath(); ctx.arc(cxC, cyC, 40, 0, Math.PI * 2);
-    ctx.strokeStyle = '#8b6914'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cxC, cyC, 52, 0, Math.PI * 2);
+    ctx.strokeStyle = '#8b6914'; ctx.lineWidth = 3; ctx.stroke();
 
     var discTex = new THREE.CanvasTexture(canvas);
     var disc = new THREE.Mesh(
