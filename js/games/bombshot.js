@@ -1,6 +1,7 @@
 // =============================================
 // BOMB SHOT BLUFF (폭탄주 블러프)
 // Liar's Bar variant — P2P card game
+// Russian Roulette penalty system
 // =============================================
 
 // ===== THREE.JS LOADER =====
@@ -70,6 +71,24 @@ function bsCreateDeck() {
   return deck;
 }
 
+// ===== ROULETTE SLOTS =====
+function generateRouletteSlots(hitCount) {
+  // 6 chambers: hitCount of them are 'hit', rest are 'safe'
+  var slots = [];
+  var i;
+  for (i = 0; i < 6; i++) slots.push('safe');
+  // Randomly distribute hitCount 'hit' slots
+  var indices = [];
+  for (i = 0; i < 6; i++) indices.push(i);
+  // Fisher-Yates partial shuffle to pick hitCount positions
+  for (i = 0; i < hitCount && i < 6; i++) {
+    var j = i + Math.floor(Math.random() * (6 - i));
+    var tmp = indices[i]; indices[i] = indices[j]; indices[j] = tmp;
+    slots[indices[i]] = 'hit';
+  }
+  return slots;
+}
+
 // ===== HOST: START GAME =====
 function startBombShot() {
   if (!state.isHost) return;
@@ -84,14 +103,15 @@ function startBombShot() {
   var pCount = state.players.length;
   var cardsPerPlayer = Math.floor(24 / pCount);
 
-  var players = state.players.map(function(p, idx) {
+  var players = state.players.map(function(p) {
     return {
       id: p.id,
       name: p.name,
       avatar: p.avatar,
       cards: deck.splice(0, cardsPerPlayer),
-      finished: false,
-      finishOrder: -1
+      eliminated: false,
+      eliminatedOrder: -1,
+      roulette: { chambers: 6, hitCount: 1 }
     };
   });
 
@@ -104,15 +124,20 @@ function startBombShot() {
     glassPile: [],
     lastSubmission: null,  // { playerId, playerName, cards[], count }
     phase: 'playing',
-    finishedCount: 0,
+    eliminatedCount: 0,
     penaltyPlayer: null,
     revealedCards: null,
     liarCallerId: null,
     liarCallerName: null,
-    revealResult: null     // 'caught' | 'wrong'
+    revealResult: null,     // 'caught' | 'wrong'
+    // Roulette state
+    rouletteTarget: null,   // { id, name }
+    rouletteSlots: null,    // ['safe','hit',...] x6
+    rouletteSlotIndex: -1,  // where ball lands
+    rouletteResult: null    // 'safe' | 'hit'
   };
 
-  // Broadcast game-start (without state — personalized state follows via broadcastBSState)
+  // Broadcast game-start
   broadcast({ type: 'game-start', game: 'bombshot' });
   showScreen('bombshotGame');
   initBSCanvas();
@@ -133,8 +158,9 @@ function buildBSView(forPlayerId) {
         avatar: p.avatar,
         cards: p.id === forPlayerId ? p.cards : null,
         cardCount: p.cards.length,
-        finished: p.finished,
-        finishOrder: p.finishOrder
+        eliminated: p.eliminated,
+        eliminatedOrder: p.eliminatedOrder,
+        rouletteHitCount: p.roulette.hitCount
       };
     }),
     designatedDrink: bs.designatedDrink,
@@ -144,16 +170,20 @@ function buildBSView(forPlayerId) {
       playerId: bs.lastSubmission.playerId,
       playerName: bs.lastSubmission.playerName,
       count: bs.lastSubmission.count,
-      // Only reveal cards during liar-reveal phase
       cards: bs.phase === 'liar-reveal' ? bs.lastSubmission.cards : null
     } : null,
     phase: bs.phase,
-    finishedCount: bs.finishedCount,
+    eliminatedCount: bs.eliminatedCount,
     penaltyPlayer: bs.penaltyPlayer,
     revealedCards: bs.phase === 'liar-reveal' ? bs.revealedCards : null,
     liarCallerId: bs.liarCallerId,
     liarCallerName: bs.liarCallerName,
-    revealResult: bs.revealResult
+    revealResult: bs.revealResult,
+    // Roulette data
+    rouletteTarget: bs.rouletteTarget,
+    rouletteSlots: bs.rouletteSlots,
+    rouletteSlotIndex: bs.rouletteSlotIndex,
+    rouletteResult: bs.rouletteResult
   };
 }
 
@@ -177,8 +207,8 @@ function processBSSubmit(peerId, cardIndices) {
 
   var bs = bsState;
   var player = bs.players[bs.turnIdx];
-  if (!player || player.id !== peerId) return; // not their turn
-  if (player.finished) return;
+  if (!player || player.id !== peerId) return;
+  if (player.eliminated) return;
 
   // Validate indices
   if (!Array.isArray(cardIndices) || cardIndices.length < 1 || cardIndices.length > 3) return;
@@ -198,7 +228,7 @@ function processBSSubmit(peerId, cardIndices) {
     player.cards.splice(uniqueIdx[j], 1);
   }
 
-  // Add to glass pile
+  // Add to glass pile (permanent accumulation — no return)
   for (var k = 0; k < submittedCards.length; k++) {
     bs.glassPile.push(submittedCards[k]);
   }
@@ -210,28 +240,22 @@ function processBSSubmit(peerId, cardIndices) {
     count: submittedCards.length
   };
 
-  // Check if player finished
-  if (player.cards.length === 0) {
-    player.finished = true;
-    bs.finishedCount++;
-    player.finishOrder = bs.finishedCount;
-  }
-
   // Broadcast animation trigger
   broadcast({ type: 'bs-anim', anim: 'submit', count: submittedCards.length, drink: bs.designatedDrink });
   handleBSAnim({ anim: 'submit', count: submittedCards.length, drink: bs.designatedDrink });
 
-  // Broadcast state immediately (shows submission info, allows liar calls)
+  // Broadcast state (shows submission info, allows liar calls)
   broadcastBSState();
 
-  // Delay game end check + turn advance to give liar call window
+  // Delay turn advance to give liar call window (3.5s)
   var t = setTimeout(function() {
     if (!bsState || bsState.phase !== 'playing') return;
-    // Check game end after liar window
+    // Check for redeal before advancing
+    bsCheckRedeal();
     if (bsCheckGameEnd()) return;
     bsAdvanceTurn();
     broadcastBSState();
-  }, 2500);
+  }, 3500);
   _bsTimers.push(t);
 }
 
@@ -246,7 +270,7 @@ function processBSLiar(callerId) {
 
   var bs = bsState;
   var caller = bs.players.find(function(p) { return p.id === callerId; });
-  if (!caller || caller.finished) return;
+  if (!caller || caller.eliminated) return;
 
   bs.phase = 'liar-reveal';
   bs.liarCallerId = callerId;
@@ -267,51 +291,124 @@ function processBSLiar(callerId) {
   bs.revealedCards = submitted;
   bs.revealResult = isLiar ? 'caught' : 'wrong';
 
-  // Determine penalty
+  // Determine penalty target
   var penalizedId = isLiar ? bs.lastSubmission.playerId : callerId;
   var penalizedPlayer = bs.players.find(function(p) { return p.id === penalizedId; });
   bs.penaltyPlayer = { id: penalizedId, name: penalizedPlayer ? penalizedPlayer.name : '' };
 
-  // Penalized player takes glass pile
-  if (penalizedPlayer) {
-    for (var j = 0; j < bs.glassPile.length; j++) {
-      penalizedPlayer.cards.push(bs.glassPile[j]);
-    }
-    // If they were finished, un-finish them
-    if (penalizedPlayer.finished) {
-      penalizedPlayer.finished = false;
-      bs.finishedCount--;
-      penalizedPlayer.finishOrder = -1;
-    }
-  }
-
-  // Clear glass
-  bs.glassPile = [];
+  // No card return — glass pile stays (permanent accumulation)
   bs.lastSubmission = null;
 
   // Broadcast reveal animation
   broadcast({ type: 'bs-anim', anim: 'reveal' });
   handleBSAnim({ anim: 'reveal' });
-
   broadcastBSState();
 
-  // After 3 seconds, resume play
-  var t = setTimeout(function() {
+  // === ROULETTE TIMING CHAIN ===
+  // Phase 1: liar-reveal (4s) — show cards
+  var t1 = setTimeout(function() {
     if (!bsState) return;
-    bs.phase = 'playing';
-    bs.revealedCards = null;
-    bs.revealResult = null;
-    bs.liarCallerId = null;
-    bs.liarCallerName = null;
-    bs.penaltyPlayer = null;
 
-    if (bsCheckGameEnd()) return;
+    // Setup roulette for penalty target
+    var target = bsState.players.find(function(p) { return p.id === penalizedId; });
+    if (!target || target.eliminated) {
+      bsResumeAfterRoulette();
+      return;
+    }
 
-    // Continue from next player after the submitter
-    bsAdvanceTurn();
+    var slots = generateRouletteSlots(target.roulette.hitCount);
+    // Determine ball landing
+    var slotIndex = Math.floor(Math.random() * 6);
+    var result = slots[slotIndex]; // 'safe' or 'hit'
+
+    bsState.rouletteTarget = { id: target.id, name: target.name };
+    bsState.rouletteSlots = slots;
+    bsState.rouletteSlotIndex = slotIndex;
+    bsState.rouletteResult = result;
+    bsState.phase = 'roulette-setup';
+
+    // Broadcast roulette-setup anim
+    broadcast({ type: 'bs-anim', anim: 'roulette-setup', hitSlots: slots, targetName: target.name });
+    handleBSAnim({ anim: 'roulette-setup', hitSlots: slots, targetName: target.name });
     broadcastBSState();
-  }, 3500);
-  _bsTimers.push(t);
+
+    // Phase 2: roulette-setup (1.5s) — camera moves, wheel appears
+    var t2 = setTimeout(function() {
+      if (!bsState) return;
+      bsState.phase = 'roulette-spin';
+
+      // Broadcast spin anim
+      broadcast({ type: 'bs-anim', anim: 'roulette-spin', slotIndex: slotIndex, hitSlots: slots });
+      handleBSAnim({ anim: 'roulette-spin', slotIndex: slotIndex, hitSlots: slots });
+      broadcastBSState();
+
+      // Phase 3: roulette-spin (5s) — ball rolls
+      var t3 = setTimeout(function() {
+        if (!bsState) return;
+        bsState.phase = 'roulette-result';
+
+        broadcast({ type: 'bs-anim', anim: 'roulette-result', result: result, targetName: target.name });
+        handleBSAnim({ anim: 'roulette-result', result: result, targetName: target.name });
+        broadcastBSState();
+
+        // Phase 4: roulette-result (3s) — show result
+        var t4 = setTimeout(function() {
+          if (!bsState) return;
+
+          // Apply roulette result
+          if (result === 'hit') {
+            // Player eliminated!
+            target.eliminated = true;
+            bsState.eliminatedCount++;
+            target.eliminatedOrder = bsState.eliminatedCount;
+          } else {
+            // Safe — increase hit count for next time
+            target.roulette.hitCount = Math.min(target.roulette.hitCount + 1, 5);
+          }
+
+          bsState.phase = 'camera-return';
+          broadcast({ type: 'bs-anim', anim: 'camera-return' });
+          handleBSAnim({ anim: 'camera-return' });
+          broadcastBSState();
+
+          // Phase 5: camera-return (1s)
+          var t5 = setTimeout(function() {
+            bsResumeAfterRoulette();
+          }, 1000);
+          _bsTimers.push(t5);
+        }, 3000);
+        _bsTimers.push(t4);
+      }, 5000);
+      _bsTimers.push(t3);
+    }, 1500);
+    _bsTimers.push(t2);
+  }, 4000);
+  _bsTimers.push(t1);
+}
+
+// ===== HOST: RESUME AFTER ROULETTE =====
+function bsResumeAfterRoulette() {
+  if (!bsState) return;
+  var bs = bsState;
+  bs.phase = 'playing';
+  bs.revealedCards = null;
+  bs.revealResult = null;
+  bs.liarCallerId = null;
+  bs.liarCallerName = null;
+  bs.penaltyPlayer = null;
+  bs.rouletteTarget = null;
+  bs.rouletteSlots = null;
+  bs.rouletteSlotIndex = -1;
+  bs.rouletteResult = null;
+
+  if (bsCheckGameEnd()) return;
+
+  // Check redeal
+  bsCheckRedeal();
+
+  // Continue from next player
+  bsAdvanceTurn();
+  broadcastBSState();
 }
 
 // ===== HOST: ADVANCE TURN =====
@@ -319,46 +416,47 @@ function bsAdvanceTurn() {
   if (!bsState) return;
   var bs = bsState;
   var pCount = bs.players.length;
-  var startIdx = bs.turnIdx;
 
   for (var i = 0; i < pCount; i++) {
     bs.turnIdx = (bs.turnIdx + 1) % pCount;
-    if (!bs.players[bs.turnIdx].finished) return;
+    var p = bs.players[bs.turnIdx];
+    // Skip eliminated players and players with 0 cards
+    if (!p.eliminated && p.cards.length > 0) return;
   }
-  // All finished — shouldn't happen if we check game end properly
+  // If everyone is out of cards or eliminated, check redeal
+  bsCheckRedeal();
 }
 
 // ===== HOST: CHECK GAME END =====
 function bsCheckGameEnd() {
   if (!bsState) return false;
   var bs = bsState;
-  var activePlayers = bs.players.filter(function(p) { return !p.finished; });
+  var activePlayers = bs.players.filter(function(p) { return !p.eliminated; });
 
   if (activePlayers.length <= 1) {
     bs.phase = 'gameover';
 
-    // The remaining player is the loser
-    if (activePlayers.length === 1) {
-      var loser = activePlayers[0];
-      loser.finishOrder = bs.players.length; // last place
-    }
-
-    // Build result — sort by finishOrder, treating -1 (un-finished then re-finished) as last
+    // Build result — eliminated players ranked by elimination order (first eliminated = last place)
     var rankings = bs.players.slice().sort(function(a, b) {
-      var aOrd = a.finishOrder > 0 ? a.finishOrder : 999;
-      var bOrd = b.finishOrder > 0 ? b.finishOrder : 999;
-      return aOrd - bOrd;
+      // Non-eliminated first (winner)
+      if (!a.eliminated && b.eliminated) return -1;
+      if (a.eliminated && !b.eliminated) return 1;
+      // Among eliminated: later elimination = better rank
+      if (a.eliminated && b.eliminated) return b.eliminatedOrder - a.eliminatedOrder;
+      return 0;
     });
 
     var result = {
       type: 'bs-result',
-      rankings: rankings.map(function(p) {
+      rankings: rankings.map(function(p, idx) {
         return {
           id: p.id,
           name: p.name,
           avatar: p.avatar,
-          finishOrder: p.finishOrder,
-          isLoser: p.finishOrder === bs.players.length
+          eliminatedOrder: p.eliminatedOrder,
+          isLoser: p.eliminatedOrder === 1, // first eliminated = biggest loser
+          isWinner: !p.eliminated,
+          glassPileCount: bsState.glassPile.length
         };
       })
     };
@@ -368,6 +466,39 @@ function bsCheckGameEnd() {
     return true;
   }
   return false;
+}
+
+// ===== HOST: CHECK REDEAL =====
+function bsCheckRedeal() {
+  if (!bsState) return;
+  var bs = bsState;
+  var activePlayers = bs.players.filter(function(p) { return !p.eliminated; });
+
+  // Check if all active players have 0 cards
+  var allEmpty = activePlayers.every(function(p) { return p.cards.length === 0; });
+  if (!allEmpty) return;
+  if (activePlayers.length < 2) return;
+
+  // Redeal: new deck, distribute to active players
+  var deck = bsCreateDeck();
+  var cardsPerPlayer = Math.floor(24 / activePlayers.length);
+
+  activePlayers.forEach(function(p) {
+    p.cards = deck.splice(0, cardsPerPlayer);
+  });
+
+  // Change designated drink
+  var oldDrink = bs.designatedDrink;
+  var newDrink;
+  do {
+    newDrink = BS_DRINKS[Math.floor(Math.random() * 3)];
+  } while (newDrink === oldDrink && BS_DRINKS.length > 1);
+  bs.designatedDrink = newDrink;
+
+  // Update 3D drink color
+  if (typeof bsSetDrinkType === 'function') {
+    bsSetDrinkType(newDrink);
+  }
 }
 
 // ===== CANVAS INIT =====
@@ -396,9 +527,8 @@ function renderBSView(view) {
   var myPlayer = view.players.find(function(p) { return p.id === state.myId; });
   var isMyTurn = view.turnPlayerId === state.myId;
 
-  // Clear stale selection when it's not my turn, phase changed, or card count changed
+  // Clear stale selection
   if (!isMyTurn || view.phase !== 'playing' || (myPlayer && myPlayer.cards && _bsSelected.length > 0)) {
-    // Validate selected indices are still in bounds
     if (myPlayer && myPlayer.cards) {
       _bsSelected = _bsSelected.filter(function(idx) { return idx < myPlayer.cards.length; });
     }
@@ -416,9 +546,9 @@ function renderBSView(view) {
     document.getElementById('bsDrinkName').textContent = '지정: ' + (info ? info.name : '');
   }
 
-  // Glass count
+  // Glass count — show cumulative
   var gc = document.getElementById('bsGlassCount');
-  if (gc) gc.textContent = view.glassPileCount;
+  if (gc) gc.textContent = '누적: ' + view.glassPileCount + '장';
 
   // -- Opponents --
   var oppContainer = document.getElementById('bsOpponents');
@@ -427,17 +557,26 @@ function renderBSView(view) {
     view.players.forEach(function(p) {
       if (p.id === state.myId) return;
       var isTurn = p.id === view.turnPlayerId;
-      var cls = 'bs-opp' + (isTurn ? ' active-turn' : '') + (p.finished ? ' finished' : '');
+      var cls = 'bs-opp' + (isTurn ? ' active-turn' : '') + (p.eliminated ? ' eliminated' : '');
       var cardsHtml = '';
       for (var c = 0; c < p.cardCount; c++) {
         cardsHtml += '<div class="bs-opp-card-back"></div>';
       }
+      // Roulette danger dots
+      var dotsHtml = '<div class="bs-opp-roulette">';
+      for (var d = 0; d < 6; d++) {
+        var dotCls = d < p.rouletteHitCount ? 'hit' : 'safe';
+        dotsHtml += '<span class="bs-roulette-dot ' + dotCls + '"></span>';
+      }
+      dotsHtml += '</div>';
+
       oppHtml += '<div class="' + cls + '">' +
         '<div class="bs-opp-turn-marker"></div>' +
         '<div class="bs-opp-avatar">' + p.avatar + '</div>' +
         '<div class="bs-opp-name">' + escapeHtml(p.name) + '</div>' +
+        dotsHtml +
         '<div class="bs-opp-cards">' + cardsHtml + '</div>' +
-        '<div class="bs-opp-count">' + (p.finished ? '완료!' : p.cardCount + '장') + '</div>' +
+        '<div class="bs-opp-count">' + (p.eliminated ? '💀 탈락' : p.cardCount + '장') + '</div>' +
         '</div>';
     });
     oppContainer.innerHTML = oppHtml;
@@ -446,7 +585,7 @@ function renderBSView(view) {
   // -- My turn banner --
   var banner = document.getElementById('bsMyTurnBanner');
   if (banner) {
-    if (isMyTurn && view.phase === 'playing' && myPlayer && !myPlayer.finished) {
+    if (isMyTurn && view.phase === 'playing' && myPlayer && !myPlayer.eliminated) {
       banner.classList.add('active');
       banner.textContent = '당신의 차례! 카드를 1~3장 선택하세요';
     } else {
@@ -467,25 +606,67 @@ function renderBSView(view) {
     }
   }
 
+  // -- Roulette status --
+  var rouletteStatusEl = document.getElementById('bsRouletteStatus');
+  if (rouletteStatusEl) {
+    var rPhase = view.phase;
+    if (rPhase === 'roulette-setup' || rPhase === 'roulette-spin' || rPhase === 'roulette-result' || rPhase === 'camera-return') {
+      rouletteStatusEl.style.display = 'block';
+      var targetName = view.rouletteTarget ? view.rouletteTarget.name : '???';
+      if (rPhase === 'roulette-setup') {
+        rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🎰 ' + escapeHtml(targetName) + '의 룰렛 스핀!</span>';
+      } else if (rPhase === 'roulette-spin') {
+        rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🎰 공이 굴러가는 중...</span>';
+      } else if (rPhase === 'roulette-result') {
+        if (view.rouletteResult === 'hit') {
+          rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-hit">💥 ' + escapeHtml(targetName) + ' 당첨! 탈락!</span>';
+        } else {
+          rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-safe">😮‍💨 ' + escapeHtml(targetName) + ' 세이프!</span>';
+        }
+      } else {
+        rouletteStatusEl.innerHTML = '';
+      }
+    } else {
+      rouletteStatusEl.style.display = 'none';
+    }
+  }
+
   // -- My cards --
   var handEl = document.getElementById('bsMyHand');
   if (handEl && myPlayer) {
-    if (myPlayer.cards && myPlayer.cards.length > 0) {
-      var canSelect = isMyTurn && view.phase === 'playing' && !myPlayer.finished;
+    if (myPlayer.eliminated) {
+      handEl.innerHTML = '<div style="color:var(--bs-neon-pink);font-size:13px;padding:12px;">💀 탈락했습니다!</div>';
+    } else if (myPlayer.cards && myPlayer.cards.length > 0) {
+      var canSelect = isMyTurn && view.phase === 'playing' && !myPlayer.eliminated;
       var handHtml = '';
       myPlayer.cards.forEach(function(card, idx) {
-        var info = BS_CARDS[card] || BS_CARDS.beer;
+        var cInfo = BS_CARDS[card] || BS_CARDS.beer;
         var sel = _bsSelected.indexOf(idx) !== -1;
-        var cls = 'bs-card ' + info.cssClass + (sel ? ' selected' : '') + (!canSelect ? ' disabled' : '');
+        var cls = 'bs-card ' + cInfo.cssClass + (sel ? ' selected' : '') + (!canSelect ? ' disabled' : '');
         handHtml += '<div class="' + cls + '" onclick="bsToggleCard(' + idx + ')">' +
-          '<div class="bs-card-emoji">' + info.emoji + '</div>' +
-          '<div class="bs-card-name">' + info.name + '</div>' +
+          '<div class="bs-card-emoji">' + cInfo.emoji + '</div>' +
+          '<div class="bs-card-name">' + cInfo.name + '</div>' +
           '</div>';
       });
       handEl.innerHTML = handHtml;
     } else {
-      handEl.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:12px;">카드를 모두 냈습니다! 🎉</div>';
+      handEl.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:12px;">카드를 모두 냈습니다! 리딜 대기 중...</div>';
     }
+  }
+
+  // -- My roulette danger indicator --
+  if (myPlayer && !myPlayer.eliminated) {
+    var myDotsHtml = '<div class="bs-my-roulette">';
+    for (var md = 0; md < 6; md++) {
+      var mdCls = md < myPlayer.rouletteHitCount ? 'hit' : 'safe';
+      myDotsHtml += '<span class="bs-roulette-dot ' + mdCls + '"></span>';
+    }
+    myDotsHtml += '<span class="bs-my-roulette-label">내 위험도</span></div>';
+    var myRouletteEl = document.getElementById('bsMyRoulette');
+    if (myRouletteEl) myRouletteEl.innerHTML = myDotsHtml;
+  } else {
+    var myRouletteEl = document.getElementById('bsMyRoulette');
+    if (myRouletteEl) myRouletteEl.innerHTML = '';
   }
 
   // -- Action buttons --
@@ -494,17 +675,16 @@ function renderBSView(view) {
   var selCount = document.getElementById('bsSelectedCount');
 
   if (submitBtn) {
-    var canSubmit = isMyTurn && view.phase === 'playing' && _bsSelected.length > 0 && _bsSelected.length <= 3 && myPlayer && !myPlayer.finished;
+    var canSubmit = isMyTurn && view.phase === 'playing' && _bsSelected.length > 0 && _bsSelected.length <= 3 && myPlayer && !myPlayer.eliminated;
     submitBtn.disabled = !canSubmit;
   }
   if (selCount) selCount.textContent = _bsSelected.length;
 
   if (liarBtn) {
-    // Liar button enabled for everyone (except submitter) when there's a lastSubmission and phase is playing
     var canLiar = view.phase === 'playing' &&
                   view.lastSubmission &&
                   view.lastSubmission.playerId !== state.myId &&
-                  myPlayer && !myPlayer.finished;
+                  myPlayer && !myPlayer.eliminated;
     liarBtn.disabled = !canLiar;
   }
 
@@ -520,6 +700,10 @@ function renderBSView(view) {
       }
     } else if (view.phase === 'liar-reveal') {
       statusEl.innerHTML = '카드 공개 중...';
+    } else if (view.phase === 'roulette-setup' || view.phase === 'roulette-spin') {
+      statusEl.innerHTML = '<span class="bs-status-highlight">🎰 룰렛 진행 중</span>';
+    } else if (view.phase === 'roulette-result') {
+      statusEl.innerHTML = '<span class="bs-status-highlight">룰렛 결과!</span>';
     } else if (view.phase === 'gameover') {
       statusEl.innerHTML = '게임 종료!';
     }
@@ -541,11 +725,11 @@ function renderBSView(view) {
       if (cardsEl) {
         var rCards = '';
         view.revealedCards.forEach(function(card) {
-          var info = BS_CARDS[card] || BS_CARDS.beer;
+          var cInfo = BS_CARDS[card] || BS_CARDS.beer;
           var isValid = (card === view.designatedDrink || card === 'water');
-          rCards += '<div class="bs-reveal-card ' + info.cssClass + (isValid ? ' valid' : ' invalid') + '">' +
-            '<div class="bs-card-emoji">' + info.emoji + '</div>' +
-            '<div class="bs-card-name">' + info.name + '</div>' +
+          rCards += '<div class="bs-reveal-card ' + cInfo.cssClass + (isValid ? ' valid' : ' invalid') + '">' +
+            '<div class="bs-card-emoji">' + cInfo.emoji + '</div>' +
+            '<div class="bs-card-name">' + cInfo.name + '</div>' +
             '</div>';
         });
         cardsEl.innerHTML = rCards;
@@ -554,10 +738,10 @@ function renderBSView(view) {
       if (resultEl) {
         if (view.revealResult === 'caught') {
           resultEl.className = 'bs-reveal-result liar-caught';
-          resultEl.textContent = '거짓말 적발! ' + (view.penaltyPlayer ? view.penaltyPlayer.name : '') + '에게 글라스 카드 전달!';
+          resultEl.textContent = '거짓말 적발! ' + (view.penaltyPlayer ? view.penaltyPlayer.name : '') + ' → 룰렛 스핀!';
         } else {
           resultEl.className = 'bs-reveal-result liar-wrong';
-          resultEl.textContent = '정직했음! ' + (view.penaltyPlayer ? view.penaltyPlayer.name : '') + '이(가) 글라스 카드 수거!';
+          resultEl.textContent = '정직했음! ' + (view.penaltyPlayer ? view.penaltyPlayer.name : '') + ' → 룰렛 스핀!';
         }
       }
     } else {
@@ -581,7 +765,7 @@ function renderBSView(view) {
 function bsToggleCard(idx) {
   if (!_bsView) return;
   var myPlayer = _bsView.players.find(function(p) { return p.id === state.myId; });
-  if (!myPlayer || myPlayer.finished) return;
+  if (!myPlayer || myPlayer.eliminated) return;
   if (_bsView.phase !== 'playing') return;
   if (_bsView.turnPlayerId !== state.myId) return;
 
@@ -589,7 +773,7 @@ function bsToggleCard(idx) {
   if (pos !== -1) {
     _bsSelected.splice(pos, 1);
   } else {
-    if (_bsSelected.length >= 3) return; // max 3
+    if (_bsSelected.length >= 3) return;
     _bsSelected.push(idx);
   }
 
@@ -638,6 +822,22 @@ function handleBSAnim(msg) {
     if (typeof bsAnimateLiarReveal === 'function') {
       bsAnimateLiarReveal(null);
     }
+  } else if (msg.anim === 'roulette-setup') {
+    if (typeof bsAnimateRouletteSetup === 'function') {
+      bsAnimateRouletteSetup(msg.hitSlots, msg.targetName);
+    }
+  } else if (msg.anim === 'roulette-spin') {
+    if (typeof bsAnimateRouletteSpin === 'function') {
+      bsAnimateRouletteSpin(msg.slotIndex, msg.hitSlots);
+    }
+  } else if (msg.anim === 'roulette-result') {
+    if (typeof bsAnimateRouletteResult === 'function') {
+      bsAnimateRouletteResult(msg.result, msg.targetName);
+    }
+  } else if (msg.anim === 'camera-return') {
+    if (typeof bsAnimateCameraReturn === 'function') {
+      bsAnimateCameraReturn();
+    }
   }
 }
 
@@ -656,14 +856,22 @@ function handleBSResult(msg) {
     var html = '';
     var medals = ['🥇', '🥈', '🥉', '4️⃣'];
     msg.rankings.forEach(function(p, i) {
-      var isLoser = p.isLoser;
       var isMe = p.id === state.myId;
-      html += '<div class="bs-rank-row' + (isLoser ? ' loser' : '') + '">' +
+      var label, labelClass;
+      if (p.isWinner) {
+        label = '🏆 생존!';
+        labelClass = 'safe';
+      } else if (p.isLoser) {
+        label = '🍺 벌칙! (' + (p.glassPileCount || 0) + '장)';
+        labelClass = 'penalty';
+      } else {
+        label = '💀 탈락';
+        labelClass = 'penalty';
+      }
+      html += '<div class="bs-rank-row' + (p.isLoser ? ' loser' : '') + (p.isWinner ? ' winner' : '') + '">' +
         '<div class="bs-rank-pos">' + (medals[i] || (i + 1)) + '</div>' +
         '<div class="bs-rank-name">' + p.avatar + ' ' + escapeHtml(p.name) + (isMe ? ' (나)' : '') + '</div>' +
-        '<div class="bs-rank-label ' + (isLoser ? 'penalty' : 'safe') + '">' +
-        (isLoser ? '🍺 벌칙!' : '통과') +
-        '</div></div>';
+        '<div class="bs-rank-label ' + labelClass + '">' + label + '</div></div>';
     });
     rankEl.innerHTML = html;
   }
@@ -671,14 +879,13 @@ function handleBSResult(msg) {
   // Record game stats
   var myResult = msg.rankings.find(function(p) { return p.id === state.myId; });
   if (myResult) {
-    var won = !myResult.isLoser;
+    var won = myResult.isWinner;
     if (typeof recordGame === 'function') recordGame(won, won ? 30 : 5);
   }
 }
 
 // ===== CLOSE GAME =====
 function closeBombShotGame() {
-  // Cleanup timers
   _bsTimers.forEach(function(t) { clearTimeout(t); });
   _bsTimers = [];
   _bsSelected = [];
