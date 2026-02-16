@@ -150,21 +150,21 @@
     scene.add(glassGroup);
   }
 
-  // ===== LIQUID + FOAM =====
+  // ===== LIQUID + FOAM (children of glassGroup for sync) =====
   function createLiquid() {
     var mat = new THREE.MeshPhongMaterial({
       color: drinkColor, transparent: true, opacity: 0.85,
       shininess: 70, emissive: drinkColor, emissiveIntensity: 0.15
     });
     liquidMesh = new THREE.Mesh(new THREE.CylinderGeometry(GLASS_R * 0.76, GLASS_R * 0.72, 0.01, 24, 1, false), mat);
-    liquidMesh.position.set(0.6, GLASS_Y, 0.3);
+    liquidMesh.position.set(0, 0, 0);
     liquidMesh.visible = false;
-    scene.add(liquidMesh);
+    glassGroup.add(liquidMesh);
 
     var fMat = new THREE.MeshPhongMaterial({ color: 0xfff8e0, transparent: true, opacity: 0.6, shininess: 10 });
     foamMesh = new THREE.Mesh(new THREE.CylinderGeometry(GLASS_R * 0.74, GLASS_R * 0.76, 0.04, 24), fMat);
     foamMesh.visible = false;
-    scene.add(foamMesh);
+    glassGroup.add(foamMesh);
   }
 
   function updateLiquid(dt) {
@@ -173,9 +173,9 @@
     liquidMesh.visible = true;
     var h = Math.max(0.04, liquidLevel * LIQUID_MAX);
     liquidMesh.scale.set(1, h / 0.01, 1);
-    liquidMesh.position.y = GLASS_Y + h / 2;
+    liquidMesh.position.y = h / 2;
     foamMesh.visible = liquidLevel > 0.04;
-    foamMesh.position.set(0.6, GLASS_Y + h + 0.015, 0.3);
+    foamMesh.position.set(0, h + 0.015, 0);
     var fw = 0.96 + Math.sin(animTime * 1.8) * 0.04;
     foamMesh.scale.set(fw, 1, fw);
     foamMesh.rotation.y += dt * 0.2;
@@ -188,12 +188,15 @@
   }
 
   function updateBubbles(dt) {
+    var gx = glassGroup ? glassGroup.position.x : 0.6;
+    var gy = glassGroup ? glassGroup.position.y : GLASS_Y;
+    var gz = glassGroup ? glassGroup.position.z : 0.3;
     if (liquidLevel > 0.04 && Math.random() < dt * 5 && bubbles.length < 15) {
       var m = new THREE.Mesh(bubbleGeo, bubbleMat);
       var s = 0.008 + Math.random() * 0.012;
       m.scale.set(s, s, s);
       var a = Math.random() * Math.PI * 2, r = Math.random() * GLASS_R * 0.5;
-      m.position.set(0.6 + Math.cos(a) * r, GLASS_Y + 0.04, 0.3 + Math.sin(a) * r);
+      m.position.set(gx + Math.cos(a) * r, gy + 0.04, gz + Math.sin(a) * r);
       scene.add(m);
       bubbles.push({ mesh: m, spd: 0.1 + Math.random() * 0.18, wF: 2 + Math.random() * 3, wA: 0.005, t: Math.random() * 6 });
     }
@@ -202,7 +205,7 @@
       var b = bubbles[i]; b.t += dt;
       b.mesh.position.y += b.spd * dt;
       b.mesh.position.x += Math.sin(b.t * b.wF) * b.wA * dt;
-      maxY = GLASS_Y + Math.max(liquidLevel, 0.04) * LIQUID_MAX;
+      maxY = gy + Math.max(liquidLevel, 0.04) * LIQUID_MAX;
       if (b.mesh.position.y >= maxY) { scene.remove(b.mesh); bubbles.splice(i, 1); }
     }
   }

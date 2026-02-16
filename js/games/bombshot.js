@@ -625,16 +625,30 @@ function renderBSView(view) {
     if (rPhase === 'roulette-setup' || rPhase === 'roulette-spin' || rPhase === 'roulette-result' || rPhase === 'camera-return') {
       rouletteStatusEl.style.display = 'block';
       var targetName = view.rouletteTarget ? view.rouletteTarget.name : '???';
+      // Build slot legend from view data
+      var slotLegend = '';
+      if (view.rouletteSlots && (rPhase === 'roulette-setup' || rPhase === 'roulette-spin')) {
+        var slotIcons = view.rouletteSlots.map(function(s) {
+          if (s.type === 'bombshot') return '<span style="color:#ff3355;">💣</span>';
+          if (s.type === 'penalty') return '<span style="color:#ffaa33;">🔸</span>';
+          return '<span style="color:#33cc66;">✓</span>';
+        });
+        slotLegend = '<div style="font-size:12px;margin-top:4px;opacity:0.85;letter-spacing:2px;">' +
+          slotIcons.join(' ') +
+          '</div>' +
+          '<div style="font-size:10px;margin-top:2px;color:var(--text-dim);">' +
+          '💣폭탄주 · 🔸벌칙 · ✓세이프</div>';
+      }
       if (rPhase === 'roulette-setup') {
-        rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🍺💣 ' + escapeHtml(targetName) + '의 폭탄주 룰렛!</span>';
+        rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🍺💣 ' + escapeHtml(targetName) + '의 폭탄주 룰렛!</span>' + slotLegend;
       } else if (rPhase === 'roulette-spin') {
-        rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🎰 폭탄주 룰렛 회전 중...</span>';
+        rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🎰 폭탄주 룰렛 회전 중...</span>' + slotLegend;
       } else if (rPhase === 'roulette-result') {
         if (view.rouletteResult === 'bombshot') {
           rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-hit">🍺💥 ' + escapeHtml(targetName) + ' 폭탄주 당첨! 게임오버!</span>';
         } else if (view.rouletteResult === 'penalty') {
           var penLabel = view.rouletteResultLabel || '벌칙';
-          rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-hit">🔸 ' + escapeHtml(targetName) + ' 벌칙: ' + escapeHtml(penLabel) + '!</span>';
+          rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-hit" style="color:#ffaa33;">🔸 ' + escapeHtml(targetName) + ' 벌칙: <strong>' + escapeHtml(penLabel) + '</strong>!</span>';
         } else {
           rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-safe">😮‍💨 ' + escapeHtml(targetName) + ' 세이프! 살았다!</span>';
         }
@@ -840,6 +854,10 @@ function handleBSAnim(msg) {
   } else if (msg.anim === 'roulette-result') {
     if (typeof bsAnimateRouletteResult === 'function') {
       bsAnimateRouletteResult(msg.result, msg.targetName);
+    }
+    // Show toast for penalty results
+    if (msg.result === 'penalty' && msg.resultLabel) {
+      showToast('🔸 ' + (msg.targetName || '') + ' 벌칙: ' + msg.resultLabel + '!');
     }
   } else if (msg.anim === 'camera-return') {
     if (typeof bsAnimateCameraReturn === 'function') {
