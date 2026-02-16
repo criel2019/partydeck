@@ -798,8 +798,8 @@
     var segArcSegs = 24; // smoothness of arc
 
     for (var i = 0; i < 6; i++) {
-      var sA = (i / 6) * Math.PI * 2;
-      var eA = ((i + 1) / 6) * Math.PI * 2;
+      var sA = (i / 6) * Math.PI * 2 - Math.PI / 2;
+      var eA = ((i + 1) / 6) * Math.PI * 2 - Math.PI / 2;
       var slot = slots && slots[i] ? slots[i] : { type: 'safe', label: 'SAFE' };
 
       var shape = new THREE.Shape();
@@ -827,7 +827,7 @@
     // ── Label sprites floating above each segment (always face camera) ──
     for (var li = 0; li < 6; li++) {
       var lSlot = slots && slots[li] ? slots[li] : { type: 'safe', label: 'SAFE' };
-      var lmA = ((li + 0.5) / 6) * Math.PI * 2;
+      var lmA = ((li + 0.5) / 6) * Math.PI * 2 - Math.PI / 2;
       var labelDist = segR * 0.58;
 
       // Small canvas per label
@@ -868,7 +868,7 @@
       var sprite = new THREE.Sprite(spriteMat);
 
       var sx = Math.cos(lmA) * labelDist;
-      var sz = Math.sin(lmA) * labelDist;
+      var sz = -Math.sin(lmA) * labelDist;
       sprite.position.set(sx, WH / 2 + 0.08, sz);
       sprite.scale.set(0.22, 0.11, 1);
       rouletteDiscGroup.add(sprite);
