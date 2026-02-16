@@ -342,7 +342,7 @@ function processBSLiar(callerId) {
       handleBSAnim({ anim: 'roulette-spin', slotIndex: slotIndex, hitSlots: slots });
       broadcastBSState();
 
-      // Phase 3: roulette-spin (5s) — ball rolls
+      // Phase 3: roulette-spin (5.5s) — ball rolls
       var t3 = setTimeout(function() {
         if (!bsState) return;
         bsState.phase = 'roulette-result';
@@ -378,7 +378,7 @@ function processBSLiar(callerId) {
           _bsTimers.push(t5);
         }, 3000);
         _bsTimers.push(t4);
-      }, 5000);
+      }, 5800);
       _bsTimers.push(t3);
     }, 1500);
     _bsTimers.push(t2);
@@ -614,14 +614,14 @@ function renderBSView(view) {
       rouletteStatusEl.style.display = 'block';
       var targetName = view.rouletteTarget ? view.rouletteTarget.name : '???';
       if (rPhase === 'roulette-setup') {
-        rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🎰 ' + escapeHtml(targetName) + '의 룰렛 스핀!</span>';
+        rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🍺💣 ' + escapeHtml(targetName) + '의 폭탄주 룰렛!</span>';
       } else if (rPhase === 'roulette-spin') {
-        rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🎰 공이 굴러가는 중...</span>';
+        rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🎰 폭탄주 룰렛 회전 중...</span>';
       } else if (rPhase === 'roulette-result') {
         if (view.rouletteResult === 'hit') {
-          rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-hit">💥 ' + escapeHtml(targetName) + ' 당첨! 탈락!</span>';
+          rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-hit">🍺💥 ' + escapeHtml(targetName) + ' 폭탄주 당첨! 게임오버!</span>';
         } else {
-          rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-safe">😮‍💨 ' + escapeHtml(targetName) + ' 세이프!</span>';
+          rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-safe">😮‍💨 ' + escapeHtml(targetName) + ' 세이프! 살았다!</span>';
         }
       } else {
         rouletteStatusEl.innerHTML = '';
@@ -661,7 +661,7 @@ function renderBSView(view) {
       var mdCls = md < myPlayer.rouletteHitCount ? 'hit' : 'safe';
       myDotsHtml += '<span class="bs-roulette-dot ' + mdCls + '"></span>';
     }
-    myDotsHtml += '<span class="bs-my-roulette-label">내 위험도</span></div>';
+    myDotsHtml += '<span class="bs-my-roulette-label">폭탄주 위험도</span></div>';
     var myRouletteEl = document.getElementById('bsMyRoulette');
     if (myRouletteEl) myRouletteEl.innerHTML = myDotsHtml;
   } else {
@@ -701,9 +701,9 @@ function renderBSView(view) {
     } else if (view.phase === 'liar-reveal') {
       statusEl.innerHTML = '카드 공개 중...';
     } else if (view.phase === 'roulette-setup' || view.phase === 'roulette-spin') {
-      statusEl.innerHTML = '<span class="bs-status-highlight">🎰 룰렛 진행 중</span>';
+      statusEl.innerHTML = '<span class="bs-status-highlight">🍺💣 폭탄주 룰렛 진행 중</span>';
     } else if (view.phase === 'roulette-result') {
-      statusEl.innerHTML = '<span class="bs-status-highlight">룰렛 결과!</span>';
+      statusEl.innerHTML = '<span class="bs-status-highlight">폭탄주 룰렛 결과!</span>';
     } else if (view.phase === 'gameover') {
       statusEl.innerHTML = '게임 종료!';
     }
@@ -738,10 +738,10 @@ function renderBSView(view) {
       if (resultEl) {
         if (view.revealResult === 'caught') {
           resultEl.className = 'bs-reveal-result liar-caught';
-          resultEl.textContent = '거짓말 적발! ' + (view.penaltyPlayer ? view.penaltyPlayer.name : '') + ' → 룰렛 스핀!';
+          resultEl.textContent = '거짓말 적발! ' + (view.penaltyPlayer ? view.penaltyPlayer.name : '') + ' → 폭탄주 룰렛!';
         } else {
           resultEl.className = 'bs-reveal-result liar-wrong';
-          resultEl.textContent = '정직했음! ' + (view.penaltyPlayer ? view.penaltyPlayer.name : '') + ' → 룰렛 스핀!';
+          resultEl.textContent = '정직했음! ' + (view.penaltyPlayer ? view.penaltyPlayer.name : '') + ' → 폭탄주 룰렛!';
         }
       }
     } else {
@@ -849,7 +849,7 @@ function handleBSResult(msg) {
   if (goEl) goEl.style.display = 'flex';
 
   var titleEl = document.getElementById('bsGameOverTitle');
-  if (titleEl) titleEl.textContent = '게임 종료! 🍺';
+  if (titleEl) titleEl.textContent = '🍺💣 폭탄주 게임 종료!';
 
   var rankEl = document.getElementById('bsRankings');
   if (rankEl) {
@@ -862,10 +862,10 @@ function handleBSResult(msg) {
         label = '🏆 생존!';
         labelClass = 'safe';
       } else if (p.isLoser) {
-        label = '🍺 벌칙! (' + (p.glassPileCount || 0) + '장)';
+        label = '🍺💣 폭탄주 꼴등!';
         labelClass = 'penalty';
       } else {
-        label = '💀 탈락';
+        label = '💀 폭탄주 탈락';
         labelClass = 'penalty';
       }
       html += '<div class="bs-rank-row' + (p.isLoser ? ' loser' : '') + (p.isWinner ? ' winner' : '') + '">' +

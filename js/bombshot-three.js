@@ -789,13 +789,13 @@
     // ── Inner spinning disc ──
     rouletteDiscGroup = new THREE.Group();
 
-    // Canvas texture for segment colors (enhanced gradients)
+    // Canvas texture for segment colors — clear 폭탄주/세이프 labels
     var canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 512;
+    canvas.width = 768; canvas.height = 768;
     var ctx = canvas.getContext('2d');
-    var cxC = 256, cyC = 256, rC = 236;
+    var cxC = 384, cyC = 384, rC = 360;
 
-    ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, 512, 512);
+    ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, 768, 768);
 
     for (var i = 0; i < 6; i++) {
       var sA = (i / 6) * Math.PI * 2 - Math.PI / 2;
@@ -808,51 +808,87 @@
 
       // Radial gradient per segment
       var grd = ctx.createRadialGradient(
-        cxC + Math.cos(mA) * 70, cyC + Math.sin(mA) * 70, 5, cxC, cyC, rC
+        cxC + Math.cos(mA) * 100, cyC + Math.sin(mA) * 100, 5, cxC, cyC, rC
       );
       if (isHit) {
-        grd.addColorStop(0, '#ff4466'); grd.addColorStop(0.4, '#cc2244'); grd.addColorStop(1, '#881133');
+        grd.addColorStop(0, '#ff3355'); grd.addColorStop(0.35, '#cc1133'); grd.addColorStop(1, '#770022');
       } else {
-        grd.addColorStop(0, '#44dd77'); grd.addColorStop(0.4, '#228844'); grd.addColorStop(1, '#0e5528');
+        grd.addColorStop(0, '#33cc66'); grd.addColorStop(0.35, '#1a8844'); grd.addColorStop(1, '#0a4422');
       }
       ctx.fillStyle = grd; ctx.fill();
 
-      // Gold border
-      ctx.strokeStyle = '#d4a843'; ctx.lineWidth = 3; ctx.stroke();
-
-      // Inner pattern lines (subtle radial stripes)
-      ctx.save(); ctx.clip();
-      ctx.strokeStyle = isHit ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.05)';
-      ctx.lineWidth = 1;
-      for (var ln = 0; ln < 5; ln++) {
-        var lnA = sA + (eA - sA) * ((ln + 1) / 6);
-        ctx.beginPath(); ctx.moveTo(cxC, cyC);
-        ctx.lineTo(cxC + Math.cos(lnA) * rC, cyC + Math.sin(lnA) * rC);
-        ctx.stroke();
+      // Hit segments: diagonal warning stripes
+      if (isHit) {
+        ctx.save(); ctx.clip();
+        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+        ctx.lineWidth = 4;
+        for (var stripe = -20; stripe < 20; stripe++) {
+          ctx.beginPath();
+          ctx.moveTo(cxC + stripe * 25, cyC - rC);
+          ctx.lineTo(cxC + stripe * 25 + rC, cyC + rC);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
-      ctx.restore();
 
-      // Labels with shadow
-      var lR = rC * 0.6;
+      // Gold border
+      ctx.strokeStyle = '#d4a843'; ctx.lineWidth = 4; ctx.stroke();
+
+      // ── ICON (large, centered in segment) ──
+      var iconR = rC * 0.48;
       ctx.save();
-      ctx.translate(cxC + Math.cos(mA) * lR, cyC + Math.sin(mA) * lR);
+      ctx.translate(cxC + Math.cos(mA) * iconR, cyC + Math.sin(mA) * iconR);
       ctx.rotate(mA + Math.PI / 2);
-      ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 6;
-      ctx.font = 'bold 36px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillStyle = '#fff';
-      ctx.fillText(isHit ? '💥' : '✓', 0, 12);
+      ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 8;
+
+      if (isHit) {
+        // 폭탄주 아이콘: 큰 폭탄 이모지
+        ctx.font = 'bold 48px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('💣', 0, -8);
+      } else {
+        // 세이프 아이콘: 큰 체크
+        ctx.font = 'bold 52px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#aaffcc';
+        ctx.fillText('✓', 0, -4);
+      }
+      ctx.shadowBlur = 0; ctx.restore();
+
+      // ── TEXT LABEL (below icon, large & readable) ──
+      var labelR = rC * 0.72;
+      ctx.save();
+      ctx.translate(cxC + Math.cos(mA) * labelR, cyC + Math.sin(mA) * labelR);
+      ctx.rotate(mA + Math.PI / 2);
+      ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 6;
+      ctx.textAlign = 'center';
+
+      if (isHit) {
+        ctx.font = 'bold 26px "Noto Sans KR", sans-serif';
+        ctx.fillStyle = '#ffe066';
+        ctx.fillText('폭탄주', 0, 8);
+      } else {
+        ctx.font = 'bold 24px "Noto Sans KR", sans-serif';
+        ctx.fillStyle = '#ccffdd';
+        ctx.fillText('세이프', 0, 8);
+      }
       ctx.shadowBlur = 0; ctx.restore();
     }
 
-    // Center decorative circle
-    var cgrd = ctx.createRadialGradient(cxC, cyC, 0, cxC, cyC, 38);
-    cgrd.addColorStop(0, '#ffe066'); cgrd.addColorStop(0.5, '#d4a843'); cgrd.addColorStop(1, '#8b6914');
-    ctx.beginPath(); ctx.arc(cxC, cyC, 38, 0, Math.PI * 2);
+    // Center decorative circle — 폭탄주 로고
+    var cgrd = ctx.createRadialGradient(cxC, cyC, 0, cxC, cyC, 52);
+    cgrd.addColorStop(0, '#ffe066'); cgrd.addColorStop(0.5, '#d4a843'); cgrd.addColorStop(1, '#6b4d14');
+    ctx.beginPath(); ctx.arc(cxC, cyC, 52, 0, Math.PI * 2);
     ctx.fillStyle = cgrd; ctx.fill();
-    ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 3; ctx.stroke();
+    // Center emoji
+    ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 4;
+    ctx.fillText('🍺', cxC, cyC + 12);
+    ctx.shadowBlur = 0;
     // Inner ring
-    ctx.beginPath(); ctx.arc(cxC, cyC, 28, 0, Math.PI * 2);
-    ctx.strokeStyle = '#8b6914'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cxC, cyC, 40, 0, Math.PI * 2);
+    ctx.strokeStyle = '#8b6914'; ctx.lineWidth = 2; ctx.stroke();
 
     var discTex = new THREE.CanvasTexture(canvas);
     var disc = new THREE.Mesh(
