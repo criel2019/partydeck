@@ -198,6 +198,12 @@
     </div>
   </div>
 
+  <!-- Bombshot: Host penalty setup + config display for all -->
+  <div id="bsLobbyArea" style="display:none;">
+    <button class="btn mf-lobby-setup-btn" id="bsSetupBtn" style="display:none;" onclick="bsOpenSetup()">🍺 벌칙 설정</button>
+    <div id="bsConfigDisplay" class="mf-config-display" style="display:none;"></div>
+  </div>
+
   <div id="waitingMsg" style="text-align:center; color:var(--text-dim); font-size:13px; padding:16px 0;">
     <div class="spinner"></div>
     <div style="margin-top:8px;" id="waitingText">호스트가 게임을 시작하길 대기 중...</div>
@@ -284,6 +290,42 @@
     <div class="mf-setup-footer">
       <button class="mf-setup-btn cancel" onclick="mfCloseSetup()">취소</button>
       <button class="mf-setup-btn confirm" onclick="mfConfirmSetup()">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOMBSHOT SETUP OVERLAY -->
+<div class="mf-setup-overlay" id="bsSetupOverlay" style="display:none;">
+  <div class="mf-setup-modal" style="max-width:360px;">
+    <div class="mf-setup-header">
+      <div class="mf-setup-title">🍺 폭탄주 벌칙 설정</div>
+      <div class="mf-setup-role-counter" style="font-size:12px;">
+        룰렛: 폭탄주 2칸 / 벌칙 2칸 / 세이프 2칸
+      </div>
+    </div>
+    <div class="mf-setup-scroll" style="padding:12px 16px;">
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">
+        벌칙 칸(2칸)에 표시할 벌칙을 1~3개 설정하세요.<br>
+        <span style="font-size:11px;opacity:0.7;">2칸에 랜덤 배치됩니다.</span>
+      </div>
+      <div id="bsPenaltyInputs">
+        <div class="bs-penalty-row" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:13px;min-width:50px;">벌칙 1</span>
+          <input type="text" class="bs-penalty-input" id="bsPenalty1" value="원샷" maxlength="8" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #444;background:#1a1a2e;color:#fff;font-size:14px;">
+        </div>
+        <div class="bs-penalty-row" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:13px;min-width:50px;">벌칙 2</span>
+          <input type="text" class="bs-penalty-input" id="bsPenalty2" value="" maxlength="8" placeholder="(선택)" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #444;background:#1a1a2e;color:#fff;font-size:14px;">
+        </div>
+        <div class="bs-penalty-row" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:13px;min-width:50px;">벌칙 3</span>
+          <input type="text" class="bs-penalty-input" id="bsPenalty3" value="" maxlength="8" placeholder="(선택)" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #444;background:#1a1a2e;color:#fff;font-size:14px;">
+        </div>
+      </div>
+    </div>
+    <div class="mf-setup-footer">
+      <button class="mf-setup-btn cancel" onclick="bsCloseSetup()">취소</button>
+      <button class="mf-setup-btn confirm" onclick="bsConfirmSetup()">확인</button>
     </div>
   </div>
 </div>

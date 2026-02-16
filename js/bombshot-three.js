@@ -36,7 +36,7 @@
   var rouletteSpinTime = 0;
   var rouletteSpinDuration = 5.5;
   var rouletteTargetSlot = 0;
-  var rouletteHitSlots = null;
+  var rouletteSlots = null; // array of {type, label} objects
   var rouletteDiscGroup = null;
   var rouletteDividers = [];
   var rouletteBallSparks = [];
@@ -724,7 +724,7 @@
   }
 
   // ===== ROULETTE WHEEL (v4 — Premium 3D) =====
-  function createRouletteWheel(hitSlots) {
+  function createRouletteWheel(slots) {
     if (rouletteGroup) removeRouletteWheel();
 
     rouletteGroup = new THREE.Group();
@@ -801,24 +801,27 @@
       var sA = (i / 6) * Math.PI * 2 - Math.PI / 2;
       var eA = ((i + 1) / 6) * Math.PI * 2 - Math.PI / 2;
       var mA = (sA + eA) / 2;
-      var isHit = hitSlots && hitSlots[i] === 'hit';
+      var slot = slots && slots[i] ? slots[i] : { type: 'safe', label: '세이프' };
+      var slotType = slot.type; // 'bombshot' | 'penalty' | 'safe'
 
       ctx.beginPath(); ctx.moveTo(cxC, cyC);
       ctx.arc(cxC, cyC, rC, sA, eA); ctx.closePath();
 
-      // Radial gradient per segment
+      // Radial gradient per segment — 3 distinct colors
       var grd = ctx.createRadialGradient(
         cxC + Math.cos(mA) * 100, cyC + Math.sin(mA) * 100, 5, cxC, cyC, rC
       );
-      if (isHit) {
+      if (slotType === 'bombshot') {
         grd.addColorStop(0, '#ff3355'); grd.addColorStop(0.35, '#cc1133'); grd.addColorStop(1, '#770022');
+      } else if (slotType === 'penalty') {
+        grd.addColorStop(0, '#ffaa33'); grd.addColorStop(0.35, '#cc7711'); grd.addColorStop(1, '#774400');
       } else {
         grd.addColorStop(0, '#33cc66'); grd.addColorStop(0.35, '#1a8844'); grd.addColorStop(1, '#0a4422');
       }
       ctx.fillStyle = grd; ctx.fill();
 
-      // Hit segments: diagonal warning stripes
-      if (isHit) {
+      // Bombshot segments: diagonal warning stripes
+      if (slotType === 'bombshot') {
         ctx.save(); ctx.clip();
         ctx.strokeStyle = 'rgba(0,0,0,0.15)';
         ctx.lineWidth = 4;
@@ -826,6 +829,20 @@
           ctx.beginPath();
           ctx.moveTo(cxC + stripe * 25, cyC - rC);
           ctx.lineTo(cxC + stripe * 25 + rC, cyC + rC);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // Penalty segments: subtle cross-hatch
+      if (slotType === 'penalty') {
+        ctx.save(); ctx.clip();
+        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+        ctx.lineWidth = 3;
+        for (var stripe = -20; stripe < 20; stripe++) {
+          ctx.beginPath();
+          ctx.moveTo(cxC + stripe * 30, cyC - rC);
+          ctx.lineTo(cxC + stripe * 30 - rC * 0.5, cyC + rC);
           ctx.stroke();
         }
         ctx.restore();
@@ -841,13 +858,15 @@
       ctx.rotate(mA + Math.PI / 2);
       ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 8;
 
-      if (isHit) {
-        // 폭탄주 아이콘: 큰 폭탄 이모지
+      if (slotType === 'bombshot') {
         ctx.font = 'bold 48px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('💣', 0, -8);
+      } else if (slotType === 'penalty') {
+        ctx.font = 'bold 44px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🔸', 0, -8);
       } else {
-        // 세이프 아이콘: 큰 체크
         ctx.font = 'bold 52px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillStyle = '#aaffcc';
@@ -863,10 +882,14 @@
       ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 6;
       ctx.textAlign = 'center';
 
-      if (isHit) {
+      if (slotType === 'bombshot') {
         ctx.font = 'bold 26px "Noto Sans KR", sans-serif';
         ctx.fillStyle = '#ffe066';
         ctx.fillText('폭탄주', 0, 8);
+      } else if (slotType === 'penalty') {
+        ctx.font = 'bold 22px "Noto Sans KR", sans-serif';
+        ctx.fillStyle = '#fff0cc';
+        ctx.fillText(slot.label || '벌칙', 0, 8);
       } else {
         ctx.font = 'bold 24px "Noto Sans KR", sans-serif';
         ctx.fillStyle = '#ccffdd';
@@ -989,7 +1012,7 @@
     rouletteGroup.add(rouletteBall);
 
     scene.add(rouletteGroup);
-    rouletteHitSlots = hitSlots;
+    rouletteSlots = slots;
     rouletteBaseAngle = 0;
     rouletteBallSparks = [];
   }
@@ -1599,28 +1622,28 @@
   };
 
   // ===== ROULETTE ANIMATION PUBLIC API =====
-  window.bsAnimateRouletteSetup = function(hitSlots, targetName) {
+  window.bsAnimateRouletteSetup = function(slots, targetName) {
     if (!isInitialized) return;
     // Create wheel and start entering
-    createRouletteWheel(hitSlots);
+    createRouletteWheel(slots);
     rouletteState = 'entering';
     rouletteEnterTime = 0;
     // Camera transition to roulette view
     startCameraTransition('roulette');
   };
 
-  window.bsAnimateRouletteSpin = function(slotIndex, hitSlots) {
+  window.bsAnimateRouletteSpin = function(slotIndex, slots) {
     if (!isInitialized) return;
     rouletteTargetSlot = slotIndex;
     rouletteState = 'spinning';
     rouletteSpinTime = 0;
-    rouletteHitSlots = hitSlots;
+    rouletteSlots = slots;
   };
 
   window.bsAnimateRouletteResult = function(result, targetName) {
     if (!isInitialized) return;
-    // Trigger bartender reaction
-    btReaction = result === 'hit' ? 'hit' : 'safe';
+    // Trigger bartender reaction: bombshot or penalty = hit reaction, safe = safe
+    btReaction = (result === 'bombshot' || result === 'penalty') ? 'hit' : 'safe';
     btReactionTime = 0;
   };
 

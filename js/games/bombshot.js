@@ -44,6 +44,8 @@ var bsState = null;  // host-side full state
 var _bsView = null;  // client-side view
 var _bsSelected = []; // local selected card indices
 var _bsTimers = [];
+var _bsSetupDone = false;
+var _bsPenalties = ['원샷']; // configured penalty labels (1-3)
 
 var BS_CARDS = {
   beer:   { emoji: '🍺', name: '맥주',   cssClass: 'bs-card-beer' },
@@ -53,6 +55,52 @@ var BS_CARDS = {
 };
 
 var BS_DRINKS = ['beer', 'soju', 'liquor'];
+
+// ===== LOBBY SETUP =====
+function bsOpenSetup() {
+  var overlay = document.getElementById('bsSetupOverlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+function bsCloseSetup() {
+  var overlay = document.getElementById('bsSetupOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+function bsConfirmSetup() {
+  var penalties = [];
+  for (var i = 1; i <= 3; i++) {
+    var input = document.getElementById('bsPenalty' + i);
+    if (input && input.value.trim()) {
+      penalties.push(input.value.trim());
+    }
+  }
+  if (penalties.length === 0) {
+    showToast('벌칙을 최소 1개 입력해주세요');
+    return;
+  }
+  _bsPenalties = penalties;
+  _bsSetupDone = true;
+  bsCloseSetup();
+  broadcast({ type: 'bs-config', penalties: _bsPenalties });
+  bsShowConfigInLobby();
+  showToast('벌칙 설정 완료!');
+}
+function bsHandleConfig(msg) {
+  if (msg.penalties) {
+    _bsPenalties = msg.penalties;
+    _bsSetupDone = true;
+    bsShowConfigInLobby();
+  }
+}
+function bsShowConfigInLobby() {
+  var el = document.getElementById('bsConfigDisplay');
+  if (!el) return;
+  el.style.display = 'block';
+  var html = '<div style="font-size:12px;color:var(--text-dim);padding:6px 10px;">';
+  html += '<strong>🎰 룰렛 구성:</strong> 폭탄주 2칸 / 세이프 2칸 / 벌칙 2칸<br>';
+  html += '<strong>벌칙:</strong> ' + _bsPenalties.map(function(p) { return '🔸' + p; }).join(' ');
+  html += '</div>';
+  el.innerHTML = html;
+}
 
 // ===== DECK & SHUFFLE =====
 function bsCreateDeck() {
@@ -71,20 +119,22 @@ function bsCreateDeck() {
   return deck;
 }
 
-// ===== ROULETTE SLOTS =====
-function generateRouletteSlots(hitCount) {
-  // 6 chambers: hitCount of them are 'hit', rest are 'safe'
-  var slots = [];
-  var i;
-  for (i = 0; i < 6; i++) slots.push('safe');
-  // Randomly distribute hitCount 'hit' slots
-  var indices = [];
-  for (i = 0; i < 6; i++) indices.push(i);
-  // Fisher-Yates partial shuffle to pick hitCount positions
-  for (i = 0; i < hitCount && i < 6; i++) {
-    var j = i + Math.floor(Math.random() * (6 - i));
-    var tmp = indices[i]; indices[i] = indices[j]; indices[j] = tmp;
-    slots[indices[i]] = 'hit';
+// ===== ROULETTE SLOTS (v2: 1/3 bombshot, 1/3 penalty, 1/3 safe) =====
+function generateRouletteSlots(penalties) {
+  // 6 chambers: 2 bombshot, 2 penalty, 2 safe — shuffled randomly
+  var pens = penalties || _bsPenalties || ['원샷'];
+  var slots = [
+    { type: 'bombshot', label: '폭탄주' },
+    { type: 'bombshot', label: '폭탄주' },
+    { type: 'safe', label: '세이프' },
+    { type: 'safe', label: '세이프' },
+    { type: 'penalty', label: pens[Math.floor(Math.random() * pens.length)] },
+    { type: 'penalty', label: pens[Math.floor(Math.random() * pens.length)] }
+  ];
+  // Fisher-Yates shuffle
+  for (var i = slots.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = slots[i]; slots[i] = slots[j]; slots[j] = tmp;
   }
   return slots;
 }
@@ -94,6 +144,10 @@ function startBombShot() {
   if (!state.isHost) return;
   if (state.players.length < 2 || state.players.length > 4) {
     showToast('폭탄주는 2~4명만 플레이 가능합니다');
+    return;
+  }
+  if (!_bsSetupDone) {
+    showToast('먼저 벌칙 설정을 해주세요!');
     return;
   }
 
@@ -108,10 +162,7 @@ function startBombShot() {
       id: p.id,
       name: p.name,
       avatar: p.avatar,
-      cards: deck.splice(0, cardsPerPlayer),
-      eliminated: false,
-      eliminatedOrder: -1,
-      roulette: { chambers: 6, hitCount: 1 }
+      cards: deck.splice(0, cardsPerPlayer)
     };
   });
 
@@ -122,19 +173,21 @@ function startBombShot() {
     designatedDrink: drink,
     turnIdx: 0,
     glassPile: [],
-    lastSubmission: null,  // { playerId, playerName, cards[], count }
+    lastSubmission: null,
     phase: 'playing',
-    eliminatedCount: 0,
+    penalties: _bsPenalties.slice(), // configured penalty labels
     penaltyPlayer: null,
     revealedCards: null,
     liarCallerId: null,
     liarCallerName: null,
-    revealResult: null,     // 'caught' | 'wrong'
+    revealResult: null,
+    savedTurnIdx: -1,  // saved turn position before liar call
     // Roulette state
-    rouletteTarget: null,   // { id, name }
-    rouletteSlots: null,    // ['safe','hit',...] x6
-    rouletteSlotIndex: -1,  // where ball lands
-    rouletteResult: null    // 'safe' | 'hit'
+    rouletteTarget: null,
+    rouletteSlots: null,
+    rouletteSlotIndex: -1,
+    rouletteResult: null,     // 'safe' | 'bombshot' | 'penalty'
+    rouletteResultLabel: null  // penalty text for display
   };
 
   // Broadcast game-start
@@ -157,10 +210,7 @@ function buildBSView(forPlayerId) {
         name: p.name,
         avatar: p.avatar,
         cards: p.id === forPlayerId ? p.cards : null,
-        cardCount: p.cards.length,
-        eliminated: p.eliminated,
-        eliminatedOrder: p.eliminatedOrder,
-        rouletteHitCount: p.roulette.hitCount
+        cardCount: p.cards.length
       };
     }),
     designatedDrink: bs.designatedDrink,
@@ -173,7 +223,6 @@ function buildBSView(forPlayerId) {
       cards: bs.phase === 'liar-reveal' ? bs.lastSubmission.cards : null
     } : null,
     phase: bs.phase,
-    eliminatedCount: bs.eliminatedCount,
     penaltyPlayer: bs.penaltyPlayer,
     revealedCards: bs.phase === 'liar-reveal' ? bs.revealedCards : null,
     liarCallerId: bs.liarCallerId,
@@ -183,7 +232,8 @@ function buildBSView(forPlayerId) {
     rouletteTarget: bs.rouletteTarget,
     rouletteSlots: bs.rouletteSlots,
     rouletteSlotIndex: bs.rouletteSlotIndex,
-    rouletteResult: bs.rouletteResult
+    rouletteResult: bs.rouletteResult,
+    rouletteResultLabel: bs.rouletteResultLabel
   };
 }
 
@@ -208,7 +258,6 @@ function processBSSubmit(peerId, cardIndices) {
   var bs = bsState;
   var player = bs.players[bs.turnIdx];
   if (!player || player.id !== peerId) return;
-  if (player.eliminated) return;
 
   // Validate indices
   if (!Array.isArray(cardIndices) || cardIndices.length < 1 || cardIndices.length > 3) return;
@@ -250,9 +299,7 @@ function processBSSubmit(peerId, cardIndices) {
   // Delay turn advance to give liar call window (3.5s)
   var t = setTimeout(function() {
     if (!bsState || bsState.phase !== 'playing') return;
-    // Check for redeal before advancing
     bsCheckRedeal();
-    if (bsCheckGameEnd()) return;
     bsAdvanceTurn();
     broadcastBSState();
   }, 3500);
@@ -270,7 +317,7 @@ function processBSLiar(callerId) {
 
   var bs = bsState;
   var caller = bs.players.find(function(p) { return p.id === callerId; });
-  if (!caller || caller.eliminated) return;
+  if (!caller) return;
 
   bs.phase = 'liar-reveal';
   bs.liarCallerId = callerId;
@@ -296,7 +343,8 @@ function processBSLiar(callerId) {
   var penalizedPlayer = bs.players.find(function(p) { return p.id === penalizedId; });
   bs.penaltyPlayer = { id: penalizedId, name: penalizedPlayer ? penalizedPlayer.name : '' };
 
-  // No card return — glass pile stays (permanent accumulation)
+  // Save current turn position for resuming after roulette
+  bs.savedTurnIdx = bs.turnIdx;
   bs.lastSubmission = null;
 
   // Broadcast reveal animation
@@ -309,27 +357,26 @@ function processBSLiar(callerId) {
   var t1 = setTimeout(function() {
     if (!bsState) return;
 
-    // Setup roulette for penalty target
     var target = bsState.players.find(function(p) { return p.id === penalizedId; });
-    if (!target || target.eliminated) {
+    if (!target) {
       bsResumeAfterRoulette();
       return;
     }
 
-    var slots = generateRouletteSlots(target.roulette.hitCount);
-    // Determine ball landing
+    var slots = generateRouletteSlots(bsState.penalties);
     var slotIndex = Math.floor(Math.random() * 6);
-    var result = slots[slotIndex]; // 'safe' or 'hit'
+    var landedSlot = slots[slotIndex]; // { type, label }
 
     bsState.rouletteTarget = { id: target.id, name: target.name };
     bsState.rouletteSlots = slots;
     bsState.rouletteSlotIndex = slotIndex;
-    bsState.rouletteResult = result;
+    bsState.rouletteResult = landedSlot.type;      // 'bombshot' | 'penalty' | 'safe'
+    bsState.rouletteResultLabel = landedSlot.label; // display text
     bsState.phase = 'roulette-setup';
 
-    // Broadcast roulette-setup anim
-    broadcast({ type: 'bs-anim', anim: 'roulette-setup', hitSlots: slots, targetName: target.name });
-    handleBSAnim({ anim: 'roulette-setup', hitSlots: slots, targetName: target.name });
+    // Broadcast roulette-setup anim (send full slot data for 3D rendering)
+    broadcast({ type: 'bs-anim', anim: 'roulette-setup', slots: slots, targetName: target.name });
+    handleBSAnim({ anim: 'roulette-setup', slots: slots, targetName: target.name });
     broadcastBSState();
 
     // Phase 2: roulette-setup (1.5s) — camera moves, wheel appears
@@ -337,9 +384,8 @@ function processBSLiar(callerId) {
       if (!bsState) return;
       bsState.phase = 'roulette-spin';
 
-      // Broadcast spin anim
-      broadcast({ type: 'bs-anim', anim: 'roulette-spin', slotIndex: slotIndex, hitSlots: slots });
-      handleBSAnim({ anim: 'roulette-spin', slotIndex: slotIndex, hitSlots: slots });
+      broadcast({ type: 'bs-anim', anim: 'roulette-spin', slotIndex: slotIndex, slots: slots });
+      handleBSAnim({ anim: 'roulette-spin', slotIndex: slotIndex, slots: slots });
       broadcastBSState();
 
       // Phase 3: roulette-spin (5.5s) — ball rolls
@@ -347,33 +393,44 @@ function processBSLiar(callerId) {
         if (!bsState) return;
         bsState.phase = 'roulette-result';
 
-        broadcast({ type: 'bs-anim', anim: 'roulette-result', result: result, targetName: target.name });
-        handleBSAnim({ anim: 'roulette-result', result: result, targetName: target.name });
+        broadcast({ type: 'bs-anim', anim: 'roulette-result', result: landedSlot.type, resultLabel: landedSlot.label, targetName: target.name });
+        handleBSAnim({ anim: 'roulette-result', result: landedSlot.type, resultLabel: landedSlot.label, targetName: target.name });
         broadcastBSState();
 
         // Phase 4: roulette-result (3s) — show result
         var t4 = setTimeout(function() {
           if (!bsState) return;
 
-          // Apply roulette result
-          if (result === 'hit') {
-            // Player eliminated!
-            target.eliminated = true;
-            bsState.eliminatedCount++;
-            target.eliminatedOrder = bsState.eliminatedCount;
-          } else {
-            // Safe — increase hit count for next time
-            target.roulette.hitCount = Math.min(target.roulette.hitCount + 1, 5);
-          }
-
           bsState.phase = 'camera-return';
           broadcast({ type: 'bs-anim', anim: 'camera-return' });
           handleBSAnim({ anim: 'camera-return' });
           broadcastBSState();
 
-          // Phase 5: camera-return (1s)
+          // Phase 5: camera-return (1s), then apply result
           var t5 = setTimeout(function() {
-            bsResumeAfterRoulette();
+            if (!bsState) return;
+
+            if (landedSlot.type === 'bombshot') {
+              // BOMB SHOT → game over immediately!
+              bsState.phase = 'gameover';
+              var result = {
+                type: 'bs-result',
+                bombshotPlayer: { id: target.id, name: target.name },
+                reason: 'bombshot',
+                rankings: bsState.players.map(function(p) {
+                  return {
+                    id: p.id, name: p.name, avatar: p.avatar,
+                    isBombshot: p.id === target.id,
+                    isWinner: p.id !== target.id
+                  };
+                })
+              };
+              broadcast(result);
+              handleBSResult(result);
+            } else {
+              // penalty or safe → continue game
+              bsResumeAfterRoulette();
+            }
           }, 1000);
           _bsTimers.push(t5);
         }, 3000);
@@ -400,13 +457,18 @@ function bsResumeAfterRoulette() {
   bs.rouletteSlots = null;
   bs.rouletteSlotIndex = -1;
   bs.rouletteResult = null;
+  bs.rouletteResultLabel = null;
 
-  if (bsCheckGameEnd()) return;
+  // Restore turn to saved position (original order, not affected by liar call)
+  if (bs.savedTurnIdx >= 0) {
+    bs.turnIdx = bs.savedTurnIdx;
+    bs.savedTurnIdx = -1;
+  }
 
   // Check redeal
   bsCheckRedeal();
 
-  // Continue from next player
+  // Advance to next player from the saved position
   bsAdvanceTurn();
   broadcastBSState();
 }
@@ -420,59 +482,18 @@ function bsAdvanceTurn() {
   for (var i = 0; i < pCount; i++) {
     bs.turnIdx = (bs.turnIdx + 1) % pCount;
     var p = bs.players[bs.turnIdx];
-    // Skip eliminated players and players with 0 cards
-    if (!p.eliminated && p.cards.length > 0) return;
+    // Skip players with 0 cards (no elimination in new rules)
+    if (p.cards.length > 0) return;
   }
-  // If everyone is out of cards or eliminated, check redeal
+  // If everyone is out of cards, redeal
   bsCheckRedeal();
-}
-
-// ===== HOST: CHECK GAME END =====
-function bsCheckGameEnd() {
-  if (!bsState) return false;
-  var bs = bsState;
-  var activePlayers = bs.players.filter(function(p) { return !p.eliminated; });
-
-  if (activePlayers.length <= 1) {
-    bs.phase = 'gameover';
-
-    // Build result — eliminated players ranked by elimination order (first eliminated = last place)
-    var rankings = bs.players.slice().sort(function(a, b) {
-      // Non-eliminated first (winner)
-      if (!a.eliminated && b.eliminated) return -1;
-      if (a.eliminated && !b.eliminated) return 1;
-      // Among eliminated: later elimination = better rank
-      if (a.eliminated && b.eliminated) return b.eliminatedOrder - a.eliminatedOrder;
-      return 0;
-    });
-
-    var result = {
-      type: 'bs-result',
-      rankings: rankings.map(function(p, idx) {
-        return {
-          id: p.id,
-          name: p.name,
-          avatar: p.avatar,
-          eliminatedOrder: p.eliminatedOrder,
-          isLoser: p.eliminatedOrder === 1, // first eliminated = biggest loser
-          isWinner: !p.eliminated,
-          glassPileCount: bsState.glassPile.length
-        };
-      })
-    };
-
-    broadcast(result);
-    handleBSResult(result);
-    return true;
-  }
-  return false;
 }
 
 // ===== HOST: CHECK REDEAL =====
 function bsCheckRedeal() {
   if (!bsState) return;
   var bs = bsState;
-  var activePlayers = bs.players.filter(function(p) { return !p.eliminated; });
+  var activePlayers = bs.players;
 
   // Check if all active players have 0 cards
   var allEmpty = activePlayers.every(function(p) { return p.cards.length === 0; });
@@ -557,26 +578,17 @@ function renderBSView(view) {
     view.players.forEach(function(p) {
       if (p.id === state.myId) return;
       var isTurn = p.id === view.turnPlayerId;
-      var cls = 'bs-opp' + (isTurn ? ' active-turn' : '') + (p.eliminated ? ' eliminated' : '');
+      var cls = 'bs-opp' + (isTurn ? ' active-turn' : '');
       var cardsHtml = '';
       for (var c = 0; c < p.cardCount; c++) {
         cardsHtml += '<div class="bs-opp-card-back"></div>';
       }
-      // Roulette danger dots
-      var dotsHtml = '<div class="bs-opp-roulette">';
-      for (var d = 0; d < 6; d++) {
-        var dotCls = d < p.rouletteHitCount ? 'hit' : 'safe';
-        dotsHtml += '<span class="bs-roulette-dot ' + dotCls + '"></span>';
-      }
-      dotsHtml += '</div>';
-
       oppHtml += '<div class="' + cls + '">' +
         '<div class="bs-opp-turn-marker"></div>' +
         '<div class="bs-opp-avatar">' + p.avatar + '</div>' +
         '<div class="bs-opp-name">' + escapeHtml(p.name) + '</div>' +
-        dotsHtml +
         '<div class="bs-opp-cards">' + cardsHtml + '</div>' +
-        '<div class="bs-opp-count">' + (p.eliminated ? '💀 탈락' : p.cardCount + '장') + '</div>' +
+        '<div class="bs-opp-count">' + p.cardCount + '장</div>' +
         '</div>';
     });
     oppContainer.innerHTML = oppHtml;
@@ -585,7 +597,7 @@ function renderBSView(view) {
   // -- My turn banner --
   var banner = document.getElementById('bsMyTurnBanner');
   if (banner) {
-    if (isMyTurn && view.phase === 'playing' && myPlayer && !myPlayer.eliminated) {
+    if (isMyTurn && view.phase === 'playing' && myPlayer) {
       banner.classList.add('active');
       banner.textContent = '당신의 차례! 카드를 1~3장 선택하세요';
     } else {
@@ -618,8 +630,11 @@ function renderBSView(view) {
       } else if (rPhase === 'roulette-spin') {
         rouletteStatusEl.innerHTML = '<span class="bs-roulette-status">🎰 폭탄주 룰렛 회전 중...</span>';
       } else if (rPhase === 'roulette-result') {
-        if (view.rouletteResult === 'hit') {
+        if (view.rouletteResult === 'bombshot') {
           rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-hit">🍺💥 ' + escapeHtml(targetName) + ' 폭탄주 당첨! 게임오버!</span>';
+        } else if (view.rouletteResult === 'penalty') {
+          var penLabel = view.rouletteResultLabel || '벌칙';
+          rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-hit">🔸 ' + escapeHtml(targetName) + ' 벌칙: ' + escapeHtml(penLabel) + '!</span>';
         } else {
           rouletteStatusEl.innerHTML = '<span class="bs-roulette-result-safe">😮‍💨 ' + escapeHtml(targetName) + ' 세이프! 살았다!</span>';
         }
@@ -634,10 +649,8 @@ function renderBSView(view) {
   // -- My cards --
   var handEl = document.getElementById('bsMyHand');
   if (handEl && myPlayer) {
-    if (myPlayer.eliminated) {
-      handEl.innerHTML = '<div style="color:var(--bs-neon-pink);font-size:13px;padding:12px;">💀 탈락했습니다!</div>';
-    } else if (myPlayer.cards && myPlayer.cards.length > 0) {
-      var canSelect = isMyTurn && view.phase === 'playing' && !myPlayer.eliminated;
+    if (myPlayer.cards && myPlayer.cards.length > 0) {
+      var canSelect = isMyTurn && view.phase === 'playing';
       var handHtml = '';
       myPlayer.cards.forEach(function(card, idx) {
         var cInfo = BS_CARDS[card] || BS_CARDS.beer;
@@ -654,19 +667,10 @@ function renderBSView(view) {
     }
   }
 
-  // -- My roulette danger indicator --
-  if (myPlayer && !myPlayer.eliminated) {
-    var myDotsHtml = '<div class="bs-my-roulette">';
-    for (var md = 0; md < 6; md++) {
-      var mdCls = md < myPlayer.rouletteHitCount ? 'hit' : 'safe';
-      myDotsHtml += '<span class="bs-roulette-dot ' + mdCls + '"></span>';
-    }
-    myDotsHtml += '<span class="bs-my-roulette-label">폭탄주 위험도</span></div>';
-    var myRouletteEl = document.getElementById('bsMyRoulette');
-    if (myRouletteEl) myRouletteEl.innerHTML = myDotsHtml;
-  } else {
-    var myRouletteEl = document.getElementById('bsMyRoulette');
-    if (myRouletteEl) myRouletteEl.innerHTML = '';
+  // -- Roulette info (static composition) --
+  var myRouletteEl = document.getElementById('bsMyRoulette');
+  if (myRouletteEl) {
+    myRouletteEl.innerHTML = '<div style="font-size:11px;color:var(--text-dim);opacity:0.7;">🎰 룰렛: 폭탄주 2 / 벌칙 2 / 세이프 2</div>';
   }
 
   // -- Action buttons --
@@ -675,7 +679,7 @@ function renderBSView(view) {
   var selCount = document.getElementById('bsSelectedCount');
 
   if (submitBtn) {
-    var canSubmit = isMyTurn && view.phase === 'playing' && _bsSelected.length > 0 && _bsSelected.length <= 3 && myPlayer && !myPlayer.eliminated;
+    var canSubmit = isMyTurn && view.phase === 'playing' && _bsSelected.length > 0 && _bsSelected.length <= 3 && myPlayer;
     submitBtn.disabled = !canSubmit;
   }
   if (selCount) selCount.textContent = _bsSelected.length;
@@ -684,7 +688,7 @@ function renderBSView(view) {
     var canLiar = view.phase === 'playing' &&
                   view.lastSubmission &&
                   view.lastSubmission.playerId !== state.myId &&
-                  myPlayer && !myPlayer.eliminated;
+                  myPlayer;
     liarBtn.disabled = !canLiar;
   }
 
@@ -765,7 +769,7 @@ function renderBSView(view) {
 function bsToggleCard(idx) {
   if (!_bsView) return;
   var myPlayer = _bsView.players.find(function(p) { return p.id === state.myId; });
-  if (!myPlayer || myPlayer.eliminated) return;
+  if (!myPlayer) return;
   if (_bsView.phase !== 'playing') return;
   if (_bsView.turnPlayerId !== state.myId) return;
 
@@ -814,6 +818,9 @@ function bsCallLiar() {
 // ===== HANDLE ANIMATION =====
 function handleBSAnim(msg) {
   if (!msg) return;
+  // Ensure Three.js is loaded for 3D animations
+  if (typeof loadBombShotThree === 'function') loadBombShotThree();
+
   if (msg.anim === 'submit') {
     if (typeof bsAnimateSubmit === 'function') {
       bsAnimateSubmit(msg.count, null, null);
@@ -824,11 +831,11 @@ function handleBSAnim(msg) {
     }
   } else if (msg.anim === 'roulette-setup') {
     if (typeof bsAnimateRouletteSetup === 'function') {
-      bsAnimateRouletteSetup(msg.hitSlots, msg.targetName);
+      bsAnimateRouletteSetup(msg.slots, msg.targetName);
     }
   } else if (msg.anim === 'roulette-spin') {
     if (typeof bsAnimateRouletteSpin === 'function') {
-      bsAnimateRouletteSpin(msg.slotIndex, msg.hitSlots);
+      bsAnimateRouletteSpin(msg.slotIndex, msg.slots);
     }
   } else if (msg.anim === 'roulette-result') {
     if (typeof bsAnimateRouletteResult === 'function') {
@@ -849,27 +856,29 @@ function handleBSResult(msg) {
   if (goEl) goEl.style.display = 'flex';
 
   var titleEl = document.getElementById('bsGameOverTitle');
-  if (titleEl) titleEl.textContent = '🍺💣 폭탄주 게임 종료!';
+  if (titleEl) {
+    if (msg.reason === 'bombshot' && msg.bombshotPlayer) {
+      titleEl.textContent = '🍺💥 ' + msg.bombshotPlayer.name + ' 폭탄주 당첨!';
+    } else {
+      titleEl.textContent = '🍺💣 폭탄주 게임 종료!';
+    }
+  }
 
   var rankEl = document.getElementById('bsRankings');
   if (rankEl) {
     var html = '';
-    var medals = ['🥇', '🥈', '🥉', '4️⃣'];
-    msg.rankings.forEach(function(p, i) {
+    msg.rankings.forEach(function(p) {
       var isMe = p.id === state.myId;
       var label, labelClass;
-      if (p.isWinner) {
-        label = '🏆 생존!';
-        labelClass = 'safe';
-      } else if (p.isLoser) {
-        label = '🍺💣 폭탄주 꼴등!';
+      if (p.isBombshot) {
+        label = '🍺💣 폭탄주!';
         labelClass = 'penalty';
       } else {
-        label = '💀 폭탄주 탈락';
-        labelClass = 'penalty';
+        label = '😮‍💨 세이프';
+        labelClass = 'safe';
       }
-      html += '<div class="bs-rank-row' + (p.isLoser ? ' loser' : '') + (p.isWinner ? ' winner' : '') + '">' +
-        '<div class="bs-rank-pos">' + (medals[i] || (i + 1)) + '</div>' +
+      html += '<div class="bs-rank-row' + (p.isBombshot ? ' loser' : ' winner') + '">' +
+        '<div class="bs-rank-pos">' + (p.isBombshot ? '🍺' : '😮‍💨') + '</div>' +
         '<div class="bs-rank-name">' + p.avatar + ' ' + escapeHtml(p.name) + (isMe ? ' (나)' : '') + '</div>' +
         '<div class="bs-rank-label ' + labelClass + '">' + label + '</div></div>';
     });
@@ -879,7 +888,7 @@ function handleBSResult(msg) {
   // Record game stats
   var myResult = msg.rankings.find(function(p) { return p.id === state.myId; });
   if (myResult) {
-    var won = myResult.isWinner;
+    var won = !myResult.isBombshot;
     if (typeof recordGame === 'function') recordGame(won, won ? 30 : 5);
   }
 }
@@ -891,6 +900,7 @@ function closeBombShotGame() {
   _bsSelected = [];
   _bsView = null;
   bsState = null;
+  _bsSetupDone = false;
 
   if (typeof destroyBombShotThree === 'function') {
     destroyBombShotThree();

@@ -94,6 +94,12 @@ function startPracticeGame(gameName) {
   // Intercept networking
   interceptNetworking();
 
+  // Bombshot: auto-setup penalties for practice mode
+  if (gameName === 'bombshot') {
+    _bsSetupDone = true;
+    _bsPenalties = ['원샷'];
+  }
+
   // Start the game
   startGame();
 }
@@ -273,7 +279,7 @@ function handleBroadcastForAI(data) {
     const submitterId = bsState.lastSubmission.playerId;
     // Each AI (except submitter) has a chance to call liar
     bsState.players.forEach(p => {
-      if (!p.id.startsWith('ai-') || p.id === submitterId || p.finished) return;
+      if (!p.id.startsWith('ai-') || p.id === submitterId) return;
       const chance = bsState.lastSubmission.count === 3 ? 0.2 : bsState.lastSubmission.count === 2 ? 0.1 : 0.03;
       if (Math.random() < chance) {
         const t = setTimeout(() => {
@@ -913,8 +919,6 @@ function aiBombShot() {
 
   const currentPlayer = bsState.players[bsState.turnIdx];
   if (!currentPlayer || !currentPlayer.id.startsWith('ai-')) return;
-  if (currentPlayer.finished) return;
-
   // AI: decide whether to call liar first (on previous submission)
   if (bsState.lastSubmission && bsState.lastSubmission.playerId !== currentPlayer.id) {
     // Call liar based on last submission size (more cards = more suspicious)

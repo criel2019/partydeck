@@ -387,12 +387,20 @@ function handleMessage(peerId, raw) {
       if (mfLobbyArea) {
         mfLobbyArea.style.display = msg.game === 'mafia' ? 'block' : 'none';
       }
+      // Show bombshot lobby area for non-host
+      const bsLobbyArea = document.getElementById('bsLobbyArea');
+      if (bsLobbyArea) {
+        bsLobbyArea.style.display = msg.game === 'bombshot' ? 'block' : 'none';
+      }
       // Update waiting text
       const waitingText = document.getElementById('waitingText');
       if (waitingText) {
         const gameNames = { poker:'포커', mafia:'마피아', sutda:'섯다', quickdraw:'총잡이', roulette:'룰렛', lottery:'뽑기', ecard:'E카드', yahtzee:'야추', updown:'업다운', truth:'진실게임', fortress:'요새', bombshot:'폭탄주' };
         waitingText.textContent = `${gameNames[msg.game] || msg.game} 게임 대기 중...`;
       }
+    },
+    'bs-config': () => {
+      if (typeof bsHandleConfig === 'function') bsHandleConfig(msg);
     },
     'truth-state': () => {
       showScreen('truthGame');
@@ -742,6 +750,20 @@ function selectGame(el) {
   }
   if (cfgDisplay) {
     cfgDisplay.style.display = (state.selectedGame === 'mafia' && typeof mfSetupDone !== 'undefined' && mfSetupDone) ? 'block' : 'none';
+  }
+
+  // Show/hide bombshot lobby area
+  const bsLobbyArea = document.getElementById('bsLobbyArea');
+  const bsSetupBtn = document.getElementById('bsSetupBtn');
+  const bsCfgDisplay = document.getElementById('bsConfigDisplay');
+  if (bsLobbyArea) {
+    bsLobbyArea.style.display = state.selectedGame === 'bombshot' ? 'block' : 'none';
+  }
+  if (bsSetupBtn) {
+    bsSetupBtn.style.display = (state.selectedGame === 'bombshot' && state.isHost) ? 'block' : 'none';
+  }
+  if (bsCfgDisplay) {
+    bsCfgDisplay.style.display = (state.selectedGame === 'bombshot' && typeof _bsSetupDone !== 'undefined' && _bsSetupDone) ? 'block' : 'none';
   }
 
   // Broadcast game selection so non-host players can see mafia config
