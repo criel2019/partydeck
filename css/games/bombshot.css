@@ -741,6 +741,32 @@
   .bs-status { display: none; }
 }
 
+/* ===== BARTENDER SELECT ===== */
+.bs-bartender-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 2px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.bs-bartender-option:hover {
+  border-color: rgba(255,215,0,0.3);
+  background: rgba(255,215,0,0.06);
+}
+.bs-bartender-option.selected {
+  border-color: var(--bs-neon-gold);
+  background: rgba(255,215,0,0.12);
+  box-shadow: 0 0 10px rgba(255,215,0,0.2);
+}
+
 /* ===== Slot strip animations ===== */
 @keyframes bs-slot-blink {
   0% { box-shadow: 0 0 0 3px #fff, 0 0 12px rgba(255,255,255,0.6); }

@@ -304,6 +304,19 @@
       </div>
     </div>
     <div class="mf-setup-scroll" style="padding:12px 16px;">
+      <div style="margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">🍸 바텐더 선택</div>
+        <div style="display:flex;gap:8px;" id="bsBartenderSelect">
+          <div class="bs-bartender-option selected" onclick="bsSelectBartender('default')" data-type="default">
+            <div style="font-size:28px;">🤵</div>
+            <div style="font-size:11px;">기본</div>
+          </div>
+          <div class="bs-bartender-option" onclick="bsSelectBartender('rabbit')" data-type="rabbit">
+            <div style="font-size:28px;">🐰</div>
+            <div style="font-size:11px;">토끼</div>
+          </div>
+        </div>
+      </div>
       <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">
         벌칙 칸(2칸)에 표시할 벌칙을 1~3개 설정하세요.<br>
         <span style="font-size:11px;opacity:0.7;">2칸에 랜덤 배치됩니다.</span>

@@ -10,6 +10,15 @@ function loadBombShotThree() {
   if (_bsThreeLoaded) return;
   _bsThreeLoaded = true;
 
+  function loadGLTFLoaderThen(cb) {
+    if (window.THREE && window.THREE.GLTFLoader) { cb(); return; }
+    var sg = document.createElement('script');
+    sg.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+    sg.onload = cb;
+    sg.onerror = cb; // proceed even if loader fails
+    document.head.appendChild(sg);
+  }
+
   function onScriptsReady() {
     var canvas = document.getElementById('bsCanvas');
     if (canvas && typeof initBombShotThree === 'function') {
@@ -17,24 +26,22 @@ function loadBombShotThree() {
     }
   }
 
-  // Reuse Three.js if already loaded (e.g. from yahtzee)
-  if (window.THREE) {
+  function loadBombShotScene() {
     var s = document.createElement('script');
     s.src = 'js/bombshot-three.js';
-    s.onload = onScriptsReady;
+    s.onload = function() { loadGLTFLoaderThen(onScriptsReady); };
     s.onerror = function() { _bsThreeLoaded = false; };
     document.head.appendChild(s);
+  }
+
+  // Reuse Three.js if already loaded (e.g. from yahtzee)
+  if (window.THREE) {
+    loadBombShotScene();
     return;
   }
   var s1 = document.createElement('script');
   s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-  s1.onload = function() {
-    var s2 = document.createElement('script');
-    s2.src = 'js/bombshot-three.js';
-    s2.onload = onScriptsReady;
-    s2.onerror = function() { _bsThreeLoaded = false; };
-    document.head.appendChild(s2);
-  };
+  s1.onload = function() { loadBombShotScene(); };
   s1.onerror = function() { _bsThreeLoaded = false; };
   document.head.appendChild(s1);
 }
@@ -46,6 +53,7 @@ var _bsSelected = []; // local selected card indices
 var _bsTimers = [];
 var _bsSetupDone = false;
 var _bsPenalties = ['원샷']; // configured penalty labels (1-3)
+var _bsBartenderType = 'default'; // 'default' or 'rabbit'
 
 var BS_CARDS = {
   beer:   { emoji: '🍺', name: '맥주',   cssClass: 'bs-card-beer' },
@@ -65,6 +73,19 @@ function bsCloseSetup() {
   var overlay = document.getElementById('bsSetupOverlay');
   if (overlay) overlay.style.display = 'none';
 }
+function bsSelectBartender(type) {
+  _bsBartenderType = type || 'default';
+  var container = document.getElementById('bsBartenderSelect');
+  if (!container) return;
+  var options = container.querySelectorAll('.bs-bartender-option');
+  for (var i = 0; i < options.length; i++) {
+    if (options[i].getAttribute('data-type') === type) {
+      options[i].classList.add('selected');
+    } else {
+      options[i].classList.remove('selected');
+    }
+  }
+}
 function bsConfirmSetup() {
   var penalties = [];
   for (var i = 1; i <= 3; i++) {
@@ -80,7 +101,7 @@ function bsConfirmSetup() {
   _bsPenalties = penalties;
   _bsSetupDone = true;
   bsCloseSetup();
-  broadcast({ type: 'bs-config', penalties: _bsPenalties });
+  broadcast({ type: 'bs-config', penalties: _bsPenalties, bartenderType: _bsBartenderType });
   bsShowConfigInLobby();
   showToast('벌칙 설정 완료!');
 }
@@ -89,6 +110,9 @@ function bsHandleConfig(msg) {
     _bsPenalties = msg.penalties;
     _bsSetupDone = true;
     bsShowConfigInLobby();
+  }
+  if (msg.bartenderType) {
+    _bsBartenderType = msg.bartenderType;
   }
 }
 function bsShowConfigInLobby() {
@@ -151,6 +175,7 @@ function startBombShot() {
     return;
   }
 
+  window._bsBartenderType = _bsBartenderType;
   loadBombShotThree();
 
   var deck = bsCreateDeck();
@@ -558,6 +583,7 @@ function initBSCanvas() {
 function renderBSView(view) {
   if (!view) return;
   _bsView = view;
+  window._bsBartenderType = _bsBartenderType;
   showScreen('bombshotGame');
 
   // Ensure 3D is initialized if scripts are ready
@@ -973,6 +999,7 @@ function closeBombShotGame() {
   _bsView = null;
   bsState = null;
   _bsSetupDone = false;
+  _bsBartenderType = 'default';
 
   if (typeof destroyBombShotThree === 'function') {
     destroyBombShotThree();

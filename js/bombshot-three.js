@@ -58,6 +58,9 @@
   var idleVariant = 0, idleSwitchTimer = 0;
   var mixCallback = null, armTimer = null;
 
+  // Rabbit GLB model
+  var rabbitModel = null;
+
   // Bartender reaction
   var btReaction = 'none'; // none, safe, hit
   var btReactionTime = 0;
@@ -1423,6 +1426,43 @@
   }
 
   // ===== PUBLIC API =====
+  function loadRabbitBartender() {
+    if (!THREE.GLTFLoader) return;
+    var loader = new THREE.GLTFLoader();
+    loader.load('Models/Meshy_AI_Dapper_Bunny_0217095031_texture.glb', function(gltf) {
+      if (!isInitialized || !scene) return;
+      rabbitModel = gltf.scene;
+
+      // Compute bounding box to determine scale & position
+      var box = new THREE.Box3().setFromObject(rabbitModel);
+      var size = new THREE.Vector3();
+      box.getSize(size);
+      var maxDim = Math.max(size.x, size.y, size.z);
+      // Target height: roughly match procedural bartender (~1.2 units tall)
+      var targetH = 1.2;
+      var scale = targetH / maxDim;
+      rabbitModel.scale.set(scale, scale, scale);
+
+      // Recompute after scaling
+      box.setFromObject(rabbitModel);
+      var center = new THREE.Vector3();
+      box.getCenter(center);
+
+      // Position: center X on 0, feet on bar surface, Z same as procedural bartender
+      rabbitModel.position.x = -center.x;
+      rabbitModel.position.y = BAR_Y - box.min.y;
+      rabbitModel.position.z = BT_Z - center.z;
+
+      scene.add(rabbitModel);
+    }, undefined, function(err) {
+      // Fallback: create procedural bartender on load error
+      createBartender();
+      createArms();
+      createHands();
+      updateArms();
+    });
+  }
+
   window.initBombShotThree = function(canvas) {
     if (isInitialized) return;
     if (!canvas || typeof THREE === 'undefined') return;
@@ -1467,10 +1507,14 @@
     createBar();
     createGlass();
     createLiquid();
-    createBartender();
-    createArms();
-    createHands();
-    updateArms();
+    if (window._bsBartenderType === 'rabbit') {
+      loadRabbitBartender();
+    } else {
+      createBartender();
+      createArms();
+      createHands();
+      updateArms();
+    }
     createBokehParticles();
 
     window.addEventListener('resize', handleResize);
@@ -1513,6 +1557,16 @@
     if (renderer) { renderer.dispose(); renderer = null; }
     scene = null; camera = null; clock = null;
     glassGroup = null; liquidMesh = null; foamMesh = null;
+    if (rabbitModel) {
+      rabbitModel.traverse(function(c) {
+        if (c.geometry) c.geometry.dispose();
+        if (c.material) {
+          if (c.material.map) c.material.map.dispose();
+          c.material.dispose();
+        }
+      });
+      rabbitModel = null;
+    }
     bartenderGroup = null; headGroup = null; bodyMesh = null; bowTieGroup = null;
     eyeL = null; eyeR = null; pupilL = null; pupilR = null; browL = null; browR = null;
     handL = null; handR = null;
