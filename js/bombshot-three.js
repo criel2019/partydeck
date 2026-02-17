@@ -60,6 +60,7 @@
 
   // Rabbit GLB model
   var rabbitModel = null;
+  var rabbitSpotlight = null;
 
   // Bartender reaction
   var btReaction = 'none'; // none, safe, hit
@@ -1454,6 +1455,23 @@
       rabbitModel.position.z = BT_Z - center.z;
 
       scene.add(rabbitModel);
+
+      // Spotlight on rabbit bartender — warm key light from above-front
+      var spot = new THREE.SpotLight(0xffeedd, 1.8, 8, Math.PI / 5, 0.5, 1);
+      spot.position.set(0, HEAD_Y + 2.0, BT_Z + 2.0);
+      spot.target.position.set(0, BODY_Y, BT_Z);
+      spot.castShadow = true;
+      scene.add(spot);
+      scene.add(spot.target);
+      // Fill light from the side to soften shadows
+      var fill = new THREE.PointLight(0xffc888, 0.6, 5);
+      fill.position.set(-1.2, HEAD_Y + 0.5, BT_Z + 0.8);
+      scene.add(fill);
+      // Rim light from behind for contour
+      var rim = new THREE.PointLight(0x88aaff, 0.4, 4);
+      rim.position.set(0.5, HEAD_Y + 0.3, BT_Z - 1.0);
+      scene.add(rim);
+      rabbitSpotlight = { spot: spot, fill: fill, rim: rim };
     }, undefined, function(err) {
       // Fallback: create procedural bartender on load error
       createBartender();
@@ -1566,6 +1584,12 @@
         }
       });
       rabbitModel = null;
+    }
+    if (rabbitSpotlight) {
+      if (rabbitSpotlight.spot) { scene.remove(rabbitSpotlight.spot); scene.remove(rabbitSpotlight.spot.target); }
+      if (rabbitSpotlight.fill) scene.remove(rabbitSpotlight.fill);
+      if (rabbitSpotlight.rim) scene.remove(rabbitSpotlight.rim);
+      rabbitSpotlight = null;
     }
     bartenderGroup = null; headGroup = null; bodyMesh = null; bowTieGroup = null;
     eyeL = null; eyeR = null; pupilL = null; pupilR = null; browL = null; browR = null;
