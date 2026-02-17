@@ -68,10 +68,21 @@ var BS_DRINKS = ['beer', 'soju', 'liquor'];
 function bsOpenSetup() {
   var overlay = document.getElementById('bsSetupOverlay');
   if (overlay) overlay.style.display = 'flex';
+  // Reset bartender selection UI to current value
+  bsSelectBartender(_bsBartenderType);
 }
 function bsCloseSetup() {
   var overlay = document.getElementById('bsSetupOverlay');
   if (overlay) overlay.style.display = 'none';
+  // If cancelled during practice mode setup, abort and return to menu
+  if (typeof _bsPracticeReady !== 'undefined' && _bsPracticeReady) {
+    _bsPracticeReady = false;
+    if (typeof practiceMode !== 'undefined' && practiceMode) {
+      practiceMode = false;
+      if (typeof cleanupAI === 'function') cleanupAI();
+      showScreen('mainMenu');
+    }
+  }
 }
 function bsSelectBartender(type) {
   _bsBartenderType = type || 'default';
@@ -100,7 +111,17 @@ function bsConfirmSetup() {
   }
   _bsPenalties = penalties;
   _bsSetupDone = true;
+
+  // Practice mode: start game directly after setup
+  var isPracticeStart = typeof _bsPracticeReady !== 'undefined' && _bsPracticeReady;
+  if (isPracticeStart) _bsPracticeReady = false; // clear before bsCloseSetup
   bsCloseSetup();
+
+  if (isPracticeStart) {
+    startGame();
+    return;
+  }
+
   broadcast({ type: 'bs-config', penalties: _bsPenalties, bartenderType: _bsBartenderType });
   bsShowConfigInLobby();
   showToast('벌칙 설정 완료!');

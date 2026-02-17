@@ -19,6 +19,7 @@ let _rrPullScheduled = false; // one-shot flag for roulette pullTrigger
 let _truthNextScheduled = false; // one-shot flag for truth processTruthNext
 let _fortAIKey = ''; // guard: prevent fortress AI re-entry during same turn
 let _bsSpinScheduled = false; // guard: prevent duplicate roulette spin
+let _bsPracticeReady = false; // flag: bombshot setup modal shown in practice mode
 
 const AI_NAMES = ['봇짱', '로봇킹', '알파봇', 'AI마스터', '사이보그'];
 const AI_AVATARS = ['🤖', '👾', '🎮', '🕹️', '💻'];
@@ -96,10 +97,11 @@ function startPracticeGame(gameName) {
   // Intercept networking
   interceptNetworking();
 
-  // Bombshot: auto-setup penalties for practice mode
+  // Bombshot: show setup modal so user can configure bartender + penalties
   if (gameName === 'bombshot') {
-    _bsSetupDone = true;
-    _bsPenalties = ['원샷'];
+    _bsPracticeReady = true;
+    bsOpenSetup();
+    return; // startGame() will be called from bsConfirmSetup()
   }
 
   // Mafia: auto-setup for practice mode (skip host config screen)
@@ -241,6 +243,7 @@ function cleanupAI() {
   _udContinuePending = false;
   _rrPullScheduled = false;
   _truthNextScheduled = false;
+  _bsPracticeReady = false;
   // Clear any game-specific timers
   if (typeof mfTimer !== 'undefined' && mfTimer) clearInterval(mfTimer);
   if (typeof qdState !== 'undefined' && qdState) {
