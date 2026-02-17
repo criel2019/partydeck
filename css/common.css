@@ -787,6 +787,17 @@ body {
   color: var(--text-dim); font-size: 12px; flex-shrink: 0;
 }
 
+/* ===== BUILD FOOTER ===== */
+.build-footer {
+  margin-top: 12px;
+  padding: 8px 0;
+  text-align: center;
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
 /* ===== TOAST ===== */
 .toast {
   position: fixed; top: 20px; left: 50%;

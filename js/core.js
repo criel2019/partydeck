@@ -1,3 +1,15 @@
+// ===== BUILD INFO =====
+var BUILD_VERSION = 'b2026.0217.1';
+var BUILD_DATE = '2026-02-17 21:00';
+var BUILD_HASH = '2b14fef';
+
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    var el = document.getElementById('buildFooter');
+    if (el) el.textContent = BUILD_VERSION + (BUILD_HASH ? ' (' + BUILD_HASH + ')' : '') + ' · ' + BUILD_DATE;
+  });
+})();
+
 // ===== HTML SANITIZATION =====
 function escapeHTML(str) {
   if (typeof str !== 'string') return String(str ?? '');
