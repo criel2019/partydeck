@@ -1434,7 +1434,8 @@
       rabbitModel = gltf.scene;
 
       // Convert PBR materials to unlit (MeshBasicMaterial)
-      // Force white color + no fog so texture shows at full brightness
+      // Reset texture encoding to Linear so sRGB→linear conversion is skipped
+      // (renderer has no outputEncoding, so sRGB textures would appear dark)
       rabbitModel.traverse(function(child) {
         if (child.isMesh && child.material) {
           var oldMat = child.material;
@@ -1442,7 +1443,14 @@
             color: 0xffffff,
             fog: false
           });
-          if (oldMat.map) newMat.map = oldMat.map;
+          if (oldMat.map) {
+            oldMat.map.encoding = THREE.LinearEncoding;
+            newMat.map = oldMat.map;
+          }
+          if (oldMat.emissiveMap) {
+            oldMat.emissiveMap.encoding = THREE.LinearEncoding;
+            newMat.map = newMat.map || oldMat.emissiveMap;
+          }
           if (oldMat.transparent) { newMat.transparent = true; newMat.opacity = oldMat.opacity; }
           if (oldMat.alphaMap) newMat.alphaMap = oldMat.alphaMap;
           if (oldMat.side !== undefined) newMat.side = oldMat.side;
