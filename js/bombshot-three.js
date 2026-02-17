@@ -1104,8 +1104,12 @@
     var WR = 0.5, WH = 0.12;
     var outerTrackR = WR + 0.01;   // ball sits on outer chrome track
     var slotR = WR * 0.55;          // where the slots/pockets are
-    var targetAngle = (rouletteTargetSlot / 6) * Math.PI * 2;
-    var totalRot = Math.PI * 2 * 7 + targetAngle; // 7 full revolutions
+    // Slot center angle in disc-local frame
+    var slotCenterAngle = ((rouletteTargetSlot + 0.5) / 6) * Math.PI * 2;
+    // Disc counter-rotates at 0.25x ball speed, so ball-in-disc-frame = totalRot * 1.25
+    // We need totalRot * 1.25 ≡ slotCenterAngle (mod 2π)
+    // → totalRot = slotCenterAngle * 0.8 + N * 1.6π  (N=10 → ~8 visual revolutions)
+    var totalRot = slotCenterAngle * 0.8 + Math.PI * 16;
 
     // ── Ball angle (main rotation with multi-phase easing) ──
     var angEase;
