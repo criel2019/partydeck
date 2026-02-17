@@ -1,12 +1,25 @@
-// ===== BUILD INFO =====
-var BUILD_VERSION = 'b2026.0217.1';
-var BUILD_DATE = '2026-02-17 21:00';
-var BUILD_HASH = '2b14fef';
-
+// ===== BUILD INFO (auto-fetch from GitHub API) =====
 (function() {
+  var REPO = 'criel2019/partydeck';
+  var BRANCH = 'master';
+
   document.addEventListener('DOMContentLoaded', function() {
     var el = document.getElementById('buildFooter');
-    if (el) el.textContent = BUILD_VERSION + (BUILD_HASH ? ' (' + BUILD_HASH + ')' : '') + ' · ' + BUILD_DATE;
+    if (!el) return;
+    el.textContent = 'build info loading...';
+
+    fetch('https://api.github.com/repos/' + REPO + '/commits/' + BRANCH)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var hash = data.sha ? data.sha.substring(0, 7) : '?';
+        var msg = data.commit && data.commit.message ? data.commit.message.split('\n')[0] : '';
+        var date = data.commit && data.commit.committer && data.commit.committer.date
+          ? new Date(data.commit.committer.date).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+          : '';
+        el.textContent = hash + ' · ' + date;
+        el.title = msg;
+      })
+      .catch(function() { el.textContent = 'build info unavailable'; });
   });
 })();
 
