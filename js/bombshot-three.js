@@ -1434,13 +1434,15 @@
       rabbitModel = gltf.scene;
 
       // Convert PBR materials to unlit (MeshBasicMaterial)
-      // so the model looks bright and cute regardless of scene lighting
+      // Force white color + no fog so texture shows at full brightness
       rabbitModel.traverse(function(child) {
         if (child.isMesh && child.material) {
           var oldMat = child.material;
-          var newMat = new THREE.MeshBasicMaterial();
+          var newMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            fog: false
+          });
           if (oldMat.map) newMat.map = oldMat.map;
-          if (oldMat.color) newMat.color.copy(oldMat.color);
           if (oldMat.transparent) { newMat.transparent = true; newMat.opacity = oldMat.opacity; }
           if (oldMat.alphaMap) newMat.alphaMap = oldMat.alphaMap;
           if (oldMat.side !== undefined) newMat.side = oldMat.side;
