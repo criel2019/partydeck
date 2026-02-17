@@ -521,6 +521,8 @@ function udRejectPenalty() {
 
 function continueUpDown() {
   if(!state.isHost) return;
+  // Guard: prevent double advance (e.g. BK reject → both AI and human accept penalty)
+  if(udState.phase === 'playing') return;
 
   udState.turnIdx = (udState.turnIdx + 1) % udState.players.length;
   udState.phase = 'playing';

@@ -318,7 +318,7 @@ function processECardBetResponse(playerId, accept) {
 function processECardPlay(playerId, cardType, cardIdx) {
   if (!state.isHost) return;
   const ec = state.ecard;
-  const validCards = ['emperor', 'citizen', 'slave'];
+  const validCards = ['emperor', 'citizen', 'slave', 'dummy'];
   if(!validCards.includes(cardType)) return;
   if(typeof cardIdx !== 'number' || cardIdx < 0) return;
 

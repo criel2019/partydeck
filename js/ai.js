@@ -17,6 +17,8 @@ let _qdTimers = []; // QuickDraw-specific timers (separate to avoid clearing oth
 let _udContinuePending = false; // debounce for UpDown continueUpDown
 let _rrPullScheduled = false; // one-shot flag for roulette pullTrigger
 let _truthNextScheduled = false; // one-shot flag for truth processTruthNext
+let _fortAIKey = ''; // guard: prevent fortress AI re-entry during same turn
+let _bsSpinScheduled = false; // guard: prevent duplicate roulette spin
 
 const AI_NAMES = ['봇짱', '로봇킹', '알파봇', 'AI마스터', '사이보그'];
 const AI_AVATARS = ['🤖', '👾', '🎮', '🕹️', '💻'];
@@ -98,6 +100,11 @@ function startPracticeGame(gameName) {
   if (gameName === 'bombshot') {
     _bsSetupDone = true;
     _bsPenalties = ['원샷'];
+  }
+
+  // Mafia: auto-setup for practice mode (skip host config screen)
+  if (gameName === 'mafia') {
+    mfSetupDone = true;
   }
 
   // Start the game
@@ -319,6 +326,9 @@ function handleAIMessage(peerId, data) {
   } catch (e) {
     return;
   }
+
+  // Mafia timer ticks: ignore to prevent constant AI action timer resets
+  if (msg.type === 'mf-timer') return;
 
   // UpDown: Black Knight request to AI — special handling
   if (msg.type === 'ud-bk-request') {
@@ -611,7 +621,11 @@ function aiECard() {
     }
   } else if (ec.phase === 'slave-play' && aiPlayer.role === 'slave') {
     if (!aiPlayer.cards || aiPlayer.cards.length === 0) return;
-    const cardIdx = Math.floor(Math.random() * aiPlayer.cards.length);
+    // Prefer non-dummy cards; use dummy only when nothing else remains
+    const nonDummy = [];
+    aiPlayer.cards.forEach((c, i) => { if (c !== 'dummy') nonDummy.push(i); });
+    const pool = nonDummy.length > 0 ? nonDummy : [aiPlayer.cards.indexOf('dummy')];
+    const cardIdx = pool[Math.floor(Math.random() * pool.length)];
     const cardType = aiPlayer.cards[cardIdx];
     processECardPlay(aiPlayer.id, cardType, cardIdx);
   } else if (ec.phase === 'emperor-play' && aiPlayer.role === 'emperor') {
@@ -755,12 +769,13 @@ function aiMafia() {
 function aiMafiaNight() {
   const ms = mfState;
   const alivePlayers = ms.players.filter(p => p.alive);
-  const isFirstNight = ms.round === 1;
-  const sixRestrict = ms.sixPlayerFirstNight && isFirstNight;
+  let advanceScheduled = false;
 
-  ms.players.forEach(p => {
-    if (!p.id.startsWith('ai-') || !p.alive) return;
-    if (ms.nightActions[p.id]) return; // already acted
+  for (let i = 0; i < ms.players.length; i++) {
+    const p = ms.players[i];
+    if (advanceScheduled) break; // stop after phase advance is scheduled
+    if (!p.id.startsWith('ai-') || !p.alive) continue;
+    if (ms.nightActions[p.id]) continue; // already acted
 
     const role = p.activeRole;
     let action = null;
@@ -768,11 +783,11 @@ function aiMafiaNight() {
 
     // Get valid targets (alive players excluding self)
     const targets = alivePlayers.filter(t => t.id !== p.id);
-    if (targets.length === 0) return;
+    if (targets.length === 0) continue;
 
     const randomTarget = () => targets[Math.floor(Math.random() * targets.length)].id;
 
-    if (role === 'mafia' && !sixRestrict) {
+    if (role === 'mafia') {
       // Kill a random non-mafia target
       const nonMafia = targets.filter(t => t.activeRole !== 'mafia');
       if (nonMafia.length > 0) {
@@ -782,14 +797,14 @@ function aiMafiaNight() {
     } else if (role === 'spy') {
       targetId = randomTarget();
       action = 'investigate';
-    } else if (role === 'police' && !sixRestrict) {
+    } else if (role === 'police') {
       targetId = randomTarget();
       action = 'investigate';
     } else if (role === 'doctor') {
       // Heal a random alive player (can include self)
       targetId = alivePlayers[Math.floor(Math.random() * alivePlayers.length)].id;
       action = 'heal';
-    } else if (role === 'reporter' && !sixRestrict) {
+    } else if (role === 'reporter') {
       targetId = randomTarget();
       action = 'investigate';
     } else if (role === 'undertaker') {
@@ -798,7 +813,7 @@ function aiMafiaNight() {
         targetId = deadPlayers[Math.floor(Math.random() * deadPlayers.length)].id;
         action = 'investigate';
       }
-    } else if (role === 'detective' && !sixRestrict) {
+    } else if (role === 'detective') {
       targetId = randomTarget();
       action = 'investigate';
     }
@@ -809,8 +824,10 @@ function aiMafiaNight() {
         nightAction: action,
         targetId: targetId,
       });
+      // Check if all actions are done — if so, stop to avoid double mfAdvancePhase
+      if (mfAllNightActionsDone()) advanceScheduled = true;
     }
-  });
+  }
 }
 
 function aiMafiaVote() {
@@ -842,6 +859,12 @@ function aiFortress() {
   const current = fortState.players[fortState.turnIdx];
   if (!current || !current.id.startsWith('ai-')) return;
   if (!current.alive) return;
+
+  // Guard: AI movement broadcasts re-trigger scheduleAIAction → aiFortress
+  // Prevent duplicate move/fire timers for the same turn
+  const turnKey = fortState.round + '-' + fortState.turnIdx;
+  if (_fortAIKey === turnKey) return;
+  _fortAIKey = turnKey;
 
   // Find closest alive enemy tank
   const enemies = fortState.players.filter(p => p.alive && p.id !== current.id);
@@ -928,7 +951,25 @@ function aiFortress() {
 // ========== BOMB SHOT AI ==========
 
 function aiBombShot() {
-  if (!bsState || bsState.phase !== 'playing') return;
+  if (!bsState) return;
+
+  // Handle roulette spin when AI is the penalty target
+  if (bsState.phase === 'roulette-setup' && bsState.rouletteTarget) {
+    if (_bsSpinScheduled) return;
+    const targetId = bsState.rouletteTarget.id;
+    if (targetId.startsWith('ai-')) {
+      _bsSpinScheduled = true;
+      const t = setTimeout(() => {
+        _bsSpinScheduled = false;
+        if (!practiceMode || !bsState || bsState.phase !== 'roulette-setup') return;
+        processBSSpin(targetId);
+      }, 1000 + Math.random() * 1000);
+      _aiTimers.push(t);
+    }
+    return;
+  }
+
+  if (bsState.phase !== 'playing') return;
 
   const currentPlayer = bsState.players[bsState.turnIdx];
   if (!currentPlayer || !currentPlayer.id.startsWith('ai-')) return;
