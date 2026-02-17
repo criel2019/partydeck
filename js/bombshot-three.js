@@ -1464,7 +1464,7 @@
       box.getSize(size);
       var maxDim = Math.max(size.x, size.y, size.z);
       // Target height: roughly match procedural bartender (~1.2 units tall)
-      var targetH = 1.2;
+      var targetH = 1.8;
       var scale = targetH / maxDim;
       rabbitModel.scale.set(scale, scale, scale);
 
