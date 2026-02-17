@@ -241,9 +241,9 @@
 
 /* ===== CANVAS AREA ===== */
 .bs-canvas-wrap {
-  flex: 1;
+  flex: 1 1 0;
   position: relative;
-  min-height: 180px;
+  min-height: 0;
   max-height: 320px;
   overflow: hidden;
 }
@@ -698,16 +698,47 @@
   border: 1px solid rgba(0,230,118,0.3);
 }
 
-/* Safe-mode env indicator */
-@media (max-height: 600px) {
-  .bs-canvas-wrap { min-height: 140px; max-height: 200px; }
-  .bs-card { width: 50px; height: 72px; }
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-height: 750px) {
+  .bs-canvas-wrap { max-height: 240px; }
+  .bs-card { width: 52px; height: 74px; }
   .bs-card-emoji { font-size: 22px; }
-  .bs-opp { padding: 4px 8px; min-width: 68px; }
+  .bs-hand-area { padding: 4px 8px; }
+  .bs-opponents { padding: 4px 6px 2px; }
+  .bs-opp { padding: 4px 8px; min-width: 64px; }
+  .bs-opp-card-back { width: 14px; height: 19px; }
+  .bs-joker-guide { padding: 2px 8px; font-size: 10px; }
+  .bs-action-bar { padding: 6px 12px 8px; }
+  .bs-status { padding: 2px 8px; min-height: 20px; font-size: 12px; }
+  .bs-my-turn-banner { padding: 4px; margin: 2px 12px 0; font-size: 12px; }
+  #bsMyRoulette { display: none; }
+  .bs-roulette-status-wrap { padding: 4px 8px; min-height: 0; }
+  .bs-roulette-status { font-size: 13px; }
 }
 
-@media (max-height: 500px) {
-  .bs-canvas-wrap { min-height: 100px; max-height: 150px; }
+@media (max-height: 650px) {
+  .bs-canvas-wrap { max-height: 180px; }
+  .bs-card { width: 46px; height: 66px; }
+  .bs-card-emoji { font-size: 20px; }
+  .bs-card-name { font-size: 8px; }
+  .bs-opp { padding: 3px 6px; min-width: 56px; }
+  .bs-opp-avatar { font-size: 20px; }
+  .bs-opp-name { font-size: 10px; }
+  .bs-opp-count { font-size: 9px; }
+  .bs-top-bar { padding: 4px 10px; }
+  .bs-drink-badge { padding: 4px 10px; font-size: 13px; }
+  .bs-btn { padding: 10px 6px; font-size: 14px; }
+  .bs-joker-guide { display: none; }
+}
+
+@media (max-height: 550px) {
+  .bs-canvas-wrap { max-height: 130px; }
+  .bs-card { width: 40px; height: 58px; margin: 0 -4px; }
+  .bs-card-emoji { font-size: 18px; }
+  .bs-opp-card-back { width: 12px; height: 16px; }
+  .bs-btn { padding: 8px 4px; font-size: 13px; border-radius: 8px; }
+  .bs-action-bar { padding: 4px 10px 6px; gap: 6px; }
+  .bs-status { display: none; }
 }
 
 /* ===== Slot strip animations ===== */
