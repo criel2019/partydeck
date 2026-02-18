@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover">
 <title>파티덱 - P2P 미니게임</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a0a12">
@@ -1281,8 +1281,24 @@
     <span class="jwl-mode-badge jwl-mode-classic">CLASSIC</span>
   </div>
 
+  <!-- Timer Bar (Timed mode) -->
+  <div class="jwl-timer-bar" id="jwlTimerBar" style="display:none;">
+    <div class="jwl-timer-labels"><span>TIME</span><span id="jwlTimerText">2:00</span></div>
+    <div class="jwl-timer-track">
+      <div class="jwl-timer-fill" id="jwlTimerFill"></div>
+    </div>
+  </div>
+
   <!-- 8x8 Grid -->
   <div class="jwl-grid-area">
+    <!-- Gem Jar -->
+    <div class="jwl-jar-wrap" id="jwlJarWrap" style="display:none;">
+      <div class="jwl-jar">
+        <div class="jwl-jar-fill" id="jwlJarFill"></div>
+        <div class="jwl-jar-gems" id="jwlJarGems"></div>
+      </div>
+      <div class="jwl-jar-label" id="jwlJarLabel">0</div>
+    </div>
     <div class="jwl-grid-container">
       <div class="jwl-grid" id="jwlGrid"></div>
     </div>
@@ -1355,6 +1371,11 @@
       <div class="tet-side-info">
         TIME
         <span class="tet-side-info-val" id="tetTimerValue">0:00.00</span>
+      </div>
+      <div class="tet-timer-bar" id="tetTimerBar" style="display:none;">
+        <div class="tet-timer-bar-track">
+          <div class="tet-timer-bar-fill" id="tetTimerFill"></div>
+        </div>
       </div>
     </div>
 

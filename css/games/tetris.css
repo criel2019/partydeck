@@ -586,3 +586,37 @@
   .tet-dpad { grid-template-columns: 38px 38px 38px; grid-template-rows: 38px 38px; gap: 2px; }
   .tet-act { width: 42px; height: 42px; }
 }
+
+/* ===== Ultra Timer Progress Bar ===== */
+.tet-timer-bar {
+  margin-top: 6px;
+  width: 100%;
+}
+.tet-timer-bar-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.tet-timer-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  width: 100%;
+  transition: width 0.1s linear;
+  background: linear-gradient(90deg, #00d2ff, #448aff);
+  box-shadow: 0 0 6px rgba(0,210,255,.4);
+}
+.tet-timer-bar-fill.warn {
+  background: linear-gradient(90deg, #ffd93d, #f0a020);
+  box-shadow: 0 0 6px rgba(255,217,61,.4);
+}
+.tet-timer-bar-fill.danger {
+  background: linear-gradient(90deg, #ff6b6b, #d32f2f);
+  box-shadow: 0 0 8px rgba(255,107,107,.5);
+  animation: tet-timer-pulse 0.5s ease-in-out infinite alternate;
+}
+@keyframes tet-timer-pulse {
+  from { opacity: 1; }
+  to { opacity: 0.6; }
+}

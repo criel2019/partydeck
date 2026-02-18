@@ -638,6 +638,22 @@ function jwlStartMode(mode) {
   jwlCalcCellSize();
   window.addEventListener('resize', jwlCalcCellSize);
 
+  // Show/hide timer bar
+  const timerBar = document.getElementById('jwlTimerBar');
+  if (timerBar) timerBar.style.display = mode === 'timed' ? 'block' : 'none';
+
+  // Show gem jar
+  const jarWrap = document.getElementById('jwlJarWrap');
+  if (jarWrap) {
+    jarWrap.style.display = 'flex';
+    const jarFill = document.getElementById('jwlJarFill');
+    if (jarFill) jarFill.style.height = '0%';
+    const jarLabel = document.getElementById('jwlJarLabel');
+    if (jarLabel) jarLabel.textContent = '0';
+    const jarGems = document.getElementById('jwlJarGems');
+    if (jarGems) jarGems.innerHTML = '';
+  }
+
   jwlRender();
 
   // Start timer for timed mode
@@ -652,9 +668,11 @@ function jwlStartMode(mode) {
 function jwlCalcCellSize() {
   const container = document.querySelector('.jwl-grid-area');
   if (!container) return;
-  const available = Math.min(container.clientWidth - 24, container.clientHeight - 16);
+  const jarWidth = document.getElementById('jwlJarWrap')?.offsetWidth || 0;
+  const available = Math.min(container.clientWidth - 24 - jarWidth, container.clientHeight - 16);
   const cellSize = Math.floor((available - 8 - 14) / 8); // 8 gaps of 2px + 8px padding
-  const clamped = Math.min(Math.max(cellSize, 32), 52);
+  const minSize = window.innerWidth <= 360 ? 28 : 32;
+  const clamped = Math.min(Math.max(cellSize, minSize), 52);
   document.getElementById('jewelGame').style.setProperty('--jwl-cell-size', clamped + 'px');
 }
 
@@ -767,6 +785,25 @@ function jwlUpdateHUD() {
       modeEl.innerHTML = `<span class="jwl-mode-badge jwl-mode-classic">CLASSIC</span>`;
     }
   }
+
+  // Timer progress bar (timed mode)
+  if (jwlState.mode === 'timed') {
+    const fill = document.getElementById('jwlTimerFill');
+    const timerText = document.getElementById('jwlTimerText');
+    if (fill) {
+      const pct = Math.max(0, (jwlState.timeLeft / 120) * 100);
+      fill.style.width = pct + '%';
+      fill.className = 'jwl-timer-fill' + (jwlState.timeLeft < 15 ? ' danger' : jwlState.timeLeft < 30 ? ' warn' : ' safe');
+    }
+    if (timerText) {
+      const mins = Math.floor(jwlState.timeLeft / 60);
+      const secs = Math.floor(jwlState.timeLeft % 60);
+      timerText.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+  }
+
+  // Gem jar
+  jwlUpdateJar();
 }
 
 // ===== Input Handling =====
@@ -1287,20 +1324,44 @@ function jwlSpawnParticles(cell) {
   const cx = rect.left - cRect.left + rect.width / 2;
   const cy = rect.top - cRect.top + rect.height / 2;
 
-  const colors = ['#ff5252', '#448aff', '#69f0ae', '#ffd740', '#e040fb', '#ffab40', '#e0e0e0'];
+  const allColors = ['#ff5252', '#448aff', '#69f0ae', '#ffd740', '#e040fb', '#ffab40', '#e0e0e0'];
+  // Try to match gem color
+  const colorIdx = parseInt(cell.className.match(/jwl-gem-(\d)/)?.[1] ?? '-1');
+  const gemColor = colorIdx >= 0 ? allColors[colorIdx] : null;
 
-  for (let i = 0; i < 4; i++) {
+  const isSpecial = cell.classList.contains('jwl-gem-flame') || cell.classList.contains('jwl-gem-star') || cell.classList.contains('jwl-gem-supernova') || cell.classList.contains('jwl-gem-rainbow');
+  const count = isSpecial ? 18 : 8 + Math.floor(Math.random() * 5);
+
+  for (let i = 0; i < count; i++) {
     const p = document.createElement('div');
-    p.className = 'jwl-particle';
-    const angle = (Math.PI * 2 / 4) * i + Math.random() * 0.5;
-    const dist = 15 + Math.random() * 20;
+    p.className = isSpecial ? 'jwl-particle-burst' : 'jwl-particle';
+    const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
+    const dist = isSpecial ? (25 + Math.random() * 40) : (15 + Math.random() * 25);
+    const size = isSpecial ? (5 + Math.random() * 5) : (4 + Math.random() * 4);
     p.style.left = cx + 'px';
     p.style.top = cy + 'px';
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
     p.style.setProperty('--px', Math.cos(angle) * dist + 'px');
     p.style.setProperty('--py', Math.sin(angle) * dist + 'px');
-    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    const color = gemColor && Math.random() > 0.3 ? gemColor : allColors[Math.floor(Math.random() * allColors.length)];
+    p.style.background = color;
+    if (isSpecial) p.style.boxShadow = `0 0 6px ${color}`;
     container.appendChild(p);
-    setTimeout(() => p.remove(), 600);
+    setTimeout(() => p.remove(), isSpecial ? 800 : 600);
+  }
+
+  // Screen flash for special gems
+  if (isSpecial) {
+    const flash = document.createElement('div');
+    flash.className = 'jwl-screen-flash';
+    container.appendChild(flash);
+    setTimeout(() => flash.remove(), 300);
+  }
+
+  // Add gem to jar with 30% chance
+  if (Math.random() < 0.3 && colorIdx >= 0) {
+    jwlAddGemToJar(allColors[colorIdx]);
   }
 }
 
@@ -1476,6 +1537,30 @@ function jwlCleanup() {
   jwlAnimating = false;
   jwlSelected = null;
   jwlDragStart = null;
+}
+
+// ===== Gem Jar =====
+function jwlUpdateJar() {
+  if (!jwlState) return;
+  const fill = document.getElementById('jwlJarFill');
+  const label = document.getElementById('jwlJarLabel');
+  if (!fill || !label) return;
+
+  const threshold = jwlGetLevelThreshold(jwlState.level);
+  const pct = Math.min(100, (jwlState.levelScore / threshold) * 100);
+  fill.style.height = pct + '%';
+  label.textContent = jwlState.gemsCleared;
+}
+
+function jwlAddGemToJar(color) {
+  const gemsEl = document.getElementById('jwlJarGems');
+  if (!gemsEl) return;
+  const gem = document.createElement('div');
+  gem.className = 'jwl-jar-gem';
+  gem.style.left = (4 + Math.random() * 18) + 'px';
+  gem.style.background = color;
+  gemsEl.appendChild(gem);
+  setTimeout(() => gem.remove(), 600);
 }
 
 // ===== Visibility Change (auto-pause) =====

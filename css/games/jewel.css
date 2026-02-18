@@ -716,10 +716,141 @@
   100% { transform: scale(1) rotate(0); opacity: 0; }
 }
 
+/* ===== Timed Mode Timer Bar ===== */
+.jwl-timer-bar {
+  padding: 0 16px;
+  margin-bottom: 6px;
+  z-index: 10;
+  flex-shrink: 0;
+}
+.jwl-timer-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: rgba(255,255,255,.25);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.jwl-timer-track {
+  width: 100%;
+  height: 5px;
+  background: rgba(255,255,255,.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.jwl-timer-fill {
+  height: 100%;
+  border-radius: 3px;
+  width: 100%;
+  transition: width 0.1s linear;
+  background: linear-gradient(90deg, #69f0ae, #2e7d32);
+  box-shadow: 0 0 8px rgba(105,240,174,.4);
+}
+.jwl-timer-fill.safe {
+  background: linear-gradient(90deg, #69f0ae, #2e7d32);
+  box-shadow: 0 0 8px rgba(105,240,174,.4);
+}
+.jwl-timer-fill.warn {
+  background: linear-gradient(90deg, #ffd740, #f9a825);
+  box-shadow: 0 0 8px rgba(255,215,64,.4);
+}
+.jwl-timer-fill.danger {
+  background: linear-gradient(90deg, #ff5252, #d32f2f);
+  box-shadow: 0 0 10px rgba(255,82,82,.5);
+  animation: jwlTimerPulse 0.5s ease-in-out infinite alternate;
+}
+@keyframes jwlTimerPulse {
+  from { opacity: 1; }
+  to { opacity: 0.55; }
+}
+
+/* ===== Gem Jar ===== */
+.jwl-jar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+.jwl-jar {
+  width: 32px;
+  height: 140px;
+  background: rgba(255,255,255,.04);
+  border: 1.5px solid rgba(255,255,255,.1);
+  border-radius: 4px 4px 12px 12px;
+  position: relative;
+  overflow: hidden;
+}
+.jwl-jar-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0%;
+  background: linear-gradient(180deg, rgba(224,64,251,.5), rgba(171,71,188,.7));
+  transition: height 0.4s ease-out;
+  border-radius: 0 0 10px 10px;
+}
+.jwl-jar-gems {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.jwl-jar-gem {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  animation: jwlJarGemFall 0.6s ease-in forwards;
+}
+@keyframes jwlJarGemFall {
+  0% { top: -8px; opacity: 1; }
+  80% { opacity: 1; }
+  100% { top: calc(100% - 8px); opacity: 0.6; }
+}
+.jwl-jar-label {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,.4);
+  margin-top: 4px;
+}
+
+/* ===== Special Burst Particles ===== */
+.jwl-particle-burst {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 25;
+  animation: jwlBurstParticle 0.8s ease-out forwards;
+}
+@keyframes jwlBurstParticle {
+  0% { transform: translate(0,0) scale(1.5); opacity: 1; }
+  100% { transform: translate(var(--px,30px), var(--py,-40px)) scale(0); opacity: 0; }
+}
+.jwl-screen-flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,.2);
+  pointer-events: none;
+  z-index: 30;
+  animation: jwlScreenFlash 0.3s ease-out forwards;
+}
+@keyframes jwlScreenFlash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* ===== Responsive ===== */
 @media (max-height: 600px) {
   .jwl-hud { padding: 6px 12px 2px; }
   .jwl-score-value { font-size: 20px; }
   .jwl-progress-bar { margin-bottom: 4px; }
+  .jwl-timer-bar { margin-bottom: 3px; }
   .jwl-bottom { padding: 6px 0 16px; }
+  .jwl-jar { height: 100px; }
 }

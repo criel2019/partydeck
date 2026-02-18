@@ -2936,3 +2936,170 @@
   border-color: var(--accent2);
 }
 
+/* =================================================================
+   TETRIS / JEWEL / STAIRS — Mobile Responsive
+   ================================================================= */
+
+/* ─── Tetris: 430px ─── */
+@media (max-width: 430px) {
+  .tet-hud { padding: 6px 10px 2px; }
+  .tet-hud-value { font-size: 16px; }
+  .tet-hud-label { font-size: 8px; }
+  .tet-mode-badge { font-size: 9px; padding: 2px 6px; }
+  .tet-play-area { gap: 4px; padding: 0 4px; }
+  .tet-side { width: 50px; }
+  .tet-side-box { padding: 3px; }
+  .tet-side-info-val { font-size: 12px; }
+  .tet-controls { padding: 6px 8px 16px; }
+  .tet-dpad { grid-template-columns: 40px 40px 40px; grid-template-rows: 40px 40px; gap: 2px; }
+  .tet-act { width: 44px; height: 44px; font-size: 10px; }
+}
+
+/* ─── Tetris: 360px ─── */
+@media (max-width: 360px) {
+  .tet-hud { padding: 4px 8px 2px; }
+  .tet-hud-value { font-size: 14px; }
+  .tet-side { width: 44px; }
+  .tet-side-label { font-size: 7px; }
+  .tet-side-info { font-size: 7px; }
+  .tet-side-info-val { font-size: 11px; }
+  .tet-play-area { gap: 3px; padding: 0 3px; }
+  .tet-dpad { grid-template-columns: 36px 36px 36px; grid-template-rows: 36px 36px; gap: 2px; }
+  .tet-dpad-btn { font-size: 14px; border-radius: 8px; }
+  .tet-act { width: 40px; height: 40px; font-size: 9px; }
+  .tet-controls { padding: 4px 6px 12px; }
+}
+
+/* ─── Jewel: 430px ─── */
+@media (max-width: 430px) {
+  .jwl-hud { padding: 8px 12px 4px; }
+  .jwl-score-value { font-size: 20px; }
+  .jwl-progress-bar { padding: 0 12px; margin-bottom: 4px; }
+  .jwl-timer-bar { padding: 0 12px; margin-bottom: 4px; }
+  .jwl-mode-info { margin-bottom: 4px; }
+  .jwl-grid-area { padding: 0 6px; }
+  .jwl-grid-container { padding: 3px; }
+  .jwl-bottom { padding: 8px 0 18px; }
+  .jwl-jar { width: 28px; height: 120px; }
+  .jwl-jar-wrap { margin-right: 8px; }
+}
+
+/* ─── Jewel: 360px ─── */
+@media (max-width: 360px) {
+  .jwl-hud { padding: 6px 10px 2px; }
+  .jwl-score-value { font-size: 18px; }
+  .jwl-combo-badge { font-size: 10px; padding: 2px 8px; }
+  .jwl-progress-bar { padding: 0 10px; margin-bottom: 3px; }
+  .jwl-timer-bar { padding: 0 10px; margin-bottom: 3px; }
+  .jwl-grid-area { padding: 0 4px; }
+  .jwl-grid-container { padding: 2px; border-radius: 8px; }
+  .jwl-bottom { padding: 6px 0 14px; }
+  .jwl-hint-btn { padding: 6px 16px; font-size: 11px; }
+  .jwl-jar { width: 24px; height: 100px; }
+  .jwl-jar-wrap { margin-right: 6px; }
+}
+
+/* ─── Stairs: 430px ─── */
+@media (max-width: 430px) {
+  .st-hud { padding: 6px 10px; }
+  .st-hud-score { font-size: 20px; }
+  .st-hud-step { font-size: 11px; }
+  .st-stamina-bar { height: 6px; }
+  .st-stamina-wrap { padding: 0 10px; margin-bottom: 4px; }
+  .st-controls { padding: 8px 16px 16px; }
+  .st-btn { padding: 14px 24px; font-size: 14px; }
+}
+
+/* ─── Stairs: 360px ─── */
+@media (max-width: 360px) {
+  .st-hud { padding: 4px 8px; gap: 4px; }
+  .st-hud-score { font-size: 18px; }
+  .st-hud-step { font-size: 10px; }
+  .st-stamina-wrap { padding: 0 8px; }
+  .st-controls { padding: 6px 12px 14px; }
+  .st-btn { padding: 12px 20px; font-size: 13px; border-radius: 10px; }
+}
+
+/* ─── Stairs: short screen ─── */
+@media (max-height: 600px) {
+  .st-hud { padding: 3px 8px; }
+  .st-hud-score { font-size: 16px; }
+  .st-stamina-wrap { margin-bottom: 2px; }
+  .st-controls { padding: 4px 12px 10px; }
+  .st-btn { padding: 10px 18px; }
+}
+
+/* ─── All 3 games: Landscape ─── */
+@media (orientation: landscape) and (max-height: 450px) {
+
+  /* Tetris landscape */
+  #tetrisGame .tet-hud { padding: 2px 8px 1px; }
+  #tetrisGame .tet-hud-value { font-size: 13px; }
+  #tetrisGame .tet-controls { padding: 2px 8px 6px; }
+  #tetrisGame .tet-dpad { grid-template-columns: 34px 34px 34px; grid-template-rows: 34px 34px; gap: 1px; }
+  #tetrisGame .tet-act { width: 38px; height: 38px; font-size: 9px; }
+  #tetrisGame .tet-side { width: 44px; }
+  #tetrisGame .tet-side-box { padding: 2px; }
+
+  /* Jewel landscape */
+  #jewelGame .jwl-hud { padding: 3px 10px 1px; }
+  #jewelGame .jwl-score-value { font-size: 16px; }
+  #jewelGame .jwl-progress-bar { margin-bottom: 2px; padding: 0 10px; }
+  #jewelGame .jwl-timer-bar { margin-bottom: 2px; padding: 0 10px; }
+  #jewelGame .jwl-mode-info { margin-bottom: 2px; }
+  #jewelGame .jwl-bottom { padding: 3px 0 8px; }
+  #jewelGame .jwl-jar { height: 80px; }
+
+  /* Stairs landscape */
+  #stairsGame .st-hud { padding: 2px 8px; }
+  #stairsGame .st-hud-score { font-size: 14px; }
+  #stairsGame .st-controls { padding: 2px 10px 6px; }
+  #stairsGame .st-btn { padding: 8px 16px; font-size: 12px; }
+  #stairsGame .st-stamina-wrap { margin-bottom: 2px; }
+}
+
+/* ─── Safe Area Insets ─── */
+@supports (padding: env(safe-area-inset-top)) {
+  /* Tetris */
+  #tetrisGame .tet-hud {
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+  #tetrisGame .tet-controls {
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+  #tetrisGame .tet-mode-overlay,
+  #tetrisGame .tet-gameover,
+  #tetrisGame .tet-pause {
+    padding-top: max(30px, env(safe-area-inset-top));
+    padding-bottom: max(30px, env(safe-area-inset-bottom));
+  }
+
+  /* Jewel */
+  #jewelGame .jwl-hud {
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+  #jewelGame .jwl-bottom {
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+  #jewelGame .jwl-title-overlay,
+  #jewelGame .jwl-gameover-overlay,
+  #jewelGame .jwl-pause-overlay {
+    padding-top: max(40px, env(safe-area-inset-top));
+    padding-bottom: max(40px, env(safe-area-inset-bottom));
+  }
+
+  /* Stairs */
+  #stairsGame .st-hud {
+    padding-top: max(6px, env(safe-area-inset-top));
+  }
+  #stairsGame .st-controls {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  #stairsGame .st-death-overlay,
+  #stairsGame .st-results-overlay,
+  #stairsGame .st-countdown-overlay {
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+}
+

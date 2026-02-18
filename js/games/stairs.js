@@ -25,6 +25,9 @@ let stCamX = 0;
 let stCamY = 0;
 let stInputLocked = false;
 let _stKeyBound = false;
+let stParticles = [];
+let stStepFlash = 0;
+let stMilestoneText = null;
 
 // ===== Seeded RNG =====
 function stRng(seed) {
@@ -121,6 +124,10 @@ function stInitLocal(seed) {
     deathTime: 0,
   };
 
+  stParticles = [];
+  stStepFlash = 0;
+  stMilestoneText = null;
+
   stSetupCanvas();
   stSetupKeyboard();
   stStartCountdown();
@@ -205,6 +212,24 @@ function stLoop(ts) {
     }
 
     stUpdateHUD();
+
+    // Trail particles for high combo
+    if (stLocal.combo >= 5 && Math.random() < 0.4) {
+      const cp = stLocal.positions[stLocal.step];
+      if (cp) {
+        const trailColor = stLocal.comboMul >= 3 ? '#fd7272' : stLocal.comboMul >= 2 ? '#ffeaa7' : '#a29bfe';
+        stParticles.push({
+          x: cp.x + (Math.random() - 0.5) * 16,
+          y: cp.y - 30 + (Math.random() - 0.5) * 10,
+          vx: (Math.random() - 0.5) * 20,
+          vy: -10 - Math.random() * 20,
+          life: 0.3 + Math.random() * 0.2,
+          maxLife: 0.3 + Math.random() * 0.2,
+          size: 1.5 + Math.random() * 1.5,
+          color: trailColor
+        });
+      }
+    }
   }
 
   // ---- Dead phase (brief animation) ----
@@ -219,6 +244,10 @@ function stLoop(ts) {
       if (stLocal.shakeAmount < 0.5) stLocal.shakeAmount = 0;
     }
   }
+
+  // ---- Update particles ----
+  stUpdateParticles(dt);
+  if (stStepFlash > 0) { stStepFlash -= dt * 1000; if (stStepFlash < 0) stStepFlash = 0; }
 
   // ---- Camera lerp ----
   if (stLocal.step < stLocal.positions.length) {
@@ -278,14 +307,27 @@ function stDoInput(dir) {
     const recovery = Math.max(1, ST_BASE_RECOVERY - stLocal.step * 0.008);
     stLocal.stamina = Math.min(100, stLocal.stamina + recovery);
 
+    // Particles: step landing sparks
+    const stepPos = stLocal.positions[stLocal.step];
+    if (stepPos) {
+      stSpawnStepParticles(stepPos.x, stepPos.y, stLocal.combo);
+      stStepFlash = 80; // ms
+    }
+
     // Milestone bonus
     if (stLocal.step > 0 && stLocal.step % 100 === 0) {
       stLocal.score += 50;
+      if (stepPos) stSpawnMilestoneBurst(stepPos.x, stepPos.y);
+      stShowMilestoneText(stLocal.step + '층 돌파!');
+    } else if (stLocal.step > 0 && stLocal.step % 50 === 0) {
+      if (stepPos) stSpawnMilestoneBurst(stepPos.x, stepPos.y);
+      stShowMilestoneText(stLocal.step + '층!');
     }
 
     // Coin bonus every 10 steps
     if (stLocal.step > 0 && stLocal.step % 10 === 0) {
       stLocal.score += 10;
+      if (stepPos) stSpawnCoinParticles(stepPos.x, stepPos.y);
     }
 
   } else {
@@ -425,6 +467,9 @@ function stCleanup() {
   stCanvas = null;
   stCtx = null;
   stInputLocked = false;
+  stParticles = [];
+  stStepFlash = 0;
+  stMilestoneText = null;
 }
 
 // ===== HUD Update =====
@@ -656,6 +701,15 @@ function stRender() {
     }
   }
 
+  // Draw particles (world-space)
+  stDrawParticles(ctx, camOffX, camOffY);
+
+  // Step flash
+  stDrawStepFlash(ctx, W, H);
+
+  // Milestone text
+  stDrawMilestoneText(ctx, W, H);
+
   // Direction arrows on upcoming stairs (helpful hint)
   if (stLocal.phase === 'playing' || stLocal.phase === 'countdown') {
     const nextIdx = stLocal.step;
@@ -728,4 +782,139 @@ function renderStairsView(st) {
   if (!st) return;
   stMulti = st;
   stInitLocal(st.seed);
+}
+
+// ===== Particle System =====
+function stSpawnStepParticles(worldX, worldY, combo) {
+  const count = Math.min(20, 6 + combo * 2);
+  const colors = ['#a29bfe', '#6c5ce7', '#dfe6e9', '#ffeaa7'];
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 30 + Math.random() * 60;
+    stParticles.push({
+      x: worldX + (Math.random() - 0.5) * 30,
+      y: worldY - 5,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 20,
+      life: 0.3 + Math.random() * 0.3,
+      maxLife: 0.3 + Math.random() * 0.3,
+      size: 1.5 + Math.random() * 2,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    });
+  }
+}
+
+function stSpawnCoinParticles(worldX, worldY) {
+  const colors = ['#ffeaa7', '#fdcb6e', '#f9ca24', '#fff'];
+  for (let i = 0; i < 10; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 40 + Math.random() * 50;
+    stParticles.push({
+      x: worldX,
+      y: worldY - 15,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 30,
+      life: 0.4 + Math.random() * 0.3,
+      maxLife: 0.4 + Math.random() * 0.3,
+      size: 2 + Math.random() * 2,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    });
+  }
+}
+
+function stSpawnMilestoneBurst(worldX, worldY) {
+  const colors = ['#fd79a8', '#e17055', '#00cec9', '#fdcb6e', '#6c5ce7', '#fff'];
+  for (let i = 0; i < 30; i++) {
+    const angle = (Math.PI * 2 / 30) * i + Math.random() * 0.3;
+    const speed = 50 + Math.random() * 100;
+    stParticles.push({
+      x: worldX,
+      y: worldY - 20,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 40,
+      life: 0.5 + Math.random() * 0.5,
+      maxLife: 0.5 + Math.random() * 0.5,
+      size: 2 + Math.random() * 3,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    });
+  }
+  if (stParticles.length > 150) stParticles.splice(0, stParticles.length - 150);
+}
+
+function stShowMilestoneText(text) {
+  stMilestoneText = { text: text, time: 0, duration: 1.5 };
+}
+
+function stUpdateParticles(dt) {
+  for (let i = stParticles.length - 1; i >= 0; i--) {
+    const p = stParticles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 100 * dt; // gravity
+    p.vx *= 0.97;
+    p.life -= dt;
+    if (p.life <= 0) {
+      stParticles.splice(i, 1);
+    }
+  }
+  // Milestone text timer
+  if (stMilestoneText) {
+    stMilestoneText.time += dt;
+    if (stMilestoneText.time >= stMilestoneText.duration) {
+      stMilestoneText = null;
+    }
+  }
+}
+
+function stDrawParticles(ctx, camOffX, camOffY) {
+  for (const p of stParticles) {
+    const alpha = Math.max(0, p.life / p.maxLife);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x + camOffX, p.y + camOffY, p.size * alpha, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function stDrawStepFlash(ctx, W, H) {
+  if (stStepFlash <= 0) return;
+  const alpha = (stStepFlash / 80) * 0.15;
+  ctx.fillStyle = `rgba(108,92,231,${alpha})`;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function stDrawMilestoneText(ctx, W, H) {
+  if (!stMilestoneText) return;
+  const t = stMilestoneText.time;
+  const dur = stMilestoneText.duration;
+  const progress = t / dur;
+
+  let scale, alpha;
+  if (progress < 0.15) {
+    // Zoom in
+    scale = 0.3 + (progress / 0.15) * 0.9;
+    alpha = progress / 0.15;
+  } else if (progress < 0.7) {
+    scale = 1.2 - (progress - 0.15) * 0.36;
+    alpha = 1;
+  } else {
+    // Fade out + zoom out
+    const fadeP = (progress - 0.7) / 0.3;
+    scale = 0.84 - fadeP * 0.2;
+    alpha = 1 - fadeP;
+  }
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.font = `bold ${Math.floor(28 * scale)}px 'Black Han Sans', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ffd93d';
+  ctx.shadowColor = 'rgba(255,217,61,0.5)';
+  ctx.shadowBlur = 15;
+  ctx.fillText(stMilestoneText.text, W / 2, H * 0.3);
+  ctx.shadowBlur = 0;
+  ctx.restore();
 }

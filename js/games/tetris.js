@@ -117,6 +117,8 @@ let _tetKeyState = {};
 let _tetActionQueue = [];
 let _tetActionTextTimer = null;
 let tetMulti = null; // multiplayer state (host)
+let tetParticles = [];
+let _tetResizeHandler = null;
 
 // ===== 7-Bag Generator =====
 function tetShuffle(arr) {
@@ -419,6 +421,10 @@ function tetLockPiece(g) {
     // Store for animation
     g.clearingRows = clearedRows.slice();
     g.clearAnim = 0;
+    g.lineClearFlash = 150; // ms
+
+    // Spawn firework particles
+    tetSpawnFireworks(g, clearedRows, lines, tSpin);
 
     for (const r of clearedRows.sort((a, b) => a - b)) {
       g.board.splice(r, 1);
@@ -551,6 +557,7 @@ function tetStartGame(mode, startLevel) {
     gravityTimer: 0,
     clearingRows: [],
     clearAnim: 0,
+    lineClearFlash: 0,
     tetrisCount: 0,
     tSpinCount: 0,
     maxCombo: 0,
@@ -562,6 +569,7 @@ function tetStartGame(mode, startLevel) {
     countdownTimer: 0,
     gameOverTime: 0,
   };
+  tetParticles = [];
 
   // Fill initial queue
   tetGame.nextQueue = [...tetCreateBag(), ...tetCreateBag()];
@@ -579,6 +587,10 @@ function tetStartGame(mode, startLevel) {
   _tetDASActive = { left: false, right: false, down: false };
   _tetKeyState = {};
   _tetActionQueue = [];
+
+  // Show/hide timer bar
+  const timerBar = document.getElementById('tetTimerBar');
+  if (timerBar) timerBar.style.display = mode === 'ultra' ? 'block' : 'none';
 
   // Show mode select overlay is hidden
   const modeOverlay = document.getElementById('tetModeOverlay');
@@ -603,20 +615,7 @@ function tetSetupCanvases() {
   if (!tetCanvas) return;
   tetCtx = tetCanvas.getContext('2d');
 
-  // Calculate cell size based on available screen space
-  // Reserve space for HUD (~50px), players bar (~30px), controls (~110px)
-  const screenH = window.innerHeight || 700;
-  const screenW = window.innerWidth || 375;
-  const boardAvailH = screenH - 200; // subtract HUD + controls
-  const boardAvailW = screenW - 140;  // subtract side panels + padding
-  tetCellSize = Math.floor(Math.min(boardAvailH / TET_VISIBLE, boardAvailW / TET_COLS));
-  tetCellSize = Math.max(tetCellSize, 14);
-  tetCellSize = Math.min(tetCellSize, 28);
-
-  tetCanvas.width = TET_COLS * tetCellSize;
-  tetCanvas.height = TET_VISIBLE * tetCellSize;
-  tetCanvas.style.width = tetCanvas.width + 'px';
-  tetCanvas.style.height = tetCanvas.height + 'px';
+  tetRecalcSize();
 
   // Hold canvas
   tetHoldCanvas = document.getElementById('tetHoldCanvas');
@@ -638,6 +637,28 @@ function tetSetupCanvases() {
       c.height = 32;
     }
   }
+
+  // Resize listener
+  if (_tetResizeHandler) window.removeEventListener('resize', _tetResizeHandler);
+  _tetResizeHandler = function() { tetRecalcSize(); };
+  window.addEventListener('resize', _tetResizeHandler);
+}
+
+function tetRecalcSize() {
+  if (!tetCanvas) return;
+  const screenH = window.innerHeight || 700;
+  const screenW = window.innerWidth || 375;
+  const isLandscape = screenW > screenH;
+  const boardAvailH = screenH - (isLandscape ? 140 : 200);
+  const boardAvailW = screenW - (isLandscape ? 180 : 140);
+  tetCellSize = Math.floor(Math.min(boardAvailH / TET_VISIBLE, boardAvailW / TET_COLS));
+  tetCellSize = Math.max(tetCellSize, 14);
+  tetCellSize = Math.min(tetCellSize, 28);
+
+  tetCanvas.width = TET_COLS * tetCellSize;
+  tetCanvas.height = TET_VISIBLE * tetCellSize;
+  tetCanvas.style.width = tetCanvas.width + 'px';
+  tetCanvas.style.height = tetCanvas.height + 'px';
 }
 
 // ===== Game loop =====
@@ -661,7 +682,12 @@ function tetGameLoop(timestamp) {
     g.clearAnim -= dt;
     if (g.clearAnim < 0) g.clearAnim = 0;
   }
+  if (g.lineClearFlash > 0) {
+    g.lineClearFlash -= dt;
+    if (g.lineClearFlash < 0) g.lineClearFlash = 0;
+  }
 
+  tetUpdateParticles(dt);
   tetRender(g);
 
   if (g.phase !== 'gameover' && g.phase !== 'victory' && g.phase !== 'modeselect' && g.phase !== 'paused') {
@@ -1028,6 +1054,12 @@ function tetRender(g) {
     }
   }
 
+  // Line clear flash
+  tetDrawLineClearFlash(ctx, g);
+
+  // Draw particles
+  tetDrawParticles(ctx);
+
   // Update HUD
   tetUpdateHUD(g);
 
@@ -1114,6 +1146,13 @@ function tetUpdateHUD(g) {
       const remaining = Math.max(0, 120000 - g.elapsedTime);
       timerEl.textContent = tetFormatTime(remaining);
       timerEl.className = remaining < 15000 ? 'tet-hud-value tet-timer-warn' : 'tet-hud-value';
+      // Update timer progress bar
+      const fill = document.getElementById('tetTimerFill');
+      if (fill) {
+        const pct = (remaining / 120000) * 100;
+        fill.style.width = pct + '%';
+        fill.className = 'tet-timer-bar-fill' + (remaining < 15000 ? ' danger' : remaining < 30000 ? ' warn' : '');
+      }
     } else if (g.mode === 'sprint') {
       timerEl.textContent = tetFormatTime(g.elapsedTime);
       timerEl.className = 'tet-hud-value';
@@ -1323,7 +1362,117 @@ function tetCleanup() {
   tetUnbindKeys();
   tetGame = null;
   tetMulti = null;
+  tetParticles = [];
   _tetKeyState = {};
   clearTimeout(_tetTouchTimeout);
   clearInterval(_tetTouchInterval);
+  if (_tetResizeHandler) {
+    window.removeEventListener('resize', _tetResizeHandler);
+    _tetResizeHandler = null;
+  }
+}
+
+// ===== Particle System =====
+function tetSpawnFireworks(g, clearedRows, lines, isTSpin) {
+  const cs = tetCellSize;
+  const offset = TET_ROWS - TET_VISIBLE;
+  const colors = ['#ff5252','#ffd740','#69f0ae','#448aff','#e040fb','#ffab40','#00d2ff'];
+
+  let count = 12;
+  if (lines >= 4 || isTSpin) count = 40;
+  else if (lines >= 2) count = 25;
+
+  for (const row of clearedRows) {
+    const vy = (row - offset) * cs + cs / 2;
+    for (let i = 0; i < Math.ceil(count / clearedRows.length); i++) {
+      const vx = Math.random() * (TET_COLS * cs);
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 40 + Math.random() * 80;
+      const size = (lines >= 4 || isTSpin) ? 2 + Math.random() * 3 : 1.5 + Math.random() * 2;
+      tetParticles.push({
+        x: vx, y: vy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 30,
+        life: 0.5 + Math.random() * 0.4,
+        maxLife: 0.5 + Math.random() * 0.4,
+        size: size,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        glow: lines >= 4 || isTSpin
+      });
+    }
+  }
+
+  // Combo burst
+  if (g.combo > 2) {
+    const cx = TET_COLS * cs / 2;
+    const cy = TET_VISIBLE * cs / 2;
+    tetSpawnBurst(cx, cy, 8 + g.combo * 2, 120);
+  }
+
+  // T-Spin radial burst
+  if (isTSpin && g.currentPiece) {
+    const px = (g.currentPiece.x + 1.5) * cs;
+    const py = (g.currentPiece.y - offset + 1.5) * cs;
+    tetSpawnBurst(px, py, 20, 100);
+  }
+
+  // Cap particles
+  if (tetParticles.length > 200) tetParticles.splice(0, tetParticles.length - 200);
+}
+
+function tetSpawnBurst(x, y, count, spread) {
+  const colors = ['#fff','#ffd740','#ff5252','#00d2ff','#e040fb'];
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 20 + Math.random() * spread;
+    tetParticles.push({
+      x: x, y: y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 0.3 + Math.random() * 0.4,
+      maxLife: 0.3 + Math.random() * 0.4,
+      size: 1.5 + Math.random() * 2.5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      glow: true
+    });
+  }
+}
+
+function tetUpdateParticles(dt) {
+  const dtSec = dt / 1000;
+  for (let i = tetParticles.length - 1; i >= 0; i--) {
+    const p = tetParticles[i];
+    p.x += p.vx * dtSec;
+    p.y += p.vy * dtSec;
+    p.vy += 120 * dtSec; // gravity
+    p.vx *= 0.98;
+    p.life -= dtSec;
+    if (p.life <= 0) {
+      tetParticles.splice(i, 1);
+    }
+  }
+}
+
+function tetDrawParticles(ctx) {
+  for (const p of tetParticles) {
+    const alpha = Math.max(0, p.life / p.maxLife);
+    ctx.globalAlpha = alpha;
+    if (p.glow && alpha > 0.5) {
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 8;
+    }
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  ctx.globalAlpha = 1;
+}
+
+function tetDrawLineClearFlash(ctx, g) {
+  if (g.lineClearFlash <= 0) return;
+  const alpha = g.lineClearFlash / 150;
+  ctx.fillStyle = `rgba(255,255,255,${alpha * 0.3})`;
+  ctx.fillRect(0, 0, tetCanvas.width, tetCanvas.height);
 }
