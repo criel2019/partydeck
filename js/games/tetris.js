@@ -420,7 +420,7 @@ function tetLockPiece(g) {
     g.clearingRows = clearedRows.slice();
     g.clearAnim = 0;
 
-    for (const r of clearedRows.sort((a, b) => b - a)) {
+    for (const r of clearedRows.sort((a, b) => a - b)) {
       g.board.splice(r, 1);
       g.board.unshift(new Array(TET_COLS).fill(0));
     }

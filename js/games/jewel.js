@@ -1064,23 +1064,78 @@ async function jwlProcessMatchAndCascade(matched, matchGroups, swapPos) {
 }
 
 async function jwlProcessCascade() {
+  if (!jwlState) return;
   const grid = jwlState.grid;
+  const maxCascades = 50; // safety limit
+  let cascadeCount = 0;
 
-  // Apply gravity
-  const falls = jwlApplyGravity(grid);
-  if (falls.length > 0) {
-    jwlRenderGrid();
-    await jwlDelay(JWL_FALL_DELAY);
+  while (cascadeCount < maxCascades) {
+    // Apply gravity
+    const falls = jwlApplyGravity(grid);
+    if (falls.length > 0) {
+      jwlRenderGrid();
+      await jwlDelay(JWL_FALL_DELAY);
+    }
+
+    // Check for new matches
+    const { matched, matchGroups } = jwlFindMatches(grid);
+    if (matched.size === 0) break;
+
+    cascadeCount++;
+    jwlState.combo++;
+    if (jwlState.combo > jwlState.maxCombo) jwlState.maxCombo = jwlState.combo;
+
+    // Process matches inline (same as jwlProcessMatchAndCascade but no recursive call)
+    const specials = jwlDetermineSpecials(matchGroups, grid, null);
+    let baseScore = 0;
+    matchGroups.forEach(g => {
+      if (g.len >= 6) baseScore += JWL_SCORE_6;
+      else if (g.len === 5) baseScore += JWL_SCORE_5;
+      else if (g.len === 4) baseScore += JWL_SCORE_4;
+      else baseScore += JWL_SCORE_3;
+    });
+    const mult = jwlComboMultiplier(jwlState.combo);
+    const score = baseScore * mult;
+    jwlState.score += score;
+    jwlState.levelScore += score;
+
+    const comboTxt = jwlComboText(jwlState.combo);
+    if (comboTxt) jwlShowComboText(comboTxt);
+
+    const toRemove = new Set(matched);
+    const activatedSpecials = [];
+    matched.forEach(idx => {
+      const r = Math.floor(idx / JWL_COLS), c = idx % JWL_COLS;
+      if (jwlIsSpecial(grid[r][c])) {
+        activatedSpecials.push({ r, c, val: grid[r][c] });
+        jwlState.specialsUsed++;
+      }
+    });
+    activatedSpecials.forEach(s => {
+      jwlActivateSpecial(grid, s.r, s.c, toRemove);
+    });
+
+    jwlPlaySound('match', jwlState.combo);
+    const specialPos = new Set(specials.map(s => s.r * JWL_COLS + s.c));
+    toRemove.forEach(idx => {
+      if (specialPos.has(idx)) return;
+      const r = Math.floor(idx / JWL_COLS), c = idx % JWL_COLS;
+      if (grid[r][c] !== -1) jwlState.gemsCleared++;
+      grid[r][c] = -1;
+    });
+    specials.forEach(s => {
+      jwlState.gemsCleared++;
+      grid[s.r][s.c] = s.val;
+      jwlPlaySound('special');
+    });
+
+    await jwlAnimateMatches(toRemove);
+    jwlShowScorePopup(score, null);
+    jwlCheckLevelUp();
   }
 
-  // Check for new matches
-  const { matched, matchGroups } = jwlFindMatches(grid);
-  if (matched.size > 0) {
-    await jwlProcessMatchAndCascade(matched, matchGroups, null);
-  } else {
-    jwlState.combo = 0;
-    jwlRender();
-  }
+  jwlState.combo = 0;
+  jwlRender();
 }
 
 // ===== Game State Checks =====

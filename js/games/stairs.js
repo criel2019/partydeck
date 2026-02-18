@@ -237,18 +237,16 @@ function stLoop(ts) {
 }
 
 // ===== Input =====
-function stTapLeft() { stDoInput(true); }
-function stTapRight() { stDoInput(false); }
+function stTapLeft() { stDoInput(-1); }
+function stTapRight() { stDoInput(1); }
 
-function stDoInput(changeDir) {
+function stDoInput(dir) {
   if (!stLocal || stLocal.phase !== 'playing' || !stLocal.alive) return;
   if (stInputLocked) return;
   stInputLocked = true;
   setTimeout(() => { stInputLocked = false; }, ST_INPUT_COOLDOWN);
 
-  if (changeDir) {
-    stLocal.facing = -stLocal.facing;
-  }
+  stLocal.facing = dir;
 
   const nextDir = stLocal.dirs[stLocal.step];
 
@@ -691,10 +689,14 @@ function stKeyHandler(e) {
 
   if (e.key === 'ArrowLeft' || e.key === 'x' || e.key === 'X') {
     e.preventDefault();
-    stTapLeft();
-  } else if (e.key === 'ArrowRight' || e.key === 'z' || e.key === 'Z' || e.key === 'ArrowUp') {
+    stTapLeft();  // 왼쪽 방향
+  } else if (e.key === 'ArrowRight' || e.key === 'z' || e.key === 'Z') {
     e.preventDefault();
-    stTapRight();
+    stTapRight(); // 오른쪽 방향
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    // 위쪽 키: 현재 방향 유지하고 올라가기
+    stDoInput(stLocal ? stLocal.facing : 1);
   }
 }
 
