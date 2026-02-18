@@ -451,3 +451,40 @@
   from { opacity: 0; transform: translateX(-10px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
+/* ===== Canvas touch hint ===== */
+.st-canvas-wrap {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== Mobile: bigger touch targets ===== */
+@media (max-width: 430px) {
+  .st-btn {
+    height: 64px;
+    font-size: 15px;
+    border-radius: 16px;
+  }
+  .st-btn-arrow { font-size: 20px; }
+  .st-controls { gap: 10px; padding: 10px 12px 28px; }
+  .st-hud { padding: 40px 12px 6px; }
+}
+
+@media (max-width: 360px) {
+  .st-btn {
+    height: 56px;
+    font-size: 14px;
+    border-radius: 14px;
+  }
+  .st-btn-arrow { font-size: 18px; }
+  .st-controls { gap: 8px; padding: 8px 10px 24px; }
+  .st-hud { padding: 36px 10px 4px; }
+  .st-score-value { font-size: 20px; }
+}
+
+@media (max-height: 600px) {
+  .st-btn { height: 50px; font-size: 13px; }
+  .st-controls { padding: 6px 10px 16px; }
+  .st-hud { padding: 28px 10px 4px; }
+}

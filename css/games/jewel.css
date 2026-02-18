@@ -144,6 +144,8 @@
   z-index: 5;
   padding: 0 8px;
   min-height: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .jwl-grid-container {
   position: relative;

@@ -134,6 +134,8 @@
   align-items: center;
   z-index: 5;
   flex-shrink: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* D-pad */

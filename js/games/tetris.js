@@ -118,6 +118,7 @@ let _tetActionQueue = [];
 let _tetActionTextTimer = null;
 let tetMulti = null; // multiplayer state (host)
 let tetParticles = [];
+let tetFireworks = [];  // 2-phase firework rockets
 let _tetResizeHandler = null;
 
 // ===== 7-Bag Generator =====
@@ -570,6 +571,7 @@ function tetStartGame(mode, startLevel) {
     gameOverTime: 0,
   };
   tetParticles = [];
+  tetFireworks = [];
 
   // Fill initial queue
   tetGame.nextQueue = [...tetCreateBag(), ...tetCreateBag()];
@@ -1363,6 +1365,7 @@ function tetCleanup() {
   tetGame = null;
   tetMulti = null;
   tetParticles = [];
+  tetFireworks = [];
   _tetKeyState = {};
   clearTimeout(_tetTouchTimeout);
   clearInterval(_tetTouchInterval);
@@ -1372,100 +1375,207 @@ function tetCleanup() {
   }
 }
 
-// ===== Particle System =====
+// ===== Particle & Firework System =====
+const TET_FW_COLORS = [
+  ['#ff5252','#ff8a80','#ffcdd2'],  // red
+  ['#ffd740','#ffe57f','#fff8e1'],  // gold
+  ['#69f0ae','#b9f6ca','#e8f5e9'],  // green
+  ['#448aff','#82b1ff','#bbdefb'],  // blue
+  ['#e040fb','#ea80fc','#f3e5f5'],  // purple
+  ['#00d2ff','#80deea','#e0f7fa'],  // cyan
+  ['#ffab40','#ffd180','#fff3e0'],  // orange
+];
+
 function tetSpawnFireworks(g, clearedRows, lines, isTSpin) {
   const cs = tetCellSize;
+  const W = TET_COLS * cs;
+  const H = TET_VISIBLE * cs;
   const offset = TET_ROWS - TET_VISIBLE;
-  const colors = ['#ff5252','#ffd740','#69f0ae','#448aff','#e040fb','#ffab40','#00d2ff'];
 
-  let count = 12;
-  if (lines >= 4 || isTSpin) count = 40;
-  else if (lines >= 2) count = 25;
+  // --- Row-level sparks (always) ---
+  let sparkCount = 10;
+  if (lines >= 4 || isTSpin) sparkCount = 30;
+  else if (lines >= 2) sparkCount = 18;
 
   for (const row of clearedRows) {
-    const vy = (row - offset) * cs + cs / 2;
-    for (let i = 0; i < Math.ceil(count / clearedRows.length); i++) {
-      const vx = Math.random() * (TET_COLS * cs);
+    const ry = (row - offset) * cs + cs / 2;
+    for (let i = 0; i < Math.ceil(sparkCount / clearedRows.length); i++) {
+      const vx = Math.random() * W;
       const angle = Math.random() * Math.PI * 2;
-      const speed = 40 + Math.random() * 80;
-      const size = (lines >= 4 || isTSpin) ? 2 + Math.random() * 3 : 1.5 + Math.random() * 2;
+      const speed = 30 + Math.random() * 60;
       tetParticles.push({
-        x: vx, y: vy,
+        x: vx, y: ry,
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 30,
-        life: 0.5 + Math.random() * 0.4,
-        maxLife: 0.5 + Math.random() * 0.4,
-        size: size,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        glow: lines >= 4 || isTSpin
+        vy: Math.sin(angle) * speed - 20,
+        life: 0.4 + Math.random() * 0.3,
+        maxLife: 0.4 + Math.random() * 0.3,
+        size: 1.5 + Math.random() * 1.5,
+        color: TET_FW_COLORS[Math.floor(Math.random() * TET_FW_COLORS.length)][0],
+        glow: false, trail: false
       });
     }
   }
 
-  // Combo burst
-  if (g.combo > 2) {
-    const cx = TET_COLS * cs / 2;
-    const cy = TET_VISIBLE * cs / 2;
-    tetSpawnBurst(cx, cy, 8 + g.combo * 2, 120);
+  // --- Real firework rockets on combo ---
+  if (g.combo >= 1) {
+    let rockets = 1;
+    if (g.combo >= 6) rockets = 5;
+    else if (g.combo >= 4) rockets = 4;
+    else if (g.combo >= 3) rockets = 3;
+    else if (g.combo >= 2) rockets = 2;
+    if (lines >= 4 || isTSpin) rockets += 2;
+
+    for (let i = 0; i < rockets; i++) {
+      const palette = TET_FW_COLORS[Math.floor(Math.random() * TET_FW_COLORS.length)];
+      const startX = 20 + Math.random() * (W - 40);
+      const startY = H + 5;
+      const peakY = 15 + Math.random() * (H * 0.45);
+      const riseTime = 0.3 + Math.random() * 0.25;
+      tetFireworks.push({
+        phase: 'rise',     // 'rise' → 'burst' → done
+        x: startX, y: startY,
+        targetY: peakY,
+        riseTime: riseTime,
+        riseTimer: 0,
+        palette: palette,
+        burstCount: 20 + Math.floor(Math.random() * 20),
+        trailTimer: 0,
+        delay: i * 0.08     // stagger rockets
+      });
+    }
   }
 
   // T-Spin radial burst
   if (isTSpin && g.currentPiece) {
     const px = (g.currentPiece.x + 1.5) * cs;
     const py = (g.currentPiece.y - offset + 1.5) * cs;
-    tetSpawnBurst(px, py, 20, 100);
+    tetSpawnBurst(px, py, 25, 120);
   }
 
   // Cap particles
-  if (tetParticles.length > 200) tetParticles.splice(0, tetParticles.length - 200);
+  if (tetParticles.length > 300) tetParticles.splice(0, tetParticles.length - 300);
 }
 
 function tetSpawnBurst(x, y, count, spread) {
-  const colors = ['#fff','#ffd740','#ff5252','#00d2ff','#e040fb'];
+  const palette = TET_FW_COLORS[Math.floor(Math.random() * TET_FW_COLORS.length)];
   for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 20 + Math.random() * spread;
+    const angle = (Math.PI * 2 / count) * i + (Math.random() - 0.5) * 0.3;
+    const speed = spread * 0.3 + Math.random() * spread * 0.7;
     tetParticles.push({
       x: x, y: y,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      life: 0.3 + Math.random() * 0.4,
-      maxLife: 0.3 + Math.random() * 0.4,
-      size: 1.5 + Math.random() * 2.5,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      glow: true
+      life: 0.5 + Math.random() * 0.5,
+      maxLife: 0.5 + Math.random() * 0.5,
+      size: 2 + Math.random() * 2.5,
+      color: palette[Math.floor(Math.random() * palette.length)],
+      glow: true, trail: true
     });
   }
 }
 
 function tetUpdateParticles(dt) {
   const dtSec = dt / 1000;
+
+  // --- Update firework rockets ---
+  for (let i = tetFireworks.length - 1; i >= 0; i--) {
+    const fw = tetFireworks[i];
+
+    // Stagger delay
+    if (fw.delay > 0) { fw.delay -= dtSec; continue; }
+
+    if (fw.phase === 'rise') {
+      fw.riseTimer += dtSec;
+      const t = Math.min(fw.riseTimer / fw.riseTime, 1);
+      const startY = tetCanvas ? tetCanvas.height + 5 : 400;
+      // Ease-out rise
+      fw.y = startY + (fw.targetY - startY) * (1 - Math.pow(1 - t, 2));
+
+      // Trail sparks during rise
+      fw.trailTimer += dtSec;
+      if (fw.trailTimer > 0.02) {
+        fw.trailTimer = 0;
+        tetParticles.push({
+          x: fw.x + (Math.random() - 0.5) * 3,
+          y: fw.y,
+          vx: (Math.random() - 0.5) * 15,
+          vy: 15 + Math.random() * 25,
+          life: 0.2 + Math.random() * 0.15,
+          maxLife: 0.2 + Math.random() * 0.15,
+          size: 1 + Math.random(),
+          color: fw.palette[0],
+          glow: true, trail: false
+        });
+      }
+
+      // Peak → burst
+      if (t >= 1) {
+        fw.phase = 'done';
+        tetSpawnBurst(fw.x, fw.y, fw.burstCount, 90 + Math.random() * 40);
+      }
+    }
+
+    if (fw.phase === 'done') {
+      tetFireworks.splice(i, 1);
+    }
+  }
+
+  // --- Update particles ---
   for (let i = tetParticles.length - 1; i >= 0; i--) {
     const p = tetParticles[i];
+    // Trail: spawn fading sub-particle
+    if (p.trail && p.life > 0.2 && Math.random() < 0.3) {
+      tetParticles.push({
+        x: p.x, y: p.y,
+        vx: 0, vy: 0,
+        life: 0.15 + Math.random() * 0.1,
+        maxLife: 0.15 + Math.random() * 0.1,
+        size: p.size * 0.5,
+        color: p.color,
+        glow: false, trail: false
+      });
+    }
     p.x += p.vx * dtSec;
     p.y += p.vy * dtSec;
-    p.vy += 120 * dtSec; // gravity
-    p.vx *= 0.98;
+    p.vy += 80 * dtSec; // gravity
+    p.vx *= 0.97;
     p.life -= dtSec;
     if (p.life <= 0) {
       tetParticles.splice(i, 1);
     }
   }
+
+  // Hard cap
+  if (tetParticles.length > 400) tetParticles.splice(0, tetParticles.length - 400);
 }
 
 function tetDrawParticles(ctx) {
+  // Draw firework rockets (rising phase)
+  for (const fw of tetFireworks) {
+    if (fw.phase !== 'rise' || fw.delay > 0) continue;
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = fw.palette[0];
+    ctx.shadowColor = fw.palette[0];
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(fw.x, fw.y, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  // Draw particles
   for (const p of tetParticles) {
     const alpha = Math.max(0, p.life / p.maxLife);
     ctx.globalAlpha = alpha;
-    if (p.glow && alpha > 0.5) {
+    if (p.glow) {
       ctx.shadowColor = p.color;
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 6 + alpha * 6;
     }
     ctx.fillStyle = p.color;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, p.size * (0.4 + alpha * 0.6), 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowBlur = 0;
+    if (p.glow) ctx.shadowBlur = 0;
   }
   ctx.globalAlpha = 1;
 }

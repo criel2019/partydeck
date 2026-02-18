@@ -130,6 +130,7 @@ function stInitLocal(seed) {
 
   stSetupCanvas();
   stSetupKeyboard();
+  stSetupTouch();
   stStartCountdown();
   stUpdatePlayersBar();
 }
@@ -462,6 +463,7 @@ function closeStairsGame() {
 function stCleanup() {
   if (stAnimId) { cancelAnimationFrame(stAnimId); stAnimId = null; }
   stRemoveKeyboard();
+  stRemoveTouch();
   stLocal = null;
   stMulti = null;
   stCanvas = null;
@@ -759,6 +761,80 @@ function stRemoveKeyboard() {
     document.removeEventListener('keydown', stKeyHandler);
     _stKeyBound = false;
   }
+}
+
+// ===== Touch / Swipe on Canvas =====
+let _stTouchStartX = null;
+let _stTouchStartY = null;
+let _stTouchBound = false;
+
+function stSetupTouch() {
+  if (_stTouchBound) return;
+  const canvas = document.getElementById('stCanvas');
+  if (!canvas) return;
+  _stTouchBound = true;
+
+  canvas.addEventListener('touchstart', stCanvasTouchStart, { passive: false });
+  canvas.addEventListener('touchend', stCanvasTouchEnd, { passive: false });
+  canvas.addEventListener('touchmove', stCanvasTouchMove, { passive: false });
+  // Also support tap on left/right halves
+  canvas.addEventListener('click', stCanvasClick);
+}
+
+function stRemoveTouch() {
+  const canvas = document.getElementById('stCanvas');
+  if (!canvas || !_stTouchBound) return;
+  canvas.removeEventListener('touchstart', stCanvasTouchStart);
+  canvas.removeEventListener('touchend', stCanvasTouchEnd);
+  canvas.removeEventListener('touchmove', stCanvasTouchMove);
+  canvas.removeEventListener('click', stCanvasClick);
+  _stTouchBound = false;
+}
+
+function stCanvasTouchStart(e) {
+  e.preventDefault();
+  const t = e.touches[0];
+  _stTouchStartX = t.clientX;
+  _stTouchStartY = t.clientY;
+}
+
+function stCanvasTouchMove(e) {
+  e.preventDefault();
+  if (_stTouchStartX === null) return;
+  const t = e.touches[0];
+  const dx = t.clientX - _stTouchStartX;
+  const dy = t.clientY - _stTouchStartY;
+  // Swipe threshold 30px
+  if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)) {
+    _stTouchStartX = null;
+    _stTouchStartY = null;
+    if (dx > 0) stTapRight();
+    else stTapLeft();
+  }
+}
+
+function stCanvasTouchEnd(e) {
+  e.preventDefault();
+  if (_stTouchStartX === null) return;
+  // Short tap = use left/right half
+  const canvas = document.getElementById('stCanvas');
+  if (!canvas) { _stTouchStartX = null; return; }
+  const rect = canvas.getBoundingClientRect();
+  const tapX = _stTouchStartX - rect.left;
+  _stTouchStartX = null;
+  _stTouchStartY = null;
+  if (tapX < rect.width / 2) stTapLeft();
+  else stTapRight();
+}
+
+function stCanvasClick(e) {
+  // Desktop click fallback - left half = left, right half = right
+  const canvas = document.getElementById('stCanvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  if (clickX < rect.width / 2) stTapLeft();
+  else stTapRight();
 }
 
 // ===== Best score persistence =====
