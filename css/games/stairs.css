@@ -1,0 +1,456 @@
+/* ===== INFINITE STAIRS (무한의 계단) CSS ===== */
+
+#stairsGame {
+  padding: 0;
+  gap: 0;
+  background: #0d1b2a;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ===== HUD ===== */
+.st-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 48px 16px 8px;
+  z-index: 10;
+  position: relative;
+}
+
+.st-hud .back-btn {
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 10px !important;
+  color: rgba(255,255,255,0.6) !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 16px !important;
+  padding: 0 !important;
+}
+
+.st-score-box {
+  text-align: left;
+}
+
+.st-score-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Oswald', sans-serif;
+}
+
+.st-score-value {
+  font-family: 'Oswald', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.st-hud-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.st-combo {
+  background: rgba(253,114,114,0.2);
+  border: 1px solid rgba(253,114,114,0.4);
+  color: #fd7272;
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 100px;
+  display: none;
+}
+
+.st-step-display {
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  font-family: 'Oswald', sans-serif;
+  letter-spacing: 1px;
+}
+
+/* ===== Stamina Bar ===== */
+.st-stamina-wrap {
+  padding: 0 16px;
+  margin-bottom: 6px;
+  z-index: 10;
+  position: relative;
+}
+
+.st-stamina-outer {
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.st-stamina-fill {
+  height: 100%;
+  border-radius: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, #55efc4, #00b894);
+  box-shadow: 0 0 12px rgba(85,239,196,0.4);
+  transition: width 0.1s linear;
+}
+
+.st-stamina-fill.warn {
+  background: linear-gradient(90deg, #ffeaa7, #fdcb6e);
+  box-shadow: 0 0 12px rgba(255,234,167,0.4);
+}
+
+.st-stamina-fill.danger {
+  background: linear-gradient(90deg, #fd7272, #e17055);
+  box-shadow: 0 0 12px rgba(253,114,114,0.4);
+  animation: st-stamina-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes st-stamina-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.st-stamina-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: rgba(255,255,255,0.3);
+  margin-top: 2px;
+  font-family: 'Oswald', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ===== Canvas Area ===== */
+.st-canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.st-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Vignette overlay for low stamina */
+.st-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(253,60,60,0.4) 100%);
+  transition: opacity 0.3s;
+}
+
+/* ===== Controls ===== */
+.st-controls {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px 36px;
+  z-index: 10;
+  position: relative;
+}
+
+.st-btn {
+  flex: 1;
+  height: 72px;
+  border-radius: 20px;
+  border: none;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s;
+}
+
+.st-btn:active {
+  transform: scale(0.96);
+}
+
+.st-btn-left {
+  background: linear-gradient(135deg, rgba(253,114,114,0.2), rgba(253,114,114,0.1));
+  border: 1.5px solid rgba(253,114,114,0.35);
+  color: #fd7272;
+}
+
+.st-btn-right {
+  background: linear-gradient(135deg, rgba(85,239,196,0.2), rgba(85,239,196,0.1));
+  border: 1.5px solid rgba(85,239,196,0.35);
+  color: #55efc4;
+}
+
+.st-btn-arrow {
+  font-size: 22px;
+}
+
+.st-btn-sub {
+  font-size: 9px;
+  opacity: 0.5;
+  position: absolute;
+  bottom: 8px;
+  letter-spacing: 1px;
+  font-family: 'Oswald', sans-serif;
+}
+
+/* ===== Countdown Overlay ===== */
+.st-countdown-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+}
+
+.st-countdown-num {
+  font-family: 'Oswald', sans-serif;
+  font-size: 120px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 60px rgba(108,92,231,0.6);
+  animation: st-countdown-pop 1s ease-in-out infinite;
+}
+
+.st-countdown-num.go {
+  font-size: 80px;
+  color: #55efc4;
+  text-shadow: 0 0 60px rgba(85,239,196,0.6);
+}
+
+@keyframes st-countdown-pop {
+  0% { transform: scale(1.2); opacity: 0.5; }
+  50% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.5; }
+}
+
+/* ===== Death Overlay ===== */
+.st-death-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  padding: 40px 30px;
+}
+
+.st-death-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: #fd7272;
+  margin-bottom: 8px;
+  text-shadow: 0 0 30px rgba(253,114,114,0.4);
+}
+
+.st-death-reason {
+  font-size: 14px;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 32px;
+}
+
+.st-death-score-box {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 20px 48px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.st-death-score {
+  font-family: 'Oswald', sans-serif;
+  font-size: 52px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.st-death-score-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-top: 4px;
+}
+
+.st-death-stats {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.st-death-stat {
+  text-align: center;
+}
+
+.st-death-stat-val {
+  font-family: 'Oswald', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #a29bfe;
+}
+
+.st-death-stat-label {
+  font-size: 9px;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.st-death-waiting {
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+  margin-top: 12px;
+}
+
+/* ===== Results Overlay ===== */
+.st-results-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  padding: 40px 20px;
+}
+
+.st-results-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 24px;
+  text-shadow: 0 0 20px rgba(108,92,231,0.4);
+}
+
+.st-results-list {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.st-rank-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255,255,255,0.06);
+  border-left: 4px solid #a29bfe;
+  border-radius: 0 8px 8px 0;
+  animation: slideIn 0.3s ease;
+}
+
+.st-rank-item.st-rank-me {
+  background: rgba(108,92,231,0.15);
+  border-left-color: #6c5ce7;
+}
+
+.st-rank-pos {
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #a29bfe;
+  min-width: 32px;
+  text-align: center;
+}
+
+.st-rank-avatar {
+  font-size: 20px;
+}
+
+.st-rank-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff;
+}
+
+.st-rank-score {
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  color: rgba(255,255,255,0.7);
+}
+
+.st-results-btn {
+  max-width: 280px;
+  width: 100%;
+}
+
+/* ===== Players Bar (multiplayer) ===== */
+.st-players-bar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 16px;
+  z-index: 10;
+  position: relative;
+}
+
+.st-player-pip {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  transition: all 0.3s;
+}
+
+.st-player-pip.alive {
+  border-color: rgba(85,239,196,0.4);
+}
+
+.st-player-pip.dead {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+.st-player-pip.me {
+  border-color: rgba(108,92,231,0.6);
+  box-shadow: 0 0 8px rgba(108,92,231,0.3);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}

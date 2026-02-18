@@ -1,0 +1,591 @@
+/* ============================
+   TETRIS - Game Styles
+   ============================ */
+
+/* ===== Container ===== */
+#tetrisGame {
+  background: linear-gradient(180deg, #060810, #0a0e1e);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ===== Top HUD ===== */
+.tet-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 8px 12px 4px;
+  z-index: 5;
+  flex-shrink: 0;
+}
+.tet-hud-item {
+  text-align: center;
+  min-width: 60px;
+}
+.tet-hud-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(255,255,255,.3);
+  font-weight: 600;
+}
+.tet-hud-value {
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+.tet-hud-close {
+  font-size: 18px;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.4);
+  cursor: pointer;
+}
+
+/* ===== Mode badge ===== */
+.tet-mode-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0,210,255,.15);
+  color: #00d2ff;
+  display: inline-block;
+}
+
+/* ===== Main play area ===== */
+.tet-play-area {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  z-index: 5;
+  min-height: 0;
+}
+
+/* ===== Side panels (Hold / Next) ===== */
+.tet-side {
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.tet-side-box {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px;
+  padding: 4px;
+  text-align: center;
+}
+.tet-side-label {
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.25);
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+.tet-side-canvas {
+  display: block;
+  margin: 0 auto;
+}
+.tet-side-info {
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,.2);
+  text-align: center;
+}
+.tet-side-info-val {
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  display: block;
+}
+
+/* ===== Board Canvas ===== */
+.tet-board-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.tet-board-canvas {
+  display: block;
+  border-radius: 4px;
+  border: 1.5px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.02);
+}
+
+/* ===== Controls ===== */
+.tet-controls {
+  padding: 8px 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 5;
+  flex-shrink: 0;
+}
+
+/* D-pad */
+.tet-dpad {
+  display: grid;
+  grid-template-columns: 44px 44px 44px;
+  grid-template-rows: 44px 44px;
+  gap: 3px;
+}
+.tet-dpad-btn {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,.4);
+  font-size: 16px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.tet-dpad-btn:active {
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.7);
+}
+.tet-dpad-empty {
+  /* empty grid cell */
+}
+
+/* Action buttons */
+.tet-action-btns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.tet-act {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  letter-spacing: 0.5px;
+}
+.tet-act:active {
+  transform: scale(0.92);
+}
+.tet-act-hold {
+  background: rgba(197,108,240,.12);
+  border: 1.5px solid rgba(197,108,240,.25);
+  color: #c56cf0;
+}
+.tet-act-rotate {
+  background: rgba(0,210,255,.15);
+  border: 1.5px solid rgba(0,210,255,.3);
+  color: #00d2ff;
+  font-size: 18px;
+}
+.tet-act-drop {
+  background: rgba(255,217,61,.12);
+  border: 1.5px solid rgba(255,217,61,.25);
+  color: #ffd93d;
+  font-size: 16px;
+}
+
+/* ===== Mode Select Overlay ===== */
+.tet-mode-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: linear-gradient(180deg, #060810, #0c1428, #0a0e1e);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+.tet-mode-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 35%, rgba(0,210,255,.1), transparent 55%);
+  pointer-events: none;
+}
+.tet-mode-title {
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, #00d2ff, #c56cf0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.tet-mode-sub {
+  font-size: 10px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: rgba(126,200,227,.5);
+  position: relative;
+  z-index: 1;
+  margin-bottom: 36px;
+}
+.tet-mode-list {
+  position: relative;
+  z-index: 1;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tet-mode-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+.tet-mode-btn:active { transform: scale(0.96); }
+.tet-mode-primary {
+  background: linear-gradient(135deg, #00d2ff, #00a8cc);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(0,210,255,.3);
+}
+.tet-mode-sec {
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.6);
+  border: 1px solid rgba(255,255,255,.08);
+}
+.tet-mode-back {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.3);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px;
+  font-family: inherit;
+}
+
+/* ===== Countdown Overlay ===== */
+.tet-countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  background: rgba(6,8,16,.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.tet-countdown-num {
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 80px;
+  font-weight: 900;
+  color: #00d2ff;
+  text-shadow: 0 0 40px rgba(0,210,255,.5);
+  animation: tet-countdown-pop 0.8s ease-out;
+}
+@keyframes tet-countdown-pop {
+  0% { transform: scale(2); opacity: 0; }
+  30% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0; }
+}
+
+/* ===== Game Over Overlay ===== */
+.tet-gameover {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: linear-gradient(180deg, rgba(6,8,16,.95), rgba(16,8,24,.95));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 24px;
+}
+.tet-gameover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, rgba(255,107,107,.06), transparent 55%);
+  pointer-events: none;
+}
+.tet-go-title {
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  color: #ff6b6b;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 4px;
+}
+.tet-go-subtitle {
+  font-size: 11px;
+  color: rgba(255,255,255,.35);
+  position: relative;
+  z-index: 1;
+  margin-bottom: 20px;
+}
+.tet-go-score-box {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px;
+  padding: 16px 36px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 12px;
+}
+.tet-go-score {
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 40px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+}
+.tet-go-score-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.25);
+  margin-top: 4px;
+}
+.tet-go-stats {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.tet-go-stat {
+  text-align: center;
+}
+.tet-go-stat-val {
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  color: #7ec8e3;
+}
+.tet-go-stat-label {
+  font-size: 8px;
+  color: rgba(255,255,255,.25);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.tet-go-best {
+  font-size: 12px;
+  color: #ffd93d;
+  font-weight: 700;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+.tet-go-btn {
+  position: relative;
+  z-index: 1;
+  width: 180px;
+  padding: 13px;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 8px;
+  display: block;
+  -webkit-tap-highlight-color: transparent;
+}
+.tet-go-btn:active { transform: scale(0.96); }
+.tet-go-retry {
+  background: linear-gradient(135deg, #00d2ff, #00a8cc);
+  color: #fff;
+}
+.tet-go-home {
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.5);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+/* ===== Line clear flash effect ===== */
+.tet-line-flash {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #fff;
+  box-shadow: 0 0 20px 4px rgba(255,255,255,.5);
+  pointer-events: none;
+  z-index: 10;
+  animation: tet-flash 0.3s ease-out forwards;
+}
+@keyframes tet-flash {
+  0% { opacity: 1; transform: scaleY(3); }
+  100% { opacity: 0; transform: scaleY(0); }
+}
+
+/* ===== Action text (Tetris!, T-Spin, etc.) ===== */
+.tet-action-text {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 24px;
+  font-weight: 900;
+  color: #ffd93d;
+  text-shadow: 0 0 20px rgba(255,217,61,.5);
+  z-index: 12;
+  pointer-events: none;
+  animation: tet-action-pop 0.8s ease-out forwards;
+  white-space: nowrap;
+}
+@keyframes tet-action-pop {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  60% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -60%) scale(0.9); opacity: 0; }
+}
+
+/* ===== Pause overlay ===== */
+.tet-pause {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  background: rgba(6,8,16,.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.tet-pause-title {
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  color: #fff;
+}
+.tet-pause-btn {
+  width: 160px;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.tet-pause-resume {
+  background: linear-gradient(135deg, #00d2ff, #00a8cc);
+  color: #fff;
+}
+.tet-pause-quit {
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.5);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+/* ===== Sprint/Ultra timer ===== */
+.tet-timer-display {
+  font-family: 'Oswald', 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffd93d;
+}
+.tet-timer-warn {
+  color: #ff6b6b;
+  animation: tet-timer-blink 0.5s ease-in-out infinite alternate;
+}
+@keyframes tet-timer-blink {
+  from { opacity: 1; }
+  to { opacity: 0.5; }
+}
+
+/* ===== Multiplayer players bar ===== */
+.tet-players-bar {
+  display: flex;
+  gap: 6px;
+  padding: 0 12px 4px;
+  overflow-x: auto;
+  z-index: 5;
+  flex-shrink: 0;
+}
+.tet-players-bar::-webkit-scrollbar { display: none; }
+.tet-player-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  font-size: 11px;
+  color: rgba(255,255,255,.5);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tet-player-chip.me {
+  border-color: rgba(0,210,255,.3);
+  color: #00d2ff;
+}
+.tet-player-avatar {
+  font-size: 14px;
+}
+.tet-player-score {
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* ===== Victory screen ===== */
+.tet-victory .tet-go-title {
+  color: #ffd93d;
+}
+
+/* ===== Responsive ===== */
+@media (max-height: 650px) {
+  .tet-hud { padding: 4px 10px 2px; }
+  .tet-hud-value { font-size: 15px; }
+  .tet-controls { padding: 4px 10px 12px; }
+  .tet-dpad { grid-template-columns: 38px 38px 38px; grid-template-rows: 38px 38px; }
+  .tet-act { width: 42px; height: 42px; }
+}
+
+@media (max-width: 360px) {
+  .tet-side { width: 48px; }
+  .tet-dpad { grid-template-columns: 38px 38px 38px; grid-template-rows: 38px 38px; gap: 2px; }
+  .tet-act { width: 42px; height: 42px; }
+}

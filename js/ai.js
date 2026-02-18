@@ -20,6 +20,7 @@ let _truthNextScheduled = false; // one-shot flag for truth processTruthNext
 let _fortAIKey = ''; // guard: prevent fortress AI re-entry during same turn
 let _bsSpinScheduled = false; // guard: prevent duplicate roulette spin
 let _bsPracticeReady = false; // flag: bombshot setup modal shown in practice mode
+let _originalCloseStairsGame = null;
 
 const AI_NAMES = ['봇짱', '로봇킹', '알파봇', 'AI마스터', '사이보그'];
 const AI_AVATARS = ['🤖', '👾', '🎮', '🕹️', '💻'];
@@ -36,6 +37,9 @@ const AI_COUNTS = {
   fortress: 2,
   lottery: 0,
   bombshot: 3,
+  stairs: 2,
+  tetris: 0,
+  jewel: 0,
 };
 
 // ========== ENTRY / EXIT ==========
@@ -60,6 +64,8 @@ function leavePracticeMode() {
   if (typeof ecState !== 'undefined') ecState = null;
   if (typeof sutdaHost !== 'undefined') sutdaHost = null;
   if (typeof bsState !== 'undefined') bsState = null;
+  if (typeof stCleanup === 'function') stCleanup();
+  if (typeof tetCleanup === 'function') tetCleanup();
   if (typeof destroyBombShotThree === 'function') destroyBombShotThree();
   showScreen('mainMenu');
 }
@@ -107,6 +113,20 @@ function startPracticeGame(gameName) {
   // Mafia: auto-setup for practice mode (skip host config screen)
   if (gameName === 'mafia') {
     mfSetupDone = true;
+  }
+
+  // Tetris: solo game — skip startGame() validation, go directly
+  if (gameName === 'tetris') {
+    showScreen('tetrisGame');
+    tetShowModeSelect();
+    return;
+  }
+
+  // Jewel: solo game — skip startGame() validation, go directly
+  if (gameName === 'jewel') {
+    showScreen('jewelGame');
+    jwlShowModeSelect();
+    return;
   }
 
   // Start the game
@@ -203,6 +223,16 @@ function interceptNetworking() {
     if (_originalCloseFortressGame) _originalCloseFortressGame();
   };
 
+  _originalCloseStairsGame = window.closeStairsGame;
+  window.closeStairsGame = function() {
+    if (typeof stCleanup === 'function') stCleanup();
+    if (practiceMode) {
+      showScreen('practiceSelect');
+      return;
+    }
+    if (_originalCloseStairsGame) _originalCloseStairsGame();
+  };
+
   _originalCloseBombShotGame = window.closeBombShotGame;
   window.closeBombShotGame = function() {
     _bsTimers.forEach(t => clearTimeout(t));
@@ -231,6 +261,7 @@ function restoreNetworking() {
   if (_originalMfCloseResult) { window.mfCloseResult = _originalMfCloseResult; _originalMfCloseResult = null; }
   if (_originalCloseYahtzeeGame) { window.closeYahtzeeGame = _originalCloseYahtzeeGame; _originalCloseYahtzeeGame = null; }
   if (_originalCloseFortressGame) { window.closeFortressGame = _originalCloseFortressGame; _originalCloseFortressGame = null; }
+  if (_originalCloseStairsGame) { window.closeStairsGame = _originalCloseStairsGame; _originalCloseStairsGame = null; }
   if (_originalCloseBombShotGame) { window.closeBombShotGame = _originalCloseBombShotGame; _originalCloseBombShotGame = null; }
 }
 
@@ -380,6 +411,7 @@ function executeAIAction() {
     case 'mafia': aiMafia(); break;
     case 'fortress': aiFortress(); break;
     case 'bombshot': aiBombShot(); break;
+    case 'stairs': aiStairs(); break;
     // lottery: no AI needed
   }
 }
@@ -1038,6 +1070,36 @@ function aiBombShot() {
 
 // Also: AI liar calls when it's NOT their turn (react to broadcasts)
 // This is handled in handleBroadcastForAI via general scheduleAIAction
+
+// ========== STAIRS AI ==========
+
+function aiStairs() {
+  if (!stMulti || stMulti.phase === 'results') return;
+
+  // Each AI player that hasn't finished yet should "die" after a random delay
+  stMulti.players.forEach(p => {
+    if (!p.id.startsWith('ai-') || p.finished || p._aiScheduled) return;
+
+    // Mark as "scheduled" to avoid re-scheduling
+    p._aiScheduled = true;
+
+    // AI generates a random score (100-500 range, roughly matching human play)
+    const aiScore = 50 + Math.floor(Math.random() * 350);
+    const aiStep = aiScore; // roughly 1 point per step
+
+    const delay = 3000 + Math.random() * 8000; // 3-11 seconds
+    const t = setTimeout(() => {
+      if (!practiceMode || !stMulti) return;
+      processStairsDead({
+        type: 'stairs-dead',
+        playerId: p.id,
+        score: aiScore,
+        step: aiStep,
+      });
+    }, delay);
+    _aiTimers.push(t);
+  });
+}
 
 // ========== LOTTERY AI ==========
 // Lottery is solo (player picks cells) — no AI needed

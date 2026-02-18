@@ -22,6 +22,9 @@
 <link rel="stylesheet" href="css/games/sutda.css">
 <link rel="stylesheet" href="css/games/fortress.css?v=7">
 <link rel="stylesheet" href="css/games/bombshot.css">
+<link rel="stylesheet" href="css/games/stairs.css">
+<link rel="stylesheet" href="css/games/tetris.css">
+<link rel="stylesheet" href="css/games/jewel.css">
 <link rel="stylesheet" href="css/games/mobile.css">
 </head>
 <body>
@@ -87,6 +90,9 @@
       <button class="debug-game-btn" onclick="debugGame('updown')">🃏 업다운</button>
       <button class="debug-game-btn" onclick="debugGame('truth')">⭕ 진실게임</button>
       <button class="debug-game-btn" onclick="debugGame('fortress')">🏰 요새</button>
+      <button class="debug-game-btn" onclick="debugGame('stairs')">🪜 무한계단</button>
+      <button class="debug-game-btn" onclick="debugGame('tetris')">🧩 테트리스</button>
+      <button class="debug-game-btn" onclick="debugGame('jewel')">💎 보석맞추기</button>
     </div>
   </div>
 
@@ -117,6 +123,9 @@
       <button class="practice-game-btn" onclick="startPracticeGame('truth')">⭕ 진실게임</button>
       <button class="practice-game-btn" onclick="startPracticeGame('fortress')">🏰 요새</button>
       <button class="practice-game-btn" onclick="startPracticeGame('bombshot')">🍺 폭탄주</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('stairs')">🪜 무한계단</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('tetris')">🧩 테트리스</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('jewel')">💎 보석맞추기</button>
     </div>
   </div>
 </div>
@@ -188,6 +197,15 @@
       </div>
       <div class="game-option" data-game="bombshot" onclick="selectGame(this)">
         <span class="game-emoji">🍺</span>폭탄주
+      </div>
+      <div class="game-option" data-game="stairs" onclick="selectGame(this)">
+        <span class="game-emoji">🪜</span>무한계단
+      </div>
+      <div class="game-option" data-game="tetris" onclick="selectGame(this)">
+        <span class="game-emoji">🧩</span>테트리스
+      </div>
+      <div class="game-option" data-game="jewel" onclick="selectGame(this)">
+        <span class="game-emoji">💎</span>보석맞추기
       </div>
     </div>
   </div>
@@ -1138,6 +1156,291 @@
   </div>
 </div>
 
+<!-- INFINITE STAIRS -->
+<div class="screen" id="stairsGame">
+  <!-- HUD -->
+  <div class="st-hud">
+    <div class="st-score-box">
+      <div class="st-score-label">SCORE</div>
+      <div class="st-score-value" id="stScore">0</div>
+    </div>
+    <div class="st-hud-right">
+      <button class="back-btn" style="font-size:16px;padding:4px;" onclick="leaveGame()">&#10005;</button>
+      <div class="st-combo" id="stCombo">🔥 x1.5</div>
+      <div class="st-step-display" id="stStep">0층</div>
+    </div>
+  </div>
+
+  <!-- Stamina Bar -->
+  <div class="st-stamina-wrap">
+    <div class="st-stamina-outer">
+      <div class="st-stamina-fill" id="stStaminaFill"></div>
+    </div>
+    <div class="st-stamina-info">
+      <span>STAMINA</span>
+      <span id="stStaminaText">100%</span>
+    </div>
+  </div>
+
+  <!-- Players bar (multiplayer) -->
+  <div class="st-players-bar" id="stPlayersBar"></div>
+
+  <!-- Game Canvas -->
+  <div class="st-canvas-wrap">
+    <canvas id="stCanvas"></canvas>
+    <div class="st-vignette" id="stVignette"></div>
+  </div>
+
+  <!-- Countdown Overlay -->
+  <div class="st-countdown-overlay" id="stCountdownOverlay" style="display:none;">
+    <div class="st-countdown-num" id="stCountdownNum">3</div>
+  </div>
+
+  <!-- Death Overlay -->
+  <div class="st-death-overlay" id="stDeathOverlay" style="display:none;">
+    <div class="st-death-title">GAME OVER</div>
+    <div class="st-death-reason" id="stDeathReason">추락!</div>
+    <div class="st-death-score-box">
+      <div class="st-death-score" id="stDeathScore">0</div>
+      <div class="st-death-score-label">FINAL SCORE</div>
+    </div>
+    <div class="st-death-stats">
+      <div class="st-death-stat"><div class="st-death-stat-val" id="stDeathStep">0층</div><div class="st-death-stat-label">STEP</div></div>
+      <div class="st-death-stat"><div class="st-death-stat-val" id="stDeathBest">0</div><div class="st-death-stat-label">BEST</div></div>
+      <div class="st-death-stat"><div class="st-death-stat-val" id="stDeathCombo">x0</div><div class="st-death-stat-label">MAX COMBO</div></div>
+    </div>
+    <div class="st-death-waiting" id="stDeathWaiting" style="display:none;">다른 플레이어를 기다리는 중...</div>
+  </div>
+
+  <!-- Results Overlay -->
+  <div class="st-results-overlay" id="stResultsOverlay" style="display:none;">
+    <div class="st-results-title">🏆 결과</div>
+    <div class="st-results-list" id="stResultsList"></div>
+    <button class="btn btn-primary st-results-btn" onclick="closeStairsGame()">대기실로</button>
+  </div>
+
+  <!-- Controls -->
+  <div class="st-controls" id="stControls" style="display:none;">
+    <button class="st-btn st-btn-left" onclick="stTapLeft()">
+      <span class="st-btn-arrow">↰</span> 방향전환
+      <span class="st-btn-sub">LEFT / X</span>
+    </button>
+    <button class="st-btn st-btn-right" onclick="stTapRight()">
+      올라가기 <span class="st-btn-arrow">↑</span>
+      <span class="st-btn-sub">RIGHT / Z</span>
+    </button>
+  </div>
+</div>
+
+<!-- JEWEL MATCH (보석맞추기) -->
+<div class="screen" id="jewelGame">
+  <!-- Title / Mode Select Overlay -->
+  <div class="jwl-title-overlay" style="display:flex;">
+    <div class="jwl-title-name">보석<br>맞추기</div>
+    <div class="jwl-title-sub">JEWEL MATCH</div>
+    <div class="jwl-title-gems">
+      <div class="jwl-title-gem jwl-gem-0" style="animation-delay:0s;">💎</div>
+      <div class="jwl-title-gem jwl-gem-1" style="animation-delay:.3s;">💎</div>
+      <div class="jwl-title-gem jwl-gem-2" style="animation-delay:.6s;">💎</div>
+      <div class="jwl-title-gem jwl-gem-3" style="animation-delay:.9s;">💎</div>
+      <div class="jwl-title-gem jwl-gem-4" style="animation-delay:1.2s;">💎</div>
+    </div>
+    <button class="jwl-title-btn jwl-title-btn-primary" onclick="jwlStartMode('classic')">CLASSIC</button>
+    <button class="jwl-title-btn jwl-title-btn-secondary" onclick="jwlStartMode('moves')">MOVES (30)</button>
+    <button class="jwl-title-btn jwl-title-btn-secondary" onclick="jwlStartMode('timed')">TIMED (2:00)</button>
+    <button class="jwl-title-btn jwl-title-btn-secondary" onclick="jwlStartMode('zen')">ZEN ∞</button>
+  </div>
+
+  <!-- HUD -->
+  <div class="jwl-hud">
+    <div class="jwl-hud-left">
+      <div class="jwl-score-label">SCORE</div>
+      <div class="jwl-score-value" id="jwlScoreValue">0</div>
+    </div>
+    <div class="jwl-hud-center">
+      <div class="jwl-combo-badge" id="jwlComboBadge">⛓️ x1</div>
+    </div>
+    <div class="jwl-hud-right">
+      <button class="jwl-pause-btn" onclick="jwlPause()">⏸</button>
+    </div>
+  </div>
+
+  <!-- Level Progress -->
+  <div class="jwl-progress-bar">
+    <div class="jwl-progress-labels">
+      <span id="jwlLevelLabel">LEVEL 1</span>
+      <span id="jwlProgressPct">0%</span>
+    </div>
+    <div class="jwl-progress-track">
+      <div class="jwl-progress-fill" id="jwlProgressFill"></div>
+    </div>
+  </div>
+
+  <!-- Mode Info -->
+  <div class="jwl-mode-info" id="jwlModeInfo">
+    <span class="jwl-mode-badge jwl-mode-classic">CLASSIC</span>
+  </div>
+
+  <!-- 8x8 Grid -->
+  <div class="jwl-grid-area">
+    <div class="jwl-grid-container">
+      <div class="jwl-grid" id="jwlGrid"></div>
+    </div>
+  </div>
+
+  <!-- Bottom -->
+  <div class="jwl-bottom">
+    <div class="jwl-hint-btn" onclick="jwlManualHint()">💡 HINT</div>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div class="jwl-gameover-overlay">
+    <div class="jwl-go-title">WELL DONE!</div>
+    <div class="jwl-go-sub">레벨 1 · CLASSIC</div>
+    <div class="jwl-go-new-best">⭐ NEW BEST! ⭐</div>
+    <div class="jwl-go-score-box">
+      <div class="jwl-go-score">0</div>
+      <div class="jwl-go-score-label">FINAL SCORE</div>
+    </div>
+    <div class="jwl-go-stats">
+      <div class="jwl-go-stat"><div class="jwl-go-stat-val">🏆 0</div><div class="jwl-go-stat-label">BEST</div></div>
+      <div class="jwl-go-stat"><div class="jwl-go-stat-val">⛓️ x0</div><div class="jwl-go-stat-label">MAX COMBO</div></div>
+      <div class="jwl-go-stat"><div class="jwl-go-stat-val">💎 0</div><div class="jwl-go-stat-label">GEMS</div></div>
+    </div>
+    <button class="jwl-go-btn jwl-go-btn-retry" onclick="jwlRetry()">🔄 RETRY</button>
+    <button class="jwl-go-btn jwl-go-btn-home" onclick="jwlHome()">🏠 HOME</button>
+  </div>
+
+  <!-- Pause Overlay -->
+  <div class="jwl-pause-overlay">
+    <div class="jwl-pause-title">⏸ PAUSED</div>
+    <button class="jwl-pause-btn jwl-pause-resume" onclick="jwlResume()">▶ RESUME</button>
+    <button class="jwl-pause-btn jwl-pause-quit" onclick="jwlQuit()">🏠 QUIT</button>
+  </div>
+</div>
+
+<!-- TETRIS -->
+<div class="screen" id="tetrisGame">
+  <!-- HUD -->
+  <div class="tet-hud">
+    <div class="tet-hud-item">
+      <div class="tet-hud-label">SCORE</div>
+      <div class="tet-hud-value" id="tetScoreValue">0</div>
+    </div>
+    <div class="tet-hud-item">
+      <span class="tet-mode-badge" id="tetModeBadge">MARATHON</span>
+    </div>
+    <div class="tet-hud-item">
+      <div class="tet-hud-label">LEVEL</div>
+      <div class="tet-hud-value" id="tetLevelValue">1</div>
+    </div>
+    <button class="tet-hud-close" onclick="tetPause()">⏸</button>
+  </div>
+
+  <!-- Players bar (multiplayer) -->
+  <div class="tet-players-bar" id="tetPlayersBar"></div>
+
+  <!-- Play area -->
+  <div class="tet-play-area">
+    <!-- Hold side -->
+    <div class="tet-side">
+      <div class="tet-side-box">
+        <div class="tet-side-label">HOLD</div>
+        <canvas class="tet-side-canvas" id="tetHoldCanvas" width="48" height="32"></canvas>
+      </div>
+      <div class="tet-side-info">
+        LINES
+        <span class="tet-side-info-val" id="tetLinesValue">0</span>
+      </div>
+      <div class="tet-side-info">
+        TIME
+        <span class="tet-side-info-val" id="tetTimerValue">0:00.00</span>
+      </div>
+    </div>
+
+    <!-- Board -->
+    <div class="tet-board-wrap">
+      <canvas class="tet-board-canvas" id="tetCanvas"></canvas>
+    </div>
+
+    <!-- Next side -->
+    <div class="tet-side">
+      <div class="tet-side-box">
+        <div class="tet-side-label">NEXT</div>
+        <canvas class="tet-side-canvas" id="tetNextCanvas0" width="48" height="32"></canvas>
+      </div>
+      <div class="tet-side-box">
+        <canvas class="tet-side-canvas" id="tetNextCanvas1" width="48" height="32"></canvas>
+      </div>
+      <div class="tet-side-box">
+        <canvas class="tet-side-canvas" id="tetNextCanvas2" width="48" height="32"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="tet-controls">
+    <div class="tet-dpad">
+      <div class="tet-dpad-empty"></div>
+      <div class="tet-dpad-btn" ontouchstart="tetTouchStart('down');event.preventDefault();" ontouchend="tetTouchEnd()" onmousedown="tetTouchDown()">&#9660;</div>
+      <div class="tet-dpad-empty"></div>
+      <div class="tet-dpad-btn" ontouchstart="tetTouchStart('left');event.preventDefault();" ontouchend="tetTouchEnd()" onmousedown="tetTouchLeft()">&#9664;</div>
+      <div class="tet-dpad-btn" ontouchstart="tetTouchStart('down');event.preventDefault();" ontouchend="tetTouchEnd()" onmousedown="tetTouchDown()">&#9660;</div>
+      <div class="tet-dpad-btn" ontouchstart="tetTouchStart('right');event.preventDefault();" ontouchend="tetTouchEnd()" onmousedown="tetTouchRight()">&#9654;</div>
+    </div>
+    <div class="tet-action-btns">
+      <div class="tet-act tet-act-hold" onclick="tetTouchHold()">HOLD</div>
+      <div class="tet-act tet-act-rotate" onclick="tetTouchRotate()">&#8635;</div>
+      <div class="tet-act tet-act-drop" onclick="tetTouchHardDrop()">&#11015;</div>
+    </div>
+  </div>
+
+  <!-- Mode Select Overlay -->
+  <div class="tet-mode-overlay" id="tetModeOverlay" style="display:flex;">
+    <div class="tet-mode-title">TETRIS</div>
+    <div class="tet-mode-sub">BLOCK PUZZLE</div>
+    <div class="tet-mode-list">
+      <button class="tet-mode-btn tet-mode-primary" onclick="tetSelectMode('marathon')">&#127956;&#65039; MARATHON</button>
+      <button class="tet-mode-btn tet-mode-sec" onclick="tetSelectMode('sprint')">&#9889; SPRINT (40L)</button>
+      <button class="tet-mode-btn tet-mode-sec" onclick="tetSelectMode('ultra')">&#9201;&#65039; ULTRA (2:00)</button>
+      <button class="tet-mode-btn tet-mode-sec" onclick="tetSelectMode('endless')">&#8734; ENDLESS</button>
+    </div>
+    <button class="tet-mode-back" onclick="tetGoHome()">&#8592; 나가기</button>
+  </div>
+
+  <!-- Countdown Overlay -->
+  <div class="tet-countdown" id="tetCountdown" style="display:none;">
+    <div class="tet-countdown-num" id="tetCountdownNum">3</div>
+  </div>
+
+  <!-- Pause Overlay -->
+  <div class="tet-pause" id="tetPause" style="display:none;">
+    <div class="tet-pause-title">PAUSED</div>
+    <button class="tet-pause-btn tet-pause-resume" onclick="tetResume()">&#9654;&#65039; 계속하기</button>
+    <button class="tet-pause-btn tet-pause-quit" onclick="tetGoHome()">&#127968; 나가기</button>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div class="tet-gameover" id="tetGameOver" style="display:none;">
+    <div class="tet-go-title" id="tetGoTitle">GAME OVER</div>
+    <div class="tet-go-subtitle" id="tetGoSubtitle">레벨 5에서 종료</div>
+    <div class="tet-go-score-box">
+      <div class="tet-go-score" id="tetGoScore">0</div>
+      <div class="tet-go-score-label">FINAL SCORE</div>
+    </div>
+    <div class="tet-go-stats">
+      <div class="tet-go-stat"><div class="tet-go-stat-val" id="tetGoLevel">Lv.1</div><div class="tet-go-stat-label">LEVEL</div></div>
+      <div class="tet-go-stat"><div class="tet-go-stat-val" id="tetGoLines">0</div><div class="tet-go-stat-label">LINES</div></div>
+      <div class="tet-go-stat"><div class="tet-go-stat-val" id="tetGoCombo">x0</div><div class="tet-go-stat-label">MAX COMBO</div></div>
+      <div class="tet-go-stat"><div class="tet-go-stat-val" id="tetGoTetris">0</div><div class="tet-go-stat-label">TETRIS</div></div>
+      <div class="tet-go-stat"><div class="tet-go-stat-val" id="tetGoTime">0:00</div><div class="tet-go-stat-label">TIME</div></div>
+    </div>
+    <div class="tet-go-best" id="tetGoBest" style="display:none;"></div>
+    <button class="tet-go-btn tet-go-retry" onclick="tetRetry()">&#128260; RETRY</button>
+    <button class="tet-go-btn tet-go-home" onclick="tetGoHome()">&#127968; HOME</button>
+  </div>
+</div>
+
 <!-- RESULT -->
 <div class="result-overlay" id="resultOverlay">
   <div class="result-title" id="resultTitle">🏆 승리!</div>
@@ -1165,6 +1468,9 @@
 <script src="js/games/sutda.js?v=2"></script>
 <script src="js/games/fortress.js?v=14"></script>
 <script src="js/games/bombshot.js?v=1"></script>
+<script src="js/games/stairs.js?v=1"></script>
+<script src="js/games/tetris.js?v=1"></script>
+<script src="js/games/jewel.js?v=1"></script>
 <script src="js/ai.js?v=3"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>
