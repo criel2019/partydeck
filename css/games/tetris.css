@@ -5,9 +5,6 @@
 /* ===== Container ===== */
 #tetrisGame {
   background: linear-gradient(180deg, #060810, #0a0e1e);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
   overflow: hidden;
   position: relative;
   user-select: none;

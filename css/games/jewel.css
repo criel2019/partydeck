@@ -6,9 +6,6 @@
 /* ===== Container ===== */
 #jewelGame {
   background: linear-gradient(180deg, #0e0820, #18103a, #12082a);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
   overflow: hidden;
   position: relative;
   user-select: none;
