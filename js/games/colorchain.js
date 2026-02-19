@@ -351,6 +351,7 @@ function ccUpdateHeatBar() {
 function ccStartResolve() { ccGameState = 'resolve'; ccResolveTimer = 0; }
 function ccUpdateResolve(dt) { ccResolveTimer += dt; if (ccResolveTimer >= CC_RESOLVE_DELAY) ccDoResolveStep(); }
 function ccDoResolveStep() {
+  ccFloatingTexts = [];
   if (ccProcessMerges()) { ccApplyGravity(); ccComboCount++; ccResolveTimer = 0; return; }
   if (ccProcessExplosions()) { ccApplyGravity(); ccComboCount++; ccResolveTimer = 0; return; }
   ccUpdateHeatBar(); ccFinishTurn();
