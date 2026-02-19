@@ -6,13 +6,13 @@
 const SLK_STAIR_W = 88, SLK_STAIR_H = 16, SLK_STAIR_D = 10, SLK_OFF_X = 72, SLK_OFF_Y = 56;
 const SLK_VIS_B = 5, SLK_VIS_A = 14;
 const SLK_IN_CD = 42;
-const SLK_NC = 14, SLK_POUR_START = 480, SLK_POUR_MIN = 140;
+const SLK_NC = 14, SLK_POUR_START = 480, SLK_POUR_MIN = 240;
 const SLK_ARCH_H = 28, SLK_SPREAD = 0.72, SLK_COIL_THICK = 3.5;
 const SLK_CL_GRACE = 4;
 const SLK_CL_IDLE = 2.8;
-const SLK_CL_MOVE = 0.8;
-const SLK_CL_MAX = 6.0;
-const SLK_CL_ACC = 0.005;
+const SLK_CL_MOVE = 0.5;
+const SLK_CL_MAX = 3.8;
+const SLK_CL_ACC = 0.003;
 const SLK_CL_IDLE_AFTER = 0.6;
 const SLK_FV_NEED = 18, SLK_FV_DUR = 4500;
 const SLK_GHOST_MAX = 5;
