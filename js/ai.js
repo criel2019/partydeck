@@ -40,6 +40,7 @@ const AI_COUNTS = {
   stairs: 2,
   tetris: 0,
   jewel: 0,
+  colorchain: 0,
 };
 
 // ========== ENTRY / EXIT ==========
@@ -66,6 +67,7 @@ function leavePracticeMode() {
   if (typeof bsState !== 'undefined') bsState = null;
   if (typeof stCleanup === 'function') stCleanup();
   if (typeof tetCleanup === 'function') tetCleanup();
+  if (typeof ccCleanup === 'function') ccCleanup();
   if (typeof destroyBombShotThree === 'function') destroyBombShotThree();
   showScreen('mainMenu');
 }
@@ -126,6 +128,12 @@ function startPracticeGame(gameName) {
   if (gameName === 'jewel') {
     showScreen('jewelGame');
     jwlShowModeSelect();
+    return;
+  }
+
+  // ColorChain: solo game — skip startGame() validation, go directly
+  if (gameName === 'colorchain') {
+    startColorChain();
     return;
   }
 

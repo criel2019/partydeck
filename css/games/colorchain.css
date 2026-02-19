@@ -1,0 +1,428 @@
+/* ===== COLOR CHAIN GAME ===== */
+/* Outfit font loaded via <link> in index.html <head> */
+
+/* Container - no display override to avoid hiding PartyDeck */
+#colorchainGame {
+  background: linear-gradient(180deg, #060810, #0a0e1e);
+  overflow: hidden;
+  align-items: center;
+  gap: 0;
+  padding-top: env(safe-area-inset-top);
+}
+
+/* ===== HUD ===== */
+.cc-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+  padding: 8px 12px 4px;
+  flex-shrink: 0;
+}
+.cc-hud-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.cc-hud-label {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: #555;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.cc-hud-value {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ff6b4a;
+}
+.cc-combo {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: transparent;
+  min-width: 80px;
+  text-align: center;
+  transition: transform .15s;
+}
+.cc-combo.active {
+  color: #ffcc00;
+  text-shadow: 0 0 12px rgba(255, 200, 0, .6);
+}
+.cc-hud-close {
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .1);
+  color: #888;
+  font-size: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cc-hud-close:active {
+  background: rgba(255, 255, 255, .12);
+}
+
+/* ===== Players Bar ===== */
+.cc-players-bar {
+  display: flex;
+  gap: 6px;
+  padding: 2px 12px 4px;
+  width: 100%;
+  max-width: 400px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.cc-player-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 20px;
+  padding: 3px 10px 3px 6px;
+  font-size: 11px;
+  color: #aaa;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cc-chip-avatar { font-size: 14px; }
+.cc-player-chip .score {
+  font-weight: 700;
+  color: #ff6b4a;
+  margin-left: 4px;
+}
+.cc-player-chip.me {
+  border-color: #ff6b4a44;
+  background: rgba(255, 107, 74, .08);
+}
+
+/* ===== Play Area ===== */
+.cc-play-area {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  width: 100%;
+  max-width: 400px;
+  padding: 4px 8px;
+  min-height: 0;
+}
+
+/* Side panels */
+.cc-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+  width: 60px;
+  flex-shrink: 0;
+}
+.cc-side-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.cc-side-label {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.cc-side-canvas {
+  background: #0d0d18;
+  border: 1px solid #1a1a2e;
+  border-radius: 6px;
+}
+.cc-side-info {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 9px;
+  color: #444;
+  text-align: center;
+  letter-spacing: 1px;
+}
+.cc-side-info-val {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: #aaa;
+  margin-top: 1px;
+}
+
+/* Board wrapper */
+.cc-board-wrap {
+  position: relative;
+  border: 2px solid #1a1a2e;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0d0d18;
+  flex-shrink: 0;
+}
+.cc-board-canvas {
+  display: block;
+}
+
+/* Heat bar */
+.cc-heat-bar {
+  width: 100%;
+  height: 5px;
+  background: #1a1a2e;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+}
+.cc-heat-fill {
+  height: 100%;
+  border-radius: 0 2px 2px 0;
+  transition: width .3s;
+  background: linear-gradient(90deg, #3498db, #e67e22, #e74c3c);
+  box-shadow: 0 0 8px rgba(231, 76, 60, .3);
+}
+
+/* ===== Controls ===== */
+.cc-controls {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 12px;
+  width: 100%;
+  max-width: 400px;
+  flex-shrink: 0;
+}
+.cc-ctrl-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+.cc-btn {
+  width: 52px;
+  height: 52px;
+  background: #1a1a2e;
+  border: 1px solid #2a2a4e;
+  border-radius: 10px;
+  color: #888;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: background .1s;
+}
+.cc-btn:active {
+  background: #2a2a4e;
+  color: #ccc;
+}
+.cc-btn-wide {
+  width: 90px;
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.cc-controls-hint {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 10px;
+  color: #333;
+  text-align: center;
+  line-height: 1.8;
+  padding: 4px 0 8px;
+  flex-shrink: 0;
+}
+
+/* Show touch controls on touch devices, hide hint */
+@media (pointer: coarse) {
+  .cc-controls { display: flex; }
+  .cc-controls-hint { display: none; }
+}
+
+/* ===== Countdown Overlay ===== */
+.cc-countdown {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, .85);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cc-countdown-num {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 80px;
+  font-weight: 900;
+  color: #ff6b4a;
+  text-shadow: 0 0 40px rgba(255, 107, 74, .5);
+  animation: ccPulse .6s ease-out;
+}
+@keyframes ccPulse {
+  0% { transform: scale(1.6); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ===== Pause Overlay ===== */
+.cc-pause-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, .88);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.cc-pause-title {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 36px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 6px;
+}
+.cc-pause-btn {
+  width: 200px;
+  padding: 14px 0;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+.cc-pause-resume {
+  background: #ff6b4a;
+  color: #fff;
+}
+.cc-pause-resume:active { background: #ff8566; }
+.cc-pause-quit {
+  background: rgba(255, 255, 255, .08);
+  color: #aaa;
+}
+.cc-pause-quit:active { background: rgba(255, 255, 255, .15); }
+
+/* ===== Game Over Overlay ===== */
+.cc-gameover {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, .88);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 20px;
+}
+.cc-go-title {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  color: #ff4444;
+  text-transform: uppercase;
+  letter-spacing: 5px;
+}
+.cc-go-score-box {
+  text-align: center;
+}
+.cc-go-score {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 40px;
+  font-weight: 900;
+  color: #ff6b4a;
+}
+.cc-go-score-label {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+  letter-spacing: 3px;
+  margin-top: 2px;
+}
+.cc-go-stats {
+  display: flex;
+  gap: 24px;
+  margin: 8px 0;
+}
+.cc-go-stat {
+  text-align: center;
+}
+.cc-go-stat-val {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #ccc;
+}
+.cc-go-stat-label {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  color: #555;
+  letter-spacing: 2px;
+  margin-top: 2px;
+}
+.cc-go-btn {
+  width: 180px;
+  padding: 12px 0;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+.cc-go-retry {
+  background: #ff6b4a;
+  color: #fff;
+}
+.cc-go-retry:active { background: #ff8566; }
+.cc-go-home {
+  background: rgba(255, 255, 255, .08);
+  color: #aaa;
+}
+.cc-go-home:active { background: rgba(255, 255, 255, .15); }
+
+/* ===== Waiting overlay ===== */
+.cc-waiting {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 13px;
+  color: #666;
+  margin-top: 8px;
+  animation: ccBlink 1.2s infinite;
+}
+@keyframes ccBlink {
+  0%, 100% { opacity: .4; }
+  50% { opacity: 1; }
+}
+
+/* ===== Responsive ===== */
+@media (max-height: 600px) {
+  .cc-hud { padding: 4px 12px 2px; }
+  .cc-hud-value { font-size: 18px; }
+  .cc-play-area { padding: 2px 8px; gap: 6px; }
+  .cc-btn { width: 46px; height: 46px; font-size: 16px; }
+  .cc-btn-wide { width: 76px; font-size: 11px; }
+}
+
+@media (max-width: 340px) {
+  .cc-side { width: 50px; }
+  .cc-side-canvas { width: 50px; height: 50px; }
+  .cc-btn { width: 44px; height: 44px; }
+  .cc-btn-wide { width: 70px; }
+}

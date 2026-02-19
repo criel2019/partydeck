@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&family=Oswald:wght@500;600;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/common.css">
 <link rel="stylesheet" href="css/games/mafia.css?v=3">
 <link rel="stylesheet" href="css/games/truth.css">
@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="css/games/stairs.css">
 <link rel="stylesheet" href="css/games/tetris.css">
 <link rel="stylesheet" href="css/games/jewel.css">
+<link rel="stylesheet" href="css/games/colorchain.css">
 <link rel="stylesheet" href="css/games/mobile.css">
 </head>
 <body>
@@ -93,6 +94,7 @@
       <button class="debug-game-btn" onclick="debugGame('stairs')">🪜 무한계단</button>
       <button class="debug-game-btn" onclick="debugGame('tetris')">🧩 테트리스</button>
       <button class="debug-game-btn" onclick="debugGame('jewel')">💎 보석맞추기</button>
+      <button class="debug-game-btn" onclick="debugGame('colorchain')">🔗 컬러체인</button>
     </div>
   </div>
 
@@ -126,6 +128,7 @@
       <button class="practice-game-btn" onclick="startPracticeGame('stairs')">🪜 무한계단</button>
       <button class="practice-game-btn" onclick="startPracticeGame('tetris')">🧩 테트리스</button>
       <button class="practice-game-btn" onclick="startPracticeGame('jewel')">💎 보석맞추기</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('colorchain')">🔗 컬러체인</button>
     </div>
   </div>
 </div>
@@ -206,6 +209,9 @@
       </div>
       <div class="game-option" data-game="jewel" onclick="selectGame(this)">
         <span class="game-emoji">💎</span>보석맞추기
+      </div>
+      <div class="game-option" data-game="colorchain" onclick="selectGame(this)">
+        <span class="game-emoji">🔗</span>컬러체인
       </div>
     </div>
   </div>
@@ -1462,6 +1468,107 @@
   </div>
 </div>
 
+<!-- COLOR CHAIN -->
+<div class="screen" id="colorchainGame">
+  <!-- HUD -->
+  <div class="cc-hud">
+    <div class="cc-hud-item">
+      <div class="cc-hud-label">SCORE</div>
+      <div class="cc-hud-value" id="ccScoreValue">0</div>
+    </div>
+    <div class="cc-hud-item">
+      <div class="cc-hud-label">TURN</div>
+      <div class="cc-hud-value" id="ccTurnValue">0</div>
+    </div>
+    <div class="cc-hud-item">
+      <div class="cc-combo" id="ccComboDisplay"></div>
+    </div>
+    <button class="cc-hud-close" onclick="ccPause()">&#9208;</button>
+  </div>
+
+  <!-- Players bar -->
+  <div class="cc-players-bar" id="ccPlayersBar"></div>
+
+  <!-- Play area -->
+  <div class="cc-play-area">
+    <!-- Hold side -->
+    <div class="cc-side">
+      <div class="cc-side-box">
+        <div class="cc-side-label">HOLD</div>
+        <canvas class="cc-side-canvas" id="ccHoldCanvas" width="60" height="60"></canvas>
+      </div>
+      <div class="cc-side-info">
+        HEAT
+        <div class="cc-heat-bar"><div class="cc-heat-fill" id="ccHeatFill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- Board -->
+    <div class="cc-board-wrap">
+      <canvas class="cc-board-canvas" id="ccCanvas"></canvas>
+    </div>
+
+    <!-- Next side -->
+    <div class="cc-side">
+      <div class="cc-side-box">
+        <div class="cc-side-label">NEXT</div>
+        <canvas class="cc-side-canvas" id="ccNextCanvas" width="60" height="60"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls hint (desktop) -->
+  <div class="cc-controls-hint">&larr; &rarr; 이동 | Z X 회전 | &darr; 소프트드롭 | Space 하드드롭 | C 홀드</div>
+
+  <!-- Touch controls (mobile) -->
+  <div class="cc-controls">
+    <div class="cc-ctrl-row">
+      <div class="cc-btn" data-action="left">&#9664;</div>
+      <div class="cc-btn" data-action="rotL">&#8634;</div>
+      <div class="cc-btn" data-action="down">&#9660;</div>
+      <div class="cc-btn" data-action="rotR">&#8635;</div>
+      <div class="cc-btn" data-action="right">&#9654;</div>
+    </div>
+    <div class="cc-ctrl-row">
+      <div class="cc-btn cc-btn-wide" data-action="drop">DROP</div>
+      <div class="cc-btn cc-btn-wide" data-action="hold">HOLD</div>
+    </div>
+  </div>
+
+  <!-- Countdown -->
+  <div class="cc-countdown" id="ccCountdown" style="display:none;">
+    <div class="cc-countdown-num" id="ccCountdownNum">3</div>
+  </div>
+
+  <!-- Pause -->
+  <div class="cc-pause-overlay" id="ccPauseOverlay" style="display:none;">
+    <div class="cc-pause-title">PAUSED</div>
+    <button class="cc-pause-btn cc-pause-resume" onclick="ccResume()">&#9654;&#65039; 계속하기</button>
+    <button class="cc-pause-btn cc-pause-quit" onclick="ccGoHome()">&#127968; 나가기</button>
+  </div>
+
+  <!-- Game Over -->
+  <div class="cc-gameover" id="ccGameOver" style="display:none;">
+    <div class="cc-go-title">GAME OVER</div>
+    <div class="cc-go-score-box">
+      <div class="cc-go-score" id="ccGoScore">0</div>
+      <div class="cc-go-score-label">FINAL SCORE</div>
+    </div>
+    <div class="cc-go-stats">
+      <div class="cc-go-stat">
+        <div class="cc-go-stat-val" id="ccGoTurn">0</div>
+        <div class="cc-go-stat-label">TURNS</div>
+      </div>
+      <div class="cc-go-stat">
+        <div class="cc-go-stat-val" id="ccGoBest">0</div>
+        <div class="cc-go-stat-label">BEST</div>
+      </div>
+    </div>
+    <button class="cc-go-btn cc-go-retry" onclick="ccRetry()">&#128260; RETRY</button>
+    <button class="cc-go-btn cc-go-home" onclick="ccGoHome()">&#127968; HOME</button>
+  </div>
+</div>
+
 <!-- RESULT -->
 <div class="result-overlay" id="resultOverlay">
   <div class="result-title" id="resultTitle">🏆 승리!</div>
@@ -1492,6 +1599,7 @@
 <script src="js/games/stairs.js?v=1"></script>
 <script src="js/games/tetris.js?v=1"></script>
 <script src="js/games/jewel.js?v=1"></script>
+<script src="js/games/colorchain.js?v=1"></script>
 <script src="js/ai.js?v=3"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>

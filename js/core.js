@@ -420,7 +420,7 @@ function handleMessage(peerId, raw) {
       // Update waiting text
       const waitingText = document.getElementById('waitingText');
       if (waitingText) {
-        const gameNames = { poker:'포커', mafia:'마피아', sutda:'섯다', quickdraw:'총잡이', roulette:'룰렛', lottery:'뽑기', ecard:'E카드', yahtzee:'야추', updown:'업다운', truth:'진실게임', fortress:'요새', bombshot:'폭탄주', stairs:'무한계단', tetris:'테트리스', jewel:'보석맞추기' };
+        const gameNames = { poker:'포커', mafia:'마피아', sutda:'섯다', quickdraw:'총잡이', roulette:'룰렛', lottery:'뽑기', ecard:'E카드', yahtzee:'야추', updown:'업다운', truth:'진실게임', fortress:'요새', bombshot:'폭탄주', stairs:'무한계단', tetris:'테트리스', jewel:'보석맞추기', colorchain:'컬러체인' };
         waitingText.textContent = `${gameNames[msg.game] || msg.game} 게임 대기 중...`;
       }
     },
@@ -525,6 +525,9 @@ function handleMessage(peerId, raw) {
     // Jewel Match handlers
     'jewel-dead': () => { if(state.isHost && typeof processJewelDead === 'function') processJewelDead({ ...msg, id: peerId }); },
     'jewel-rankings': () => { if(typeof jwlShowRankings === 'function') jwlShowRankings(msg.rankings); },
+    // ColorChain handlers
+    'cc-dead': () => { if(state.isHost && typeof processColorChainDead === 'function') processColorChainDead({ ...msg, id: peerId }); },
+    'cc-rankings': () => { if(typeof ccShowRankings === 'function') ccShowRankings(msg.rankings); },
     'player-left': () => {
       state.players = state.players.filter(p => p.id !== msg.playerId);
       updateLobbyUI();
@@ -728,6 +731,7 @@ function returnToLobby() {
   if (typeof tetGame !== 'undefined' && tetGame) {
     if (typeof tetCleanup === 'function') tetCleanup();
   }
+  if (typeof ccCleanup === 'function') ccCleanup();
   showScreen('lobby');
   updateLobbyUI();
 }
@@ -819,7 +823,7 @@ function selectGame(el) {
 // ===== GAME START =====
 function startGame() {
   console.log('[PartyDeck] startGame 호출. isHost:', state.isHost, 'players:', state.players.length, 'game:', state.selectedGame);
-  const soloGames = ['tetris', 'jewel'];
+  const soloGames = ['tetris', 'jewel', 'colorchain'];
   const minPlayers = soloGames.includes(state.selectedGame) ? 1 : 2;
   if(!state.isHost || state.players.length < minPlayers) { showToast('최소 ' + minPlayers + '명 필요 (현재 ' + state.players.length + '명)'); return; }
   if(!spendEnergy(1)) { showToast('⚡ 에너지가 부족합니다! 충전을 기다려주세요'); return; }
@@ -839,6 +843,7 @@ function startGame() {
   else if(g === 'stairs') startStairs();
   else if(g === 'tetris') startTetris();
   else if(g === 'jewel') startJewel();
+  else if(g === 'colorchain') startColorChain();
   else showToast('준비 중인 게임입니다');
 }
 
@@ -906,6 +911,10 @@ function handleGameStart(msg) {
     showScreen('jewelGame');
     renderJewelView(msg.state);
   }
+  else if(msg.game === 'colorchain') {
+    showScreen('colorchainGame');
+    renderColorChainView(msg.state);
+  }
 }
 
 // ===== DEBUG / PREVIEW MODE =====
@@ -951,7 +960,8 @@ function debugGame(game) {
     bombshot: 'bombshotGame',
     stairs: 'stairsGame',
     tetris: 'tetrisGame',
-    jewel: 'jewelGame'
+    jewel: 'jewelGame',
+    colorchain: 'colorchainGame'
   };
 
   if(game === 'stairs') {
@@ -993,6 +1003,11 @@ function debugGame(game) {
   if(game === 'jewel') {
     showScreen('jewelGame');
     jwlShowModeSelect();
+    return;
+  }
+
+  if(game === 'colorchain') {
+    startColorChain();
     return;
   }
 
