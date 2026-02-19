@@ -189,8 +189,7 @@ function ccProcessMerges() {
     for (const g of group) processed.add(g.r + ',' + g.c);
     merged = true;
 
-    const mid = (CC_COLS - 1) / 2;
-    group.sort((a, b) => b.r - a.r || Math.abs(a.c - mid) - Math.abs(b.c - mid));
+    group.sort((a, b) => b.r - a.r || (Math.random() - 0.5));
     const sv = group[0];
     const newLv = Math.min(level + (group.length - 1), CC_MAX_LEVEL + 1);
     for (const g of group) ccBoard[g.r][g.c] = 0;
