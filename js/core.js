@@ -857,8 +857,12 @@ function updateLobbyUI() {
   `).join('');
   document.getElementById('playerCount').textContent = state.players.length;
   if(state.isHost) {
-    document.getElementById('startGameBtn').style.display = state.players.length >= 2 ? 'block' : 'none';
+    const _soloList = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee'];
+    const _minP = _soloList.includes(state.selectedGame) ? 1 : 2;
+    document.getElementById('startGameBtn').style.display = state.players.length >= _minP ? 'block' : 'none';
   }
+  // Show game info panel for currently selected game
+  if(typeof updateGameInfoPanel === 'function') updateGameInfoPanel(state.selectedGame);
 }
 
 function selectGame(el) {

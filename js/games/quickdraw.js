@@ -48,10 +48,23 @@ function startQuickDraw() {
 }
 
 // Web Audio API gunshot sound for fire signal
+// AudioContext is created on first user gesture (qdTap) and reused
+var _qdAudioCtx = null;
+function qdEnsureAudioCtx() {
+  if(!_qdAudioCtx) {
+    try { _qdAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e) { /* audio not supported */ }
+  }
+  // Resume if suspended (iOS requires resume after user gesture)
+  if(_qdAudioCtx && _qdAudioCtx.state === 'suspended') {
+    _qdAudioCtx.resume();
+  }
+}
+
 function qdPlayFireSound() {
+  if(!_qdAudioCtx) return;
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // Gunshot: short burst of noise
+    const ctx = _qdAudioCtx;
     const duration = 0.15;
     const buffer = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -66,8 +79,7 @@ function qdPlayFireSound() {
     source.connect(gain);
     gain.connect(ctx.destination);
     source.start();
-    source.onended = () => ctx.close();
-  } catch(e) { /* ignore if audio not available */ }
+  } catch(e) { /* ignore playback errors */ }
 }
 
 function broadcastQDState() {
@@ -173,6 +185,9 @@ function renderQDRankings(qd) {
 }
 
 function qdTap() {
+  // Create/resume AudioContext on user gesture (required by iOS Safari)
+  qdEnsureAudioCtx();
+
   const qd = qdState;
   const now = Date.now();
 

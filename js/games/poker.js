@@ -12,6 +12,7 @@ function createDeck() {
 }
 
 function startPoker() {
+  _pkCardsHidden = false; // reset card flip state on new round
   const deck = createDeck();
   const n = state.players.length;
   const prevChips = state.poker?.players;
@@ -192,7 +193,9 @@ var _pkCardsHidden = false;
 function pkHeroCardHTML(c) {
   if(!c) return '<div class="pk-hero-card pk-card-back"><div class="pk-hero-back-pattern"></div></div>';
   const cls = (c.suit === '♥' || c.suit === '♦') ? 'pk-red' : 'pk-black';
-  if(_pkCardsHidden) {
+  // During showdown, always show cards regardless of hidden state
+  const isShowdown = window._lastPokerView && window._lastPokerView.phase === 'showdown';
+  if(_pkCardsHidden && !isShowdown) {
     return `<div class="pk-hero-card pk-card-back" onclick="pkToggleCards()" style="cursor:pointer;"><div class="pk-hero-back-pattern"></div></div>`;
   }
   return `<div class="pk-hero-card ${cls}" onclick="pkToggleCards()" style="cursor:pointer;">

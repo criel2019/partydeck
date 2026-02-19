@@ -125,7 +125,9 @@ function hwatuCardHTML(card, big) {
     const cls = big ? 'hwatu-card hwatu-card-big back' : 'hwatu-card back';
     return '<div class="' + cls + '"></div>';
   }
-  if (big && _sutdaCardsHidden) {
+  // During showdown, always show cards regardless of hidden state
+  var isShowdownPhase = sutdaView && sutdaView.phase === 'showdown';
+  if (big && _sutdaCardsHidden && !isShowdownPhase) {
     return '<div class="hwatu-card hwatu-card-big back" onclick="sutdaToggleCards()" style="cursor:pointer;"></div>';
   }
   const sizeClass = big ? 'hwatu-card hwatu-card-big' : 'hwatu-card';
@@ -161,6 +163,7 @@ function shuffleHwatu() {
 // 게임 시작 (호스트)
 // =========================
 function startSutda() {
+  _sutdaCardsHidden = false; // reset card flip state on new round
   if (!state.isHost) return;
   if (state.players.length < 2 || state.players.length > 6) {
     showToast('섯다는 2~6인 플레이입니다');

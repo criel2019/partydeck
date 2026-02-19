@@ -783,8 +783,13 @@ function fortPowerStop() {
 var _fortCharging = false;
 var _fortChargeInterval = null;
 var _fortChargeValue = 0;
+var _fortChargeTouched = false; // prevent touch+mouse double-trigger
 
-function fortFireChargeStart() {
+function fortFireChargeStart(evt) {
+  // Prevent touch+mouse double-trigger
+  if (evt && evt.type && evt.type.startsWith('touch')) _fortChargeTouched = true;
+  if (evt && evt.type && evt.type.startsWith('mouse') && _fortChargeTouched) return;
+
   if (!fortState && !window._fortView) return;
   const view = window._fortView;
   if (!view || view.phase !== 'aiming') return;
@@ -805,8 +810,13 @@ function fortFireChargeStart() {
   }, 40);
 }
 
-function fortFireChargeEnd() {
+function fortFireChargeEnd(evt) {
   if (!_fortCharging) return;
+  if (evt && evt.type && evt.type.startsWith('mouse') && _fortChargeTouched) return;
+  // Reset touch flag on touch end
+  if (evt && evt.type && evt.type.startsWith('touch')) {
+    setTimeout(function() { _fortChargeTouched = false; }, 300);
+  }
   _fortCharging = false;
   if (_fortChargeInterval) { clearInterval(_fortChargeInterval); _fortChargeInterval = null; }
   hideChargeGauge();
