@@ -28,6 +28,13 @@ function loadYahtzeeThree() {
   s1.onload = () => {
     const s2 = document.createElement('script');
     s2.src = 'js/yahtzee-three.js';
+    s2.onload = () => {
+      // Script loaded — initialize 3D scene if yahtzee screen is active
+      const canvas = document.getElementById('yahtzeeCanvas');
+      if(canvas && typeof initYahtzeeThree === 'function') {
+        initYahtzeeThree(canvas);
+      }
+    };
     s2.onerror = () => { _threeLoaded = false; };
     document.head.appendChild(s2);
   };
