@@ -1171,7 +1171,7 @@ function debugGame(game) {
       held: [false, false, false, false, false],
       rollsLeft: 3,
       turnNum: 1,
-      maxTurns: 13,
+      maxTurns: 12,
       selectedCategory: null,
       phase: 'rolling'
     };
