@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&family=Oswald:wght@500;600;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&family=Oswald:wght@500;600;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/common.css">
 <link rel="stylesheet" href="css/games/mafia.css?v=3">
 <link rel="stylesheet" href="css/games/truth.css">
@@ -26,6 +26,7 @@
 <link rel="stylesheet" href="css/games/tetris.css">
 <link rel="stylesheet" href="css/games/jewel.css">
 <link rel="stylesheet" href="css/games/colorchain.css">
+<link rel="stylesheet" href="css/games/slinkystairs.css">
 <link rel="stylesheet" href="css/games/mobile.css">
 </head>
 <body>
@@ -95,6 +96,7 @@
       <button class="debug-game-btn" onclick="debugGame('tetris')">🧩 테트리스</button>
       <button class="debug-game-btn" onclick="debugGame('jewel')">💎 보석맞추기</button>
       <button class="debug-game-btn" onclick="debugGame('colorchain')">🔗 컬러체인</button>
+      <button class="debug-game-btn" onclick="debugGame('slinkystairs')">🌀 슬링키</button>
     </div>
   </div>
 
@@ -129,6 +131,7 @@
       <button class="practice-game-btn" onclick="startPracticeGame('tetris')">🧩 테트리스</button>
       <button class="practice-game-btn" onclick="startPracticeGame('jewel')">💎 보석맞추기</button>
       <button class="practice-game-btn" onclick="startPracticeGame('colorchain')">🔗 컬러체인</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('slinkystairs')">🌀 슬링키</button>
     </div>
   </div>
 </div>
@@ -219,6 +222,9 @@
       </div>
       <div class="game-option" data-game="colorchain" onclick="selectGame(this)">
         <span class="game-emoji">🔗</span>컬러체인
+      </div>
+      <div class="game-option" data-game="slinkystairs" onclick="selectGame(this)">
+        <span class="game-emoji">🌀</span>슬링키
       </div>
     </div>
     <div class="game-info-panel" id="gameInfoPanel" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
@@ -1666,6 +1672,12 @@
   </div>
 </div>
 
+<!-- SLINKY STAIRS GAME -->
+<div class="screen" id="slinkyStairsGame">
+  <canvas id="slkCanvas"></canvas>
+  <button class="slk-exit-btn" onclick="leaveGame()">&#10005;</button>
+</div>
+
 <!-- RESULT -->
 <div class="result-overlay" id="resultOverlay">
   <div class="result-title" id="resultTitle">🏆 승리!</div>
@@ -1708,6 +1720,7 @@
 <script src="js/games/tetris.js?v=1"></script>
 <script src="js/games/jewel.js?v=1"></script>
 <script src="js/games/colorchain.js?v=1"></script>
+<script src="js/games/slinkystairs.js?v=1"></script>
 <script src="js/ai.js?v=3"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>

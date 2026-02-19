@@ -320,6 +320,118 @@
 }
 .cc-pause-quit:active { background: rgba(255, 255, 255, .15); }
 
+/* ===== HUD Help Button ===== */
+.cc-hud-help {
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .1);
+  color: #888;
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cc-hud-help:active {
+  background: rgba(255, 255, 255, .12);
+}
+
+/* ===== Rulebook Overlay ===== */
+.cc-rulebook {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, .92);
+  z-index: 130;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.cc-rulebook-inner {
+  max-width: 360px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px 20px;
+  background: #12141f;
+  border: 1px solid #2a2a4e;
+  border-radius: 12px;
+}
+.cc-rb-title {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 24px;
+  font-weight: 900;
+  color: #ff6b4a;
+  letter-spacing: 4px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.cc-rb-section {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff6b4a;
+  letter-spacing: 1px;
+  margin-top: 14px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 107, 74, .2);
+  padding-bottom: 3px;
+}
+.cc-rb-text {
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #bbb;
+  line-height: 1.7;
+  margin-bottom: 4px;
+}
+.cc-rb-text b {
+  color: #ddd;
+  font-weight: 700;
+}
+.cc-rb-key {
+  display: inline-block;
+  background: #1a1a2e;
+  border: 1px solid #2a2a4e;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ccc;
+  min-width: 20px;
+  text-align: center;
+}
+.cc-rb-close {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px 0;
+  border: none;
+  border-radius: 8px;
+  background: #ff6b4a;
+  color: #fff;
+  font-family: 'Outfit', 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+.cc-rb-close:active {
+  background: #ff8566;
+}
+
+/* Pause menu rulebook button */
+.cc-pause-rulebook {
+  background: rgba(255, 255, 255, .08);
+  color: #aaa;
+}
+.cc-pause-rulebook:active { background: rgba(255, 255, 255, .15); }
+
 /* ===== Game Over Overlay ===== */
 .cc-gameover {
   position: absolute;
@@ -413,6 +525,14 @@
 @keyframes ccBlink {
   0%, 100% { opacity: .4; }
   50% { opacity: 1; }
+}
+
+/* ===== Desktop: larger board ===== */
+@media (min-width: 600px) {
+  .cc-hud { max-width: 520px; }
+  .cc-players-bar { max-width: 520px; }
+  .cc-play-area { max-width: 520px; }
+  .cc-controls { max-width: 520px; }
 }
 
 /* ===== Responsive ===== */

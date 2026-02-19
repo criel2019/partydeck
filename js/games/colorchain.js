@@ -3,8 +3,9 @@
 // ═══════════════════════════════════════
 
 // ═══ CONSTANTS ═══
-const CC_COLS = 6, CC_ROWS = 12, CC_CELL = 36, CC_PAD = 100;
-const CC_BOARD_W = CC_COLS * CC_CELL, CC_BOARD_H = CC_ROWS * CC_CELL;
+const CC_COLS = 6, CC_ROWS = 12, CC_PAD = 100;
+let CC_CELL = 36;
+let CC_BOARD_W = CC_COLS * CC_CELL, CC_BOARD_H = CC_ROWS * CC_CELL;
 const CC_COLORS = [null, '#9b59b6', '#3498db', '#2ecc71', '#f1c40f', '#e74c3c'];
 const CC_COLOR_RGB = [null, [155,89,182], [52,152,219], [46,204,113], [241,196,15], [231,76,60]];
 const CC_MAX_LEVEL = 5, CC_JUNK = -1;
@@ -27,6 +28,8 @@ let ccNextCanvas = null, ccNextCtx = null;
 let ccHoldCanvas = null, ccHoldCtx = null;
 let ccAnimId = null;
 let ccPaused = false;
+let ccRulebookOpen = false;
+let ccPausedBeforeRulebook = false;
 let ccMulti = null;
 let ccCountdownIv = null;
 let ccTouchBound = false;
@@ -701,8 +704,23 @@ function _ccBindTouch() {
   });
 }
 
+// ═══ DYNAMIC SIZING ═══
+function ccComputeSize() {
+  var vw = window.innerWidth, vh = window.innerHeight;
+  // Available width: viewport minus side panels (60*2), gaps (8*2), padding
+  var aw = vw - 152;
+  // Available height: viewport minus HUD (~46), players bar (~30), controls (~130), padding
+  var ah = vh - 220;
+  var cellW = Math.floor(aw / CC_COLS);
+  var cellH = Math.floor(ah / CC_ROWS);
+  CC_CELL = Math.max(28, Math.min(52, Math.min(cellW, cellH)));
+  CC_BOARD_W = CC_COLS * CC_CELL;
+  CC_BOARD_H = CC_ROWS * CC_CELL;
+}
+
 // ═══ CANVAS INIT ═══
 function ccInitCanvas() {
+  ccComputeSize();
   ccCanvas = document.getElementById('ccCanvas');
   if (!ccCanvas) return;
   ccCtx = ccCanvas.getContext('2d');
@@ -734,6 +752,8 @@ function ccResetState() {
   ccShakeAmount = 0; ccScreenFlash = 0; ccPreHeatBoard = null;
   ccPendingJunkCols = []; ccWarningJunkCols = [];
   ccPaused = false;
+  ccRulebookOpen = false;
+  ccPausedBeforeRulebook = false;
   ccBgPulse = 0; ccBgPulseColor = [255,220,100]; ccScreenFlashColor = [255,220,100];
   ccBgOrbs = [];
   for (var oi = 0; oi < 12; oi++) {
@@ -749,6 +769,7 @@ function ccResetState() {
   const goEl = document.getElementById('ccGameOver');
   const pauseEl = document.getElementById('ccPauseOverlay');
   const cdEl = document.getElementById('ccCountdown');
+  const rbEl = document.getElementById('ccRulebook');
 
   if (scoreEl) scoreEl.textContent = '0';
   if (turnEl) turnEl.textContent = '0';
@@ -757,6 +778,7 @@ function ccResetState() {
   if (goEl) goEl.style.display = 'none';
   if (pauseEl) pauseEl.style.display = 'none';
   if (cdEl) cdEl.style.display = 'none';
+  if (rbEl) rbEl.style.display = 'none';
 
   ccCurrentPiece = ccCreatePiece();
   ccNextPiece = ccCreatePiece();
@@ -857,6 +879,24 @@ function ccResume() {
   if (el) el.style.display = 'none';
 }
 
+// ═══ RULEBOOK ═══
+function ccShowRulebook() {
+  ccPausedBeforeRulebook = ccPaused;
+  ccPaused = true;
+  ccRulebookOpen = true;
+  const el = document.getElementById('ccRulebook');
+  if (el) el.style.display = 'flex';
+}
+function ccCloseRulebook() {
+  ccRulebookOpen = false;
+  const el = document.getElementById('ccRulebook');
+  if (el) el.style.display = 'none';
+  if (!ccPausedBeforeRulebook) {
+    ccPaused = false;
+    ccLastFrameTime = 0;
+  }
+}
+
 // ═══ CLEANUP ═══
 function ccCleanup() {
   if (ccAnimId) { cancelAnimationFrame(ccAnimId); ccAnimId = null; }
@@ -867,6 +907,8 @@ function ccCleanup() {
   ccHoldCanvas = null; ccHoldCtx = null;
   ccMulti = null;
   ccPaused = false;
+  ccRulebookOpen = false;
+  ccPausedBeforeRulebook = false;
   ccTouchBound = false;
 }
 

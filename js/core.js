@@ -746,6 +746,7 @@ function returnToLobby() {
     if (typeof tetCleanup === 'function') tetCleanup();
   }
   if (typeof ccCleanup === 'function') ccCleanup();
+  if (typeof slkCleanup === 'function') slkCleanup();
   // Clean up AI timers (lobby CPU mode)
   if(typeof cleanupAI === 'function') cleanupAI();
   showScreen('lobby');
@@ -773,6 +774,7 @@ function restartCurrentGame() {
   else if(g === 'truth') startTruthGame();
   else if(g === 'lottery') startLottery();
   else if(g === 'updown') startUpDown();
+  else if(g === 'slinkystairs') { if(typeof slkCleanup==='function') slkCleanup(); startSlinkyStairs(); }
   else { showToast('이 게임은 자동 재시작됩니다'); }
 }
 
@@ -882,7 +884,7 @@ function updateLobbyUI() {
   }
 
   if(state.isHost) {
-    const _soloList = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee'];
+    const _soloList = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs'];
     const _minP = _soloList.includes(state.selectedGame) ? 1 : 2;
     document.getElementById('startGameBtn').style.display = state.players.length >= _minP ? 'block' : 'none';
   }
@@ -963,7 +965,7 @@ function selectGame(el) {
   // Update game info panel + start button visibility
   updateGameInfoPanel(state.selectedGame);
   if(state.isHost) {
-    const _soloList = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee'];
+    const _soloList = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs'];
     const _minP = _soloList.includes(state.selectedGame) ? 1 : 2;
     document.getElementById('startGameBtn').style.display = state.players.length >= _minP ? 'block' : 'none';
   }
@@ -990,7 +992,8 @@ const GAME_INFO = {
   stairs:   { emoji:'🪜', name:'무한계단', desc:'끝없이 올라가는 계단! 좌우 타이밍을 맞춰 최고 기록 도전.', players:'1~14명', time:'3~10분', type:'레이싱' },
   tetris:   { emoji:'🧩', name:'테트리스', desc:'클래식 퍼즐! 블록을 쌓고 줄을 지워 최고 점수에 도전.', players:'1~14명', time:'5~10분', type:'퍼즐' },
   jewel:    { emoji:'💎', name:'보석맞추기', desc:'같은 보석 3개를 맞춰 제거! 콤보와 연쇄로 고득점.', players:'1~14명', time:'5~10분', type:'퍼즐' },
-  colorchain:{ emoji:'🔗', name:'컬러체인', desc:'같은 색 구슬을 연결해서 터뜨려라! 중력과 연쇄 콤보.', players:'1~14명', time:'5~10분', type:'퍼즐' }
+  colorchain:{ emoji:'🔗', name:'컬러체인', desc:'같은 색 구슬을 연결해서 터뜨려라! 중력과 연쇄 콤보.', players:'1~14명', time:'5~10분', type:'퍼즐' },
+  slinkystairs:{ emoji:'🌀', name:'슬링키 스테어즈', desc:'무너지는 계단 위에서 슬링키를 조종해 살아남으세요! 좌우 타이밍이 핵심.', players:'1~14명', time:'3~10분', type:'아케이드' }
 };
 
 function updateGameInfoPanel(game) {
@@ -1009,7 +1012,7 @@ function updateGameInfoPanel(game) {
 // ===== GAME START =====
 function startGame() {
   console.log('[PartyDeck] startGame 호출. isHost:', state.isHost, 'players:', state.players.length, 'game:', state.selectedGame);
-  const soloGames = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee'];
+  const soloGames = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs'];
   const minPlayers = soloGames.includes(state.selectedGame) ? 1 : 2;
   if(!state.isHost || state.players.length < minPlayers) { showToast('최소 ' + minPlayers + '명 필요 (현재 ' + state.players.length + '명)'); return; }
   if(!spendEnergy(1)) { showToast('⚡ 에너지가 부족합니다! 충전을 기다려주세요'); return; }
@@ -1030,6 +1033,7 @@ function startGame() {
   else if(g === 'tetris') startTetris();
   else if(g === 'jewel') startJewel();
   else if(g === 'colorchain') startColorChain();
+  else if(g === 'slinkystairs') startSlinkyStairs();
   else showToast('준비 중인 게임입니다');
 }
 
@@ -1101,6 +1105,10 @@ function handleGameStart(msg) {
     showScreen('colorchainGame');
     renderColorChainView(msg.state);
   }
+  else if(msg.game === 'slinkystairs') {
+    showScreen('slinkyStairsGame');
+    renderSlinkyStairsView(msg.state);
+  }
 }
 
 // ===== DEBUG / PREVIEW MODE =====
@@ -1147,7 +1155,8 @@ function debugGame(game) {
     stairs: 'stairsGame',
     tetris: 'tetrisGame',
     jewel: 'jewelGame',
-    colorchain: 'colorchainGame'
+    colorchain: 'colorchainGame',
+    slinkystairs: 'slinkyStairsGame'
   };
 
   if(game === 'stairs') {
@@ -1194,6 +1203,11 @@ function debugGame(game) {
 
   if(game === 'colorchain') {
     startColorChain();
+    return;
+  }
+
+  if(game === 'slinkystairs') {
+    startSlinkyStairs();
     return;
   }
 

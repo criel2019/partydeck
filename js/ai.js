@@ -47,6 +47,7 @@ const AI_COUNTS = {
   tetris: 0,
   jewel: 0,
   colorchain: 0,
+  slinkystairs: 0,
 };
 
 // ========== ENTRY / EXIT ==========
