@@ -41,6 +41,8 @@ let ccPendingJunkCols = [], ccWarningJunkCols = [];
 let ccParticles = [], ccFloatingTexts = [], ccRings = [];
 let ccShakeAmount = 0, ccScreenFlash = 0;
 let ccCellFlash = {}, ccCellScale = {};
+let ccBgOrbs = [], ccBgPulse = 0, ccBgPulseColor = [255,220,100];
+let ccScreenFlashColor = [255,220,100];
 
 // ═══ BOARD ═══
 function ccInitBoard() {
@@ -141,6 +143,7 @@ function ccLockPiece(piece) {
     if (r < 0) { ccTriggerGameOver(); return; }
     ccBoard[r][c] = TAG_BASE + piece.colors[i];
   }
+  ccShakeAmount = Math.max(ccShakeAmount, 1.5);
   ccApplyGravityRaw();
   ccActiveCells = new Set();
   for (let r = 0; r < CC_ROWS; r++) {
@@ -148,6 +151,8 @@ function ccLockPiece(piece) {
       if (ccBoard[r][c] >= TAG_BASE) {
         ccBoard[r][c] = ccBoard[r][c] - TAG_BASE;
         ccActiveCells.add(r + ',' + c);
+        ccCellScale[r+','+c] = 1.1;
+        ccCellFlash[r+','+c] = {alpha:0.4,type:'white'};
       }
     }
   }
@@ -166,6 +171,7 @@ function ccProcessMerges() {
   let merged = false;
   const nextActive = new Set();
   const processed = new Set();
+  let lastMergeRgb = null;
 
   for (const key of ccActiveCells) {
     if (processed.has(key)) continue;
@@ -195,9 +201,20 @@ function ccProcessMerges() {
     for (const g of group) ccBoard[g.r][g.c] = 0;
     ccBoard[sv.r][sv.c] = newLv;
     nextActive.add(sv.r + ',' + sv.c);
+    // Activate neighbors of all group cells for cascade detection
+    for (const g of group) {
+      for (const [dr, dc] of CC_DIRS) {
+        const nr = g.r + dr, nc = g.c + dc;
+        if (nr >= 0 && nr < CC_ROWS && nc >= 0 && nc < CC_COLS) {
+          const nv = ccBoard[nr][nc];
+          if (nv > 0 && nv !== CC_JUNK) nextActive.add(nr + ',' + nc);
+        }
+      }
+    }
 
     const sx = sv.c * CC_CELL + CC_CELL / 2, sy = sv.r * CC_CELL + CC_CELL / 2;
     const rgb = CC_COLOR_RGB[Math.min(newLv, CC_MAX_LEVEL)] || [200,200,200];
+    lastMergeRgb = rgb;
     for (let i = 1; i < group.length; i++) {
       const g = group[i], gx = g.c * CC_CELL + CC_CELL / 2, gy = g.r * CC_CELL + CC_CELL / 2;
       const ang = Math.atan2(sy - gy, sx - gx);
@@ -211,6 +228,7 @@ function ccProcessMerges() {
       ccParticles.push({x:sx,y:sy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-0.5,life:0.7,decay:0.025,size:2+Math.random()*2,r:Math.min(rgb[0]+60,255),g:Math.min(rgb[1]+60,255),b:Math.min(rgb[2]+60,255)});
     }
     if (group.length >= 3) ccRings.push({x:sx,y:sy,radius:3,maxR:CC_CELL*1.2+group.length*5,life:1,spd:2.5,color:CC_COLORS[Math.min(newLv,CC_MAX_LEVEL)]});
+    else ccRings.push({x:sx,y:sy,radius:2,maxR:CC_CELL*0.8,life:0.6,spd:2,color:CC_COLORS[Math.min(newLv,CC_MAX_LEVEL)]});
 
     const pts = group.length * level * 15 * Math.max(ccComboCount, 1);
     ccScore += pts;
@@ -223,6 +241,8 @@ function ccProcessMerges() {
     const scoreEl = document.getElementById('ccScoreValue');
     if (scoreEl) scoreEl.textContent = ccScore;
     ccShakeAmount = Math.max(ccShakeAmount, 4);
+    ccBgPulse = Math.max(ccBgPulse, 0.15);
+    if (lastMergeRgb) ccBgPulseColor = lastMergeRgb;
     ccActiveCells = nextActive;
   } else {
     ccActiveCells = new Set();
@@ -268,9 +288,14 @@ function ccProcessExplosions() {
   if (chain >= 2) ccFloatingTexts.push({x:CC_BOARD_W/2,y:CC_BOARD_H/2-30,text:(chain>=4?'\u{1F4A5} ':'')+chain+'x CHAIN!',life:2,decay:0.015,vy:-0.4,size:26+chain*4,color:chain>=4?'#ff1111':'#ffaa00',scale:1.8});
   if (chain === 1 && ex.length >= 2) ccFloatingTexts.push({x:CC_BOARD_W/2,y:CC_BOARD_H/2,text:'BOOM!',life:1.2,decay:0.02,vy:-0.5,size:24,color:'#ff6644',scale:1.4});
 
-  ccHitstopTimer = chain >= 3 ? 120 : chain >= 2 ? 80 : 50;
-  ccShakeAmount = Math.min(8 + chain * 5, 25);
-  ccScreenFlash = Math.min(0.35 + chain * 0.12, 0.8);
+  ccHitstopTimer = chain >= 4 ? 160 : chain >= 3 ? 120 : chain >= 2 ? 80 : 50;
+  ccShakeAmount = Math.min(8 + chain * 6, 30);
+  var flashColors = [[255,220,100],[255,200,50],[255,160,30],[255,80,30]];
+  var fci = Math.min(chain - 1, 3);
+  ccScreenFlashColor = flashColors[fci];
+  ccScreenFlash = Math.min(0.35 + chain * 0.15, 0.9);
+  ccBgPulse = Math.min(0.3 + chain * 0.12, 0.8);
+  ccBgPulseColor = flashColors[fci];
 
   for (const pos of ex) ccBoard[pos.r][pos.c] = 0;
   const affected = new Set(), junkDead = [];
@@ -408,7 +433,31 @@ function ccFinishTurn() {
   setTimeout(function(){ var el=document.getElementById('ccComboDisplay'); if(el){el.textContent=''; el.className='cc-combo';} }, 600);
 }
 
-function ccHardDrop() { if (ccGameState!=='playing'||ccGameOver||!ccCurrentPiece) return; while(ccCanMove(ccCurrentPiece,1,0)) ccCurrentPiece.row++; ccLockPiece(ccCurrentPiece); }
+function ccHardDrop() {
+  if (ccGameState!=='playing'||ccGameOver||!ccCurrentPiece) return;
+  var startRow = ccCurrentPiece.row;
+  while(ccCanMove(ccCurrentPiece,1,0)) ccCurrentPiece.row++;
+  var dist = ccCurrentPiece.row - startRow;
+  if (dist > 0) {
+    var intensity = Math.min(dist / 10, 1);
+    ccShakeAmount = Math.max(ccShakeAmount, 2 + intensity * 4);
+    ccScreenFlash = Math.max(ccScreenFlash, 0.06 + intensity * 0.08);
+    ccScreenFlashColor = [255,255,255];
+    ccHitstopTimer = Math.max(ccHitstopTimer, 10 + intensity * 20);
+    // Dust particles at landing cells
+    for (var i = 0; i < ccCurrentPiece.cells.length; i++) {
+      var lr = ccCurrentPiece.row + ccCurrentPiece.cells[i][0];
+      var lc = ccCurrentPiece.col + ccCurrentPiece.cells[i][1];
+      var dx = lc * CC_CELL + CC_CELL / 2, dy = (lr + 1) * CC_CELL;
+      for (var j = 0; j < 3 + Math.floor(intensity * 4); j++) {
+        var ang = -Math.PI * (0.15 + Math.random() * 0.7), sp = 0.8 + Math.random() * 1.5 * (0.5 + intensity);
+        ccParticles.push({x:dx+(Math.random()-0.5)*CC_CELL*0.6,y:dy,vx:Math.cos(ang)*sp*(Math.random()>0.5?1:-1),vy:Math.sin(ang)*sp*0.5-0.3,life:0.5+Math.random()*0.3,decay:0.03,size:1.5+Math.random()*2,r:180,g:180,b:200});
+      }
+      ccCellScale[lr+','+lc] = 1.15 + intensity * 0.1;
+    }
+  }
+  ccLockPiece(ccCurrentPiece);
+}
 
 function ccTriggerGameOver() {
   ccGameOver = true;
@@ -454,9 +503,18 @@ function ccDrawCell(c, x, y, lv, sz, al) {
   }
 
   var v = Math.min(lv, CC_MAX_LEVEL);
-  if (v>=4) { c.shadowColor=CC_COLORS[v]; c.shadowBlur=v===5?16:8; }
+  if (v===5) {
+    var pulse5 = Math.sin(Date.now() * 0.008);
+    var blur5 = 17 + pulse5 * 5;
+    c.shadowColor = '#ff3322'; c.shadowBlur = blur5;
+  } else if (v>=4) { c.shadowColor=CC_COLORS[v]; c.shadowBlur=8; }
   c.fillStyle=CC_COLORS[v]; c.beginPath(); c.roundRect(dx,dy,ds,ds,rd); c.fill();
   var g2=c.createLinearGradient(dx,dy,dx,dy+ds); g2.addColorStop(0,'rgba(255,255,255,0.25)'); g2.addColorStop(0.5,'rgba(255,255,255,0)'); g2.addColorStop(1,'rgba(0,0,0,0.2)'); c.fillStyle=g2; c.beginPath(); c.roundRect(dx,dy,ds,ds,rd); c.fill();
+  if (v===5) {
+    var borderPulse = 0.5 + Math.sin(Date.now() * 0.006 + 1.5) * 0.3;
+    c.strokeStyle = 'rgba(255,50,30,' + borderPulse + ')'; c.lineWidth = 1.5;
+    c.beginPath(); c.roundRect(dx,dy,ds,ds,rd); c.stroke();
+  }
   c.shadowColor='transparent'; c.shadowBlur=0;
   c.fillStyle='rgba(255,255,255,'+0.55*al+')'; c.font='bold '+Math.floor(sz*0.35)+'px Outfit,Oswald,sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(v,x+sz/2,y+sz/2);
   c.restore();
@@ -468,11 +526,26 @@ function ccDraw() {
   if (ccShakeAmount>0.2) { sx=(Math.random()-0.5)*ccShakeAmount; sy=(Math.random()-0.5)*ccShakeAmount; ccShakeAmount*=0.87; if(ccShakeAmount<0.2)ccShakeAmount=0; }
   ccCtx.clearRect(0,0,ccCanvas.width,ccCanvas.height);
   ccCtx.save(); ccCtx.translate(CC_PAD+sx,CC_PAD+sy);
-  if (ccScreenFlash>0.01) { ccCtx.save(); ccCtx.translate(-CC_PAD,-CC_PAD); ccCtx.fillStyle='rgba(255,220,100,'+ccScreenFlash+')'; ccCtx.fillRect(0,0,ccCanvas.width,ccCanvas.height); ccCtx.restore(); ccScreenFlash*=0.88; if(ccScreenFlash<0.01)ccScreenFlash=0; }
+  if (ccScreenFlash>0.01) { ccCtx.save(); ccCtx.translate(-CC_PAD,-CC_PAD); ccCtx.fillStyle='rgba('+ccScreenFlashColor[0]+','+ccScreenFlashColor[1]+','+ccScreenFlashColor[2]+','+ccScreenFlash+')'; ccCtx.fillRect(0,0,ccCanvas.width,ccCanvas.height); ccCtx.restore(); ccScreenFlash*=0.88; if(ccScreenFlash<0.01)ccScreenFlash=0; }
   ccCtx.fillStyle='#0d0d18'; ccCtx.fillRect(0,0,CC_BOARD_W,CC_BOARD_H);
 
+  // Background orbs
+  for (var oi=0;oi<ccBgOrbs.length;oi++) {
+    var orb=ccBgOrbs[oi]; orb.x+=orb.vx; orb.y+=orb.vy; orb.phase+=0.008;
+    if(orb.x<-orb.r)orb.x=CC_BOARD_W+orb.r; if(orb.x>CC_BOARD_W+orb.r)orb.x=-orb.r;
+    if(orb.y<-orb.r)orb.y=CC_BOARD_H+orb.r; if(orb.y>CC_BOARD_H+orb.r)orb.y=-orb.r;
+    var oAlpha=orb.alpha*(0.7+Math.sin(orb.phase)*0.3);
+    var og=ccCtx.createRadialGradient(orb.x,orb.y,0,orb.x,orb.y,orb.r);
+    og.addColorStop(0,'rgba('+orb.cr+','+orb.cg+','+orb.cb+','+oAlpha+')'); og.addColorStop(1,'rgba(0,0,0,0)');
+    ccCtx.fillStyle=og; ccCtx.fillRect(orb.x-orb.r,orb.y-orb.r,orb.r*2,orb.r*2);
+  }
+
+  // Background pulse overlay
+  if(ccBgPulse>0.005){ccCtx.fillStyle='rgba('+ccBgPulseColor[0]+','+ccBgPulseColor[1]+','+ccBgPulseColor[2]+','+ccBgPulse*0.12+')';ccCtx.fillRect(0,0,CC_BOARD_W,CC_BOARD_H);ccBgPulse*=0.94;if(ccBgPulse<0.005)ccBgPulse=0;}
+
   // Grid
-  ccCtx.strokeStyle='#151525'; ccCtx.lineWidth=1;
+  var gridTint = ccBgPulse > 0.01 ? Math.floor(20 + ccBgPulse * 15) : 21;
+  ccCtx.strokeStyle='rgb('+gridTint+','+gridTint+','+(gridTint+10)+')'; ccCtx.lineWidth=1;
   for (var r=0;r<=CC_ROWS;r++) { ccCtx.beginPath(); ccCtx.moveTo(0,r*CC_CELL); ccCtx.lineTo(CC_BOARD_W,r*CC_CELL); ccCtx.stroke(); }
   for (var c=0;c<=CC_COLS;c++) { ccCtx.beginPath(); ccCtx.moveTo(c*CC_CELL,0); ccCtx.lineTo(c*CC_CELL,CC_BOARD_H); ccCtx.stroke(); }
 
@@ -504,6 +577,8 @@ function ccDraw() {
       ccCtx.save();ccCtx.translate(px,py);ccCtx.scale(sc,sc);ccCtx.translate(-px,-py);
       ccDrawCell(ccCtx,c*CC_CELL,r*CC_CELL,ccBoard[r][c]===CC_JUNK?CC_JUNK:ccBoard[r][c]);ccCtx.restore();
       var fl=ccCellFlash[k];if(fl&&fl.alpha>0){ccCtx.save();ccCtx.globalAlpha=Math.min(fl.alpha,1)*0.6;ccCtx.fillStyle=fl.type==='white'?'#fff':'#ff6633';ccCtx.beginPath();ccCtx.roundRect(c*CC_CELL+2,r*CC_CELL+2,CC_CELL-4,CC_CELL-4,4);ccCtx.fill();ccCtx.restore();fl.alpha-=0.05;if(fl.alpha<=0)delete ccCellFlash[k];}
+      // Level 5 spark particles
+      if(ccBoard[r][c]===CC_MAX_LEVEL&&Math.random()<0.06){var spx=c*CC_CELL+4+Math.random()*(CC_CELL-8),spy=r*CC_CELL+4+Math.random()*(CC_CELL-8);ccParticles.push({x:spx,y:spy,vx:(Math.random()-0.5)*0.6,vy:-0.5-Math.random()*1.2,life:0.4+Math.random()*0.3,decay:0.03,size:1+Math.random()*1.5,r:255,g:100+Math.floor(Math.random()*80),b:20+Math.floor(Math.random()*30)});}
     }
   }
 
@@ -635,6 +710,13 @@ function ccResetState() {
   ccShakeAmount = 0; ccScreenFlash = 0; ccPreHeatBoard = null;
   ccPendingJunkCols = []; ccWarningJunkCols = [];
   ccPaused = false;
+  ccBgPulse = 0; ccBgPulseColor = [255,220,100]; ccScreenFlashColor = [255,220,100];
+  ccBgOrbs = [];
+  for (var oi = 0; oi < 12; oi++) {
+    var ocIdx = 1 + Math.floor(Math.random() * 5);
+    var ocRgb = CC_COLOR_RGB[ocIdx];
+    ccBgOrbs.push({x: Math.random() * CC_BOARD_W, y: Math.random() * CC_BOARD_H, r: 30 + Math.random() * 50, vx: (Math.random() - 0.5) * 0.15, vy: (Math.random() - 0.5) * 0.15, cr: ocRgb[0], cg: ocRgb[1], cb: ocRgb[2], alpha: 0.03 + Math.random() * 0.04, phase: Math.random() * Math.PI * 2});
+  }
 
   const scoreEl = document.getElementById('ccScoreValue');
   const turnEl = document.getElementById('ccTurnValue');
