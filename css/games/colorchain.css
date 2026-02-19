@@ -166,12 +166,16 @@
   position: relative;
   border: 2px solid #1a1a2e;
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible;
   background: #0d0d18;
   flex-shrink: 0;
 }
 .cc-board-canvas {
   display: block;
+  margin: -60px;
+  position: relative;
+  z-index: 10;
+  pointer-events: none;
 }
 
 /* Heat bar */

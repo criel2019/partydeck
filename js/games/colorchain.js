@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════
 
 // ═══ CONSTANTS ═══
-const CC_COLS = 6, CC_ROWS = 12, CC_CELL = 36, CC_PAD = 0;
+const CC_COLS = 6, CC_ROWS = 12, CC_CELL = 36, CC_PAD = 60;
 const CC_BOARD_W = CC_COLS * CC_CELL, CC_BOARD_H = CC_ROWS * CC_CELL;
 const CC_COLORS = [null, '#9b59b6', '#3498db', '#2ecc71', '#f1c40f', '#e74c3c'];
 const CC_COLOR_RGB = [null, [155,89,182], [52,152,219], [46,204,113], [241,196,15], [231,76,60]];
@@ -457,8 +457,8 @@ function ccDraw() {
   var sx=0, sy=0;
   if (ccShakeAmount>0.2) { sx=(Math.random()-0.5)*ccShakeAmount; sy=(Math.random()-0.5)*ccShakeAmount; ccShakeAmount*=0.87; if(ccShakeAmount<0.2)ccShakeAmount=0; }
   ccCtx.clearRect(0,0,ccCanvas.width,ccCanvas.height);
-  ccCtx.save(); ccCtx.translate(sx,sy);
-  if (ccScreenFlash>0.01) { ccCtx.fillStyle='rgba(255,220,100,'+ccScreenFlash+')'; ccCtx.fillRect(0,0,ccCanvas.width,ccCanvas.height); ccScreenFlash*=0.88; if(ccScreenFlash<0.01)ccScreenFlash=0; }
+  ccCtx.save(); ccCtx.translate(CC_PAD+sx,CC_PAD+sy);
+  if (ccScreenFlash>0.01) { ccCtx.save(); ccCtx.translate(-CC_PAD,-CC_PAD); ccCtx.fillStyle='rgba(255,220,100,'+ccScreenFlash+')'; ccCtx.fillRect(0,0,ccCanvas.width,ccCanvas.height); ccCtx.restore(); ccScreenFlash*=0.88; if(ccScreenFlash<0.01)ccScreenFlash=0; }
   ccCtx.fillStyle='#0d0d18'; ccCtx.fillRect(0,0,CC_BOARD_W,CC_BOARD_H);
 
   // Grid
@@ -597,10 +597,10 @@ function ccInitCanvas() {
   ccCanvas = document.getElementById('ccCanvas');
   if (!ccCanvas) return;
   ccCtx = ccCanvas.getContext('2d');
-  ccCanvas.width = CC_BOARD_W;
-  ccCanvas.height = CC_BOARD_H;
+  ccCanvas.width = CC_BOARD_W + CC_PAD * 2;
+  ccCanvas.height = CC_BOARD_H + CC_PAD * 2;
 
-  // Set board wrapper size
+  // Set board wrapper size (visual board only, canvas overflows for effects)
   const wrap = ccCanvas.closest('.cc-board-wrap');
   if (wrap) {
     wrap.style.width = CC_BOARD_W + 'px';
