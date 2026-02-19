@@ -502,6 +502,28 @@ function ccDrawCell(c, x, y, lv, sz, al) {
     c.restore(); return;
   }
 
+  // Level 6+: about to ACTUALLY explode — white-hot strobe
+  if (lv > CC_MAX_LEVEL) {
+    var t6 = Date.now();
+    var strobe = Math.sin(t6 * 0.025) * 0.5 + 0.5;
+    var fastFlicker = Math.sin(t6 * 0.06) * 0.3 + 0.7;
+    c.shadowColor = '#fff'; c.shadowBlur = 20 + strobe * 15;
+    // White-hot core
+    c.fillStyle = 'rgb('+(200+Math.floor(strobe*55))+','+(180+Math.floor(strobe*75))+','+(120+Math.floor(strobe*135))+')';
+    c.beginPath(); c.roundRect(dx,dy,ds,ds,rd); c.fill();
+    // Bright inner glow overlay
+    var g6 = c.createRadialGradient(x+sz/2,y+sz/2,0,x+sz/2,y+sz/2,sz*0.6);
+    g6.addColorStop(0,'rgba(255,255,255,'+0.5*fastFlicker+')'); g6.addColorStop(1,'rgba(255,200,100,0)');
+    c.fillStyle=g6; c.beginPath(); c.roundRect(dx,dy,ds,ds,rd); c.fill();
+    // Red-hot pulsing border
+    c.strokeStyle = 'rgba(255,'+Math.floor(60+strobe*80)+',20,'+(0.7+strobe*0.3)+')'; c.lineWidth = 2.5;
+    c.beginPath(); c.roundRect(dx-1,dy-1,ds+2,ds+2,rd+1); c.stroke();
+    c.shadowColor='transparent'; c.shadowBlur=0;
+    // Exclamation mark instead of number
+    c.fillStyle='rgba(255,50,20,'+fastFlicker+')'; c.font='bold '+Math.floor(sz*0.4)+'px Outfit,Oswald,sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('\u2716',x+sz/2,y+sz/2);
+    c.restore(); return;
+  }
+
   var v = Math.min(lv, CC_MAX_LEVEL);
   if (v===5) {
     var pulse5 = Math.sin(Date.now() * 0.008);
@@ -526,7 +548,7 @@ function ccDraw() {
   if (ccShakeAmount>0.2) { sx=(Math.random()-0.5)*ccShakeAmount; sy=(Math.random()-0.5)*ccShakeAmount; ccShakeAmount*=0.87; if(ccShakeAmount<0.2)ccShakeAmount=0; }
   ccCtx.clearRect(0,0,ccCanvas.width,ccCanvas.height);
   ccCtx.save(); ccCtx.translate(CC_PAD+sx,CC_PAD+sy);
-  if (ccScreenFlash>0.01) { ccCtx.save(); ccCtx.translate(-CC_PAD,-CC_PAD); ccCtx.fillStyle='rgba('+ccScreenFlashColor[0]+','+ccScreenFlashColor[1]+','+ccScreenFlashColor[2]+','+ccScreenFlash+')'; ccCtx.fillRect(0,0,ccCanvas.width,ccCanvas.height); ccCtx.restore(); ccScreenFlash*=0.88; if(ccScreenFlash<0.01)ccScreenFlash=0; }
+  if (ccScreenFlash>0.01) { ccCtx.fillStyle='rgba('+ccScreenFlashColor[0]+','+ccScreenFlashColor[1]+','+ccScreenFlashColor[2]+','+ccScreenFlash+')'; ccCtx.fillRect(0,0,CC_BOARD_W,CC_BOARD_H); ccScreenFlash*=0.88; if(ccScreenFlash<0.01)ccScreenFlash=0; }
   ccCtx.fillStyle='#0d0d18'; ccCtx.fillRect(0,0,CC_BOARD_W,CC_BOARD_H);
 
   // Background orbs
@@ -577,8 +599,10 @@ function ccDraw() {
       ccCtx.save();ccCtx.translate(px,py);ccCtx.scale(sc,sc);ccCtx.translate(-px,-py);
       ccDrawCell(ccCtx,c*CC_CELL,r*CC_CELL,ccBoard[r][c]===CC_JUNK?CC_JUNK:ccBoard[r][c]);ccCtx.restore();
       var fl=ccCellFlash[k];if(fl&&fl.alpha>0){ccCtx.save();ccCtx.globalAlpha=Math.min(fl.alpha,1)*0.6;ccCtx.fillStyle=fl.type==='white'?'#fff':'#ff6633';ccCtx.beginPath();ccCtx.roundRect(c*CC_CELL+2,r*CC_CELL+2,CC_CELL-4,CC_CELL-4,4);ccCtx.fill();ccCtx.restore();fl.alpha-=0.05;if(fl.alpha<=0)delete ccCellFlash[k];}
-      // Level 5 spark particles
-      if(ccBoard[r][c]===CC_MAX_LEVEL&&Math.random()<0.06){var spx=c*CC_CELL+4+Math.random()*(CC_CELL-8),spy=r*CC_CELL+4+Math.random()*(CC_CELL-8);ccParticles.push({x:spx,y:spy,vx:(Math.random()-0.5)*0.6,vy:-0.5-Math.random()*1.2,life:0.4+Math.random()*0.3,decay:0.03,size:1+Math.random()*1.5,r:255,g:100+Math.floor(Math.random()*80),b:20+Math.floor(Math.random()*30)});}
+      // Level 6+: intense sparks (about to explode NOW)
+      if(ccBoard[r][c]>CC_MAX_LEVEL&&Math.random()<0.25){var spx=c*CC_CELL+4+Math.random()*(CC_CELL-8),spy=r*CC_CELL+4+Math.random()*(CC_CELL-8);ccParticles.push({x:spx,y:spy,vx:(Math.random()-0.5)*1.5,vy:-1-Math.random()*2,life:0.5+Math.random()*0.4,decay:0.025,size:1.5+Math.random()*2.5,r:255,g:200+Math.floor(Math.random()*55),b:150+Math.floor(Math.random()*105)});}
+      // Level 5: gentle spark particles
+      else if(ccBoard[r][c]===CC_MAX_LEVEL&&Math.random()<0.06){var spx=c*CC_CELL+4+Math.random()*(CC_CELL-8),spy=r*CC_CELL+4+Math.random()*(CC_CELL-8);ccParticles.push({x:spx,y:spy,vx:(Math.random()-0.5)*0.6,vy:-0.5-Math.random()*1.2,life:0.4+Math.random()*0.3,decay:0.03,size:1+Math.random()*1.5,r:255,g:100+Math.floor(Math.random()*80),b:20+Math.floor(Math.random()*30)});}
     }
   }
 
