@@ -172,7 +172,7 @@
 }
 .cc-board-canvas {
   display: block;
-  margin: -60px;
+  margin: -100px;
   position: relative;
   z-index: 10;
   pointer-events: none;

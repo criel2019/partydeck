@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════
 
 // ═══ CONSTANTS ═══
-const CC_COLS = 6, CC_ROWS = 12, CC_CELL = 36, CC_PAD = 60;
+const CC_COLS = 6, CC_ROWS = 12, CC_CELL = 36, CC_PAD = 100;
 const CC_BOARD_W = CC_COLS * CC_CELL, CC_BOARD_H = CC_ROWS * CC_CELL;
 const CC_COLORS = [null, '#9b59b6', '#3498db', '#2ecc71', '#f1c40f', '#e74c3c'];
 const CC_COLOR_RGB = [null, [155,89,182], [52,152,219], [46,204,113], [241,196,15], [231,76,60]];
@@ -306,6 +306,8 @@ function ccApplyGravityRaw() {
 
 const CC_GRAV_TAG = 100;
 function ccApplyGravity() {
+  // Snapshot before tagging so we can detect moved cells
+  const before = ccBoard.map(function(r){ return r.slice(); });
   for (const key of ccActiveCells) {
     const p2 = key.split(','); const r = Number(p2[0]), c = Number(p2[1]);
     if (ccBoard[r][c] !== 0 && ccBoard[r][c] !== CC_JUNK) {
@@ -318,6 +320,14 @@ function ccApplyGravity() {
     for (let c = 0; c < CC_COLS; c++) {
       if (ccBoard[r][c] >= CC_GRAV_TAG) {
         ccBoard[r][c] = ccBoard[r][c] - CC_GRAV_TAG;
+        ccActiveCells.add(r + ',' + c);
+      }
+    }
+  }
+  // Also mark cells that moved during gravity as active (enables merge detection)
+  for (let r = 0; r < CC_ROWS; r++) {
+    for (let c = 0; c < CC_COLS; c++) {
+      if (ccBoard[r][c] !== 0 && ccBoard[r][c] !== CC_JUNK && ccBoard[r][c] !== before[r][c]) {
         ccActiveCells.add(r + ',' + c);
       }
     }
