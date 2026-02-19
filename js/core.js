@@ -397,6 +397,7 @@ function handleMessage(peerId, raw) {
     'player-info': () => handlePlayerJoin(peerId, msg),
     'player-list': () => { state.players = msg.players; updateLobbyUI(); },
     'game-start': () => handleGameStart(msg),
+    'game-restart': () => handleGameStart(msg),
     'poker-state': () => { showScreen('pokerGame'); renderPokerView(msg); },
     'poker-action': () => { if(state.isHost) processPokerAction(peerId, msg.action, msg.amount); },
     'poker-result': () => handlePokerResult(msg),
@@ -741,6 +742,86 @@ function leaveGame() {
   returnToLobby();
 }
 
+// ===== RESTART CURRENT GAME =====
+function restartCurrentGame() {
+  if(!state.isHost) { showToast('호스트만 재시작할 수 있습니다'); return; }
+  const g = state.selectedGame;
+  if(!g) { returnToLobby(); return; }
+  // Broadcast restart to all clients
+  broadcast({ type: 'game-restart', game: g });
+  // Re-invoke the start function directly (no energy cost for restart)
+  if(g === 'yahtzee') { document.getElementById('yahtzeeGameOver').style.display='none'; startYahtzee(); }
+  else if(g === 'fortress') { closeFortressCleanup(); startFortress(); }
+  else if(g === 'bombshot') { closeBombShotCleanup(); startBombShot(); }
+  else if(g === 'stairs') { if(typeof stCleanup==='function') stCleanup(); document.getElementById('stResultsOverlay').style.display='none'; startStairs(); }
+  else if(g === 'ecard') startECard();
+  else if(g === 'truth') startTruthGame();
+  else if(g === 'lottery') startLottery();
+  else if(g === 'updown') startUpDown();
+  else { showToast('이 게임은 자동 재시작됩니다'); }
+}
+
+// ===== HAND RANKING OVERLAY =====
+const HAND_RANKINGS = {
+  poker: {
+    title: '🃏 포커 족보',
+    content: `<div style="display:flex;flex-direction:column;gap:6px;">
+<div><b style="color:#ffd700;">1. 로얄 플러시</b> — A K Q J 10 같은 무늬</div>
+<div><b style="color:#e0e0e0;">2. 스트레이트 플러시</b> — 연속 5장 같은 무늬</div>
+<div><b style="color:#e0e0e0;">3. 포카드</b> — 같은 숫자 4장</div>
+<div><b style="color:#e0e0e0;">4. 풀하우스</b> — 트리플 + 원페어</div>
+<div><b style="color:#e0e0e0;">5. 플러시</b> — 같은 무늬 5장</div>
+<div><b style="color:#e0e0e0;">6. 스트레이트</b> — 연속 5장</div>
+<div><b style="color:#e0e0e0;">7. 트리플</b> — 같은 숫자 3장</div>
+<div><b style="color:#e0e0e0;">8. 투페어</b> — 페어 2개</div>
+<div><b style="color:#e0e0e0;">9. 원페어</b> — 같은 숫자 2장</div>
+<div><b style="color:#888;">10. 하이카드</b> — 위에 해당 없음</div>
+</div>`
+  },
+  sutda: {
+    title: '🎴 섯다 족보',
+    content: `<div style="display:flex;flex-direction:column;gap:4px;">
+<div style="color:#ffd700;font-weight:700;margin-bottom:4px;">[ 땡 ]</div>
+<div><b>장땡</b> 10+10 (최강)</div>
+<div><b>9땡~1땡</b> 같은 숫자 페어</div>
+<div style="color:#ff6b35;font-weight:700;margin:8px 0 4px;">[ 특수패 ]</div>
+<div><b>광땡 (3+8광)</b> — 땡잡이만 이김</div>
+<div><b>광땡 (1+8광)</b></div>
+<div><b>광땡 (1+3광)</b></div>
+<div><b>땡잡이 (3+7)</b> — 땡을 이김</div>
+<div><b>암행어사 (4+7)</b> — 광땡을 이김</div>
+<div><b>세륙 (4+6)</b> — 밀기 or 깽판</div>
+<div style="color:#4fc3f7;font-weight:700;margin:8px 0 4px;">[ 끗 ]</div>
+<div><b>갑오 (9끗)</b> — 두 패 합 끝자리 9</div>
+<div><b>8끗~1끗</b></div>
+<div><b>망통 (0끗)</b> — 최하</div>
+</div>`
+  },
+  ecard: {
+    title: '👑 E카드 규칙',
+    content: `<div style="display:flex;flex-direction:column;gap:6px;">
+<div style="color:#ffd700;font-weight:700;">승패 관계</div>
+<div>👑 <b>황제</b> &gt; 🧑 <b>시민</b> &gt; ⛓️ <b>노예</b></div>
+<div>⛓️ <b>노예</b> &gt; 👑 <b>황제</b> (역전!)</div>
+<div>❓ <b>더미</b> — 항상 무승부</div>
+<div style="margin-top:8px;color:#aaa;">
+<div>황제 팀: 황제1 + 시민4</div>
+<div>노예 팀: 노예1 + 시민4</div>
+<div>5라운드 동안 진행, 많이 이긴 쪽 승리</div>
+</div>
+</div>`
+  }
+};
+
+function toggleHandRanking(game) {
+  const overlay = document.getElementById('handRankingOverlay');
+  const data = HAND_RANKINGS[game];
+  if(!data || !overlay) return;
+  document.getElementById('handRankingTitle').textContent = data.title;
+  document.getElementById('handRankingContent').innerHTML = data.content;
+  overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
+}
+
 function copyRoomCode() {
   const url = location.origin + location.pathname + '?room=' + state.roomCode;
   navigator.clipboard?.writeText(state.roomCode).then(() => showToast('코드 복사됨: ' + state.roomCode));
@@ -814,16 +895,51 @@ function selectGame(el) {
     bsCfgDisplay.style.display = (state.selectedGame === 'bombshot' && typeof _bsSetupDone !== 'undefined' && _bsSetupDone) ? 'block' : 'none';
   }
 
+  // Update game info panel
+  updateGameInfoPanel(state.selectedGame);
+
   // Broadcast game selection so non-host players can see mafia config
   if (state.isHost) {
     broadcast({ type: 'game-selected', game: state.selectedGame });
   }
 }
 
+const GAME_INFO = {
+  poker:    { emoji:'🃏', name:'포커', desc:'텍사스 홀덤 포커. 2장의 개인 카드와 5장의 공용 카드로 최강의 족보를 만드세요.', players:'2~14명', time:'10~30분', type:'카드' },
+  mafia:    { emoji:'🕵️', name:'마피아', desc:'마피아와 시민의 두뇌 싸움. 밤에 암살, 낮에 투표로 적을 찾아내세요.', players:'3~14명', time:'15~45분', type:'추리' },
+  sutda:    { emoji:'🎴', name:'섯다', desc:'화투 2장으로 승부! 땡, 광땡, 끗 등 다양한 족보로 베팅 대결.', players:'2~6명', time:'5~10분', type:'카드' },
+  quickdraw:{ emoji:'🤠', name:'총잡이', desc:'서부 결투! "Fire!" 신호에 가장 빠르게 반응하는 사람이 승리.', players:'2~14명', time:'2~5분', type:'반응속도' },
+  roulette: { emoji:'🔫', name:'러시안 룰렛', desc:'스마트폰을 총처럼! 실린더를 돌리고 방아쇠를 당기는 스릴 게임.', players:'2~14명', time:'1~3분', type:'운' },
+  lottery:  { emoji:'🎰', name:'뽑기', desc:'번호를 뽑아 운명을 결정! 랜덤 추첨으로 당첨자를 가려내세요.', players:'1~14명', time:'5~15분', type:'운' },
+  ecard:    { emoji:'👑', name:'E카드', desc:'황제 vs 노예의 심리전. 5장의 카드로 상대의 수를 읽어라!', players:'2명', time:'5~10분', type:'심리전' },
+  yahtzee:  { emoji:'🎲', name:'야추', desc:'5개의 주사위로 최고 점수를 노려라! 3번의 기회로 족보 완성.', players:'1~14명', time:'10~15분', type:'주사위' },
+  updown:   { emoji:'🃏', name:'업다운', desc:'다음 카드가 높을까 낮을까? 연속 맞추기 도전!', players:'2~14명', time:'5~10분', type:'카드' },
+  truth:    { emoji:'⭕', name:'진실게임', desc:'질문에 투표하고, 가장 많이 뽑힌 사람이 벌칙!', players:'3~14명', time:'10~20분', type:'파티' },
+  fortress: { emoji:'🏰', name:'요새', desc:'탱크 포격전! 각도와 파워를 조절해서 상대 요새를 파괴하세요.', players:'2~14명', time:'5~10분', type:'전략' },
+  bombshot: { emoji:'🍺', name:'폭탄주', desc:'라이어즈바 블러프 게임. 거짓말을 간파하고 폭탄주 룰렛을 피하라!', players:'2~4명', time:'5~15분', type:'블러프' },
+  stairs:   { emoji:'🪜', name:'무한계단', desc:'끝없이 올라가는 계단! 좌우 타이밍을 맞춰 최고 기록 도전.', players:'1~14명', time:'3~10분', type:'레이싱' },
+  tetris:   { emoji:'🧩', name:'테트리스', desc:'클래식 퍼즐! 블록을 쌓고 줄을 지워 최고 점수에 도전.', players:'1~14명', time:'5~10분', type:'퍼즐' },
+  jewel:    { emoji:'💎', name:'보석맞추기', desc:'같은 보석 3개를 맞춰 제거! 콤보와 연쇄로 고득점.', players:'1~14명', time:'5~10분', type:'퍼즐' },
+  colorchain:{ emoji:'🔗', name:'컬러체인', desc:'같은 색 구슬을 연결해서 터뜨려라! 중력과 연쇄 콤보.', players:'1~14명', time:'5~10분', type:'퍼즐' }
+};
+
+function updateGameInfoPanel(game) {
+  const panel = document.getElementById('gameInfoPanel');
+  const info = GAME_INFO[game];
+  if(!panel || !info) { if(panel) panel.style.display='none'; return; }
+  panel.style.display = 'block';
+  document.getElementById('gameInfoEmoji').textContent = info.emoji;
+  document.getElementById('gameInfoName').textContent = info.name;
+  document.getElementById('gameInfoDesc').textContent = info.desc;
+  document.getElementById('gameInfoPlayers').textContent = '👥 ' + info.players;
+  document.getElementById('gameInfoTime').textContent = '⏱ ' + info.time;
+  document.getElementById('gameInfoType').textContent = '🏷 ' + info.type;
+}
+
 // ===== GAME START =====
 function startGame() {
   console.log('[PartyDeck] startGame 호출. isHost:', state.isHost, 'players:', state.players.length, 'game:', state.selectedGame);
-  const soloGames = ['tetris', 'jewel', 'colorchain'];
+  const soloGames = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee'];
   const minPlayers = soloGames.includes(state.selectedGame) ? 1 : 2;
   if(!state.isHost || state.players.length < minPlayers) { showToast('최소 ' + minPlayers + '명 필요 (현재 ' + state.players.length + '명)'); return; }
   if(!spendEnergy(1)) { showToast('⚡ 에너지가 부족합니다! 충전을 기다려주세요'); return; }

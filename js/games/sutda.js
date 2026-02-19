@@ -119,21 +119,30 @@ function sutdaCompare(r1, r2) {
 // =========================
 // 화투패 HTML 렌더링
 // =========================
+var _sutdaCardsHidden = false;
 function hwatuCardHTML(card, big) {
   if (!card) {
     const cls = big ? 'hwatu-card hwatu-card-big back' : 'hwatu-card back';
     return '<div class="' + cls + '"></div>';
+  }
+  if (big && _sutdaCardsHidden) {
+    return '<div class="hwatu-card hwatu-card-big back" onclick="sutdaToggleCards()" style="cursor:pointer;"></div>';
   }
   const sizeClass = big ? 'hwatu-card hwatu-card-big' : 'hwatu-card';
   const typeClass = card.gwang ? 'gwang' : 'normal';
   const monthClass = 'm' + card.num;
   const gwangText = card.gwang ? '<span class="hwatu-gwang-text">' + (GWANG_NAMES[card.num] || '광') + '</span>' : '';
   const monthLabel = card.num + '월';
-  return '<div class="' + sizeClass + ' ' + typeClass + ' ' + monthClass + '">' +
+  const clickAttr = big ? ' onclick="sutdaToggleCards()" style="cursor:pointer;"' : '';
+  return '<div class="' + sizeClass + ' ' + typeClass + ' ' + monthClass + '"' + clickAttr + '>' +
     '<span class="hwatu-num">' + card.num + '</span>' +
     '<span class="hwatu-month">' + monthLabel + '</span>' +
     gwangText +
     '</div>';
+}
+function sutdaToggleCards() {
+  _sutdaCardsHidden = !_sutdaCardsHidden;
+  if(sutdaView) renderSutdaView(sutdaView);
 }
 
 // =========================

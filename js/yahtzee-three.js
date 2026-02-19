@@ -1026,6 +1026,9 @@
   window.showCupReady = function(held) {
     if (!isInitialized || !cupGroup) return;
 
+    // Clear any pending shake timer to prevent race conditions
+    if (cupShakeTimer) { clearTimeout(cupShakeTimer); cupShakeTimer = null; }
+
     cupReadyHeld = held ? [...held] : [false, false, false, false, false];
     cupState = 'ready';
     cupShakeIntensity = 0;
@@ -1074,6 +1077,7 @@
   };
 
   function beginCupDump() {
+    if (cupState === 'dumping') return; // prevent duplicate dump calls
     cupState = 'dumping';
     cupDumpStartTime = clock ? clock.getElapsedTime() : 0;
     cupDumpCallbackFired = false;

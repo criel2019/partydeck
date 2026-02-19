@@ -188,7 +188,7 @@ function pullTrigger() {
     currentPlayer.alive = false;
     rrState.lastResult = { playerId: currentPlayer.id, result: 'dead' };
 
-    if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    if(navigator.vibrate) navigator.vibrate([100, 50, 300, 100, 200]);
 
     showRouletteFlash('bang', '💥', '탕!');
 
@@ -200,6 +200,7 @@ function pullTrigger() {
   } else {
     rrState.lastResult = { playerId: currentPlayer.id, result: 'safe' };
 
+    if(navigator.vibrate) navigator.vibrate(50);
     showRouletteFlash('safe', '😮‍💨', '찰칵... 살았다!');
 
     setTimeout(() => {

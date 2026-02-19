@@ -38,12 +38,36 @@ function startQuickDraw() {
       broadcastQDState();
 
       if(navigator.vibrate) navigator.vibrate(200);
+      qdPlayFireSound();
 
       qdState.fireTimeout = setTimeout(() => {
         resolveQD();
       }, 5000);
     }, delay);
   }, 3000);
+}
+
+// Web Audio API gunshot sound for fire signal
+function qdPlayFireSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Gunshot: short burst of noise
+    const duration = 0.15;
+    const buffer = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 3);
+    }
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.8, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    source.connect(gain);
+    gain.connect(ctx.destination);
+    source.start();
+    source.onended = () => ctx.close();
+  } catch(e) { /* ignore if audio not available */ }
 }
 
 function broadcastQDState() {
@@ -83,10 +107,11 @@ function renderQuickDrawView(qd) {
       break;
 
     case 'fire':
-      statusText.textContent = '발사!';
+      statusText.textContent = '🔫 발사!';
       reactionTime.textContent = '';
 
       if(navigator.vibrate) navigator.vibrate(200);
+      qdPlayFireSound();
       break;
 
     case 'result':

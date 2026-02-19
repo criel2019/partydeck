@@ -107,6 +107,7 @@ function broadcastPokerState() {
 
 function renderPokerView(ps) {
   state._pokerView = ps;
+  window._lastPokerView = ps;
   const me = ps.players.find(p => p.id === state.myId);
   const isMyTurn = ps.players[ps.turnIdx]?.id === state.myId && ps.phase !== 'showdown';
 
@@ -186,17 +187,25 @@ function renderPokerView(ps) {
   }
 }
 
-/* Hero card (my hand) — large detailed card */
+/* Hero card (my hand) — large detailed card, tap to flip */
+var _pkCardsHidden = false;
 function pkHeroCardHTML(c) {
   if(!c) return '<div class="pk-hero-card pk-card-back"><div class="pk-hero-back-pattern"></div></div>';
   const cls = (c.suit === '♥' || c.suit === '♦') ? 'pk-red' : 'pk-black';
-  return `<div class="pk-hero-card ${cls}">
+  if(_pkCardsHidden) {
+    return `<div class="pk-hero-card pk-card-back" onclick="pkToggleCards()" style="cursor:pointer;"><div class="pk-hero-back-pattern"></div></div>`;
+  }
+  return `<div class="pk-hero-card ${cls}" onclick="pkToggleCards()" style="cursor:pointer;">
     <div class="pk-hero-inner">
       <div class="pk-hero-corner"><span class="pk-hero-rank">${c.rank}</span><span class="pk-hero-suit-sm">${c.suit}</span></div>
       <div class="pk-hero-center">${c.suit}</div>
       <div class="pk-hero-corner pk-corner-bottom"><span class="pk-hero-rank">${c.rank}</span><span class="pk-hero-suit-sm">${c.suit}</span></div>
     </div>
   </div>`;
+}
+function pkToggleCards() {
+  _pkCardsHidden = !_pkCardsHidden;
+  if(window._lastPokerView) renderPokerView(window._lastPokerView);
 }
 
 /* Community card — medium */

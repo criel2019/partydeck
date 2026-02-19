@@ -36,10 +36,7 @@ function loadYahtzeeThree() {
 }
 
 function startYahtzee() {
-  if(!state.isHost || state.players.length < 2) {
-    showToast('\ucd5c\uc18c 2\uba85 \ud544\uc694');
-    return;
-  }
+  if(!state.isHost) return;
   loadYahtzeeThree();
 
   yahState = {

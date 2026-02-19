@@ -779,6 +779,59 @@ function fortPowerStop() {
   if (_fortPowerInterval) { clearInterval(_fortPowerInterval); _fortPowerInterval = null; }
 }
 
+// ===== CHARGE SHOT =====
+var _fortCharging = false;
+var _fortChargeInterval = null;
+var _fortChargeValue = 0;
+
+function fortFireChargeStart() {
+  if (!fortState && !window._fortView) return;
+  const view = window._fortView;
+  if (!view || view.phase !== 'aiming') return;
+  _fortCharging = true;
+  _fortChargeValue = 10;
+  fortSetPower(_fortChargeValue);
+  updateFortChargeGauge();
+  if (_fortChargeInterval) clearInterval(_fortChargeInterval);
+  _fortChargeInterval = setInterval(function() {
+    if (!_fortCharging) return;
+    _fortChargeValue = Math.min(100, _fortChargeValue + 2);
+    fortSetPower(_fortChargeValue);
+    updateFortChargeGauge();
+    if (_fortChargeValue >= 100) {
+      clearInterval(_fortChargeInterval);
+      _fortChargeInterval = null;
+    }
+  }, 40);
+}
+
+function fortFireChargeEnd() {
+  if (!_fortCharging) return;
+  _fortCharging = false;
+  if (_fortChargeInterval) { clearInterval(_fortChargeInterval); _fortChargeInterval = null; }
+  hideChargeGauge();
+  fortFire();
+}
+
+function updateFortChargeGauge() {
+  var gauge = document.getElementById('fortChargeGauge');
+  if (!gauge) return;
+  gauge.style.display = 'block';
+  var pct = ((_fortChargeValue - 10) / 90) * 100;
+  var bar = gauge.querySelector('.fort-charge-fill');
+  if (bar) {
+    bar.style.width = pct + '%';
+    bar.style.background = pct < 40 ? '#4caf50' : pct < 70 ? '#ff9800' : '#f44336';
+  }
+  var label = gauge.querySelector('.fort-charge-label');
+  if (label) label.textContent = _fortChargeValue;
+}
+
+function hideChargeGauge() {
+  var gauge = document.getElementById('fortChargeGauge');
+  if (gauge) gauge.style.display = 'none';
+}
+
 // ===== FIRE =====
 function fortFire() {
   if (!fortState && !window._fortView) return;
@@ -1873,7 +1926,7 @@ function showFortressGameOver(msg) {
   recordGame(won, goldReward);
 }
 
-function closeFortressGame() {
+function closeFortressCleanup() {
   const overlay = document.getElementById('fortGameOver');
   if (overlay) overlay.style.display = 'none';
   if (fortAnimId) { cancelAnimationFrame(fortAnimId); fortAnimId = null; }
@@ -1882,7 +1935,6 @@ function closeFortressGame() {
   fortStopMove();
   fortAngleStop();
   fortPowerStop();
-  // Remove pan event listeners
   if (fortCanvas) {
     fortCanvas.ontouchstart = null;
     fortCanvas.ontouchmove = null;
@@ -1902,9 +1954,12 @@ function closeFortressGame() {
   fortDebris = [];
   fortSmoke = [];
   fortWindParticles = [];
-  // Reset camera
   fortCam.x = 400; fortCam.y = 250;
   fortCam.targetX = 400; fortCam.targetY = 250;
   fortCam.zoom = 2.0;
+}
+
+function closeFortressGame() {
+  closeFortressCleanup();
   returnToLobby();
 }

@@ -51,6 +51,7 @@ var bsState = null;  // host-side full state
 var _bsView = null;  // client-side view
 var _bsSelected = []; // local selected card indices
 var _bsTimers = [];
+var _bsSubmitted = false; // guard against double submission per turn
 var _bsSetupDone = false;
 var _bsPenalties = ['원샷']; // configured penalty labels (1-3)
 var _bsBartenderType = 'default'; // 'default' or 'rabbit'
@@ -300,10 +301,12 @@ function broadcastBSState() {
 function processBSSubmit(peerId, cardIndices) {
   if (!state.isHost || !bsState) return;
   if (bsState.phase !== 'playing') return;
+  if (bsState._submittedThisTurn) return; // prevent double submission
 
   var bs = bsState;
   var player = bs.players[bs.turnIdx];
   if (!player || player.id !== peerId) return;
+  bs._submittedThisTurn = true; // lock until turn advances
 
   // Validate indices
   if (!Array.isArray(cardIndices) || cardIndices.length < 1 || cardIndices.length > 3) return;
@@ -544,12 +547,35 @@ function bsResumeAfterRoulette() {
 function bsAdvanceTurn() {
   if (!bsState) return;
   var bs = bsState;
+  bs._submittedThisTurn = false; // reset submission guard for new turn
   var pCount = bs.players.length;
+
+  // Check if only 1 player has cards remaining → that player loses
+  var playersWithCards = bs.players.filter(function(p) { return p.cards.length > 0; });
+  if (playersWithCards.length === 1 && pCount > 1) {
+    var loser = playersWithCards[0];
+    bs.phase = 'gameover';
+    var result = {
+      type: 'bs-result',
+      bombshotPlayer: { id: loser.id, name: loser.name },
+      reason: 'last-card',
+      rankings: bs.players.map(function(p) {
+        return {
+          id: p.id, name: p.name, avatar: p.avatar,
+          isBombshot: p.id === loser.id,
+          isWinner: p.id !== loser.id
+        };
+      })
+    };
+    broadcast(result);
+    handleBSResult(result);
+    return;
+  }
 
   for (var i = 0; i < pCount; i++) {
     bs.turnIdx = (bs.turnIdx + 1) % pCount;
     var p = bs.players[bs.turnIdx];
-    // Skip players with 0 cards (no elimination in new rules)
+    // Skip players with 0 cards
     if (p.cards.length > 0) return;
   }
   // If everyone is out of cards, redeal
@@ -615,6 +641,11 @@ function renderBSView(view) {
 
   var myPlayer = view.players.find(function(p) { return p.id === state.myId; });
   var isMyTurn = view.turnPlayerId === state.myId;
+
+  // Reset submission guard when it's a new turn for me
+  if (isMyTurn && view.phase === 'playing' && !view.lastSubmission) {
+    _bsSubmitted = false;
+  }
 
   // Clear stale selection
   if (!isMyTurn || view.phase !== 'playing' || (myPlayer && myPlayer.cards && _bsSelected.length > 0)) {
@@ -902,10 +933,12 @@ function bsToggleCard(idx) {
 // ===== CLIENT: SUBMIT CARDS =====
 function bsSubmitCards() {
   if (!_bsView) return;
+  if (_bsSubmitted) return; // prevent double submission
   if (_bsSelected.length < 1 || _bsSelected.length > 3) return;
   if (_bsView.phase !== 'playing') return;
   if (_bsView.turnPlayerId !== state.myId) return;
 
+  _bsSubmitted = true; // lock submissions until next turn
   var indices = _bsSelected.slice();
   _bsSelected = [];
 
@@ -976,7 +1009,9 @@ function handleBSResult(msg) {
 
   var titleEl = document.getElementById('bsGameOverTitle');
   if (titleEl) {
-    if (msg.reason === 'bombshot' && msg.bombshotPlayer) {
+    if (msg.reason === 'last-card' && msg.bombshotPlayer) {
+      titleEl.textContent = '🃏 ' + msg.bombshotPlayer.name + ' 마지막 카드 보유! 패배!';
+    } else if (msg.reason === 'bombshot' && msg.bombshotPlayer) {
       titleEl.textContent = '🍺💥 ' + msg.bombshotPlayer.name + ' 폭탄주 당첨!';
     } else {
       titleEl.textContent = '🍺💣 폭탄주 게임 종료!';
@@ -1013,14 +1048,13 @@ function handleBSResult(msg) {
 }
 
 // ===== CLOSE GAME =====
-function closeBombShotGame() {
+function closeBombShotCleanup() {
   _bsTimers.forEach(function(t) { clearTimeout(t); });
   _bsTimers = [];
   _bsSelected = [];
+  _bsSubmitted = false;
   _bsView = null;
   bsState = null;
-  _bsSetupDone = false;
-  _bsBartenderType = 'default';
 
   if (typeof destroyBombShotThree === 'function') {
     destroyBombShotThree();
@@ -1030,7 +1064,12 @@ function closeBombShotGame() {
   if (goEl) goEl.style.display = 'none';
   var revEl = document.getElementById('bsReveal');
   if (revEl) revEl.style.display = 'none';
+}
 
+function closeBombShotGame() {
+  closeBombShotCleanup();
+  _bsSetupDone = false;
+  _bsBartenderType = 'default';
   returnToLobby();
 }
 
