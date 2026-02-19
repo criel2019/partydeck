@@ -3,11 +3,11 @@
 // ═══════════════════════════════════════
 
 /* ===== CONFIG ===== */
-const SLK_STAIR_W = 88, SLK_STAIR_H = 16, SLK_STAIR_D = 10, SLK_OFF_X = 72, SLK_OFF_Y = 56;
+const SLK_STAIR_W = 88, SLK_STAIR_H = 16, SLK_STAIR_D = 10, SLK_OFF_X = 88, SLK_OFF_Y = 68;
 const SLK_VIS_B = 5, SLK_VIS_A = 14;
 const SLK_IN_CD = 42;
 const SLK_NC = 14, SLK_POUR_START = 480, SLK_POUR_MIN = 240;
-const SLK_ARCH_H = 28, SLK_SPREAD = 0.72, SLK_COIL_THICK = 3.5;
+const SLK_ARCH_H = 34, SLK_SPREAD = 0.72, SLK_COIL_THICK = 3.5;
 const SLK_CL_GRACE = 4;
 const SLK_CL_IDLE = 2.8;
 const SLK_CL_MOVE = 0.5;
