@@ -7,14 +7,14 @@ let yahState = {
   held: [false, false, false, false, false],
   rollsLeft: 3,
   turnNum: 1,
-  maxTurns: 13,
+  maxTurns: 12,
   selectedCategory: null,
   phase: 'rolling',
 };
 
 const YAHTZEE_CATEGORIES = [
   'ones', 'twos', 'threes', 'fours', 'fives', 'sixes',
-  'three-kind', 'four-kind', 'full-house', 'small-straight',
+  'four-kind', 'full-house', 'small-straight',
   'large-straight', 'yahtzee', 'chance'
 ];
 
@@ -53,7 +53,7 @@ function startYahtzee() {
       avatar: p.avatar,
       scores: {
         ones: null, twos: null, threes: null, fours: null, fives: null, sixes: null,
-        'three-kind': null, 'four-kind': null, 'full-house': null,
+        'four-kind': null, 'full-house': null,
         'small-straight': null, 'large-straight': null, yahtzee: null, chance: null
       },
       total: 0
@@ -63,7 +63,7 @@ function startYahtzee() {
     held: [false, false, false, false, false],
     rollsLeft: 3,
     turnNum: 1,
-    maxTurns: 13,
+    maxTurns: 12,
     selectedCategory: null,
     phase: 'rolling'
   };
@@ -314,7 +314,7 @@ function calculatePlayerTotal(player) {
 
   total = upperSum + bonus;
 
-  const lowerCats = ['three-kind', 'four-kind', 'full-house', 'small-straight', 'large-straight', 'yahtzee', 'chance'];
+  const lowerCats = ['four-kind', 'full-house', 'small-straight', 'large-straight', 'yahtzee', 'chance'];
   lowerCats.forEach(cat => {
     if(player.scores[cat] !== null) {
       total += player.scores[cat];
@@ -337,9 +337,6 @@ function calcYahtzeeScore(dice, category) {
     case 'fours': return dice.filter(d => d === 4).length * 4;
     case 'fives': return dice.filter(d => d === 5).length * 5;
     case 'sixes': return dice.filter(d => d === 6).length * 6;
-
-    case 'three-kind':
-      return Object.values(counts).some(c => c >= 3) ? sum : 0;
 
     case 'four-kind':
       return Object.values(counts).some(c => c >= 4) ? sum : 0;
@@ -392,8 +389,6 @@ function getYahtzeeComboName(dice) {
   if (vals[0] === 4) return 'Four of a Kind';
   if (vals[0] === 3 && vals[1] === 2) return 'Full House';
   if (sorted.join('') === '12345' || sorted.join('') === '23456') return 'Large Straight';
-  if (vals[0] === 3) return 'Three of a Kind';
-
   // small straight check
   const unique = [...new Set(sorted)];
   const uStr = unique.join('');
@@ -564,10 +559,10 @@ function renderYahtzeeView(view) {
 }
 
 const YAH_CATS_UPPER = ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'];
-const YAH_CATS_LOWER = ['three-kind', 'four-kind', 'full-house', 'small-straight', 'large-straight', 'yahtzee', 'chance'];
+const YAH_CATS_LOWER = ['four-kind', 'full-house', 'small-straight', 'large-straight', 'yahtzee', 'chance'];
 const YAH_CAT_LABELS = {
   ones: '1s', twos: '2s', threes: '3s', fours: '4s', fives: '5s', sixes: '6s',
-  'three-kind': '3Kind', 'four-kind': '4Kind', 'full-house': 'F.House',
+  'four-kind': '4Kind', 'full-house': 'F.House',
   'small-straight': 'S.Str', 'large-straight': 'L.Str', yahtzee: 'Yahtzee!', chance: 'Chance'
 };
 

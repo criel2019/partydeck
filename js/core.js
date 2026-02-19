@@ -1161,7 +1161,7 @@ function debugGame(game) {
         id: p.id, name: p.name, avatar: p.avatar,
         scores: {
           ones: null, twos: null, threes: null, fours: null, fives: null, sixes: null,
-          'three-kind': null, 'four-kind': null, 'full-house': null,
+          'four-kind': null, 'full-house': null,
           'small-straight': null, 'large-straight': null, yahtzee: null, chance: null
         },
         total: 0
