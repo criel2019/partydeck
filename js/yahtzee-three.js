@@ -621,8 +621,11 @@
       // Instant update - place dice at final positions (normal scale on tray)
       for (let i = 0; i < 5; i++) {
         if (values[i] === 0) {
-          // Unrolled dice - hide them
-          diceMeshes[i].visible = false;
+          // Unrolled dice — show with default face on tray
+          diceMeshes[i].visible = true;
+          diceMeshes[i].position.set(ROW_X[i], ROW_Y, ROW_Z);
+          diceMeshes[i].scale.setScalar(DICE_SCALE_NORMAL);
+          setDieRotation(i, (i % 6) + 1);
         } else if (held[i]) {
           // Held dice are invisible in 3D (shown in HTML hold bar)
           diceMeshes[i].visible = false;

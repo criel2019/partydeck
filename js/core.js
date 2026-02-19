@@ -95,6 +95,8 @@ let state = {
   _pokerView: null, _mafiaView: null,
 };
 
+let _cpuCount = 0;
+
 // ===== INIT =====
 async function init() {
   const bar = document.getElementById('loadingBar');
@@ -376,9 +378,18 @@ function broadcast(data, exclude) {
     if(conn.open) { conn.send(msg); console.log('[PartyDeck]   → 전송:', pid); }
     else console.warn('[PartyDeck]   → 연결 닫힘:', pid);
   });
+  // Trigger AI for CPU players in the room (lobby CPU mode)
+  if(data && data.type && typeof handleBroadcastForAI === 'function' && state.players.some(p => p.id.startsWith('ai-'))) {
+    handleBroadcastForAI(data);
+  }
 }
 
 function sendTo(peerId, data) {
+  // Route AI peer messages to local AI handler
+  if(peerId && peerId.toString().startsWith('ai-') && typeof handleAIMessage === 'function') {
+    handleAIMessage(peerId, data);
+    return;
+  }
   const conn = state.connections[peerId];
   if(conn?.open) conn.send(JSON.stringify(data));
 }
@@ -702,6 +713,8 @@ function leaveLobby() {
   state.players = [];
   state.poker = null;
   state.mafia = null;
+  _cpuCount = 0;
+  if(typeof cleanupAI === 'function') cleanupAI();
   showScreen('mainMenu');
 }
 
@@ -733,6 +746,8 @@ function returnToLobby() {
     if (typeof tetCleanup === 'function') tetCleanup();
   }
   if (typeof ccCleanup === 'function') ccCleanup();
+  // Clean up AI timers (lobby CPU mode)
+  if(typeof cleanupAI === 'function') cleanupAI();
   showScreen('lobby');
   updateLobbyUI();
 }
@@ -853,9 +868,19 @@ function updateLobbyUI() {
       <div class="player-name">${escapeHTML(p.name)}</div>
       ${p.isHost ? '<span class="host-badge">HOST</span>' : ''}
       ${p.id === state.myId ? '<span style="font-size:11px;color:var(--accent2);">나</span>' : ''}
+      ${p.id.startsWith('ai-') ? '<span style="font-size:11px;color:var(--text-dim);background:rgba(255,255,255,0.08);padding:1px 6px;border-radius:4px;">CPU</span>' : ''}
     </div>
   `).join('');
   document.getElementById('playerCount').textContent = state.players.length;
+
+  // CPU selector (host only)
+  const cpuSelector = document.getElementById('cpuSelectorArea');
+  if(cpuSelector) {
+    cpuSelector.style.display = state.isHost ? 'block' : 'none';
+    const cpuCountEl = document.getElementById('cpuCount');
+    if(cpuCountEl) cpuCountEl.textContent = _cpuCount;
+  }
+
   if(state.isHost) {
     const _soloList = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee'];
     const _minP = _soloList.includes(state.selectedGame) ? 1 : 2;
@@ -863,6 +888,42 @@ function updateLobbyUI() {
   }
   // Show game info panel for currently selected game
   if(typeof updateGameInfoPanel === 'function') updateGameInfoPanel(state.selectedGame);
+}
+
+function addCPU() {
+  if(!state.isHost) return;
+  if(state.players.length >= 14) { showToast('최대 14명까지 가능합니다'); return; }
+
+  const names = (typeof AI_NAMES !== 'undefined') ? AI_NAMES : ['봇짱', '로봇킹', '알파봇', 'AI마스터', '사이보그'];
+  const avatars = (typeof AI_AVATARS !== 'undefined') ? AI_AVATARS : ['🤖', '👾', '🎮', '🕹️', '💻'];
+
+  const idx = _cpuCount;
+  state.players.push({
+    id: 'ai-' + idx,
+    name: names[idx % names.length],
+    avatar: avatars[idx % avatars.length],
+    isHost: false,
+  });
+  _cpuCount++;
+
+  updateLobbyUI();
+  broadcast({ type: 'player-list', players: state.players });
+}
+
+function removeCPU() {
+  if(!state.isHost || _cpuCount <= 0) return;
+
+  // Remove last AI player from list
+  for(let i = state.players.length - 1; i >= 0; i--) {
+    if(state.players[i].id.startsWith('ai-')) {
+      state.players.splice(i, 1);
+      _cpuCount--;
+      break;
+    }
+  }
+
+  updateLobbyUI();
+  broadcast({ type: 'player-list', players: state.players });
 }
 
 function selectGame(el) {

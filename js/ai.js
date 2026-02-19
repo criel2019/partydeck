@@ -3,6 +3,12 @@
 // =============================================
 
 let practiceMode = false;
+
+// Returns true when AI players should be active (practice mode OR lobby CPU mode)
+function isAIActive() {
+  return practiceMode || (state && state.players && state.players.some(p => p.id.startsWith('ai-')));
+}
+
 let _originalBroadcast = null;
 let _originalSendTo = null;
 let _originalCloseResult = null;
@@ -307,7 +313,7 @@ function handleBroadcastForAI(data) {
       _udContinuePending = true;
       const t = setTimeout(() => {
         _udContinuePending = false;
-        if (!practiceMode || !udState) return;
+        if (!isAIActive() || !udState) return;
         // Guard: if turn already advanced (e.g. human also accepted penalty), skip
         if (udState.phase === 'playing') return;
         if (state.isHost && typeof continueUpDown === 'function') continueUpDown();
@@ -328,7 +334,7 @@ function handleBroadcastForAI(data) {
     if (bsState.rouletteTarget && bsState.rouletteTarget.id.startsWith('ai-')) {
       var aiSpinId = bsState.rouletteTarget.id;
       var tSpin = setTimeout(function() {
-        if (!practiceMode || !bsState || bsState.phase !== 'roulette-setup') return;
+        if (!isAIActive() || !bsState || bsState.phase !== 'roulette-setup') return;
         if (!bsState.rouletteTarget || bsState.rouletteTarget.id !== aiSpinId) return;
         processBSSpin(aiSpinId);
       }, 1000 + Math.random() * 1000);
@@ -345,7 +351,7 @@ function handleBroadcastForAI(data) {
       const chance = bsState.lastSubmission.count === 3 ? 0.2 : bsState.lastSubmission.count === 2 ? 0.1 : 0.03;
       if (Math.random() < chance) {
         const t = setTimeout(() => {
-          if (!practiceMode || !bsState || bsState.phase !== 'playing') return;
+          if (!isAIActive() || !bsState || bsState.phase !== 'playing') return;
           processBSLiar(p.id);
         }, 500 + Math.random() * 1500);
         _aiTimers.push(t);
@@ -376,7 +382,7 @@ function handleAIMessage(peerId, data) {
   if (msg.type === 'ud-bk-request') {
     const accept = Math.random() < 0.5;
     const t = setTimeout(() => {
-      if (!practiceMode) return;
+      if (!isAIActive()) return;
       if (accept) {
         resolveBKAccept(msg.requesterId, peerId, msg.penaltyText);
       } else {
@@ -394,17 +400,17 @@ function handleAIMessage(peerId, data) {
 // ========== AI SCHEDULING ==========
 
 function scheduleAIAction() {
-  if (!practiceMode) return;
+  if (!isAIActive()) return;
   if (_aiTimer) clearTimeout(_aiTimer);
   _aiTimer = setTimeout(() => {
     _aiTimer = null;
-    if (!practiceMode) return;
+    if (!isAIActive()) return;
     executeAIAction();
   }, 600 + Math.random() * 1200);
 }
 
 function executeAIAction() {
-  if (!practiceMode) return;
+  if (!isAIActive()) return;
   const game = state.selectedGame;
 
   switch (game) {
@@ -593,7 +599,7 @@ function scheduleQDAIResponses() {
 
     const reactionTime = 300 + Math.random() * 600; // 300-900ms
     const timer = setTimeout(() => {
-      if (!practiceMode) return;
+      if (!isAIActive()) return;
       if (!qdState || qdState.phase !== 'fire') return;
       if (qdState.results[p.id]) return;
 
@@ -628,7 +634,7 @@ function aiRoulette() {
     const aiId = currentPlayer.id;
     const t = setTimeout(() => {
       _rrPullScheduled = false;
-      if (!practiceMode || !rrState) return;
+      if (!isAIActive() || !rrState) return;
       if (rrState.phase !== 'spinning') return;
       const cp = rrState.players[rrState.turnIdx];
       if (!cp || cp.id !== aiId) return;
@@ -787,7 +793,7 @@ function aiTruth() {
     _truthNextScheduled = true;
     const t = setTimeout(() => {
       _truthNextScheduled = false;
-      if (!practiceMode) return;
+      if (!isAIActive()) return;
       if (truthState && truthState.phase === 'result') {
         processTruthNext();
       }
@@ -977,7 +983,7 @@ function aiFortress() {
   // Delay then fire (wait for moves to complete)
   const fireDelay = 800 + Math.random() * 600 + moveSteps * 100;
   const t = setTimeout(() => {
-    if (!practiceMode || !fortState) return;
+    if (!isAIActive() || !fortState) return;
     if (fortState.phase !== 'aiming') return;
     const cp = fortState.players[fortState.turnIdx];
     if (!cp || cp.id !== current.id) return;
@@ -1004,7 +1010,7 @@ function aiBombShot() {
       _bsSpinScheduled = true;
       const t = setTimeout(() => {
         _bsSpinScheduled = false;
-        if (!practiceMode || !bsState || bsState.phase !== 'roulette-setup') return;
+        if (!isAIActive() || !bsState || bsState.phase !== 'roulette-setup') return;
         processBSSpin(targetId);
       }, 1000 + Math.random() * 1000);
       _aiTimers.push(t);
@@ -1023,7 +1029,7 @@ function aiBombShot() {
                        bsState.lastSubmission.count === 2 ? 0.15 : 0.05;
     if (Math.random() < liarChance) {
       const t = setTimeout(() => {
-        if (!practiceMode || !bsState || bsState.phase !== 'playing') return;
+        if (!isAIActive() || !bsState || bsState.phase !== 'playing') return;
         processBSLiar(currentPlayer.id);
       }, 400 + Math.random() * 600);
       _aiTimers.push(t);
@@ -1068,7 +1074,7 @@ function aiBombShot() {
   if (submitIndices.length === 0) submitIndices = [0];
 
   const t = setTimeout(() => {
-    if (!practiceMode || !bsState || bsState.phase !== 'playing') return;
+    if (!isAIActive() || !bsState || bsState.phase !== 'playing') return;
     const cp = bsState.players[bsState.turnIdx];
     if (!cp || cp.id !== currentPlayer.id) return;
     processBSSubmit(currentPlayer.id, submitIndices);
@@ -1097,7 +1103,7 @@ function aiStairs() {
 
     const delay = 3000 + Math.random() * 8000; // 3-11 seconds
     const t = setTimeout(() => {
-      if (!practiceMode || !stMulti) return;
+      if (!isAIActive() || !stMulti) return;
       processStairsDead({
         type: 'stairs-dead',
         playerId: p.id,
