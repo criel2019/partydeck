@@ -960,8 +960,13 @@ function selectGame(el) {
     bsCfgDisplay.style.display = (state.selectedGame === 'bombshot' && typeof _bsSetupDone !== 'undefined' && _bsSetupDone) ? 'block' : 'none';
   }
 
-  // Update game info panel
+  // Update game info panel + start button visibility
   updateGameInfoPanel(state.selectedGame);
+  if(state.isHost) {
+    const _soloList = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee'];
+    const _minP = _soloList.includes(state.selectedGame) ? 1 : 2;
+    document.getElementById('startGameBtn').style.display = state.players.length >= _minP ? 'block' : 'none';
+  }
 
   // Broadcast game selection so non-host players can see mafia config
   if (state.isHost) {
