@@ -362,6 +362,18 @@ function ccDoResolveStep() {
 }
 
 // ═══ JUNK ═══
+// 왼쪽 합체 편향 보정: 오른쪽 열에 정크를 덜 배치
+const CC_JUNK_COL_W = [1.4, 1.2, 1.0, 0.9, 0.8, 0.7];
+const CC_JUNK_W_SUM = CC_JUNK_COL_W.reduce((a, b) => a + b, 0);
+function _ccPickJunkCol(used) {
+  for (let att = 0; att < 20; att++) {
+    let roll = Math.random() * CC_JUNK_W_SUM, c = 0;
+    for (let i = 0; i < CC_COLS; i++) { roll -= CC_JUNK_COL_W[i]; if (roll <= 0) { c = i; break; } }
+    if (!used.has(c)) return c;
+  }
+  for (let c = 0; c < CC_COLS; c++) { if (!used.has(c)) return c; }
+  return 0;
+}
 function ccPlanNextJunk() {
   ccPendingJunkCols = [];
   const ne = ccTurn + 1 - CC_JUNK_START;
@@ -369,7 +381,7 @@ function ccPlanNextJunk() {
   const intv = Math.max(3, CC_JUNK_BASE_INT - Math.floor(ne / 20));
   if (ne % intv !== 0) return;
   const cnt = Math.min(2 + Math.floor(ne / 15), 4), used = new Set();
-  for (let i = 0; i < cnt; i++) { let c, att = 0; do { c = Math.floor(Math.random()*CC_COLS); att++; } while (used.has(c) && att < 10); used.add(c); ccPendingJunkCols.push(c); }
+  for (let i = 0; i < cnt; i++) { const c = _ccPickJunkCol(used); used.add(c); ccPendingJunkCols.push(c); }
 }
 function ccSpawnJunk(cols) {
   for (const c of cols) {
