@@ -32,11 +32,11 @@ const PPL_CAP = 5, PPL_INTV = 300, PPL_MIN_V = 3, PPL_MAX_RT = 3, PPL_QT = 30;
 const PPL_ADAPT_SEC = 15;
 const PPL_MEASURE_WINDOW = [800, 1500];
 const PPL_CALIB_QS = [
-  "지금 이 화면을 보고 있습니까?",
-  "오늘 아침에 일어났습니까?",
-  "지금 숨을 쉬고 있습니까?",
-  "당신은 사람입니까?",
-  "지금 한국어를 읽고 있습니까?"
+  "오늘 아침밥을 먹었습니까?",
+  "어제 밖에 나간 적이 있습니까?",
+  "지금 핸드폰이 손 닿는 곳에 있습니까?",
+  "이번 주에 커피나 차를 마셨습니까?",
+  "어제 밤 11시 전에 잠들었습니까?"
 ];
 
 // ===== STATE =====
@@ -320,6 +320,8 @@ async function pplStartApp() {
 
 function pplSetupCalibScreen() {
   pplBuildPh('pplCPh', 5); pplBuildStr('pplStr1', PPL_CAP);
+  const camUi = ppl$('pplCamUi1');
+  if (camUi) camUi.style.opacity = '1';
   const cBtn = ppl$('pplCBtn');
   if (cBtn) cBtn.style.display = 'block';
   const qtxt = ppl$('pplQtxt');
@@ -727,6 +729,8 @@ function pplBeginCalib() {
 
 function pplShowCQ(i) {
   pplQIdx = i; pplUpdPh('pplCPh', i, 'c'); pplBuildStr('pplStr1', PPL_CAP); pplHideRB('pplRb1');
+  const camUi = ppl$('pplCamUi1');
+  if (camUi) camUi.style.opacity = '1';
   const qlbl = ppl$('pplQlbl'); if (qlbl) qlbl.textContent = `캘리브레이션 ${i + 1}/5`;
   const qtxt = ppl$('pplQtxt'); if (qtxt) qtxt.textContent = PPL_CALIB_QS[i];
   const qins = ppl$('pplQins'); if (qins) qins.textContent = '"맞아요" 또는 "아니요"로 대답해주세요';
@@ -744,8 +748,8 @@ function pplShowCQ(i) {
 async function pplAnsCalib(a) {
   pplPauseListening();
   const responseTime = Date.now() - pplStreamStartT;
-  const yn1 = ppl$('pplYn1'); if (yn1) yn1.style.display = 'none';
-  const qins = ppl$('pplQins'); if (qins) qins.textContent = '촬영 중... 카메라를 봐주세요';
+  const camUi = ppl$('pplCamUi1');
+  if (camUi) camUi.style.opacity = '0';
   await pplCdown('pplCd1', 3);
   const res = await pplCapValid('calib');
   if (res.ok) {
@@ -755,8 +759,10 @@ async function pplAnsCalib(a) {
     if (pplQIdx < PPL_CALIB_QS.length - 1) pplShowCQ(pplQIdx + 1);
     else { pplEndVoiceSession(); pplPhase = 'cq'; pplShowInternal('ppl-cq'); }
   } else {
+    if (camUi) camUi.style.opacity = '1';
+    const qins = ppl$('pplQins');
     if (qins) qins.textContent = '눈 감지 실패. 다시 시도해주세요.';
-    if (yn1) yn1.style.display = 'flex';
+    const yn1 = ppl$('pplYn1'); if (yn1) yn1.style.display = 'flex';
     pplUpdBtns();
     pplListenAnswer(
       () => { const yn = ppl$('pplYn1'); if (yn && yn.style.display !== 'none') pplAnsCalib('yes'); },
@@ -769,22 +775,20 @@ async function pplAnsCalib(a) {
 function pplBeginTest() {
   const main = ppl$('pplQMain').value.trim();
   if (!main) { ppl$('pplQMain').style.borderColor = '#ff3366'; return; }
-  const irrRaw = ppl$('pplQIrr').value.trim();
-  const irrs = irrRaw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-  if (irrs.length < 2) { ppl$('pplQIrr').style.borderColor = '#ff3366'; return; }
-  pplTQs = irrs.slice(0, 4);
-  pplCritIdx = Math.floor(Math.random() * (pplTQs.length + 1));
-  pplTQs.splice(pplCritIdx, 0, main);
+  pplTQs = [main];
+  pplCritIdx = 0;
   pplTestData = []; pplTestMeta = []; pplQIdx = 0;
   pplPhase = 'test'; pplShowInternal('ppl-test');
-  pplBuildPh('pplTPh', pplTQs.length); pplBuildStr('pplStr2', PPL_CAP, true);
+  pplBuildPh('pplTPh', 1); pplBuildStr('pplStr2', PPL_CAP, true);
   pplStartVoiceSession();
   pplShowTQ(0);
 }
 
 function pplShowTQ(i) {
   pplQIdx = i; pplUpdPh('pplTPh', i, 't'); pplBuildStr('pplStr2', PPL_CAP, true); pplHideRB('pplRb2');
-  const tqlbl = ppl$('pplTqlbl'); if (tqlbl) tqlbl.textContent = `테스트 ${i + 1}/${pplTQs.length}`;
+  const camUi = ppl$('pplCamUi2');
+  if (camUi) camUi.style.opacity = '1';
+  const tqlbl = ppl$('pplTqlbl'); if (tqlbl) tqlbl.textContent = `핵심 질문`;
   const tqtxt = ppl$('pplTqtxt'); if (tqtxt) tqtxt.textContent = pplTQs[i];
   const tqins = ppl$('pplTqins'); if (tqins) tqins.textContent = '솔직하게 대답해주세요';
   const yn2 = ppl$('pplYn2'); if (yn2) yn2.style.display = 'flex';
@@ -801,20 +805,22 @@ function pplShowTQ(i) {
 async function pplAnsTest(a) {
   pplPauseListening();
   const responseTime = Date.now() - pplStreamStartT;
-  const yn2 = ppl$('pplYn2'); if (yn2) yn2.style.display = 'none';
-  const tqins = ppl$('pplTqins'); if (tqins) tqins.textContent = '촬영 중...';
+  const camUi = ppl$('pplCamUi2');
+  if (camUi) camUi.style.opacity = '0';
   await pplCdown('pplCd2', 3);
   const res = await pplCapValid('test');
   if (res.ok) {
     const slope = pplCalcSlope(pplStreamStartT + PPL_MEASURE_WINDOW[0], pplStreamStartT + PPL_MEASURE_WINDOW[1]);
     const blinkRate = pplCalcBlinkRate(pplStreamStartT, Date.now());
     pplTestData.push({ frames: res.frames, slope, blinkRate, responseTime });
-    pplTestMeta.push({ isCritical: pplQIdx === pplCritIdx, responseTime });
+    pplTestMeta.push({ isCritical: true, responseTime });
     if (pplQIdx < pplTQs.length - 1) pplShowTQ(pplQIdx + 1);
     else { pplEndVoiceSession(); pplPhase = 'az'; pplShowInternal('ppl-az'); pplAnalyze(); }
   } else {
+    if (camUi) camUi.style.opacity = '1';
+    const tqins = ppl$('pplTqins');
     if (tqins) tqins.textContent = '눈 감지 실패. 다시 시도해주세요.';
-    if (yn2) yn2.style.display = 'flex';
+    const yn2 = ppl$('pplYn2'); if (yn2) yn2.style.display = 'flex';
     pplUpdBtns();
     pplListenAnswer(
       () => { const yn = ppl$('pplYn2'); if (yn && yn.style.display !== 'none') pplAnsTest('yes'); },
@@ -876,7 +882,7 @@ function pplCalcBlinkRate(t0, t1) {
 // ===== ANALYSIS =====
 async function pplAnalyze() {
   const d = ppl$('pplAzD');
-  const steps = ['동공/홍채 비율(PIR) 계산 중...', 'Z-score 정규화 적용 중...', '깜빡임 패턴 분석 중...', '동공 확장 속도 계산 중...', '응답 시간 분석 중...', 'CIT 대조 비교 중...', '로지스틱 회귀 복합 점수 산출 중...', '최종 판정 생성 중...'];
+  const steps = ['동공/홍채 비율(PIR) 계산 중...', 'Z-score 정규화 적용 중...', '깜빡임 패턴 분석 중...', '동공 확장 속도 계산 중...', '응답 시간 분석 중...', '기준선 대조 비교 중...', '로지스틱 회귀 복합 점수 산출 중...', '최종 판정 생성 중...'];
   for (let i = 0; i < steps.length; i++) { await pplSlp(400); if (d) d.innerHTML = steps.slice(0, i + 1).join('<br>'); }
   await pplSlp(600);
   pplShowResult(pplCalcResult());
@@ -901,55 +907,49 @@ function pplCalcResult() {
   const bRT_sd = Math.max(pplStd(pplCalibData.map(d => d.responseTime)), 150);
   const bGaze_sd = Math.max(pplStd(cFrames.map(f => f.gazeS)), 0.003);
 
-  // Extract critical vs irrelevant test data
-  let critFrames = [], irrFrames = [];
-  let critSlope = 0, critBlink = 0, critRT = 0;
+  // Extract test data (single question — baseline comparison)
+  const td0 = pplTestData[0];
+  if (!td0 || !td0.frames.length) return pplDefaultResult();
 
-  pplTestData.forEach((td, i) => {
-    const meta = pplTestMeta[i];
-    if (meta?.isCritical) { critFrames.push(...td.frames); critSlope = td.slope; critBlink = td.blinkRate; critRT = td.responseTime; }
-    else { irrFrames.push(...td.frames); }
-  });
+  const critFrames = td0.frames;
+  const critSlope = td0.slope;
+  const critBlink = td0.blinkRate;
+  const critRT = td0.responseTime;
 
-  if (!critFrames.length) return pplDefaultResult();
+  const tPIR = pplAvg(critFrames.map(f => f.pir));
+  const tGaze = pplAvg(critFrames.map(f => f.gazeS));
+  const tAsym = pplAvg(critFrames.map(f => f.asym));
 
-  const tPIR_crit = pplAvg(critFrames.map(f => f.pir));
-  const tPIR_irr = irrFrames.length ? pplAvg(irrFrames.map(f => f.pir)) : bPIR;
-  const tGaze_crit = pplAvg(critFrames.map(f => f.gazeS));
-  const tAsym_crit = pplAvg(critFrames.map(f => f.asym));
-
-  // Z-scores with robust std (amplified sensitivity)
-  const zPIR = (tPIR_crit - bPIR) / bPIR_sd;
-  const citZ = (tPIR_crit - tPIR_irr) / bPIR_sd;
+  // Z-scores vs baseline (amplified for party-game decisive verdicts)
+  const zPIR = (tPIR - bPIR) / bPIR_sd;
   const slopeZ = (critSlope - bSlope) / bSlope_sd;
   const blinkZ = -(critBlink - bBlink) / bBlink_sd;
   const rtZ = (critRT - bRT) / bRT_sd;
-  const gazeZ = (tGaze_crit - bGaze) / bGaze_sd;
-  const asymDiff = tAsym_crit - bAsym;
-  const pirChange = ((tPIR_crit - bPIR) / (bPIR + .0001)) * 100;
+  const gazeZ = (tGaze - bGaze) / bGaze_sd;
+  const asymDiff = tAsym - bAsym;
+  const pirChange = ((tPIR - bPIR) / (bPIR + .0001)) * 100;
 
-  // CIT rank: position of critical item among all test items (0=lowest, 1=highest)
-  const allTestPIRs = pplTestData.map(td => pplAvg(td.frames.map(f => f.pir)));
-  const nOther = allTestPIRs.length - 1;
-  const citRank = nOther > 0 ? allTestPIRs.filter((p, i) => i !== pplCritIdx && p < tPIR_crit).length / nOther : 0.5;
+  // Logistic regression — strong weights for decisive party-game verdicts
+  // Without CIT, all weight goes to baseline comparison metrics
+  let logit = -0.2;
+  logit += pplClamp(zPIR, -3, 6) * 1.8;
+  logit += pplClamp(slopeZ, -3, 5) * 1.0;
+  logit += pplClamp(blinkZ, -3, 4) * 0.8;
+  logit += pplClamp(rtZ, -2, 5) * 0.8;
+  logit += pplClamp(gazeZ, -2, 4) * 0.6;
+  logit += pplClamp(asymDiff * 80, -2, 3) * 0.5;
 
-  // Logistic regression — amplified scale for decisive verdicts
-  // Old range: logit ~[-0.5, +0.5] → sigmoid 38-62% (always uncertain)
-  // New range: logit ~[-4, +8] → sigmoid 2-99% (clear verdicts)
-  let logit = -0.3;
-  logit += pplClamp(zPIR, -3, 6) * 1.2;
-  logit += pplClamp(citZ, -3, 5) * 0.8;
-  logit += (citRank - 0.5) * 2.0;
-  logit += pplClamp(slopeZ, -3, 5) * 0.7;
-  logit += pplClamp(blinkZ, -3, 4) * 0.5;
-  logit += pplClamp(rtZ, -2, 5) * 0.5;
-  logit += pplClamp(gazeZ, -2, 4) * 0.4;
-  logit += pplClamp(asymDiff * 80, -2, 3) * 0.3;
+  // Scale logit for more extreme sigmoid output (avoid ~50% zone)
+  logit *= 1.5;
 
   const prob = 1 / (1 + Math.exp(-logit));
-  const score = pplClamp(Math.round(prob * 100), 5, 98);
+  // Confidence stretch: push away from 50% for clear verdicts
+  let raw = prob * 100;
+  if (raw >= 50) { raw = 50 + (raw - 50) * 1.3; }
+  else { raw = 50 - (50 - raw) * 1.3; }
+  const score = pplClamp(Math.round(raw), 5, 98);
 
-  return { score, pirChange, slopeVal: critSlope, blinkChange: critBlink - bBlink, responseTime: critRT, gazeVal: tGaze_crit, asymVal: tAsym_crit, bPIR, tPIR: tPIR_crit, zPIR };
+  return { score, pirChange, slopeVal: critSlope, blinkChange: critBlink - bBlink, responseTime: critRT, gazeVal: tGaze, asymVal: tAsym, bPIR, tPIR, zPIR };
 }
 
 function pplDefaultResult() { return { score: 50, pirChange: 0, slopeVal: 0, blinkChange: 0, responseTime: 0, gazeVal: 0, asymVal: 0, bPIR: 0, tPIR: 0, zPIR: 0 }; }
@@ -987,7 +987,7 @@ function pplShowResult(r) {
   pplSetMetric('pplMA', r.asymVal.toFixed(4), 'pplBA', pplClamp(r.asymVal * 500, 0, 100));
 
   const mn = ppl$('pplMethodNote');
-  if (mn) mn.textContent = `Z-SCORE: ${r.zPIR >= 0 ? '+' : ''}${r.zPIR.toFixed(2)} · CIT PROTOCOL · LOGISTIC REGRESSION`;
+  if (mn) mn.textContent = `Z-SCORE: ${r.zPIR >= 0 ? '+' : ''}${r.zPIR.toFixed(2)} · BASELINE COMPARISON · LOGISTIC REGRESSION`;
 
   setTimeout(() => {
     document.querySelectorAll('#pupilGame .ppl-db .ppl-fill').forEach(e => e.style.transition = 'width 1.5s ease');
@@ -1026,7 +1026,6 @@ function pplResetAll() {
   pplPupilStream = []; pplBlinkStream = [];
   pplEyeOk = false; pplEyeQ = 0; pplLostN = 0; pplStreamStartT = 0;
   const qMain = ppl$('pplQMain'); if (qMain) qMain.value = '';
-  const qIrr = ppl$('pplQIrr'); if (qIrr) qIrr.value = '';
   const rArc = ppl$('pplRArc'); if (rArc) rArc.style.strokeDasharray = '0 428';
   const rPct = ppl$('pplRPct'); if (rPct) rPct.textContent = '0%';
   pplPhase = 'calib'; pplShowInternal('ppl-calib'); pplSetupCalibScreen();

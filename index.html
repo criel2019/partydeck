@@ -1696,7 +1696,7 @@
       <p style="font-size:.82rem;color:#6a6a80;line-height:1.8;margin-bottom:16px;text-align:center">
         인지 부하에 의한 동공 반응을 분석하여<br>진술의 신뢰도를 측정합니다.
       </p>
-      <div class="ppl-method-badge" style="text-align:center;display:block">CIT PROTOCOL · PIR METRIC · MULTI-CHANNEL FUSION</div>
+      <div class="ppl-method-badge" style="text-align:center;display:block">PIR METRIC · BASELINE COMPARISON · MULTI-CHANNEL FUSION</div>
       <button class="ppl-btn ppl-bp" onclick="pplStartApp()" style="margin-top:12px">시작하기</button>
       <div class="ppl-disc">본 앱은 엔터테인먼트 목적이며 실제 거짓말 탐지기가 아닙니다.<br>Dionisio(2001), Cook(2012), Seymour(2013) 연구 기반 설계</div>
     </div>
@@ -1722,23 +1722,27 @@
     <div class="ppl-screen" id="ppl-calib">
       <div class="ppl-hd" style="padding:16px 0 10px"><h1 style="font-size:1.3rem;letter-spacing:6px">PUPIL</h1></div>
       <div class="ppl-pi" id="pplCPh"></div>
-      <div class="ppl-vc">
+      <div class="ppl-vc ppl-vc-expand">
         <video id="pplVid2" autoplay playsinline></video>
         <canvas id="pplOvl2" class="ppl-overlay"></canvas>
         <div class="ppl-flash" id="pplFl1"></div><div class="ppl-cdo" id="pplCd1"></div>
         <div class="ppl-ew" id="pplEw2"><div class="ppl-wi">⚠️</div><div class="ppl-wt">얼굴이 감지되지 않습니다</div></div>
+        <div class="ppl-cam-ui" id="pplCamUi1">
+          <div class="ppl-cam-ql" id="pplQlbl">캘리브레이션</div>
+          <div class="ppl-cam-qt" id="pplQtxt">준비되면 시작을 눌러주세요</div>
+          <div class="ppl-cam-qi" id="pplQins"></div>
+          <div class="ppl-byn" id="pplYn1" style="display:none">
+            <button class="ppl-btn ppl-bp" id="pplBY" onclick="pplAnsCalib('yes')" disabled>예</button>
+            <button class="ppl-btn ppl-bg" id="pplBN" onclick="pplAnsCalib('no')" disabled>아니오</button>
+          </div>
+          <div class="ppl-voice-ind" id="pplVoice1" style="display:none"><div class="ppl-vtop"><span>🎤</span><div class="ppl-vbar"><div class="ppl-vfill"></div></div></div><div class="ppl-vrec">"맞아요" 또는 "아니요"</div></div>
+          <button class="ppl-btn ppl-bp ppl-cam-start" id="pplCBtn" onclick="pplBeginCalib()" disabled>캘리브레이션 시작</button>
+        </div>
       </div>
       <div class="ppl-sb" id="pplSb2"><div class="ppl-sd" id="pplSd2"></div><span class="ppl-st" id="pplSt2">캘리브레이션</span></div>
       <div class="ppl-eq"><span class="ppl-eq-l">눈 감지 품질</span><div class="ppl-eq-b"><div class="ppl-eq-f" id="pplEf2"></div></div><span class="ppl-eq-v" id="pplEv2">—</span></div>
       <div class="ppl-str" id="pplStr1"></div>
       <div class="ppl-rb" id="pplRb1"><span>🔄</span><span class="ppl-rt" id="pplRbt1"></span></div>
-      <div class="ppl-qc"><div class="ppl-ql" id="pplQlbl">캘리브레이션</div><div class="ppl-qt" id="pplQtxt">준비되면 시작을 눌러주세요</div><div class="ppl-qi" id="pplQins"></div></div>
-      <div class="ppl-byn" id="pplYn1" style="display:none">
-        <button class="ppl-btn ppl-bp" id="pplBY" onclick="pplAnsCalib('yes')" disabled>예</button>
-        <button class="ppl-btn ppl-bg" id="pplBN" onclick="pplAnsCalib('no')" disabled>아니오</button>
-      </div>
-      <div class="ppl-voice-ind" id="pplVoice1" style="display:none"><div class="ppl-vtop"><span>🎤</span><div class="ppl-vbar"><div class="ppl-vfill"></div></div></div><div class="ppl-vrec">"맞아요" 또는 "아니요"</div></div>
-      <button class="ppl-btn ppl-bp" id="pplCBtn" onclick="pplBeginCalib()" disabled>캘리브레이션 시작</button>
     </div>
 
     <!-- CUSTOM Q -->
@@ -1747,20 +1751,16 @@
       <div class="ppl-qc">
         <div class="ppl-ql t">테스트 질문 설정</div>
         <p style="font-size:.85rem;line-height:1.7;margin:12px 0 16px">
-          핵심 질문 1개와 무관한 질문 4개를 입력하세요.<br>
-          <strong>CIT(은폐 정보 검사)</strong> 방식으로 핵심 질문에 대한<br>동공 반응만 별도 분석합니다.
+          확인하고 싶은 질문을 입력하세요.<br>
+          동공 반응을 기준선과 비교하여 분석합니다.
         </p>
-        <div class="ppl-cqa" style="margin-bottom:12px">
+        <div class="ppl-cqa">
           <label style="font-size:.7rem;color:#ff3366;font-family:'JetBrains Mono',monospace;letter-spacing:1px">★ 핵심 질문 (거짓말 여부를 확인할 질문)</label>
           <textarea id="pplQMain" rows="2" placeholder="예: 어제 밤 10시에 집에 있었나요?" style="margin-top:6px"></textarea>
         </div>
-        <div class="ppl-cqa">
-          <label style="font-size:.7rem;color:#6a6a80;font-family:'JetBrains Mono',monospace;letter-spacing:1px">무관한 질문 4개 (줄바꿈으로 구분)</label>
-          <textarea id="pplQIrr" rows="5" placeholder="예:&#10;오늘 아침을 먹었나요?&#10;어제 TV를 봤나요?&#10;지금 신발을 신고 있나요?&#10;이번 주에 커피를 마셨나요?" style="margin-top:6px"></textarea>
-        </div>
       </div>
       <div style="flex:1"></div>
-      <div class="ppl-method-badge" style="text-align:center;display:block;margin-bottom:12px">CIT: 4 IRRELEVANT + 1 CRITICAL · 800-1500ms WINDOW</div>
+      <div class="ppl-method-badge" style="text-align:center;display:block;margin-bottom:12px">BASELINE COMPARISON · PIR METRIC · 800-1500ms WINDOW</div>
       <button class="ppl-btn ppl-bd" onclick="pplBeginTest()">테스트 시작</button>
     </div>
 
@@ -1768,22 +1768,26 @@
     <div class="ppl-screen" id="ppl-test">
       <div class="ppl-hd" style="padding:16px 0 10px"><h1 style="font-size:1.3rem;letter-spacing:6px;color:#ff3366">PUPIL</h1></div>
       <div class="ppl-pi" id="pplTPh"></div>
-      <div class="ppl-vc">
+      <div class="ppl-vc ppl-vc-expand">
         <video id="pplVid3" autoplay playsinline></video>
         <canvas id="pplOvl3" class="ppl-overlay"></canvas>
         <div class="ppl-flash" id="pplFl2"></div><div class="ppl-cdo" id="pplCd2"></div>
         <div class="ppl-ew" id="pplEw3"><div class="ppl-wi">⚠️</div><div class="ppl-wt">얼굴이 감지되지 않습니다</div></div>
+        <div class="ppl-cam-ui" id="pplCamUi2">
+          <div class="ppl-cam-ql t" id="pplTqlbl">핵심 질문</div>
+          <div class="ppl-cam-qt" id="pplTqtxt"></div>
+          <div class="ppl-cam-qi" id="pplTqins">솔직하게 대답해주세요</div>
+          <div class="ppl-byn" id="pplYn2" style="display:none">
+            <button class="ppl-btn ppl-bd" id="pplTbY" onclick="pplAnsTest('yes')" disabled>예</button>
+            <button class="ppl-btn ppl-bg" id="pplTbN" onclick="pplAnsTest('no')" disabled>아니오</button>
+          </div>
+          <div class="ppl-voice-ind" id="pplVoice2" style="display:none"><div class="ppl-vtop"><span>🎤</span><div class="ppl-vbar"><div class="ppl-vfill"></div></div></div><div class="ppl-vrec">"맞아요" 또는 "아니요"</div></div>
+        </div>
       </div>
       <div class="ppl-sb" id="pplSb3"><div class="ppl-sd" id="pplSd3"></div><span class="ppl-st" id="pplSt3">테스트</span></div>
       <div class="ppl-eq"><span class="ppl-eq-l">눈 감지 품질</span><div class="ppl-eq-b"><div class="ppl-eq-f" id="pplEf3"></div></div><span class="ppl-eq-v" id="pplEv3">—</span></div>
       <div class="ppl-str" id="pplStr2"></div>
       <div class="ppl-rb" id="pplRb2"><span>🔄</span><span class="ppl-rt" id="pplRbt2"></span></div>
-      <div class="ppl-qc"><div class="ppl-ql t" id="pplTqlbl">테스트 1/5</div><div class="ppl-qt" id="pplTqtxt"></div><div class="ppl-qi" id="pplTqins">솔직하게 답해주세요</div></div>
-      <div class="ppl-byn" id="pplYn2" style="display:none">
-        <button class="ppl-btn ppl-bd" id="pplTbY" onclick="pplAnsTest('yes')" disabled>예</button>
-        <button class="ppl-btn ppl-bg" id="pplTbN" onclick="pplAnsTest('no')" disabled>아니오</button>
-      </div>
-      <div class="ppl-voice-ind" id="pplVoice2" style="display:none"><div class="ppl-vtop"><span>🎤</span><div class="ppl-vbar"><div class="ppl-vfill"></div></div></div><div class="ppl-vrec">"맞아요" 또는 "아니요"</div></div>
     </div>
 
     <!-- ANALYZE -->
@@ -1823,7 +1827,7 @@
         </div>
       </div>
       <div class="ppl-method-badge" style="text-align:center;display:block;margin-bottom:12px" id="pplMethodNote">
-        CIT PROTOCOL · Z-SCORE NORM · LOGISTIC REGRESSION
+        BASELINE COMPARISON · Z-SCORE NORM · LOGISTIC REGRESSION
       </div>
       <button class="ppl-btn ppl-bd" onclick="pplResetAll()">다시 테스트하기</button>
       <button class="ppl-btn ppl-bg" onclick="pplLeavePupil()" style="margin-top:4px">나가기</button>
