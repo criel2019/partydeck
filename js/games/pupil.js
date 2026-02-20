@@ -51,6 +51,8 @@ let pplStreamStartT = 0;
 let pplMonitorId = null;
 let pplAnimLoopActive = false;
 let pplAdaptTimerId = null;
+let pplSpeechRec = null;
+let pplVoiceActive = false;
 
 const ppl$ = id => document.getElementById(id);
 
@@ -267,6 +269,69 @@ function pplSetupCalibScreen() {
   if (qins) qins.textContent = '';
 }
 
+// ===== VOICE (TTS + STT) =====
+function pplSpeak(text) {
+  return new Promise(resolve => {
+    if (!window.speechSynthesis) { resolve(); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR';
+    u.rate = 1.05;
+    u.onend = resolve;
+    u.onerror = resolve;
+    speechSynthesis.speak(u);
+  });
+}
+
+function pplStartVoice(onYes, onNo) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  pplStopVoice();
+  const rec = new SR();
+  rec.lang = 'ko-KR';
+  rec.continuous = false;
+  rec.interimResults = false;
+  rec.maxAlternatives = 5;
+  rec.onresult = (e) => {
+    const results = e.results[0];
+    for (let i = 0; i < results.length; i++) {
+      const t = results[i].transcript.trim();
+      if (/^(네|예|응|어|맞아|맞습니다|yes)/i.test(t)) { pplStopVoice(); onYes(); return; }
+      if (/^(아니|아뇨|노|no)/i.test(t)) { pplStopVoice(); onNo(); return; }
+    }
+  };
+  rec.onerror = () => {};
+  rec.onend = () => { if (pplVoiceActive) setTimeout(() => { if (pplVoiceActive) try { rec.start(); } catch {} }, 150); };
+  pplSpeechRec = rec;
+  pplVoiceActive = true;
+  pplShowVoiceInd(true);
+  try { rec.start(); } catch {}
+}
+
+function pplStopVoice() {
+  pplVoiceActive = false;
+  if (pplSpeechRec) { try { pplSpeechRec.abort(); } catch {} pplSpeechRec = null; }
+  pplShowVoiceInd(false);
+}
+
+function pplShowVoiceInd(show) {
+  ['pplVoice1', 'pplVoice2'].forEach(id => { const el = ppl$(id); if (el) el.style.display = show ? 'flex' : 'none'; });
+}
+
+function pplVoiceCalib() {
+  pplStartVoice(
+    () => { const yn = ppl$('pplYn1'); if (yn && yn.style.display !== 'none') pplAnsCalib('yes'); },
+    () => { const yn = ppl$('pplYn1'); if (yn && yn.style.display !== 'none') pplAnsCalib('no'); }
+  );
+}
+
+function pplVoiceTest() {
+  pplStartVoice(
+    () => { const yn = ppl$('pplYn2'); if (yn && yn.style.display !== 'none') pplAnsTest('yes'); },
+    () => { const yn = ppl$('pplYn2'); if (yn && yn.style.display !== 'none') pplAnsTest('no'); }
+  );
+}
+
 // ===== CALIBRATION =====
 function pplBeginCalib() {
   const cBtn = ppl$('pplCBtn');
@@ -279,16 +344,19 @@ function pplShowCQ(i) {
   pplQIdx = i; pplUpdPh('pplCPh', i, 'c'); pplBuildStr('pplStr1', PPL_CAP); pplHideRB('pplRb1');
   const qlbl = ppl$('pplQlbl'); if (qlbl) qlbl.textContent = `캘리브레이션 ${i + 1}/5`;
   const qtxt = ppl$('pplQtxt'); if (qtxt) qtxt.textContent = PPL_CALIB_QS[i];
-  const qins = ppl$('pplQins'); if (qins) qins.textContent = '눈이 감지되면 버튼이 활성화됩니다';
+  const qins = ppl$('pplQins'); if (qins) qins.textContent = '"네" 또는 "아니오"로 대답해주세요';
   const yn1 = ppl$('pplYn1'); if (yn1) yn1.style.display = 'flex';
   pplUpdBtns();
   pplStreamStartT = Date.now();
+  pplSpeak(PPL_CALIB_QS[i]).then(() => { if (pplPhase === 'calib') pplVoiceCalib(); });
 }
 
 async function pplAnsCalib(a) {
+  pplStopVoice();
   const responseTime = Date.now() - pplStreamStartT;
   const yn1 = ppl$('pplYn1'); if (yn1) yn1.style.display = 'none';
   const qins = ppl$('pplQins'); if (qins) qins.textContent = '촬영 중... 카메라를 봐주세요';
+  pplSpeak('촬영합니다. 카메라를 봐주세요.');
   await pplCdown('pplCd1', 3);
   const res = await pplCapValid('calib');
   if (res.ok) {
@@ -296,11 +364,12 @@ async function pplAnsCalib(a) {
     const blinkRate = pplCalcBlinkRate(pplStreamStartT, Date.now());
     pplCalibData.push({ frames: res.frames, slope, blinkRate, responseTime });
     if (pplQIdx < PPL_CALIB_QS.length - 1) pplShowCQ(pplQIdx + 1);
-    else { pplPhase = 'cq'; pplShowInternal('ppl-cq'); }
+    else { pplStopVoice(); pplPhase = 'cq'; pplShowInternal('ppl-cq'); }
   } else {
-    if (qins) qins.textContent = '눈 감지 실패. 조명/카메라를 확인 후 다시 시도해주세요.';
+    if (qins) qins.textContent = '눈 감지 실패. 다시 시도해주세요.';
     if (yn1) yn1.style.display = 'flex';
     pplUpdBtns();
+    pplVoiceCalib();
   }
 }
 
@@ -324,16 +393,19 @@ function pplShowTQ(i) {
   pplQIdx = i; pplUpdPh('pplTPh', i, 't'); pplBuildStr('pplStr2', PPL_CAP, true); pplHideRB('pplRb2');
   const tqlbl = ppl$('pplTqlbl'); if (tqlbl) tqlbl.textContent = `테스트 ${i + 1}/${pplTQs.length}`;
   const tqtxt = ppl$('pplTqtxt'); if (tqtxt) tqtxt.textContent = pplTQs[i];
-  const tqins = ppl$('pplTqins'); if (tqins) tqins.textContent = '솔직하게 답해주세요';
+  const tqins = ppl$('pplTqins'); if (tqins) tqins.textContent = '솔직하게 대답해주세요';
   const yn2 = ppl$('pplYn2'); if (yn2) yn2.style.display = 'flex';
   pplUpdBtns();
   pplStreamStartT = Date.now();
+  pplSpeak(pplTQs[i]).then(() => { if (pplPhase === 'test') pplVoiceTest(); });
 }
 
 async function pplAnsTest(a) {
+  pplStopVoice();
   const responseTime = Date.now() - pplStreamStartT;
   const yn2 = ppl$('pplYn2'); if (yn2) yn2.style.display = 'none';
   const tqins = ppl$('pplTqins'); if (tqins) tqins.textContent = '촬영 중...';
+  pplSpeak('촬영합니다.');
   await pplCdown('pplCd2', 3);
   const res = await pplCapValid('test');
   if (res.ok) {
@@ -342,11 +414,12 @@ async function pplAnsTest(a) {
     pplTestData.push({ frames: res.frames, slope, blinkRate, responseTime });
     pplTestMeta.push({ isCritical: pplQIdx === pplCritIdx, responseTime });
     if (pplQIdx < pplTQs.length - 1) pplShowTQ(pplQIdx + 1);
-    else { pplPhase = 'az'; pplShowInternal('ppl-az'); pplAnalyze(); }
+    else { pplStopVoice(); pplPhase = 'az'; pplShowInternal('ppl-az'); pplAnalyze(); }
   } else {
     if (tqins) tqins.textContent = '눈 감지 실패. 다시 시도해주세요.';
     if (yn2) yn2.style.display = 'flex';
     pplUpdBtns();
+    pplVoiceTest();
   }
 }
 
@@ -413,24 +486,30 @@ function pplCalcResult() {
   const cFrames = pplCalibData.flatMap(d => d.frames).filter(Boolean);
   if (!cFrames.length) return pplDefaultResult();
 
+  // Baseline statistics
   const bPIR = pplAvg(cFrames.map(f => f.pir));
   const bGaze = pplAvg(cFrames.map(f => f.gazeS));
   const bAsym = pplAvg(cFrames.map(f => f.asym));
   const bSlope = pplAvg(pplCalibData.map(d => d.slope));
   const bBlink = pplAvg(pplCalibData.map(d => d.blinkRate));
   const bRT = pplAvg(pplCalibData.map(d => d.responseTime));
-  const bPIR_sd = pplStd(cFrames.map(f => f.pir));
 
-  let critFrames = [], irrFrames = [], critSlope = 0, irrSlope = 0, critBlink = 0, irrBlink = 0, critRT = 0, irrRT = 0;
+  // Robust std floors — prevent tiny denominators while allowing meaningful z-scores
+  const bPIR_sd = Math.max(pplStd(cFrames.map(f => f.pir)), bPIR * 0.005, 0.003);
+  const bSlope_sd = Math.max(pplStd(pplCalibData.map(d => d.slope)), 0.0005);
+  const bBlink_sd = Math.max(pplStd(pplCalibData.map(d => d.blinkRate)), 2);
+  const bRT_sd = Math.max(pplStd(pplCalibData.map(d => d.responseTime)), 150);
+  const bGaze_sd = Math.max(pplStd(cFrames.map(f => f.gazeS)), 0.003);
+
+  // Extract critical vs irrelevant test data
+  let critFrames = [], irrFrames = [];
+  let critSlope = 0, critBlink = 0, critRT = 0;
 
   pplTestData.forEach((td, i) => {
     const meta = pplTestMeta[i];
     if (meta?.isCritical) { critFrames.push(...td.frames); critSlope = td.slope; critBlink = td.blinkRate; critRT = td.responseTime; }
-    else { irrFrames.push(...td.frames); irrSlope += td.slope; irrBlink += td.blinkRate; irrRT += td.responseTime; }
+    else { irrFrames.push(...td.frames); }
   });
-
-  const nIrr = pplTestData.length - 1 || 1;
-  irrSlope /= nIrr; irrBlink /= nIrr; irrRT /= nIrr;
 
   if (!critFrames.length) return pplDefaultResult();
 
@@ -439,29 +518,38 @@ function pplCalcResult() {
   const tGaze_crit = pplAvg(critFrames.map(f => f.gazeS));
   const tAsym_crit = pplAvg(critFrames.map(f => f.asym));
 
-  const zPIR = (tPIR_crit - bPIR) / (bPIR_sd + .0001);
+  // Z-scores with robust std (amplified sensitivity)
+  const zPIR = (tPIR_crit - bPIR) / bPIR_sd;
+  const citZ = (tPIR_crit - tPIR_irr) / bPIR_sd;
+  const slopeZ = (critSlope - bSlope) / bSlope_sd;
+  const blinkZ = -(critBlink - bBlink) / bBlink_sd;
+  const rtZ = (critRT - bRT) / bRT_sd;
+  const gazeZ = (tGaze_crit - bGaze) / bGaze_sd;
+  const asymDiff = tAsym_crit - bAsym;
   const pirChange = ((tPIR_crit - bPIR) / (bPIR + .0001)) * 100;
 
-  const slopeDiff = critSlope - bSlope;
-  const blinkDiff = critBlink - bBlink;
-  const rtDiff = critRT - bRT;
-  const gazeDiff = tGaze_crit - bGaze;
-  const asymDiff = tAsym_crit - bAsym;
-  const pirCITdiff = tPIR_crit - tPIR_irr;
+  // CIT rank: position of critical item among all test items (0=lowest, 1=highest)
+  const allTestPIRs = pplTestData.map(td => pplAvg(td.frames.map(f => f.pir)));
+  const nOther = allTestPIRs.length - 1;
+  const citRank = nOther > 0 ? allTestPIRs.filter((p, i) => i !== pplCritIdx && p < tPIR_crit).length / nOther : 0.5;
 
-  let logit = 0;
-  logit += pplClamp(zPIR * 0.8, -2, 3) * 0.30;
-  logit += pplClamp(pirCITdiff * 50, -2, 3) * 0.10;
-  logit += pplClamp(slopeDiff * 20, -2, 3) * 0.15;
-  logit += pplClamp(-blinkDiff / 5, -2, 2) * 0.15;
-  logit += pplClamp(rtDiff / 2000, -1, 2) * 0.15;
-  logit += pplClamp(gazeDiff * 5, -1, 2) * 0.10;
-  logit += pplClamp(asymDiff * 20, -1, 2) * 0.05;
+  // Logistic regression — amplified scale for decisive verdicts
+  // Old range: logit ~[-0.5, +0.5] → sigmoid 38-62% (always uncertain)
+  // New range: logit ~[-4, +8] → sigmoid 2-99% (clear verdicts)
+  let logit = -0.3;
+  logit += pplClamp(zPIR, -3, 6) * 1.2;
+  logit += pplClamp(citZ, -3, 5) * 0.8;
+  logit += (citRank - 0.5) * 2.0;
+  logit += pplClamp(slopeZ, -3, 5) * 0.7;
+  logit += pplClamp(blinkZ, -3, 4) * 0.5;
+  logit += pplClamp(rtZ, -2, 5) * 0.5;
+  logit += pplClamp(gazeZ, -2, 4) * 0.4;
+  logit += pplClamp(asymDiff * 80, -2, 3) * 0.3;
 
   const prob = 1 / (1 + Math.exp(-logit));
-  const score = pplClamp(Math.round(prob * 100), 10, 95);
+  const score = pplClamp(Math.round(prob * 100), 5, 98);
 
-  return { score, pirChange, slopeVal: critSlope, blinkChange: blinkDiff, responseTime: critRT, gazeVal: tGaze_crit, asymVal: tAsym_crit, bPIR, tPIR: tPIR_crit, zPIR };
+  return { score, pirChange, slopeVal: critSlope, blinkChange: critBlink - bBlink, responseTime: critRT, gazeVal: tGaze_crit, asymVal: tAsym_crit, bPIR, tPIR: tPIR_crit, zPIR };
 }
 
 function pplDefaultResult() { return { score: 50, pirChange: 0, slopeVal: 0, blinkChange: 0, responseTime: 0, gazeVal: 0, asymVal: 0, bPIR: 0, tPIR: 0, zPIR: 0 }; }
@@ -513,6 +601,8 @@ function pplSetMetric(mId, mVal, bId, bWidth) {
 
 // ===== CLEANUP & RESET =====
 function pplCleanup() {
+  pplStopVoice();
+  if (window.speechSynthesis) speechSynthesis.cancel();
   pplStopMonitor();
   if (pplAdaptTimerId) { clearInterval(pplAdaptTimerId); pplAdaptTimerId = null; }
   pplAnimLoopActive = false;

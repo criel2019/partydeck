@@ -505,3 +505,29 @@
   color: #ff3366;
   white-space: nowrap;
 }
+
+/* Voice indicator */
+.ppl-voice-ind {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 14px;
+  color: #00e0ff;
+  font-size: .75rem;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: .5px;
+  animation: pplVoiceFade 1.5s ease-in-out infinite;
+}
+.ppl-mic-pulse {
+  font-size: 1.1rem;
+  animation: pplMicPulse 1s ease-in-out infinite;
+}
+@keyframes pplMicPulse {
+  0%, 100% { transform: scale(1); opacity: .6; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+@keyframes pplVoiceFade {
+  0%, 100% { opacity: .5; }
+  50% { opacity: 1; }
+}
