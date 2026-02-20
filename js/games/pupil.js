@@ -289,42 +289,53 @@ function pplSpeak(text) {
   });
 }
 
-function pplStartVoice(onYes, onNo) {
+// Session-based voice: ONE SpeechRecognition per phase, swap callbacks per question
+let pplVoiceHandler = null; // { yes: fn, no: fn } — swapped each question
+
+function pplStartVoiceSession() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return;
-  pplStopVoice();
+  if (!SR || pplSpeechRec) return;
   const rec = new SR();
   rec.lang = 'ko-KR';
   rec.continuous = true;
   rec.interimResults = false;
   rec.maxAlternatives = 5;
   rec.onresult = (e) => {
+    if (!pplVoiceHandler) return;
     for (let r = e.resultIndex; r < e.results.length; r++) {
       if (!e.results[r].isFinal) continue;
       for (let i = 0; i < e.results[r].length; i++) {
         const t = e.results[r][i].transcript.trim();
-        if (/^(네|예|응|어|맞아|맞습니다|yes)/i.test(t)) { pplStopVoice(); onYes(); return; }
-        if (/^(아니|아뇨|노|no)/i.test(t)) { pplStopVoice(); onNo(); return; }
+        if (/^(네|예|응|어|맞아|맞습니다|yes)/i.test(t)) { const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false); h.yes(); return; }
+        if (/^(아니|아뇨|노|no)/i.test(t)) { const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false); h.no(); return; }
       }
     }
   };
   rec.onerror = (e) => {
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture') {
-      pplVoiceActive = false;
-      pplSpeechRec = null;
-      pplShowVoiceInd(false);
-    }
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture') pplEndVoiceSession();
   };
-  rec.onend = () => { if (pplVoiceActive) setTimeout(() => { if (pplVoiceActive && pplSpeechRec) try { rec.start(); } catch { pplVoiceActive = false; pplShowVoiceInd(false); } }, 500); };
+  rec.onend = () => {
+    if (pplVoiceActive) setTimeout(() => { if (pplVoiceActive && pplSpeechRec === rec) try { rec.start(); } catch { pplEndVoiceSession(); } }, 500);
+  };
   pplSpeechRec = rec;
   pplVoiceActive = true;
-  pplShowVoiceInd(true);
   try { rec.start(); } catch {}
 }
 
-function pplStopVoice() {
+function pplEndVoiceSession() {
   pplVoiceActive = false;
+  pplVoiceHandler = null;
+  pplShowVoiceInd(false);
   if (pplSpeechRec) { try { pplSpeechRec.abort(); } catch {} pplSpeechRec = null; }
+}
+
+function pplListenAnswer(onYes, onNo) {
+  pplVoiceHandler = { yes: onYes, no: onNo };
+  pplShowVoiceInd(true);
+}
+
+function pplPauseListening() {
+  pplVoiceHandler = null;
   pplShowVoiceInd(false);
 }
 
@@ -332,25 +343,12 @@ function pplShowVoiceInd(show) {
   ['pplVoice1', 'pplVoice2'].forEach(id => { const el = ppl$(id); if (el) el.style.display = show ? 'flex' : 'none'; });
 }
 
-function pplVoiceCalib() {
-  pplStartVoice(
-    () => { const yn = ppl$('pplYn1'); if (yn && yn.style.display !== 'none') pplAnsCalib('yes'); },
-    () => { const yn = ppl$('pplYn1'); if (yn && yn.style.display !== 'none') pplAnsCalib('no'); }
-  );
-}
-
-function pplVoiceTest() {
-  pplStartVoice(
-    () => { const yn = ppl$('pplYn2'); if (yn && yn.style.display !== 'none') pplAnsTest('yes'); },
-    () => { const yn = ppl$('pplYn2'); if (yn && yn.style.display !== 'none') pplAnsTest('no'); }
-  );
-}
-
 // ===== CALIBRATION =====
 function pplBeginCalib() {
   const cBtn = ppl$('pplCBtn');
   if (cBtn) cBtn.style.display = 'none';
   pplCalibData = []; pplQIdx = 0; pplTotV = 0; pplTotA = 0;
+  pplStartVoiceSession();
   pplShowCQ(0);
 }
 
@@ -362,11 +360,16 @@ function pplShowCQ(i) {
   const yn1 = ppl$('pplYn1'); if (yn1) yn1.style.display = 'flex';
   pplUpdBtns();
   pplStreamStartT = Date.now();
-  pplSpeak(PPL_CALIB_QS[i]).then(() => { if (pplPhase === 'calib') pplVoiceCalib(); });
+  pplSpeak(PPL_CALIB_QS[i]).then(() => {
+    if (pplPhase === 'calib') pplListenAnswer(
+      () => { const yn = ppl$('pplYn1'); if (yn && yn.style.display !== 'none') pplAnsCalib('yes'); },
+      () => { const yn = ppl$('pplYn1'); if (yn && yn.style.display !== 'none') pplAnsCalib('no'); }
+    );
+  });
 }
 
 async function pplAnsCalib(a) {
-  pplStopVoice();
+  pplPauseListening();
   const responseTime = Date.now() - pplStreamStartT;
   const yn1 = ppl$('pplYn1'); if (yn1) yn1.style.display = 'none';
   const qins = ppl$('pplQins'); if (qins) qins.textContent = '촬영 중... 카메라를 봐주세요';
@@ -377,12 +380,15 @@ async function pplAnsCalib(a) {
     const blinkRate = pplCalcBlinkRate(pplStreamStartT, Date.now());
     pplCalibData.push({ frames: res.frames, slope, blinkRate, responseTime });
     if (pplQIdx < PPL_CALIB_QS.length - 1) pplShowCQ(pplQIdx + 1);
-    else { pplStopVoice(); pplPhase = 'cq'; pplShowInternal('ppl-cq'); }
+    else { pplEndVoiceSession(); pplPhase = 'cq'; pplShowInternal('ppl-cq'); }
   } else {
     if (qins) qins.textContent = '눈 감지 실패. 다시 시도해주세요.';
     if (yn1) yn1.style.display = 'flex';
     pplUpdBtns();
-    pplVoiceCalib();
+    pplListenAnswer(
+      () => { const yn = ppl$('pplYn1'); if (yn && yn.style.display !== 'none') pplAnsCalib('yes'); },
+      () => { const yn = ppl$('pplYn1'); if (yn && yn.style.display !== 'none') pplAnsCalib('no'); }
+    );
   }
 }
 
@@ -399,6 +405,7 @@ function pplBeginTest() {
   pplTestData = []; pplTestMeta = []; pplQIdx = 0;
   pplPhase = 'test'; pplShowInternal('ppl-test');
   pplBuildPh('pplTPh', pplTQs.length); pplBuildStr('pplStr2', PPL_CAP, true);
+  pplStartVoiceSession();
   pplShowTQ(0);
 }
 
@@ -410,11 +417,16 @@ function pplShowTQ(i) {
   const yn2 = ppl$('pplYn2'); if (yn2) yn2.style.display = 'flex';
   pplUpdBtns();
   pplStreamStartT = Date.now();
-  pplSpeak(pplTQs[i]).then(() => { if (pplPhase === 'test') pplVoiceTest(); });
+  pplSpeak(pplTQs[i]).then(() => {
+    if (pplPhase === 'test') pplListenAnswer(
+      () => { const yn = ppl$('pplYn2'); if (yn && yn.style.display !== 'none') pplAnsTest('yes'); },
+      () => { const yn = ppl$('pplYn2'); if (yn && yn.style.display !== 'none') pplAnsTest('no'); }
+    );
+  });
 }
 
 async function pplAnsTest(a) {
-  pplStopVoice();
+  pplPauseListening();
   const responseTime = Date.now() - pplStreamStartT;
   const yn2 = ppl$('pplYn2'); if (yn2) yn2.style.display = 'none';
   const tqins = ppl$('pplTqins'); if (tqins) tqins.textContent = '촬영 중...';
@@ -426,12 +438,15 @@ async function pplAnsTest(a) {
     pplTestData.push({ frames: res.frames, slope, blinkRate, responseTime });
     pplTestMeta.push({ isCritical: pplQIdx === pplCritIdx, responseTime });
     if (pplQIdx < pplTQs.length - 1) pplShowTQ(pplQIdx + 1);
-    else { pplStopVoice(); pplPhase = 'az'; pplShowInternal('ppl-az'); pplAnalyze(); }
+    else { pplEndVoiceSession(); pplPhase = 'az'; pplShowInternal('ppl-az'); pplAnalyze(); }
   } else {
     if (tqins) tqins.textContent = '눈 감지 실패. 다시 시도해주세요.';
     if (yn2) yn2.style.display = 'flex';
     pplUpdBtns();
-    pplVoiceTest();
+    pplListenAnswer(
+      () => { const yn = ppl$('pplYn2'); if (yn && yn.style.display !== 'none') pplAnsTest('yes'); },
+      () => { const yn = ppl$('pplYn2'); if (yn && yn.style.display !== 'none') pplAnsTest('no'); }
+    );
   }
 }
 
@@ -613,7 +628,7 @@ function pplSetMetric(mId, mVal, bId, bWidth) {
 
 // ===== CLEANUP & RESET =====
 function pplCleanup() {
-  pplStopVoice();
+  pplEndVoiceSession();
   if (window.speechSynthesis) speechSynthesis.cancel();
   pplStopMonitor();
   if (pplAdaptTimerId) { clearInterval(pplAdaptTimerId); pplAdaptTimerId = null; }
