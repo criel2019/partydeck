@@ -37,10 +37,7 @@ function getSutdaRank(card1, card2) {
   if ((n1 === 1 && g1 && n2 === 8 && g2) || (n1 === 8 && g1 && n2 === 1 && g2)) {
     return { rank: 99, name: '18광땡', tier: 'gwangttaeng' };
   }
-  // 13광땡: 1광 + 3광
-  if ((n1 === 1 && g1 && n2 === 3 && g2) || (n1 === 3 && g1 && n2 === 1 && g2)) {
-    return { rank: 98, name: '13광땡', tier: 'gwangttaeng' };
-  }
+  // 13광땡 제거 — 1광+3광은 일반 4끗으로 처리 (암행어사용 플래그만 유지)
 
   // === 땡 (같은 숫자 2장) ===
   if (n1 === n2) {
@@ -68,14 +65,17 @@ function getSutdaRank(card1, card2) {
   const kkut = (n1 + n2) % 10;
   const mult = n1 * n2; // 같은 끗일 때 곱으로 비교
 
+  // 1광+3광 조합인지 체크 (암행어사가 잡을 수 있도록 플래그)
+  const is13Gwang = ((n1 === 1 && g1 && n2 === 3 && g2) || (n1 === 3 && g1 && n2 === 1 && g2));
+
   if (kkut === 9) {
-    return { rank: 60, name: '갑오', tier: 'kkut', kkut: 9, mult: mult };
+    return { rank: 60, name: '갑오', tier: 'kkut', kkut: 9, mult: mult, is13Gwang: false };
   }
   if (kkut === 0) {
-    return { rank: 50, name: '망통', tier: 'kkut', kkut: 0, mult: mult };
+    return { rank: 50, name: '망통', tier: 'kkut', kkut: 0, mult: mult, is13Gwang: false };
   }
   // 1끗~8끗
-  return { rank: 50 + kkut, name: kkut + '끗', tier: 'kkut', kkut: kkut, mult: mult };
+  return { rank: 50 + kkut, name: kkut + '끗', tier: 'kkut', kkut: kkut, mult: mult, is13Gwang: is13Gwang };
 }
 
 // =========================
@@ -86,17 +86,15 @@ function sutdaCompare(r1, r2) {
   if (r1.special === '37' && r2.tier === 'ttaeng') return 1;
   if (r2.special === '37' && r1.tier === 'ttaeng') return -1;
   if (r1.special === '37' && r2.tier !== 'ttaeng') {
-    const r1asKkut = { rank: 50, name: '망통', tier: 'kkut', kkut: 0, mult: 21 };
-    return sutdaCompare(r1asKkut, r2);
+    return -1; // 땡잡이는 일반패들에게 무조건 진다
   }
   if (r2.special === '37' && r1.tier !== 'ttaeng') {
-    const r2asKkut = { rank: 50, name: '망통', tier: 'kkut', kkut: 0, mult: 21 };
-    return sutdaCompare(r1, r2asKkut);
+    return 1; // 땡잡이는 일반패들에게 무조건 진다
   }
 
-  // === 2순위: 암행어사(47) - 13광땡(98), 18광땡(99)만 잡음 ===
-  if (r1.special === '47' && (r2.rank === 99 || r2.rank === 98)) return 1;
-  if (r2.special === '47' && (r1.rank === 99 || r1.rank === 98)) return -1;
+  // === 2순위: 암행어사(47) - 18광땡(99), 13광땡(1광+3광 조합)만 잡음 ===
+  if (r1.special === '47' && (r2.rank === 99 || r2.is13Gwang)) return 1;
+  if (r2.special === '47' && (r1.rank === 99 || r1.is13Gwang)) return -1;
   if (r1.special === '47') {
     const r1asKkut = { rank: 51, name: '1끗', tier: 'kkut', kkut: 1, mult: 28 };
     return sutdaCompare(r1asKkut, r2);
@@ -112,7 +110,7 @@ function sutdaCompare(r1, r2) {
     return 0;
   }
 
-  // === 일반 rank 비교: 장땡(101) > 38광땡(100) > 18광땡(99) > 13광땡(98) > 9땡~1땡 > ... ===
+  // === 일반 rank 비교: 장땡(101) > 38광땡(100) > 18광땡(99) > 9땡~1땡(89~81) > ... ===
   return r1.rank > r2.rank ? 1 : r1.rank < r2.rank ? -1 : 0;
 }
 
@@ -224,9 +222,9 @@ function startSutda() {
   if (seryukPlayer) {
     // 세륙 플레이어가 있으면, 나중에 콜을 먼저 받았을 때 선택
     sutdaHost.seryukPlayerId = seryukPlayer.id;
-    // 9땡 이하인 상대가 있어야 깽판 가능
+    // 상대 전원이 9땡 이하여야 깽판 가능
     const others = sutdaHost.players.filter(p => p.id !== seryukPlayer.id);
-    sutdaHost.seryukCanChaos = others.some(p => p.rank.rank <= 89);
+    sutdaHost.seryukCanChaos = others.every(p => p.rank.rank <= 89);
   }
 
   // 딜러 다음 사람부터 시작
@@ -582,8 +580,8 @@ function processSutdaSeryuk(playerId, choice) {
   seryukP.seryukChoice = choice;
 
   if (choice === 'push') {
-    // 밀기: 숫자 10으로써 기능 → 10%10=0끗=망통
-    seryukP.rank = { rank: 50, name: '세륙밀기(망통)', tier: 'kkut', kkut: 0, mult: 24, special: null };
+    // 밀기: 숫자 10으로써 기능 (갑오보다 위, 10끗)
+    seryukP.rank = { rank: 70, name: '세륙밀기', tier: 'kkut', kkut: 10, mult: 24, special: null };
     gs.phase = 'betting';
     // 배팅 계속 (추가 라운드 없이 바로 showdown)
     resolveSutdaShowdown();
@@ -594,8 +592,8 @@ function processSutdaSeryuk(playerId, choice) {
     // 9땡 이상이면 깽판 불가 (38광땡, 18광땡, 13광땡, 장땡)
     const hasHighHand = alive.some(p => p.id !== playerId && p.rank.rank >= 90);
     if (hasHighHand) {
-      // 깽판 실패 - 밀기로 강제 전환 (망통)
-      seryukP.rank = { rank: 50, name: '세륙밀기(망통)', tier: 'kkut', kkut: 0, mult: 24, special: null };
+      // 깽판 실패 - 밀기로 강제 전환 (10끗)
+      seryukP.rank = { rank: 70, name: '세륙밀기', tier: 'kkut', kkut: 10, mult: 24, special: null };
       showToast('상대에게 장땡 이상이 있어 깽판 실패!');
     } else {
       // 패 재분배
@@ -612,7 +610,7 @@ function processSutdaSeryuk(playerId, choice) {
       const newSeryuk = alive.find(p => p.rank.special === '64');
       if (newSeryuk) {
         gs.seryukPlayerId = newSeryuk.id;
-        gs.seryukCanChaos = alive.some(p => p.id !== newSeryuk.id && p.rank.rank <= 89);
+        gs.seryukCanChaos = alive.filter(p => p.id !== newSeryuk.id).every(p => p.rank.rank <= 89);
         // 다시 세륙 선택
         gs.phase = 'seryuk_choice';
         broadcastSutdaState();

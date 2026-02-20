@@ -9,11 +9,9 @@ const SLK_IN_CD = 42;
 const SLK_NC = 14, SLK_POUR_START = 480, SLK_POUR_MIN = 340;
 const SLK_ARCH_H = 34, SLK_SPREAD = 0.72, SLK_COIL_THICK = 3.5;
 const SLK_CL_GRACE = 4;
-const SLK_CL_IDLE = 2.8;
-const SLK_CL_MOVE = 0.5;
-const SLK_CL_MAX = 3.8;
-const SLK_CL_ACC = 0.003;
-const SLK_CL_IDLE_AFTER = 0.6;
+const SLK_DEAD_BASE = 2000;   // 기본 Dead 시간 (ms) — 밟은 후 무너지기까지
+const SLK_DEAD_MIN = 700;     // 최소 Dead 시간 (ms)
+const SLK_DEAD_REDUCE = 6.5;  // 단계당 줄어드는 시간 (ms)
 const SLK_FV_NEED = 18, SLK_FV_DUR = 4500;
 const SLK_GHOST_MAX = 5;
 
@@ -95,7 +93,7 @@ function slkInit() {
     flipped: false,
     dead: false, deathReason: '', deathTime: 0,
     stars: 0, starSlots: slkGenStars(slkSD), mText: '', mTime: 0, shakeEnd: 0, cdStart: 0,
-    cl: -2, cs: SLK_CL_IDLE, clActive: false, cst: {}, lastMove: 0,
+    cl: -2, clActive: false, cst: {}, lastMove: 0, stairTimers: { 0: 0 }, deadProgress: 0,
     fg: 0, fv: false, fe: 0,
     sh: false, shSlots: slkGenShields(slkSD),
     ghosts: [], slines: [], landT: 0, landS: -1, vel: 0, pcy: 0, redF: 0,
@@ -157,6 +155,7 @@ function slkInp(dir) {
     slkBurstStep(nextStep, slkG.face);
     for (const m of SLK_ML) if (nextStep === m) { slkG.mText = `${m}칸!`; slkG.mTime = now; slkBurstMile(nextStep); slkG.shakeEnd = now + 200; }
     slkG.score = nextStep; slkG.landT = now; slkG.landS = nextStep;
+    slkG.stairTimers[nextStep] = now; // per-stair dead timer 기록
     const n = 2 + Math.min(~~(slkG.combo * .2), 6);
     for (let i = 0; i < n; i++) slkG.slines.push({ x: Math.random() * slkW, y: -10, l: 30 + Math.random() * 60, sp: 400 + Math.random() * 600, a: .8 });
     if (nextStep >= SLK_CL_GRACE && !slkG.clActive) slkG.clActive = true;
@@ -361,6 +360,19 @@ function slkDrawHUD(now) {
   if (slkG.best > 0 && slkG.score < slkG.best) { ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillText(`BEST ${slkG.best}`, W / 2, st + fs + 27); }
   if (slkG.combo > 1) { const sz = Math.min(14 + slkG.combo * .25, 26); const cc = slkG.fv ? `hsl(${(now * .3) % 360},90%,65%)` : slkG.combo >= 15 ? SLK_CC[~~(now * .01) % SLK_NC].m : slkG.combo >= 8 ? '#ffd93d' : 'rgba(255,255,255,.5)'; slkST(`${slkG.combo}x`, W / 2, st + fs + 42, `700 ${sz}px "Baloo 2",sans-serif`, cc); }
   if (!slkG.fv && slkG.fg > 0) { const fW = Math.min(80, W * .2), fH = 3, fX = W / 2 - fW / 2, fY = H - 22; ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(fX, fY, fW, fH); const gr = ctx.createLinearGradient(fX, 0, fX + fW, 0); gr.addColorStop(0, '#ff6b6b'); gr.addColorStop(1, '#ffd93d'); ctx.fillStyle = gr; ctx.fillRect(fX, fY, (slkG.fg / SLK_FV_NEED) * fW, fH); }
+  // Dead 타이머 바 표시
+  if (slkG.clActive && !slkG.dead && slkG.deadProgress > 0) {
+    const dW = Math.min(120, W * .3), dH = 6, dX = W / 2 - dW / 2, dY = st + fs + 54;
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(dX, dY, dW, dH);
+    const dp = slkG.deadProgress;
+    const deadColor = dp < .5 ? '#4caf50' : dp < .75 ? '#ff9800' : '#f44336';
+    ctx.fillStyle = deadColor; ctx.fillRect(dX, dY, dW * dp, dH);
+    if (dp > .6) { ctx.globalAlpha = .15 + dp * .25; ctx.strokeStyle = '#ff0000'; ctx.lineWidth = 2; ctx.strokeRect(dX - 1, dY - 1, dW + 2, dH + 2); ctx.globalAlpha = 1; }
+    const deadMs = Math.max(SLK_DEAD_MIN, SLK_DEAD_BASE - slkG.score * SLK_DEAD_REDUCE);
+    const remaining = Math.max(0, deadMs - (performance.now() - slkG.lastMove));
+    ctx.font = '600 9px "Baloo 2",sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = dp > .75 ? '#ff4444' : 'rgba(255,255,255,.4)';
+    ctx.fillText((remaining / 1000).toFixed(1) + 's', W / 2, dY + dH + 10);
+  }
   if (slkG.stars > 0) { ctx.font = '700 14px "Baloo 2",sans-serif'; ctx.textAlign = 'right'; ctx.fillStyle = '#ffd93d'; ctx.fillText(`★${slkG.stars}`, W - 10, st + 22); }
   if (slkG.sh) { ctx.font = '16px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('\u{1F6E1}\uFE0F', 8, st + 22); }
   if (slkG.mText && now - slkG.mTime < 1800) { const m = (now - slkG.mTime) / 1800; ctx.globalAlpha = 1 - m; slkST(slkG.mText, W / 2, H * .25 - m * 25, `800 ${28 + (1 - m) * 8}px "Baloo 2",sans-serif`, SLK_CC[~~(now * .008) % SLK_NC].m); ctx.globalAlpha = 1; }
@@ -384,7 +396,7 @@ function slkDrawCD(now) {
   const ctx = slkCtx, W = slkW, H = slkH;
   const el = (now - slkG.cdStart) / 1000; let txt;
   if (el < .7) txt = '3'; else if (el < 1.4) txt = '2'; else if (el < 2.1) txt = '1';
-  else { txt = 'GO!'; if (el > 2.5) { slkGs = 'playing'; slkG.lastMove = performance.now(); return; } }
+  else { txt = 'GO!'; if (el > 2.5) { slkGs = 'playing'; var _now = performance.now(); slkG.lastMove = _now; slkG.stairTimers[0] = _now; return; } }
   const ph = (el % .7) / .7;
   ctx.globalAlpha = txt === 'GO!' ? Math.max(0, 1 - (el - 2.1) * 2.5) : 1;
   ctx.fillStyle = txt === 'GO!' ? '#55efc4' : '#fff';
@@ -406,16 +418,38 @@ function slkLoop(ts) {
   if (slkGs === 'playing') {
     if (slkG.fv && ts > slkG.fe) { slkG.fv = false; slkG.fg = 0; }
     if (slkG.clActive && !slkG.dead) {
-      const idle = (ts - slkG.lastMove) / 1000;
-      const baseSpd = idle > SLK_CL_IDLE_AFTER ? SLK_CL_IDLE : SLK_CL_MOVE;
-      slkG.cs = Math.min(SLK_CL_MAX, baseSpd + slkG.score * SLK_CL_ACC);
-      slkG.cl += slkG.cs * dt;
-      const ci = Math.floor(slkG.cl);
-      for (let j = Math.max(0, ci - 2); j <= ci; j++) {
-        if (j >= 0 && !slkG.cst[j]) { slkG.cst[j] = { start: ts }; slkBurstCollapse(j); }
-      }
       const currentStair = slkG.pouring ? slkG.pourFrom : slkG.step;
-      if (currentStair <= slkG.cl) slkDie('collapse');
+      const idleTime = ts - slkG.lastMove;
+      const deadDuration = Math.max(SLK_DEAD_MIN, SLK_DEAD_BASE - slkG.score * SLK_DEAD_REDUCE);
+      slkG.deadProgress = Math.min(1, idleTime / deadDuration);
+
+      // 현재 계단 Dead 타이머 — 이동하지 않으면 무너짐
+      if (idleTime >= deadDuration) {
+        if (!slkG.cst[currentStair]) {
+          slkG.cst[currentStair] = { start: ts };
+          slkBurstCollapse(currentStair);
+        }
+        slkDie('collapse');
+      }
+
+      // 지나간 계단들 per-stair 타이머로 무너뜨리기
+      for (let i = 0; i < currentStair; i++) {
+        if (slkG.stairTimers[i] && !slkG.cst[i]) {
+          const stairDeadTime = Math.max(SLK_DEAD_MIN, SLK_DEAD_BASE - i * SLK_DEAD_REDUCE);
+          if (ts - slkG.stairTimers[i] > stairDeadTime) {
+            slkG.cst[i] = { start: ts };
+            slkBurstCollapse(i);
+          }
+        }
+      }
+
+      // 불기둥 시각효과용 collapse line 업데이트
+      let maxCollapsed = -2;
+      for (let key in slkG.cst) {
+        const k = parseInt(key);
+        if (k > maxCollapsed) maxCollapsed = k;
+      }
+      slkG.cl = maxCollapsed;
     }
   }
 

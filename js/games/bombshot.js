@@ -229,6 +229,8 @@ function startBombShot() {
     liarCallerName: null,
     revealResult: null,
     savedTurnIdx: -1,  // saved turn position before liar call
+    bombshotMixes: 0,  // 폭탄주 누적 카운트
+    rouletteReason: null, // 'liar-caught' | 'liar-wrong' | 'last-card'
     // Roulette state
     rouletteTarget: null,
     rouletteSlots: null,
@@ -280,7 +282,8 @@ function buildBSView(forPlayerId) {
     rouletteSlots: bs.rouletteSlots,
     rouletteSlotIndex: bs.rouletteSlotIndex,
     rouletteResult: bs.rouletteResult,
-    rouletteResultLabel: bs.rouletteResultLabel
+    rouletteResultLabel: bs.rouletteResultLabel,
+    bombshotMixes: bs.bombshotMixes || 0
   };
 }
 
@@ -402,7 +405,7 @@ function processBSLiar(callerId) {
   broadcastBSState();
 
   // === ROULETTE TIMING CHAIN ===
-  // Phase 1: liar-reveal (4s) — show cards, then enter roulette-setup and WAIT for player spin
+  // Phase 1: liar-reveal (4s) — show cards, then enter roulette-setup
   var t1 = setTimeout(function() {
     if (!bsState) return;
 
@@ -412,22 +415,8 @@ function processBSLiar(callerId) {
       return;
     }
 
-    var slots = generateRouletteSlots(bsState.penalties);
-    var slotIndex = Math.floor(Math.random() * 6);
-    var landedSlot = slots[slotIndex]; // { type, label }
-
-    bsState.rouletteTarget = { id: target.id, name: target.name };
-    bsState.rouletteSlots = slots;
-    bsState.rouletteSlotIndex = slotIndex;
-    bsState.rouletteResult = landedSlot.type;      // 'bombshot' | 'penalty' | 'safe'
-    bsState.rouletteResultLabel = landedSlot.label; // display text
-    bsState.phase = 'roulette-setup';
-
-    // Broadcast roulette-setup anim (send full slot data for 3D rendering)
-    broadcast({ type: 'bs-anim', anim: 'roulette-setup', slots: slots, targetName: target.name });
-    handleBSAnim({ anim: 'roulette-setup', slots: slots, targetName: target.name });
-    broadcastBSState();
-    // Now WAIT — player must press spin button (or AI auto-spins)
+    var reason = isLiar ? 'liar-caught' : 'liar-wrong';
+    bsTriggerRouletteForPlayer(target.id, target.name, reason);
   }, 4000);
   _bsTimers.push(t1);
 }
@@ -475,10 +464,12 @@ function processBSSpin(peerId) {
         if (landedSlot.type === 'bombshot') {
           // BOMB SHOT → game over immediately!
           bsState.phase = 'gameover';
+          var totalMixes = (bsState.bombshotMixes || 0) + 1;
           var result = {
             type: 'bs-result',
             bombshotPlayer: { id: target.id, name: target.name },
             reason: 'bombshot',
+            bombshotMixes: totalMixes,
             rankings: bsState.players.map(function(p) {
               return {
                 id: p.id, name: p.name, avatar: p.avatar,
@@ -517,6 +508,8 @@ function bsSpin() {
 function bsResumeAfterRoulette() {
   if (!bsState) return;
   var bs = bsState;
+  var wasLastCard = bs.rouletteReason === 'last-card';
+
   bs.phase = 'playing';
   bs.revealedCards = null;
   bs.revealResult = null;
@@ -528,19 +521,59 @@ function bsResumeAfterRoulette() {
   bs.rouletteSlotIndex = -1;
   bs.rouletteResult = null;
   bs.rouletteResultLabel = null;
+  bs.rouletteReason = null;
 
-  // Restore turn to saved position (original order, not affected by liar call)
+  // 폭탄주 누적 카운트 증가 (세이프/벌칙일 경우 누적)
+  if (!bs.bombshotMixes) bs.bombshotMixes = 0;
+  bs.bombshotMixes++;
+
+  // Restore turn to saved position
   if (bs.savedTurnIdx >= 0) {
     bs.turnIdx = bs.savedTurnIdx;
     bs.savedTurnIdx = -1;
   }
 
-  // Check redeal
-  bsCheckRedeal();
-
-  // Advance to next player from the saved position
-  bsAdvanceTurn();
+  if (wasLastCard) {
+    // 마지막 카드였으면 게임 재시작 (카드 재분배, 폭탄주 누적 유지)
+    bsRestartRound();
+  } else {
+    // Check redeal
+    bsCheckRedeal();
+    // Advance to next player
+    bsAdvanceTurn();
+  }
   broadcastBSState();
+}
+
+// ===== HOST: RESTART ROUND (카드 재분배, 폭탄주 누적 유지) =====
+function bsRestartRound() {
+  if (!bsState) return;
+  var bs = bsState;
+
+  // 새 덱으로 카드 재분배
+  var deck = bsCreateDeck();
+  var cardsPerPlayer = Math.floor(24 / bs.players.length);
+  bs.players.forEach(function(p) {
+    p.cards = deck.splice(0, cardsPerPlayer);
+  });
+
+  // 지정 음료 변경
+  var oldDrink = bs.designatedDrink;
+  var newDrink;
+  do {
+    newDrink = BS_DRINKS[Math.floor(Math.random() * 3)];
+  } while (newDrink === oldDrink && BS_DRINKS.length > 1);
+  bs.designatedDrink = newDrink;
+
+  // 3D 음료 업데이트
+  if (typeof bsSetDrinkType === 'function') bsSetDrinkType(newDrink);
+
+  // glassPile은 유지 (누적), 턴 초기화
+  bs.lastSubmission = null;
+  bs.turnIdx = 0;
+  bs._submittedThisTurn = false;
+
+  showToast('🔄 새 라운드! 폭탄주 ' + (bs.bombshotMixes || 0) + '잔 누적 중...');
 }
 
 // ===== HOST: ADVANCE TURN =====
@@ -548,27 +581,17 @@ function bsAdvanceTurn() {
   if (!bsState) return;
   var bs = bsState;
   bs._submittedThisTurn = false; // reset submission guard for new turn
+  bs.lastSubmission = null; // 제출 정보 클리어 → 다음 턴 제출 버그 방지
   var pCount = bs.players.length;
 
-  // Check if only 1 player has cards remaining → that player loses
+  // 카드 제일 늦게 낸 플레이어 → 룰렛 (마지막 1명 카드 보유 시)
   var playersWithCards = bs.players.filter(function(p) { return p.cards.length > 0; });
   if (playersWithCards.length === 1 && pCount > 1) {
-    var loser = playersWithCards[0];
-    bs.phase = 'gameover';
-    var result = {
-      type: 'bs-result',
-      bombshotPlayer: { id: loser.id, name: loser.name },
-      reason: 'last-card',
-      rankings: bs.players.map(function(p) {
-        return {
-          id: p.id, name: p.name, avatar: p.avatar,
-          isBombshot: p.id === loser.id,
-          isWinner: p.id !== loser.id
-        };
-      })
-    };
-    broadcast(result);
-    handleBSResult(result);
+    var lastPlayer = playersWithCards[0];
+    // 마지막 카드 보유자 → 룰렛 돌리기
+    bs.penaltyPlayer = { id: lastPlayer.id, name: lastPlayer.name };
+    bs.savedTurnIdx = bs.turnIdx;
+    bsTriggerRouletteForPlayer(lastPlayer.id, lastPlayer.name, 'last-card');
     return;
   }
 
@@ -580,6 +603,28 @@ function bsAdvanceTurn() {
   }
   // If everyone is out of cards, redeal
   bsCheckRedeal();
+}
+
+// ===== HOST: TRIGGER ROULETTE FOR PLAYER =====
+function bsTriggerRouletteForPlayer(targetId, targetName, reason) {
+  if (!bsState) return;
+  var bs = bsState;
+
+  var slots = generateRouletteSlots(bs.penalties);
+  var slotIndex = Math.floor(Math.random() * 6);
+  var landedSlot = slots[slotIndex];
+
+  bs.rouletteTarget = { id: targetId, name: targetName };
+  bs.rouletteSlots = slots;
+  bs.rouletteSlotIndex = slotIndex;
+  bs.rouletteResult = landedSlot.type;
+  bs.rouletteResultLabel = landedSlot.label;
+  bs.rouletteReason = reason; // 'liar-caught', 'liar-wrong', 'last-card'
+  bs.phase = 'roulette-setup';
+
+  broadcast({ type: 'bs-anim', anim: 'roulette-setup', slots: slots, targetName: targetName });
+  handleBSAnim({ anim: 'roulette-setup', slots: slots, targetName: targetName });
+  broadcastBSState();
 }
 
 // ===== HOST: CHECK REDEAL =====
@@ -816,7 +861,8 @@ function renderBSView(view) {
   // -- Roulette info (static composition) --
   var myRouletteEl = document.getElementById('bsMyRoulette');
   if (myRouletteEl) {
-    myRouletteEl.innerHTML = '<div style="font-size:11px;color:var(--text-dim);opacity:0.7;">🎰 룰렛: 폭탄주 2 / 벌칙 2 / 세이프 2</div>';
+    var mixesText = view.bombshotMixes > 0 ? ' · 🍺 누적 ' + view.bombshotMixes + '잔' : '';
+    myRouletteEl.innerHTML = '<div style="font-size:11px;color:var(--text-dim);opacity:0.7;">🎰 룰렛: 폭탄주 2 / 벌칙 2 / 세이프 2' + mixesText + '</div>';
   }
 
   // -- Action buttons --
@@ -1009,10 +1055,9 @@ function handleBSResult(msg) {
 
   var titleEl = document.getElementById('bsGameOverTitle');
   if (titleEl) {
-    if (msg.reason === 'last-card' && msg.bombshotPlayer) {
-      titleEl.textContent = '🃏 ' + msg.bombshotPlayer.name + ' 마지막 카드 보유! 패배!';
-    } else if (msg.reason === 'bombshot' && msg.bombshotPlayer) {
-      titleEl.textContent = '🍺💥 ' + msg.bombshotPlayer.name + ' 폭탄주 당첨!';
+    if (msg.reason === 'bombshot' && msg.bombshotPlayer) {
+      var mixes = msg.bombshotMixes || 1;
+      titleEl.textContent = '🍺💥 ' + msg.bombshotPlayer.name + ' 폭탄주 당첨!' + (mixes > 1 ? ' (' + mixes + '잔 누적!)' : '');
     } else {
       titleEl.textContent = '🍺💣 폭탄주 게임 종료!';
     }
