@@ -270,14 +270,42 @@ async function pplStartApp() {
   pplShowInternal('ppl-adapt');
   pplPhase = 'adapt';
 
-  // Pre-grant mic permission for SpeechRecognition + warm up TTS (requires user gesture)
-  try { const a = await navigator.mediaDevices.getUserMedia({ audio: true }); a.getTracks().forEach(t => t.stop()); } catch {}
+  const stEl = ppl$('pplSt1');
+
+  // Pre-grant mic permission (timeout 3s — some browsers hang on permission prompt)
+  if (stEl) stEl.textContent = '마이크 권한 요청 중...';
+  try {
+    const micP = navigator.mediaDevices.getUserMedia({ audio: true });
+    const a = await Promise.race([micP, pplSlp(3000).then(() => null)]);
+    if (a) a.getTracks().forEach(t => t.stop());
+  } catch {}
+  // Warm up TTS (requires user gesture)
   if (window.speechSynthesis) { const w = new SpeechSynthesisUtterance(' '); w.volume = 0; speechSynthesis.speak(w); }
 
-  await _pplLoadFaceMesh();
-  const ok = await pplStartCam();
-  if (!ok) { pplCleanup(); leaveGame(); return; }
+  // Load FaceMesh with timeout (15s — CDN can be slow)
+  if (stEl) stEl.textContent = 'FaceMesh 로딩 중...';
+  try {
+    await Promise.race([
+      _pplLoadFaceMesh(),
+      pplSlp(15000).then(() => { throw new Error('FaceMesh load timeout'); })
+    ]);
+  } catch (e) {
+    console.error('[PPL] FaceMesh load failed:', e);
+    showToast('얼굴 인식 모듈을 불러올 수 없습니다. 네트워크를 확인해주세요.');
+    pplCleanup(); leaveGame(); return;
+  }
 
+  // Start camera with timeout (10s)
+  if (stEl) stEl.textContent = '카메라 시작 중...';
+  let camOk = false;
+  try {
+    const camP = pplStartCam();
+    const result = await Promise.race([camP, pplSlp(10000).then(() => false)]);
+    camOk = !!result;
+  } catch { camOk = false; }
+  if (!camOk) { showToast('카메라를 시작할 수 없습니다.'); pplCleanup(); leaveGame(); return; }
+
+  if (stEl) stEl.textContent = '조명 적응 대기 중...';
   pplStartMonitor();
 
   let sec = PPL_ADAPT_SEC;
@@ -393,7 +421,8 @@ function pplStartVoiceSession() {
   pplDbg('음성 세션 시작...', 'sys');
   pplDebugShow(true);
   pplDebugStatus('STARTING');
-  pplStartMicLevel();
+  // ★ pplStartMicLevel() 제거 — 별도 getUserMedia가 SpeechRecognition 오디오 캡처와 충돌
+  // 마이크 레벨 표시는 SpeechRecognition의 soundstart/speechstart 이벤트로 대체
   const rec = new SR();
   rec.lang = 'ko-KR';
   rec.continuous = true;
@@ -404,6 +433,32 @@ function pplStartVoiceSession() {
     _pplRecRunning = true;
     pplDbg('rec.onstart — 인식기 시작됨', 'sys');
     pplDebugStatus('LISTENING');
+  };
+
+  // ── 오디오 파이프라인 진단 + 마이크 레벨 표시 (getUserMedia 대체) ──
+  rec.onaudiostart = () => {
+    pplDbg('rec.onaudiostart — 오디오 캡처 활성', 'sys');
+    document.querySelectorAll('.ppl-vfill').forEach(el => el.style.width = '10%');
+  };
+  rec.onaudioend = () => {
+    pplDbg('rec.onaudioend — 오디오 캡처 종료', 'sys');
+    document.querySelectorAll('.ppl-vfill').forEach(el => el.style.width = '0');
+  };
+  rec.onsoundstart = () => {
+    pplDbg('rec.onsoundstart — 소리 감지', 'sys');
+    document.querySelectorAll('.ppl-vfill').forEach(el => el.style.width = '60%');
+  };
+  rec.onsoundend = () => {
+    pplDbg('rec.onsoundend — 소리 종료', 'sys');
+    document.querySelectorAll('.ppl-vfill').forEach(el => el.style.width = '5%');
+  };
+  rec.onspeechstart = () => {
+    pplDbg('rec.onspeechstart — 음성 감지!', 'sys');
+    document.querySelectorAll('.ppl-vfill').forEach(el => el.style.width = '90%');
+  };
+  rec.onspeechend = () => {
+    pplDbg('rec.onspeechend — 음성 종료', 'sys');
+    document.querySelectorAll('.ppl-vfill').forEach(el => el.style.width = '15%');
   };
 
   rec.onresult = (e) => {
@@ -571,8 +626,15 @@ function pplListenAnswer(onYes, onNo) {
   pplVoiceHandler = { yes: onYes, no: onNo };
   pplShowVoiceInd(true);
   pplShowRecText('"네" 또는 "아니오"로 대답하세요', '');
-  // Ensure recognition is actively running after TTS (may have stopped during playback)
-  pplEnsureRecActive();
+  // ★ TTS 후 인식기 강제 재시작 — TTS 재생 중 Chrome 에코 캔슬레이션이 활성화되어
+  // 오디오 파이프라인이 모든 마이크 입력을 억제하는 문제 방지
+  if (pplSpeechRec && _pplRecRunning) {
+    pplDbg('TTS 후 인식기 강제 재시작 (에코 캔슬레이션 초기화)', 'sys');
+    try { pplSpeechRec.abort(); } catch {}
+    // onend 핸들러가 pplVoiceActive=true를 확인하고 _pplRecRestart로 자동 재시작
+  } else {
+    pplEnsureRecActive();
+  }
 }
 
 function pplPauseListening() {
