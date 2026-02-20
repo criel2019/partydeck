@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="css/games/jewel.css">
 <link rel="stylesheet" href="css/games/colorchain.css">
 <link rel="stylesheet" href="css/games/slinkystairs.css">
+<link rel="stylesheet" href="css/games/pupil.css">
 <link rel="stylesheet" href="css/games/mobile.css">
 </head>
 <body>
@@ -97,6 +98,7 @@
       <button class="debug-game-btn" onclick="debugGame('jewel')">💎 보석맞추기</button>
       <button class="debug-game-btn" onclick="debugGame('colorchain')">🔗 컬러체인</button>
       <button class="debug-game-btn" onclick="debugGame('slinkystairs')">🌀 슬링키</button>
+      <button class="debug-game-btn" onclick="debugGame('pupil')">👁 동공탐지</button>
     </div>
   </div>
 
@@ -225,6 +227,9 @@
       </div>
       <div class="game-option" data-game="slinkystairs" onclick="selectGame(this)">
         <span class="game-emoji">🌀</span>슬링키
+      </div>
+      <div class="game-option" data-game="pupil" onclick="selectGame(this)">
+        <span class="game-emoji">👁</span>동공탐지
       </div>
     </div>
     <div class="game-info-panel" id="gameInfoPanel" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
@@ -1123,9 +1128,9 @@
       <div class="fort-val"><span class="fort-val-lbl">파워</span><span id="fortPowerValue" class="fort-val-num">50</span></div>
       <button class="fort-ctrl-btn" ontouchstart="fortPowerStart(1)" ontouchend="fortPowerStop()" onmousedown="fortPowerStart(1)" onmouseup="fortPowerStop()" onmouseleave="fortPowerStop()">›</button>
     </div>
-    <div id="fortChargeGauge" style="display:none;position:relative;width:100%;height:14px;background:#222;border-radius:7px;overflow:hidden;margin-bottom:4px;">
-      <div class="fort-charge-fill" style="height:100%;width:0%;border-radius:7px;transition:width 0.04s linear;"></div>
-      <span class="fort-charge-label" style="position:absolute;width:100%;text-align:center;font-size:10px;font-weight:700;color:#fff;line-height:14px;top:0;left:0;"></span>
+    <div id="fortChargeGauge" style="display:none;position:relative;width:100%;height:24px;background:rgba(0,0,0,0.6);border-radius:12px;overflow:hidden;margin-bottom:6px;border:2px solid rgba(255,255,255,0.2);">
+      <div class="fort-charge-fill" style="height:100%;width:0%;border-radius:10px;transition:width 0.04s linear;"></div>
+      <span class="fort-charge-label" style="position:absolute;width:100%;text-align:center;font-size:13px;font-weight:800;color:#fff;line-height:24px;top:0;left:0;text-shadow:0 1px 3px rgba(0,0,0,0.8);"></span>
     </div>
     <button class="fort-fire-btn" id="fortFireBtn"
       ontouchstart="fortFireChargeStart(event)" ontouchend="fortFireChargeEnd(event)" ontouchcancel="fortFireChargeEnd(event)"
@@ -1678,6 +1683,154 @@
   <button class="slk-exit-btn" onclick="leaveGame()">&#10005;</button>
 </div>
 
+<!-- PUPIL -->
+<div class="screen" id="pupilGame">
+  <button class="ppl-exit-btn" onclick="pplLeavePupil()">&#10005;</button>
+  <div class="ppl-ct">
+
+    <!-- INTRO -->
+    <div class="ppl-screen active" id="ppl-intro">
+      <div class="ppl-hd"><h1>PUPIL</h1><div class="ppl-sub">Cognitive Load Pupillometry System</div></div>
+      <div class="ppl-vc"><div class="ppl-ph"><div class="ppl-ei"></div><p>카메라 권한이 필요합니다</p></div></div>
+      <div style="flex:1"></div>
+      <p style="font-size:.82rem;color:#6a6a80;line-height:1.8;margin-bottom:16px;text-align:center">
+        인지 부하에 의한 동공 반응을 분석하여<br>진술의 신뢰도를 측정합니다.
+      </p>
+      <div class="ppl-method-badge" style="text-align:center;display:block">CIT PROTOCOL · PIR METRIC · MULTI-CHANNEL FUSION</div>
+      <button class="ppl-btn ppl-bp" onclick="pplStartApp()" style="margin-top:12px">시작하기</button>
+      <div class="ppl-disc">본 앱은 엔터테인먼트 목적이며 실제 거짓말 탐지기가 아닙니다.<br>Dionisio(2001), Cook(2012), Seymour(2013) 연구 기반 설계</div>
+    </div>
+
+    <!-- ADAPT -->
+    <div class="ppl-screen" id="ppl-adapt">
+      <div class="ppl-hd" style="padding:20px 0 10px"><h1 style="font-size:1.3rem;letter-spacing:6px">PUPIL</h1></div>
+      <div class="ppl-vc">
+        <video id="pplVid" autoplay playsinline></video>
+        <canvas id="pplOvl" class="ppl-overlay"></canvas>
+        <div class="ppl-ew" id="pplEw1"><div class="ppl-wi">⚠️</div><div class="ppl-wt">얼굴이 감지되지 않습니다<br>카메라를 정면으로 바라봐주세요</div></div>
+      </div>
+      <div class="ppl-sb" id="pplSb1"><div class="ppl-sd" id="pplSd1"></div><span class="ppl-st" id="pplSt1">초기화 중...</span></div>
+      <div class="ppl-eq"><span class="ppl-eq-l">눈 감지 품질</span><div class="ppl-eq-b"><div class="ppl-eq-f" id="pplEf1"></div></div><span class="ppl-eq-v" id="pplEv1">—</span></div>
+      <div class="ppl-adapt">
+        <div class="ppl-adapt-ring" id="pplAdaptTimer">15</div>
+        <p><strong>조명 적응 중</strong><br>동공이 현재 조명에 적응하는 시간입니다.<br>카메라를 정면으로 바라보며 기다려주세요.</p>
+      </div>
+      <div class="ppl-disc">동공의 광반사(PLR)를 안정화하여 인지 부하 신호를 분리합니다.</div>
+    </div>
+
+    <!-- CALIBRATION -->
+    <div class="ppl-screen" id="ppl-calib">
+      <div class="ppl-hd" style="padding:16px 0 10px"><h1 style="font-size:1.3rem;letter-spacing:6px">PUPIL</h1></div>
+      <div class="ppl-pi" id="pplCPh"></div>
+      <div class="ppl-vc">
+        <video id="pplVid2" autoplay playsinline></video>
+        <canvas id="pplOvl2" class="ppl-overlay"></canvas>
+        <div class="ppl-flash" id="pplFl1"></div><div class="ppl-cdo" id="pplCd1"></div>
+        <div class="ppl-ew" id="pplEw2"><div class="ppl-wi">⚠️</div><div class="ppl-wt">얼굴이 감지되지 않습니다</div></div>
+      </div>
+      <div class="ppl-sb" id="pplSb2"><div class="ppl-sd" id="pplSd2"></div><span class="ppl-st" id="pplSt2">캘리브레이션</span></div>
+      <div class="ppl-eq"><span class="ppl-eq-l">눈 감지 품질</span><div class="ppl-eq-b"><div class="ppl-eq-f" id="pplEf2"></div></div><span class="ppl-eq-v" id="pplEv2">—</span></div>
+      <div class="ppl-str" id="pplStr1"></div>
+      <div class="ppl-rb" id="pplRb1"><span>🔄</span><span class="ppl-rt" id="pplRbt1"></span></div>
+      <div class="ppl-qc"><div class="ppl-ql" id="pplQlbl">캘리브레이션</div><div class="ppl-qt" id="pplQtxt">준비되면 시작을 눌러주세요</div><div class="ppl-qi" id="pplQins"></div></div>
+      <div class="ppl-byn" id="pplYn1" style="display:none">
+        <button class="ppl-btn ppl-bp" id="pplBY" onclick="pplAnsCalib('yes')" disabled>예</button>
+        <button class="ppl-btn ppl-bg" id="pplBN" onclick="pplAnsCalib('no')" disabled>아니오</button>
+      </div>
+      <button class="ppl-btn ppl-bp" id="pplCBtn" onclick="pplBeginCalib()" disabled>캘리브레이션 시작</button>
+    </div>
+
+    <!-- CUSTOM Q -->
+    <div class="ppl-screen" id="ppl-cq">
+      <div class="ppl-hd" style="padding:16px 0 10px"><h1 style="font-size:1.3rem;letter-spacing:6px">PUPIL</h1></div>
+      <div class="ppl-qc">
+        <div class="ppl-ql t">테스트 질문 설정</div>
+        <p style="font-size:.85rem;line-height:1.7;margin:12px 0 16px">
+          핵심 질문 1개와 무관한 질문 4개를 입력하세요.<br>
+          <strong>CIT(은폐 정보 검사)</strong> 방식으로 핵심 질문에 대한<br>동공 반응만 별도 분석합니다.
+        </p>
+        <div class="ppl-cqa" style="margin-bottom:12px">
+          <label style="font-size:.7rem;color:#ff3366;font-family:'JetBrains Mono',monospace;letter-spacing:1px">★ 핵심 질문 (거짓말 여부를 확인할 질문)</label>
+          <textarea id="pplQMain" rows="2" placeholder="예: 어제 밤 10시에 집에 있었나요?" style="margin-top:6px"></textarea>
+        </div>
+        <div class="ppl-cqa">
+          <label style="font-size:.7rem;color:#6a6a80;font-family:'JetBrains Mono',monospace;letter-spacing:1px">무관한 질문 4개 (줄바꿈으로 구분)</label>
+          <textarea id="pplQIrr" rows="5" placeholder="예:&#10;오늘 아침을 먹었나요?&#10;어제 TV를 봤나요?&#10;지금 신발을 신고 있나요?&#10;이번 주에 커피를 마셨나요?" style="margin-top:6px"></textarea>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+      <div class="ppl-method-badge" style="text-align:center;display:block;margin-bottom:12px">CIT: 4 IRRELEVANT + 1 CRITICAL · 800-1500ms WINDOW</div>
+      <button class="ppl-btn ppl-bd" onclick="pplBeginTest()">테스트 시작</button>
+    </div>
+
+    <!-- TEST -->
+    <div class="ppl-screen" id="ppl-test">
+      <div class="ppl-hd" style="padding:16px 0 10px"><h1 style="font-size:1.3rem;letter-spacing:6px;color:#ff3366">PUPIL</h1></div>
+      <div class="ppl-pi" id="pplTPh"></div>
+      <div class="ppl-vc">
+        <video id="pplVid3" autoplay playsinline></video>
+        <canvas id="pplOvl3" class="ppl-overlay"></canvas>
+        <div class="ppl-flash" id="pplFl2"></div><div class="ppl-cdo" id="pplCd2"></div>
+        <div class="ppl-ew" id="pplEw3"><div class="ppl-wi">⚠️</div><div class="ppl-wt">얼굴이 감지되지 않습니다</div></div>
+      </div>
+      <div class="ppl-sb" id="pplSb3"><div class="ppl-sd" id="pplSd3"></div><span class="ppl-st" id="pplSt3">테스트</span></div>
+      <div class="ppl-eq"><span class="ppl-eq-l">눈 감지 품질</span><div class="ppl-eq-b"><div class="ppl-eq-f" id="pplEf3"></div></div><span class="ppl-eq-v" id="pplEv3">—</span></div>
+      <div class="ppl-str" id="pplStr2"></div>
+      <div class="ppl-rb" id="pplRb2"><span>🔄</span><span class="ppl-rt" id="pplRbt2"></span></div>
+      <div class="ppl-qc"><div class="ppl-ql t" id="pplTqlbl">테스트 1/5</div><div class="ppl-qt" id="pplTqtxt"></div><div class="ppl-qi" id="pplTqins">솔직하게 답해주세요</div></div>
+      <div class="ppl-byn" id="pplYn2" style="display:none">
+        <button class="ppl-btn ppl-bd" id="pplTbY" onclick="pplAnsTest('yes')" disabled>예</button>
+        <button class="ppl-btn ppl-bg" id="pplTbN" onclick="pplAnsTest('no')" disabled>아니오</button>
+      </div>
+    </div>
+
+    <!-- ANALYZE -->
+    <div class="ppl-screen" id="ppl-az">
+      <div class="ppl-hd"><h1 style="font-size:1.3rem;letter-spacing:6px">PUPIL</h1></div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center">
+        <div class="ppl-az ppl-fi"><div class="ppl-sp"></div><h3>ANALYZING</h3><div class="ppl-dt" id="pplAzD">동공 데이터 수집 완료...</div></div>
+      </div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="ppl-screen" id="ppl-res">
+      <div class="ppl-hd" style="padding:16px 0 10px"><h1 style="font-size:1.3rem;letter-spacing:6px">PUPIL</h1></div>
+      <div class="ppl-rc ppl-fi">
+        <div class="ppl-dqb h" id="pplDqb">DATA QUALITY: HIGH</div>
+        <div class="ppl-rm">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="68" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="7"/>
+            <circle id="pplRArc" cx="80" cy="80" r="68" fill="none" stroke="#ff3366" stroke-width="7" stroke-dasharray="0 428" stroke-linecap="round" style="transition:stroke-dasharray 2s ease"/>
+          </svg>
+          <div class="ppl-vl" id="pplRPct">0%</div>
+        </div>
+        <div class="ppl-rl" id="pplRLbl">분석 완료</div>
+      </div>
+      <div class="ppl-cmp ppl-fi">
+        <div class="ppl-cc"><h4 class="ppl-bl">기준선 PIR</h4><div class="ppl-cv ppl-bl" id="pplBpD">0.00</div></div>
+        <div class="ppl-cc"><h4 class="ppl-tl">핵심질문 PIR</h4><div class="ppl-cv ppl-tl" id="pplTpD">0.00</div></div>
+      </div>
+      <div class="ppl-rc ppl-fi">
+        <div class="ppl-rd">
+          <div class="ppl-dr"><span class="ppl-mn">동공/홍채 비율 변화</span><span><span class="ppl-mv" id="pplMD">+0.0%</span><span class="ppl-db"><span class="ppl-fill" id="pplBD" style="width:0;background:#ff3366"></span></span></span></div>
+          <div class="ppl-dr"><span class="ppl-mn">동공 확장 속도</span><span><span class="ppl-mv" id="pplMS">0.00</span><span class="ppl-db"><span class="ppl-fill" id="pplBS" style="width:0;background:#00f0ff"></span></span></span></div>
+          <div class="ppl-dr"><span class="ppl-mn">깜빡임 빈도 변화</span><span><span class="ppl-mv" id="pplMB">0.00</span><span class="ppl-db"><span class="ppl-fill" id="pplBB" style="width:0;background:#00ff88"></span></span></span></div>
+          <div class="ppl-dr"><span class="ppl-mn">응답 시간 (ms)</span><span><span class="ppl-mv" id="pplMR">0</span><span class="ppl-db"><span class="ppl-fill" id="pplBR" style="width:0;background:#ffaa00"></span></span></span></div>
+          <div class="ppl-dr"><span class="ppl-mn">시선 안정성</span><span><span class="ppl-mv" id="pplMG">0.00</span><span class="ppl-db"><span class="ppl-fill" id="pplBG2" style="width:0;background:#9966ff"></span></span></span></div>
+          <div class="ppl-dr"><span class="ppl-mn">좌우 비대칭</span><span><span class="ppl-mv" id="pplMA">0.00</span><span class="ppl-db"><span class="ppl-fill" id="pplBA" style="width:0;background:#ff9944"></span></span></span></div>
+        </div>
+      </div>
+      <div class="ppl-method-badge" style="text-align:center;display:block;margin-bottom:12px" id="pplMethodNote">
+        CIT PROTOCOL · Z-SCORE NORM · LOGISTIC REGRESSION
+      </div>
+      <button class="ppl-btn ppl-bd" onclick="pplResetAll()">다시 테스트하기</button>
+      <button class="ppl-btn ppl-bg" onclick="pplLeavePupil()" style="margin-top:4px">나가기</button>
+      <div class="ppl-disc">이 결과는 참고용이며 과학적 거짓말 탐지 결과가 아닙니다.<br>동공 변화는 조명, 감정, 약물, 피로 등 다양한 요인에 영향받습니다.</div>
+    </div>
+
+  </div>
+</div>
+
 <!-- RESULT -->
 <div class="result-overlay" id="resultOverlay">
   <div class="result-title" id="resultTitle">🏆 승리!</div>
@@ -1721,6 +1874,7 @@
 <script src="js/games/jewel.js?v=1"></script>
 <script src="js/games/colorchain.js?v=1"></script>
 <script src="js/games/slinkystairs.js?v=1"></script>
+<script src="js/games/pupil.js?v=1"></script>
 <script src="js/ai.js?v=3"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>

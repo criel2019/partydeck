@@ -60,6 +60,8 @@ function loadPeerJS() {
 }
 
 // ===== CONSTANTS & STATE =====
+const SOLO_GAMES = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil'];
+const SOLO_ONLY_GAMES = ['pupil']; // 1인 전용 (다인 시 비활성화)
 const AVATARS = ['😎','🤠','👻','🦊','🐱','🐼','🦁','🐸','🎃','🤖','👽','🦄'];
 const SUITS = ['♠','♥','♦','♣'];
 const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
@@ -148,6 +150,10 @@ function showScreen(id) {
     if(typeof destroyYahtzeeThree === 'function') destroyYahtzeeThree();
     // Unlock orientation when leaving yahtzee
     try { screen.orientation.unlock(); } catch(e) {}
+  }
+  // Cleanup pupil camera/mediapipe when leaving
+  if(prev && prev.id === 'pupilGame' && id !== 'pupilGame') {
+    if(typeof pplCleanup === 'function') pplCleanup();
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -775,6 +781,7 @@ function restartCurrentGame() {
   else if(g === 'lottery') startLottery();
   else if(g === 'updown') startUpDown();
   else if(g === 'slinkystairs') { if(typeof slkCleanup==='function') slkCleanup(); startSlinkyStairs(); }
+  else if(g === 'pupil') { pplCleanup(); startPupil(); }
   else { showToast('이 게임은 자동 재시작됩니다'); }
 }
 
@@ -883,9 +890,25 @@ function updateLobbyUI() {
     if(cpuCountEl) cpuCountEl.textContent = _cpuCount;
   }
 
+  // Solo-only games: disable when >1 player
+  document.querySelectorAll('.game-option').forEach(el => {
+    if (SOLO_ONLY_GAMES.includes(el.dataset.game)) {
+      if (state.players.length > 1) {
+        el.classList.add('solo-only-disabled');
+        if (el.classList.contains('selected')) {
+          el.classList.remove('selected');
+          // Auto-select first non-disabled game
+          const first = document.querySelector('.game-option:not(.solo-only-disabled)');
+          if (first) { first.classList.add('selected'); state.selectedGame = first.dataset.game; }
+        }
+      } else {
+        el.classList.remove('solo-only-disabled');
+      }
+    }
+  });
+
   if(state.isHost) {
-    const _soloList = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs'];
-    const _minP = _soloList.includes(state.selectedGame) ? 1 : 2;
+    const _minP = SOLO_GAMES.includes(state.selectedGame) ? 1 : 2;
     document.getElementById('startGameBtn').style.display = state.players.length >= _minP ? 'block' : 'none';
   }
   // Show game info panel for currently selected game
@@ -929,7 +952,7 @@ function removeCPU() {
 }
 
 function selectGame(el) {
-  if(el.classList.contains('disabled')) return;
+  if(el.classList.contains('disabled') || el.classList.contains('solo-only-disabled')) return;
   document.querySelectorAll('.game-option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
   state.selectedGame = el.dataset.game;
@@ -965,8 +988,7 @@ function selectGame(el) {
   // Update game info panel + start button visibility
   updateGameInfoPanel(state.selectedGame);
   if(state.isHost) {
-    const _soloList = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs'];
-    const _minP = _soloList.includes(state.selectedGame) ? 1 : 2;
+    const _minP = SOLO_GAMES.includes(state.selectedGame) ? 1 : 2;
     document.getElementById('startGameBtn').style.display = state.players.length >= _minP ? 'block' : 'none';
   }
 
@@ -986,14 +1008,15 @@ const GAME_INFO = {
   ecard:    { emoji:'👑', name:'E카드', desc:'황제 vs 노예의 심리전. 5장의 카드로 상대의 수를 읽어라!', players:'2명', time:'5~10분', type:'심리전' },
   yahtzee:  { emoji:'🎲', name:'야추', desc:'5개의 주사위로 최고 점수를 노려라! 3번의 기회로 족보 완성.', players:'1~14명', time:'10~15분', type:'주사위' },
   updown:   { emoji:'🃏', name:'업다운', desc:'다음 카드가 높을까 낮을까? 연속 맞추기 도전!', players:'2~14명', time:'5~10분', type:'카드' },
-  truth:    { emoji:'⭕', name:'진실게임', desc:'질문에 투표하고, 가장 많이 뽑힌 사람이 벌칙!', players:'3~14명', time:'10~20분', type:'파티' },
+  truth:    { emoji:'⭕', name:'진실게임', desc:'질문을 하고, 비밀투표를 통해 다른 사람의 속마음을 엿볼 수 있어요.', players:'3~14명', time:'10~20분', type:'파티' },
   fortress: { emoji:'🏰', name:'요새', desc:'탱크 포격전! 각도와 파워를 조절해서 상대 요새를 파괴하세요.', players:'2~14명', time:'5~10분', type:'전략' },
-  bombshot: { emoji:'🍺', name:'폭탄주', desc:'라이어즈바 블러프 게임. 거짓말을 간파하고 폭탄주 룰렛을 피하라!', players:'2~4명', time:'5~15분', type:'블러프' },
+  bombshot: { emoji:'🍺', name:'폭탄주', desc:'거짓말로 술을 섞는 라이어를 찾아라. 거짓말을 간파하고 폭탄주 룰렛을 피하자!', players:'2~4명', time:'5~15분', type:'블러프' },
   stairs:   { emoji:'🪜', name:'무한계단', desc:'끝없이 올라가는 계단! 좌우 타이밍을 맞춰 최고 기록 도전.', players:'1~14명', time:'3~10분', type:'레이싱' },
   tetris:   { emoji:'🧩', name:'테트리스', desc:'클래식 퍼즐! 블록을 쌓고 줄을 지워 최고 점수에 도전.', players:'1~14명', time:'5~10분', type:'퍼즐' },
   jewel:    { emoji:'💎', name:'보석맞추기', desc:'같은 보석 3개를 맞춰 제거! 콤보와 연쇄로 고득점.', players:'1~14명', time:'5~10분', type:'퍼즐' },
   colorchain:{ emoji:'🔗', name:'컬러체인', desc:'같은 색 구슬을 연결해서 터뜨려라! 중력과 연쇄 콤보.', players:'1~14명', time:'5~10분', type:'퍼즐' },
-  slinkystairs:{ emoji:'🌀', name:'슬링키 스테어즈', desc:'무너지는 계단 위에서 슬링키를 조종해 살아남으세요! 좌우 타이밍이 핵심.', players:'1~14명', time:'3~10분', type:'아케이드' }
+  slinkystairs:{ emoji:'🌀', name:'슬링키 스테어즈', desc:'무너지는 계단 위에서 슬링키를 조종해 살아남으세요! 좌우 타이밍이 핵심.', players:'1~14명', time:'3~10분', type:'아케이드' },
+  pupil:{ emoji:'👁', name:'동공 탐지기', desc:'카메라로 동공 반응을 분석하여 진술의 신뢰도를 측정합니다. 혼자서만 플레이 가능!', players:'1명 전용', time:'5~10분', type:'분석' }
 };
 
 function updateGameInfoPanel(game) {
@@ -1012,8 +1035,7 @@ function updateGameInfoPanel(game) {
 // ===== GAME START =====
 function startGame() {
   console.log('[PartyDeck] startGame 호출. isHost:', state.isHost, 'players:', state.players.length, 'game:', state.selectedGame);
-  const soloGames = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs'];
-  const minPlayers = soloGames.includes(state.selectedGame) ? 1 : 2;
+  const minPlayers = SOLO_GAMES.includes(state.selectedGame) ? 1 : 2;
   if(!state.isHost || state.players.length < minPlayers) { showToast('최소 ' + minPlayers + '명 필요 (현재 ' + state.players.length + '명)'); return; }
   if(!spendEnergy(1)) { showToast('⚡ 에너지가 부족합니다! 충전을 기다려주세요'); return; }
   const g = state.selectedGame;
@@ -1034,6 +1056,7 @@ function startGame() {
   else if(g === 'jewel') startJewel();
   else if(g === 'colorchain') startColorChain();
   else if(g === 'slinkystairs') startSlinkyStairs();
+  else if(g === 'pupil') { if(state.players.length > 1) { showToast('👁 동공 탐지기는 1인 전용입니다'); return; } startPupil(); }
   else showToast('준비 중인 게임입니다');
 }
 
@@ -1109,6 +1132,9 @@ function handleGameStart(msg) {
     showScreen('slinkyStairsGame');
     renderSlinkyStairsView(msg.state);
   }
+  else if(msg.game === 'pupil') {
+    startPupil();
+  }
 }
 
 // ===== DEBUG / PREVIEW MODE =====
@@ -1156,8 +1182,15 @@ function debugGame(game) {
     tetris: 'tetrisGame',
     jewel: 'jewelGame',
     colorchain: 'colorchainGame',
-    slinkystairs: 'slinkyStairsGame'
+    slinkystairs: 'slinkyStairsGame',
+    pupil: 'pupilGame'
   };
+
+  if(game === 'pupil') {
+    state.players = [{ id: 'debug-me', name: '테스터', avatar: '😎' }];
+    startPupil();
+    return;
+  }
 
   if(game === 'stairs') {
     startStairs();
