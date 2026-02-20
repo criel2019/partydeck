@@ -53,6 +53,8 @@ let pplAnimLoopActive = false;
 let pplAdaptTimerId = null;
 let pplSpeechRec = null;
 let pplVoiceActive = false;
+let _pplRecRunning = false;
+let _pplRecRestartTimer = null;
 let pplAudioCtx = null, pplAnalyser = null, pplMicStream = null, pplLevelRAF = null;
 
 const ppl$ = id => document.getElementById(id);
@@ -278,15 +280,31 @@ function pplSetupCalibScreen() {
 function pplSpeak(text) {
   return new Promise(resolve => {
     if (!window.speechSynthesis) { resolve(); return; }
+
+    let resolved = false;
+    const done = () => { if (!resolved) { resolved = true; resolve(); } };
+
+    // Cancel any pending/stuck speech first (fixes Chrome TTS freeze bug)
+    speechSynthesis.cancel();
+
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'ko-KR';
     u.rate = 1.05;
     const voices = speechSynthesis.getVoices();
     const ko = voices.find(v => v.lang.startsWith('ko'));
     if (ko) u.voice = ko;
-    u.onend = resolve;
-    u.onerror = resolve;
-    speechSynthesis.speak(u);
+    u.onend = done;
+    u.onerror = done;
+
+    try { speechSynthesis.speak(u); } catch (e) { done(); return; }
+
+    // Safety timeout: ~200ms per Korean char, min 2s, max 8s
+    // If TTS hangs (Kakao browser, broken WebView), resolve anyway
+    const estMs = Math.max(text.length * 200, 2000);
+    setTimeout(() => { if (!resolved) { speechSynthesis.cancel(); done(); } }, Math.min(estMs + 1500, 8000));
+
+    // Quick check: if speech didn't actually start after 500ms, TTS is broken
+    setTimeout(() => { if (!resolved && !speechSynthesis.speaking && !speechSynthesis.pending) done(); }, 500);
   });
 }
 
@@ -351,6 +369,9 @@ function pplStartVoiceSession() {
   rec.continuous = true;
   rec.interimResults = true;
   rec.maxAlternatives = 5;
+
+  rec.onstart = () => { _pplRecRunning = true; };
+
   rec.onresult = (e) => {
     for (let r = e.resultIndex; r < e.results.length; r++) {
       const text = e.results[r][0].transcript.trim();
@@ -407,20 +428,65 @@ function pplStartVoiceSession() {
     } else if (e.error === 'network') {
       pplShowRecText('⚠ 네트워크 오류 — 인터넷 연결을 확인하세요', 'warn');
     }
+    // 'no-speech', 'aborted' are non-fatal — onend will handle restart
   };
   rec.onend = () => {
-    if (pplVoiceActive) setTimeout(() => { if (pplVoiceActive && pplSpeechRec === rec) try { rec.start(); } catch { pplEndVoiceSession(); } }, 500);
+    _pplRecRunning = false;
+    if (pplVoiceActive) _pplRecRestart(rec, 0);
   };
   pplSpeechRec = rec;
   pplVoiceActive = true;
+  _pplRecRunning = false;
   try { rec.start(); } catch {}
+}
+
+// Robust restart with exponential backoff (up to 5 retries, then recreate)
+function _pplRecRestart(rec, attempt) {
+  if (!pplVoiceActive || pplSpeechRec !== rec) return;
+  if (_pplRecRestartTimer) clearTimeout(_pplRecRestartTimer);
+  const delay = Math.min(300 * (attempt + 1), 2000);
+  _pplRecRestartTimer = setTimeout(() => {
+    _pplRecRestartTimer = null;
+    if (!pplVoiceActive || pplSpeechRec !== rec) return;
+    try {
+      rec.start();
+    } catch (e) {
+      if (attempt < 5) {
+        _pplRecRestart(rec, attempt + 1);
+      } else {
+        // After 5 failures, recreate recognition entirely
+        pplSpeechRec = null;
+        _pplRecRunning = false;
+        pplStartVoiceSession();
+      }
+    }
+  }, delay);
+}
+
+// Ensure recognition is actively running (call before setting voice handler)
+function pplEnsureRecActive() {
+  if (!pplVoiceActive) return;
+  if (!pplSpeechRec) { pplStartVoiceSession(); return; }
+  if (_pplRecRunning) return; // already running, good
+  try {
+    pplSpeechRec.start();
+  } catch (e) {
+    // InvalidStateError = already running → fine
+    if (e.name !== 'InvalidStateError') {
+      _pplRecRestart(pplSpeechRec, 0);
+    } else {
+      _pplRecRunning = true; // was running after all
+    }
+  }
 }
 
 function pplEndVoiceSession() {
   _pplClearInterim();
+  if (_pplRecRestartTimer) { clearTimeout(_pplRecRestartTimer); _pplRecRestartTimer = null; }
   pplStopMicLevel();
   pplVoiceActive = false;
   pplVoiceHandler = null;
+  _pplRecRunning = false;
   pplShowVoiceInd(false);
   if (pplSpeechRec) { try { pplSpeechRec.abort(); } catch {} pplSpeechRec = null; }
 }
@@ -429,6 +495,8 @@ function pplListenAnswer(onYes, onNo) {
   pplVoiceHandler = { yes: onYes, no: onNo };
   pplShowVoiceInd(true);
   pplShowRecText('"네" 또는 "아니오"로 대답하세요', '');
+  // Ensure recognition is actively running after TTS (may have stopped during playback)
+  pplEnsureRecActive();
 }
 
 function pplPauseListening() {
