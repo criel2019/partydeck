@@ -547,3 +547,71 @@
 .ppl-vrec.nomatch { color: #ffaa00; }
 .ppl-vrec.warn { color: #ff3366; }
 .ppl-vrec.idle { color: #555; }
+
+/* Debug Panel */
+.ppl-debug {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  max-height: 40vh;
+  background: rgba(10, 10, 20, .95);
+  border-top: 2px solid #00e0ff;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ppl-debug-hdr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: rgba(0, 224, 255, .1);
+  font-size: .7rem;
+  color: #00e0ff;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+.ppl-debug-st {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.ppl-debug-st.on { background: #00ff8833; color: #00ff88; }
+.ppl-debug-st.off { background: #ff336633; color: #ff3366; }
+.ppl-debug-st.err { background: #ffaa0033; color: #ffaa00; }
+.ppl-debug-clr {
+  margin-left: auto;
+  background: rgba(255,255,255,.1);
+  border: none;
+  color: #888;
+  font-size: .6rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.ppl-debug-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 12px;
+  font-size: .68rem;
+  line-height: 1.6;
+  max-height: 30vh;
+}
+.ppl-debug-log .dlog {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  padding: 2px 0;
+}
+.ppl-debug-log .dlog .dt { color: #555; min-width: 65px; }
+.ppl-debug-log .dlog .dm { color: #ccc; word-break: break-all; }
+.ppl-debug-log .dlog.yes .dm { color: #00ff88; font-weight: 700; }
+.ppl-debug-log .dlog.no .dm { color: #ff3366; font-weight: 700; }
+.ppl-debug-log .dlog.interim .dm { color: #00e0ff; }
+.ppl-debug-log .dlog.warn .dm { color: #ffaa00; }
+.ppl-debug-log .dlog.err .dm { color: #ff3366; }
+.ppl-debug-log .dlog.sys .dm { color: #9966ff; }
+.ppl-debug-log .dlog.nomatch .dm { color: #ffaa00; }

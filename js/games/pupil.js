@@ -59,6 +59,30 @@ let pplAudioCtx = null, pplAnalyser = null, pplMicStream = null, pplLevelRAF = n
 
 const ppl$ = id => document.getElementById(id);
 
+// ===== DEBUG LOG =====
+function pplDbg(msg, type) {
+  console.log(`[PPL-STT] [${type || 'info'}] ${msg}`);
+  const log = ppl$('pplDebugLog');
+  if (!log) return;
+  const row = document.createElement('div');
+  row.className = 'dlog' + (type ? ' ' + type : '');
+  const now = new Date();
+  const ts = now.toTimeString().slice(0, 8) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+  row.innerHTML = `<span class="dt">${ts}</span><span class="dm">${msg}</span>`;
+  log.appendChild(row);
+  log.scrollTop = log.scrollHeight;
+  // Keep max 80 entries
+  while (log.children.length > 80) log.removeChild(log.firstChild);
+}
+function pplDebugClear() { const log = ppl$('pplDebugLog'); if (log) log.innerHTML = ''; }
+function pplDebugShow(show) { const el = ppl$('pplDebug'); if (el) el.style.display = show ? 'flex' : 'none'; }
+function pplDebugStatus(state) {
+  const el = ppl$('pplDebugSt');
+  if (!el) return;
+  el.textContent = state;
+  el.className = 'ppl-debug-st ' + (state === 'LISTENING' ? 'on' : state === 'OFF' || state === 'STOPPED' ? 'off' : 'err');
+}
+
 // ===== START PUPIL =====
 function startPupil() {
   _pplLoadFonts();
@@ -279,10 +303,11 @@ function pplSetupCalibScreen() {
 // ===== VOICE (TTS + STT) =====
 function pplSpeak(text) {
   return new Promise(resolve => {
-    if (!window.speechSynthesis) { resolve(); return; }
+    pplDbg(`TTS 시작: "${text}"`, 'sys');
+    if (!window.speechSynthesis) { pplDbg('TTS 없음 (speechSynthesis 미지원)', 'warn'); resolve(); return; }
 
     let resolved = false;
-    const done = () => { if (!resolved) { resolved = true; resolve(); } };
+    const done = (reason) => { if (!resolved) { resolved = true; pplDbg(`TTS 종료: ${reason}`, 'sys'); resolve(); } };
 
     // Cancel any pending/stuck speech first (fixes Chrome TTS freeze bug)
     speechSynthesis.cancel();
@@ -293,18 +318,17 @@ function pplSpeak(text) {
     const voices = speechSynthesis.getVoices();
     const ko = voices.find(v => v.lang.startsWith('ko'));
     if (ko) u.voice = ko;
-    u.onend = done;
-    u.onerror = done;
+    u.onend = () => done('onend');
+    u.onerror = (e) => done('onerror: ' + (e.error || 'unknown'));
 
-    try { speechSynthesis.speak(u); } catch (e) { done(); return; }
+    try { speechSynthesis.speak(u); } catch (e) { done('speak() throw: ' + e.message); return; }
 
     // Safety timeout: ~200ms per Korean char, min 2s, max 8s
-    // If TTS hangs (Kakao browser, broken WebView), resolve anyway
     const estMs = Math.max(text.length * 200, 2000);
-    setTimeout(() => { if (!resolved) { speechSynthesis.cancel(); done(); } }, Math.min(estMs + 1500, 8000));
+    setTimeout(() => { if (!resolved) { speechSynthesis.cancel(); done('timeout ' + Math.min(estMs + 1500, 8000) + 'ms'); } }, Math.min(estMs + 1500, 8000));
 
     // Quick check: if speech didn't actually start after 500ms, TTS is broken
-    setTimeout(() => { if (!resolved && !speechSynthesis.speaking && !speechSynthesis.pending) done(); }, 500);
+    setTimeout(() => { if (!resolved && !speechSynthesis.speaking && !speechSynthesis.pending) done('500ms no-start'); }, 500);
   });
 }
 
@@ -316,6 +340,8 @@ function pplClassifyAnswer(text) {
   if (!text) return null;
   const t = text.replace(/[\s.,!?~…·\-_'"()[\]{}:;。，！？、\u200b]/g, '');
   if (!t) return null;
+  // Log the cleaned text for debugging
+  pplDbg(`분류 시도: raw="${text}" → clean="${t}"`, 'sys');
 
   // Exact single-word matches (highest confidence)
   const YES_EXACT = ['네','예','응','어','넵','넹','녜','내','넴','냉','넽',
@@ -358,11 +384,15 @@ function _pplClearInterim() {
 function pplStartVoiceSession() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
+    pplDbg('SpeechRecognition API 미지원!', 'err');
     pplShowVoiceInd(true);
     pplShowRecText('⚠ 이 브라우저에서는 음성인식을 사용할 수 없습니다', 'warn');
     return;
   }
-  if (pplSpeechRec) return;
+  if (pplSpeechRec) { pplDbg('이미 세션 존재, 스킵', 'sys'); return; }
+  pplDbg('음성 세션 시작...', 'sys');
+  pplDebugShow(true);
+  pplDebugStatus('STARTING');
   pplStartMicLevel();
   const rec = new SR();
   rec.lang = 'ko-KR';
@@ -370,23 +400,38 @@ function pplStartVoiceSession() {
   rec.interimResults = true;
   rec.maxAlternatives = 5;
 
-  rec.onstart = () => { _pplRecRunning = true; };
+  rec.onstart = () => {
+    _pplRecRunning = true;
+    pplDbg('rec.onstart — 인식기 시작됨', 'sys');
+    pplDebugStatus('LISTENING');
+  };
 
   rec.onresult = (e) => {
     for (let r = e.resultIndex; r < e.results.length; r++) {
       const text = e.results[r][0].transcript.trim();
+      const conf = (e.results[r][0].confidence * 100).toFixed(1);
+      const isFinal = e.results[r].isFinal;
 
-      // ── Interim: show + early-accept if stable for 1.2s ──
-      if (!e.results[r].isFinal) {
+      // Log all alternatives for debugging
+      const alts = [];
+      for (let a = 0; a < e.results[r].length; a++) {
+        alts.push(e.results[r][a].transcript.trim());
+      }
+
+      // ── Interim ──
+      if (!isFinal) {
+        pplDbg(`[중간] "${text}" (${conf}%)`, 'interim');
         if (pplVoiceHandler) {
           const cls = pplClassifyAnswer(text);
           if (cls) {
+            pplDbg(`  → 분류: ${cls === 'yes' ? 'YES' : 'NO'} (interim stable 대기)`, cls);
             pplShowRecText(text + ` → ${cls === 'yes' ? '예?' : '아니오?'}`, 'interim');
             if (_pplInterimCls !== cls) {
               _pplInterimCls = cls;
               if (_pplInterimTimer) clearTimeout(_pplInterimTimer);
               _pplInterimTimer = setTimeout(() => {
                 if (pplVoiceHandler && _pplInterimCls === cls) {
+                  pplDbg(`  → interim stable 1.2s — ${cls} 수락!`, cls);
                   _pplClearInterim();
                   pplShowRecText(text, cls);
                   const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false);
@@ -396,6 +441,7 @@ function pplStartVoiceSession() {
             }
           } else {
             _pplClearInterim();
+            pplDbg(`  → 분류 불가`, 'nomatch');
             pplShowRecText(text, 'interim');
           }
         } else {
@@ -404,24 +450,33 @@ function pplStartVoiceSession() {
         continue;
       }
 
-      // ── Final: classify across all alternatives ──
+      // ── Final ──
       _pplClearInterim();
-      if (!pplVoiceHandler) { pplShowRecText(text, 'idle'); continue; }
+      pplDbg(`[최종] "${text}" (${conf}%) alts=[${alts.join(' | ')}]`, 'sys');
+      if (!pplVoiceHandler) { pplDbg('  → handler 없음 (대기 중)', 'warn'); pplShowRecText(text, 'idle'); continue; }
       let matched = false;
       for (let i = 0; i < e.results[r].length; i++) {
         const t = e.results[r][i].transcript.trim();
         const cls = pplClassifyAnswer(t);
         if (cls) {
+          pplDbg(`  → alt[${i}] "${t}" = ${cls.toUpperCase()} — 수락!`, cls);
           pplShowRecText(t, cls);
           const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false);
           if (cls === 'yes') h.yes(); else h.no();
           matched = true; break;
+        } else {
+          pplDbg(`  → alt[${i}] "${t}" = 분류 불가`, 'nomatch');
         }
       }
-      if (!matched) pplShowRecText(text + '  ← 인식 불가, 다시 말해주세요', 'nomatch');
+      if (!matched) {
+        pplDbg(`  → 모든 alt 분류 실패! 다시 말해주세요`, 'err');
+        pplShowRecText(text + '  ← 인식 불가, 다시 말해주세요', 'nomatch');
+      }
     }
   };
   rec.onerror = (e) => {
+    pplDbg(`rec.onerror: ${e.error} (message: ${e.message || 'none'})`, 'err');
+    pplDebugStatus('ERR: ' + e.error);
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture') {
       pplShowRecText('⚠ 마이크 권한이 거부되었습니다', 'warn');
       pplEndVoiceSession();
@@ -432,12 +487,23 @@ function pplStartVoiceSession() {
   };
   rec.onend = () => {
     _pplRecRunning = false;
-    if (pplVoiceActive) _pplRecRestart(rec, 0);
+    pplDbg('rec.onend — 인식기 중단됨', 'warn');
+    pplDebugStatus('STOPPED');
+    if (pplVoiceActive) {
+      pplDbg('  → 재시작 시도...', 'sys');
+      _pplRecRestart(rec, 0);
+    }
   };
   pplSpeechRec = rec;
   pplVoiceActive = true;
   _pplRecRunning = false;
-  try { rec.start(); } catch {}
+  try {
+    rec.start();
+    pplDbg('rec.start() 호출됨', 'sys');
+  } catch (e) {
+    pplDbg('rec.start() 실패: ' + e.message, 'err');
+    pplDebugStatus('START FAIL');
+  }
 }
 
 // Robust restart with exponential backoff (up to 5 retries, then recreate)
@@ -445,16 +511,20 @@ function _pplRecRestart(rec, attempt) {
   if (!pplVoiceActive || pplSpeechRec !== rec) return;
   if (_pplRecRestartTimer) clearTimeout(_pplRecRestartTimer);
   const delay = Math.min(300 * (attempt + 1), 2000);
+  pplDbg(`재시작 예약 (attempt ${attempt + 1}, ${delay}ms 후)`, 'sys');
   _pplRecRestartTimer = setTimeout(() => {
     _pplRecRestartTimer = null;
     if (!pplVoiceActive || pplSpeechRec !== rec) return;
     try {
       rec.start();
+      pplDbg(`재시작 성공 (attempt ${attempt + 1})`, 'sys');
+      pplDebugStatus('LISTENING');
     } catch (e) {
+      pplDbg(`재시작 실패 (attempt ${attempt + 1}): ${e.message}`, 'err');
       if (attempt < 5) {
         _pplRecRestart(rec, attempt + 1);
       } else {
-        // After 5 failures, recreate recognition entirely
+        pplDbg('5회 실패 — 인식기 완전 재생성', 'err');
         pplSpeechRec = null;
         _pplRecRunning = false;
         pplStartVoiceSession();
@@ -465,22 +535,27 @@ function _pplRecRestart(rec, attempt) {
 
 // Ensure recognition is actively running (call before setting voice handler)
 function pplEnsureRecActive() {
-  if (!pplVoiceActive) return;
-  if (!pplSpeechRec) { pplStartVoiceSession(); return; }
-  if (_pplRecRunning) return; // already running, good
+  if (!pplVoiceActive) { pplDbg('pplEnsureRecActive: voiceActive=false, 스킵', 'warn'); return; }
+  if (!pplSpeechRec) { pplDbg('pplEnsureRecActive: rec 없음, 새 세션 시작', 'warn'); pplStartVoiceSession(); return; }
+  if (_pplRecRunning) { pplDbg('pplEnsureRecActive: 이미 실행 중, OK', 'sys'); return; }
+  pplDbg('pplEnsureRecActive: 중단 상태, start() 시도', 'warn');
   try {
     pplSpeechRec.start();
+    pplDbg('pplEnsureRecActive: start() 성공', 'sys');
   } catch (e) {
-    // InvalidStateError = already running → fine
     if (e.name !== 'InvalidStateError') {
+      pplDbg('pplEnsureRecActive: start() 실패: ' + e.message + ', 재시작', 'err');
       _pplRecRestart(pplSpeechRec, 0);
     } else {
-      _pplRecRunning = true; // was running after all
+      pplDbg('pplEnsureRecActive: InvalidStateError (이미 실행 중)', 'sys');
+      _pplRecRunning = true;
     }
   }
 }
 
 function pplEndVoiceSession() {
+  pplDbg('음성 세션 종료', 'sys');
+  pplDebugStatus('OFF');
   _pplClearInterim();
   if (_pplRecRestartTimer) { clearTimeout(_pplRecRestartTimer); _pplRecRestartTimer = null; }
   pplStopMicLevel();
@@ -492,6 +567,7 @@ function pplEndVoiceSession() {
 }
 
 function pplListenAnswer(onYes, onNo) {
+  pplDbg('pplListenAnswer() — 핸들러 등록, 음성 수신 대기', 'sys');
   pplVoiceHandler = { yes: onYes, no: onNo };
   pplShowVoiceInd(true);
   pplShowRecText('"네" 또는 "아니오"로 대답하세요', '');
@@ -841,6 +917,7 @@ function pplSetMetric(mId, mVal, bId, bWidth) {
 // ===== CLEANUP & RESET =====
 function pplCleanup() {
   pplEndVoiceSession();
+  pplDebugShow(false);
   if (window.speechSynthesis) speechSynthesis.cancel();
   pplStopMonitor();
   if (pplAdaptTimerId) { clearInterval(pplAdaptTimerId); pplAdaptTimerId = null; }
