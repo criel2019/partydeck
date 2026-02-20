@@ -53,6 +53,7 @@ let pplAnimLoopActive = false;
 let pplAdaptTimerId = null;
 let pplSpeechRec = null;
 let pplVoiceActive = false;
+let pplAudioCtx = null, pplAnalyser = null, pplMicStream = null, pplLevelRAF = null;
 
 const ppl$ = id => document.getElementById(id);
 
@@ -290,29 +291,49 @@ function pplSpeak(text) {
 }
 
 // Session-based voice: ONE SpeechRecognition per phase, swap callbacks per question
-let pplVoiceHandler = null; // { yes: fn, no: fn } — swapped each question
+let pplVoiceHandler = null;
 
 function pplStartVoiceSession() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR || pplSpeechRec) return;
+  if (!SR) {
+    pplShowVoiceInd(true);
+    pplShowRecText('⚠ 이 브라우저에서는 음성인식을 사용할 수 없습니다', 'warn');
+    return;
+  }
+  if (pplSpeechRec) return;
+  pplStartMicLevel();
   const rec = new SR();
   rec.lang = 'ko-KR';
   rec.continuous = true;
-  rec.interimResults = false;
+  rec.interimResults = true;
   rec.maxAlternatives = 5;
   rec.onresult = (e) => {
-    if (!pplVoiceHandler) return;
     for (let r = e.resultIndex; r < e.results.length; r++) {
-      if (!e.results[r].isFinal) continue;
+      const text = e.results[r][0].transcript.trim();
+      if (!e.results[r].isFinal) { pplShowRecText(text, 'interim'); continue; }
+      if (!pplVoiceHandler) { pplShowRecText(text, 'idle'); continue; }
+      let matched = false;
       for (let i = 0; i < e.results[r].length; i++) {
         const t = e.results[r][i].transcript.trim();
-        if (/^(네|예|응|어|맞아|맞습니다|yes)/i.test(t)) { const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false); h.yes(); return; }
-        if (/^(아니|아뇨|노|no)/i.test(t)) { const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false); h.no(); return; }
+        if (/^(네|예|응|어|맞아|맞습니다|yes)/i.test(t)) {
+          pplShowRecText(t, 'yes');
+          const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false); h.yes(); matched = true; break;
+        }
+        if (/^(아니|아뇨|노|no)/i.test(t)) {
+          pplShowRecText(t, 'no');
+          const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false); h.no(); matched = true; break;
+        }
       }
+      if (!matched) pplShowRecText(text + '  ← 인식 불가, 다시 말해주세요', 'nomatch');
     }
   };
   rec.onerror = (e) => {
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture') pplEndVoiceSession();
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture') {
+      pplShowRecText('⚠ 마이크 권한이 거부되었습니다', 'warn');
+      pplEndVoiceSession();
+    } else if (e.error === 'network') {
+      pplShowRecText('⚠ 네트워크 오류 — 인터넷 연결을 확인하세요', 'warn');
+    }
   };
   rec.onend = () => {
     if (pplVoiceActive) setTimeout(() => { if (pplVoiceActive && pplSpeechRec === rec) try { rec.start(); } catch { pplEndVoiceSession(); } }, 500);
@@ -323,6 +344,7 @@ function pplStartVoiceSession() {
 }
 
 function pplEndVoiceSession() {
+  pplStopMicLevel();
   pplVoiceActive = false;
   pplVoiceHandler = null;
   pplShowVoiceInd(false);
@@ -332,11 +354,58 @@ function pplEndVoiceSession() {
 function pplListenAnswer(onYes, onNo) {
   pplVoiceHandler = { yes: onYes, no: onNo };
   pplShowVoiceInd(true);
+  pplShowRecText('"네" 또는 "아니오"로 대답하세요', '');
 }
 
 function pplPauseListening() {
   pplVoiceHandler = null;
   pplShowVoiceInd(false);
+}
+
+// Mic level visualization (Web Audio API)
+async function pplStartMicLevel() {
+  if (pplAnalyser) return;
+  try {
+    pplMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    pplAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = pplAudioCtx.createMediaStreamSource(pplMicStream);
+    pplAnalyser = pplAudioCtx.createAnalyser();
+    pplAnalyser.fftSize = 256;
+    pplAnalyser.smoothingTimeConstant = 0.5;
+    src.connect(pplAnalyser);
+    pplTickLevel();
+  } catch {}
+}
+
+function pplTickLevel() {
+  if (!pplAnalyser) return;
+  const buf = new Uint8Array(pplAnalyser.frequencyBinCount);
+  pplAnalyser.getByteFrequencyData(buf);
+  const avg = buf.reduce((a, b) => a + b, 0) / buf.length;
+  const pct = Math.min(avg / 50 * 100, 100);
+  document.querySelectorAll('.ppl-vfill').forEach(el => el.style.width = pct + '%');
+  pplLevelRAF = requestAnimationFrame(pplTickLevel);
+}
+
+function pplStopMicLevel() {
+  if (pplLevelRAF) { cancelAnimationFrame(pplLevelRAF); pplLevelRAF = null; }
+  if (pplMicStream) { pplMicStream.getTracks().forEach(t => t.stop()); pplMicStream = null; }
+  if (pplAudioCtx) { pplAudioCtx.close().catch(() => {}); pplAudioCtx = null; }
+  pplAnalyser = null;
+  document.querySelectorAll('.ppl-vfill').forEach(el => el.style.width = '0');
+}
+
+function pplShowRecText(text, type) {
+  document.querySelectorAll('.ppl-vrec').forEach(el => {
+    el.textContent = type === 'interim' ? `"${text}" …`
+      : type === 'yes' ? `"${text}" → 예 ✓`
+      : type === 'no' ? `"${text}" → 아니오 ✓`
+      : type === 'nomatch' ? text
+      : type === 'warn' ? text
+      : type === 'idle' ? `"${text}" (대기 중)`
+      : text;
+    el.className = 'ppl-vrec' + (type ? ' ' + type : '');
+  });
 }
 
 function pplShowVoiceInd(show) {
