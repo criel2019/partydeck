@@ -55,13 +55,11 @@ let pplSpeechRec = null;
 let pplVoiceActive = false;
 let _pplRecRunning = false;
 let _pplRecRestartTimer = null;
-let pplAudioCtx = null, pplAnalyser = null, pplMicStream = null, pplLevelRAF = null;
 
 const ppl$ = id => document.getElementById(id);
 
 // ===== DEBUG LOG =====
 function pplDbg(msg, type) {
-  console.log(`[PPL-STT] [${type || 'info'}] ${msg}`);
   const log = ppl$('pplDebugLog');
   if (!log) return;
   const row = document.createElement('div');
@@ -425,10 +423,7 @@ function pplStartVoiceSession() {
   }
   if (pplSpeechRec) { pplDbg('이미 세션 존재, 스킵', 'sys'); return; }
   pplDbg('음성 세션 시작...', 'sys');
-  pplDebugShow(true);
   pplDebugStatus('STARTING');
-  // ★ pplStartMicLevel() 제거 — 별도 getUserMedia가 SpeechRecognition 오디오 캡처와 충돌
-  // 마이크 레벨 표시는 SpeechRecognition의 soundstart/speechstart 이벤트로 대체
   const rec = new SR();
   rec.lang = 'ko-KR';
   rec.continuous = true;
@@ -638,7 +633,6 @@ function pplEndVoiceSession() {
   pplDebugStatus('OFF');
   _pplClearInterim();
   if (_pplRecRestartTimer) { clearTimeout(_pplRecRestartTimer); _pplRecRestartTimer = null; }
-  pplStopMicLevel();
   pplVoiceActive = false;
   pplVoiceHandler = null;
   _pplRecRunning = false;
@@ -666,39 +660,6 @@ function pplPauseListening() {
   _pplClearInterim();
   pplVoiceHandler = null;
   pplShowVoiceInd(false);
-}
-
-// Mic level visualization (Web Audio API)
-async function pplStartMicLevel() {
-  if (pplAnalyser) return;
-  try {
-    pplMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    pplAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const src = pplAudioCtx.createMediaStreamSource(pplMicStream);
-    pplAnalyser = pplAudioCtx.createAnalyser();
-    pplAnalyser.fftSize = 256;
-    pplAnalyser.smoothingTimeConstant = 0.5;
-    src.connect(pplAnalyser);
-    pplTickLevel();
-  } catch {}
-}
-
-function pplTickLevel() {
-  if (!pplAnalyser) return;
-  const buf = new Uint8Array(pplAnalyser.frequencyBinCount);
-  pplAnalyser.getByteFrequencyData(buf);
-  const avg = buf.reduce((a, b) => a + b, 0) / buf.length;
-  const pct = Math.min(avg / 50 * 100, 100);
-  document.querySelectorAll('.ppl-vfill').forEach(el => el.style.width = pct + '%');
-  pplLevelRAF = requestAnimationFrame(pplTickLevel);
-}
-
-function pplStopMicLevel() {
-  if (pplLevelRAF) { cancelAnimationFrame(pplLevelRAF); pplLevelRAF = null; }
-  if (pplMicStream) { pplMicStream.getTracks().forEach(t => t.stop()); pplMicStream = null; }
-  if (pplAudioCtx) { pplAudioCtx.close().catch(() => {}); pplAudioCtx = null; }
-  pplAnalyser = null;
-  document.querySelectorAll('.ppl-vfill').forEach(el => el.style.width = '0');
 }
 
 function pplShowRecText(text, type) {
