@@ -293,6 +293,50 @@ function pplSpeak(text) {
 // Session-based voice: ONE SpeechRecognition per phase, swap callbacks per question
 let pplVoiceHandler = null;
 
+// ── Korean Yes/No Classifier — handles common STT misrecognitions ──
+function pplClassifyAnswer(text) {
+  if (!text) return null;
+  const t = text.replace(/[\s.,!?~…·\-_'"()[\]{}:;。，！？、\u200b]/g, '');
+  if (!t) return null;
+
+  // Exact single-word matches (highest confidence)
+  const YES_EXACT = ['네','예','응','어','넵','넹','녜','내','넴','냉','넽',
+    '네에','예에','네네','예예','넵넵','응응',
+    '맞아','맞아요','맞습니다','맞죠','맞음',
+    '그래','그래요','그렇죠','그렇습니다',
+    '당연','당연하죠','당연히','물론','물론이죠','물론이요',
+    'yes','yeah','yep','yea','ya','ok','okay'];
+  const NO_EXACT = ['아니','아니오','아니요','아뇨','아녜요',
+    '아닙니다','아니야','아닌데','아닌데요','아니에요','아니거든','아니거든요',
+    '노','안돼','안되','안돼요','안되요',
+    '전혀','절대','절대로','아냐','아닝',
+    'no','nope','nah','never'];
+
+  if (YES_EXACT.includes(t)) return 'yes';
+  if (NO_EXACT.includes(t)) return 'no';
+
+  // Starts-with — check NO first ("아니" is unambiguous)
+  if (/^(아니[오요에야]?|아뇨|아녜|아닙|안돼|안되|절대|전혀|아냐)/.test(t)) return 'no';
+  if (/^no(pe|t|thing)?$/i.test(t)) return 'no';
+  if (/^(네|예|응|어|넵|넹|녜|맞|그래|그렇|당연|물론)/.test(t)) return 'yes';
+  if (/^(yes|yeah|yep|yea|ok)/i.test(t)) return 'yes';
+
+  // Contains — distinctive NO words only
+  if (/아니[오요에]|아뇨|아닙니다|아닌데/.test(t)) return 'no';
+  // Contains — distinctive YES words
+  if (/맞아|맞습니다|그래요|당연|물론/.test(t)) return 'yes';
+
+  return null;
+}
+
+// Interim acceptance: if interim classification stays stable, accept early
+let _pplInterimCls = null;
+let _pplInterimTimer = null;
+function _pplClearInterim() {
+  _pplInterimCls = null;
+  if (_pplInterimTimer) { clearTimeout(_pplInterimTimer); _pplInterimTimer = null; }
+}
+
 function pplStartVoiceSession() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
@@ -310,18 +354,47 @@ function pplStartVoiceSession() {
   rec.onresult = (e) => {
     for (let r = e.resultIndex; r < e.results.length; r++) {
       const text = e.results[r][0].transcript.trim();
-      if (!e.results[r].isFinal) { pplShowRecText(text, 'interim'); continue; }
+
+      // ── Interim: show + early-accept if stable for 1.2s ──
+      if (!e.results[r].isFinal) {
+        if (pplVoiceHandler) {
+          const cls = pplClassifyAnswer(text);
+          if (cls) {
+            pplShowRecText(text + ` → ${cls === 'yes' ? '예?' : '아니오?'}`, 'interim');
+            if (_pplInterimCls !== cls) {
+              _pplInterimCls = cls;
+              if (_pplInterimTimer) clearTimeout(_pplInterimTimer);
+              _pplInterimTimer = setTimeout(() => {
+                if (pplVoiceHandler && _pplInterimCls === cls) {
+                  _pplClearInterim();
+                  pplShowRecText(text, cls);
+                  const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false);
+                  if (cls === 'yes') h.yes(); else h.no();
+                }
+              }, 1200);
+            }
+          } else {
+            _pplClearInterim();
+            pplShowRecText(text, 'interim');
+          }
+        } else {
+          pplShowRecText(text, 'interim');
+        }
+        continue;
+      }
+
+      // ── Final: classify across all alternatives ──
+      _pplClearInterim();
       if (!pplVoiceHandler) { pplShowRecText(text, 'idle'); continue; }
       let matched = false;
       for (let i = 0; i < e.results[r].length; i++) {
         const t = e.results[r][i].transcript.trim();
-        if (/^(네|예|응|어|맞아|맞습니다|yes)/i.test(t)) {
-          pplShowRecText(t, 'yes');
-          const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false); h.yes(); matched = true; break;
-        }
-        if (/^(아니|아뇨|노|no)/i.test(t)) {
-          pplShowRecText(t, 'no');
-          const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false); h.no(); matched = true; break;
+        const cls = pplClassifyAnswer(t);
+        if (cls) {
+          pplShowRecText(t, cls);
+          const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false);
+          if (cls === 'yes') h.yes(); else h.no();
+          matched = true; break;
         }
       }
       if (!matched) pplShowRecText(text + '  ← 인식 불가, 다시 말해주세요', 'nomatch');
@@ -344,6 +417,7 @@ function pplStartVoiceSession() {
 }
 
 function pplEndVoiceSession() {
+  _pplClearInterim();
   pplStopMicLevel();
   pplVoiceActive = false;
   pplVoiceHandler = null;
@@ -358,6 +432,7 @@ function pplListenAnswer(onYes, onNo) {
 }
 
 function pplPauseListening() {
+  _pplClearInterim();
   pplVoiceHandler = null;
   pplShowVoiceInd(false);
 }
