@@ -234,7 +234,7 @@ async function pplStartCam() {
     pplAnimLoopActive = true;
     (async function loop() { if (pplStream && pplAnimLoopActive) { try { await f.send({ image: v }); } catch {} } if (pplAnimLoopActive) requestAnimationFrame(loop); })();
     return true;
-  } catch { showToast('카메라 접근이 거부되었습니다.'); return false; }
+  } catch { showToast('카메라 권한이 필요합니다. 로비로 돌아갑니다.'); return false; }
 }
 
 // ===== START APP (from intro) =====
@@ -243,9 +243,13 @@ async function pplStartApp() {
   pplShowInternal('ppl-adapt');
   pplPhase = 'adapt';
 
+  // Pre-grant mic permission for SpeechRecognition + warm up TTS (requires user gesture)
+  try { const a = await navigator.mediaDevices.getUserMedia({ audio: true }); a.getTracks().forEach(t => t.stop()); } catch {}
+  if (window.speechSynthesis) { const w = new SpeechSynthesisUtterance(' '); w.volume = 0; speechSynthesis.speak(w); }
+
   await _pplLoadFaceMesh();
   const ok = await pplStartCam();
-  if (!ok) { pplShowInternal('ppl-intro'); pplPhase = 'intro'; return; }
+  if (!ok) { pplCleanup(); leaveGame(); return; }
 
   pplStartMonitor();
 
@@ -273,10 +277,12 @@ function pplSetupCalibScreen() {
 function pplSpeak(text) {
   return new Promise(resolve => {
     if (!window.speechSynthesis) { resolve(); return; }
-    speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'ko-KR';
     u.rate = 1.05;
+    const voices = speechSynthesis.getVoices();
+    const ko = voices.find(v => v.lang.startsWith('ko'));
+    if (ko) u.voice = ko;
     u.onend = resolve;
     u.onerror = resolve;
     speechSynthesis.speak(u);
@@ -289,19 +295,27 @@ function pplStartVoice(onYes, onNo) {
   pplStopVoice();
   const rec = new SR();
   rec.lang = 'ko-KR';
-  rec.continuous = false;
+  rec.continuous = true;
   rec.interimResults = false;
   rec.maxAlternatives = 5;
   rec.onresult = (e) => {
-    const results = e.results[0];
-    for (let i = 0; i < results.length; i++) {
-      const t = results[i].transcript.trim();
-      if (/^(네|예|응|어|맞아|맞습니다|yes)/i.test(t)) { pplStopVoice(); onYes(); return; }
-      if (/^(아니|아뇨|노|no)/i.test(t)) { pplStopVoice(); onNo(); return; }
+    for (let r = e.resultIndex; r < e.results.length; r++) {
+      if (!e.results[r].isFinal) continue;
+      for (let i = 0; i < e.results[r].length; i++) {
+        const t = e.results[r][i].transcript.trim();
+        if (/^(네|예|응|어|맞아|맞습니다|yes)/i.test(t)) { pplStopVoice(); onYes(); return; }
+        if (/^(아니|아뇨|노|no)/i.test(t)) { pplStopVoice(); onNo(); return; }
+      }
     }
   };
-  rec.onerror = () => {};
-  rec.onend = () => { if (pplVoiceActive) setTimeout(() => { if (pplVoiceActive) try { rec.start(); } catch {} }, 150); };
+  rec.onerror = (e) => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture') {
+      pplVoiceActive = false;
+      pplSpeechRec = null;
+      pplShowVoiceInd(false);
+    }
+  };
+  rec.onend = () => { if (pplVoiceActive) setTimeout(() => { if (pplVoiceActive && pplSpeechRec) try { rec.start(); } catch { pplVoiceActive = false; pplShowVoiceInd(false); } }, 500); };
   pplSpeechRec = rec;
   pplVoiceActive = true;
   pplShowVoiceInd(true);
@@ -356,7 +370,6 @@ async function pplAnsCalib(a) {
   const responseTime = Date.now() - pplStreamStartT;
   const yn1 = ppl$('pplYn1'); if (yn1) yn1.style.display = 'none';
   const qins = ppl$('pplQins'); if (qins) qins.textContent = '촬영 중... 카메라를 봐주세요';
-  pplSpeak('촬영합니다. 카메라를 봐주세요.');
   await pplCdown('pplCd1', 3);
   const res = await pplCapValid('calib');
   if (res.ok) {
@@ -405,7 +418,6 @@ async function pplAnsTest(a) {
   const responseTime = Date.now() - pplStreamStartT;
   const yn2 = ppl$('pplYn2'); if (yn2) yn2.style.display = 'none';
   const tqins = ppl$('pplTqins'); if (tqins) tqins.textContent = '촬영 중...';
-  pplSpeak('촬영합니다.');
   await pplCdown('pplCd2', 3);
   const res = await pplCapValid('test');
   if (res.ok) {
