@@ -409,6 +409,10 @@ function _pplClearInterim() {
   if (_pplInterimTimer) { clearTimeout(_pplInterimTimer); _pplInterimTimer = null; }
 }
 
+// Track speech detection for empty-result heuristic
+let _pplSpeechDetectedAt = 0;
+let _pplEmptyFinalCount = 0;
+
 function pplStartVoiceSession() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
@@ -454,6 +458,8 @@ function pplStartVoiceSession() {
   };
   rec.onspeechstart = () => {
     pplDbg('rec.onspeechstart — 음성 감지!', 'sys');
+    _pplSpeechDetectedAt = Date.now();
+    _pplEmptyFinalCount = 0;
     document.querySelectorAll('.ppl-vfill').forEach(el => el.style.width = '90%');
   };
   rec.onspeechend = () => {
@@ -486,13 +492,13 @@ function pplStartVoiceSession() {
               if (_pplInterimTimer) clearTimeout(_pplInterimTimer);
               _pplInterimTimer = setTimeout(() => {
                 if (pplVoiceHandler && _pplInterimCls === cls) {
-                  pplDbg(`  → interim stable 1.2s — ${cls} 수락!`, cls);
+                  pplDbg(`  → interim stable 600ms — ${cls} 수락!`, cls);
                   _pplClearInterim();
                   pplShowRecText(text, cls);
                   const h = pplVoiceHandler; pplVoiceHandler = null; pplShowVoiceInd(false);
                   if (cls === 'yes') h.yes(); else h.no();
                 }
-              }, 1200);
+              }, 600);
             }
           } else {
             _pplClearInterim();
@@ -506,8 +512,25 @@ function pplStartVoiceSession() {
       }
 
       // ── Final ──
-      _pplClearInterim();
       pplDbg(`[최종] "${text}" (${conf}%) alts=[${alts.join(' | ')}]`, 'sys');
+
+      // ★ 빈 결과 처리: "네" 같은 단음절은 Chrome이 transcribe 못해 빈 문자열로 반환
+      // interim 상태를 보존하고, 반복되면 사용자에게 안내
+      if (!text && alts.every(a => !a)) {
+        const sinceSpch = Date.now() - _pplSpeechDetectedAt;
+        _pplEmptyFinalCount++;
+        if (_pplSpeechDetectedAt && sinceSpch < 3000) {
+          pplDbg(`  → 음성 감지 후 빈 결과 (${sinceSpch}ms, ${_pplEmptyFinalCount}회) — 단음절 인식 실패`, 'warn');
+          if (_pplEmptyFinalCount >= 2 && pplVoiceHandler) {
+            pplShowRecText('짧게 들렸어요 — "맞아요" 또는 "아니요"로 말해주세요', 'warn');
+          }
+        }
+        // interim 상태를 보존 (단음절 interim 분류가 진행 중일 수 있음)
+        continue;
+      }
+
+      _pplClearInterim();
+      _pplEmptyFinalCount = 0;
       if (!pplVoiceHandler) { pplDbg('  → handler 없음 (대기 중)', 'warn'); pplShowRecText(text, 'idle'); continue; }
       let matched = false;
       for (let i = 0; i < e.results[r].length; i++) {
@@ -524,8 +547,8 @@ function pplStartVoiceSession() {
         }
       }
       if (!matched) {
-        pplDbg(`  → 모든 alt 분류 실패! 다시 말해주세요`, 'err');
-        pplShowRecText(text + '  ← 인식 불가, 다시 말해주세요', 'nomatch');
+        pplDbg(`  → 모든 alt 분류 실패! "맞아요/아니요"로 말해주세요`, 'err');
+        pplShowRecText('"맞아요" 또는 "아니요"로 말해주세요', 'nomatch');
       }
     }
   };
@@ -625,7 +648,7 @@ function pplListenAnswer(onYes, onNo) {
   pplDbg('pplListenAnswer() — 핸들러 등록, 음성 수신 대기', 'sys');
   pplVoiceHandler = { yes: onYes, no: onNo };
   pplShowVoiceInd(true);
-  pplShowRecText('"네" 또는 "아니오"로 대답하세요', '');
+  pplShowRecText('"맞아요" 또는 "아니요"로 대답하세요', '');
   // ★ TTS 후 인식기 강제 재시작 — TTS 재생 중 Chrome 에코 캔슬레이션이 활성화되어
   // 오디오 파이프라인이 모든 마이크 입력을 억제하는 문제 방지
   if (pplSpeechRec && _pplRecRunning) {
@@ -706,7 +729,7 @@ function pplShowCQ(i) {
   pplQIdx = i; pplUpdPh('pplCPh', i, 'c'); pplBuildStr('pplStr1', PPL_CAP); pplHideRB('pplRb1');
   const qlbl = ppl$('pplQlbl'); if (qlbl) qlbl.textContent = `캘리브레이션 ${i + 1}/5`;
   const qtxt = ppl$('pplQtxt'); if (qtxt) qtxt.textContent = PPL_CALIB_QS[i];
-  const qins = ppl$('pplQins'); if (qins) qins.textContent = '"네" 또는 "아니오"로 대답해주세요';
+  const qins = ppl$('pplQins'); if (qins) qins.textContent = '"맞아요" 또는 "아니요"로 대답해주세요';
   const yn1 = ppl$('pplYn1'); if (yn1) yn1.style.display = 'flex';
   pplUpdBtns();
   pplStreamStartT = Date.now();
