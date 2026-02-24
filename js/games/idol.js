@@ -666,6 +666,9 @@ function renderIdolView(gs) {
 
 function idolRenderAll() {
   if (!idolState) return;
+  // 선택 화면 인라인 스타일 초기화
+  const panel = document.getElementById('idolActionPanel');
+  if (panel) { panel.style.flex = ''; panel.style.overflowY = ''; panel.style.maxHeight = ''; }
   idolRenderHeader();
   idolRenderResourceBar();
   idolRenderBoard();
@@ -823,28 +826,32 @@ function idolCreateCellElement(cell, idx) {
 
 function idolRenderCenterHTML() {
   const currentP = idolCurrentPlayer();
-  const me = idolState.players.find(p => p.id === state.myId);
+  if (!currentP) return '<div class="idol-center-title">🎤</div>';
+
+  const stage = getIdolStage(currentP.looks);
+  const currentType = IDOL_TYPES.find(t => t.id === currentP.idolType);
 
   const playersHTML = idolState.order.map(id => {
     const p = idolState.players.find(pl => pl.id === id);
     if (!p) return '';
-    const isCurrent = id === currentP?.id;
-    const stage = getIdolStage(p.looks);
+    const isCurrent = id === currentP.id;
+    const pType = IDOL_TYPES.find(t => t.id === p.idolType);
     return `<div class="idol-player-mini ${isCurrent ? 'is-current' : ''} ${p.bankrupt ? 'is-bankrupt' : ''}">
-      <div class="idol-player-mini-emoji">${p.avatar}</div>
+      ${pType?.img ? `<img src="${pType.img}" alt="" class="idol-mini-img">` : `<div class="idol-player-mini-emoji">${p.avatar}</div>`}
       <div class="idol-player-mini-name">${escapeHTML(p.name)}</div>
       <div class="idol-player-mini-fame">${p.fame}⭐</div>
-      <div style="font-size:7px;color:${stage.color};">${stage.emoji}</div>
     </div>`;
   }).join('');
 
   return `
-    <div class="idol-center-title">🎤 아이돌 매니지먼트</div>
+    <div class="idol-center-portrait idol-stage-${stage.stage}">
+      ${currentType?.img
+        ? `<img src="${currentType.img}" alt="${escapeHTML(currentP.idolName ?? '')}" class="idol-center-img">`
+        : `<div class="idol-center-img-placeholder">${currentType?.emoji ?? '🎤'}</div>`}
+      <div class="idol-center-name">${escapeHTML(currentP.idolName ?? currentP.name)}</div>
+      <div class="idol-center-stage" style="color:${stage.color}">${stage.emoji} ${stage.name}</div>
+    </div>
     <div class="idol-players-mini">${playersHTML}</div>
-    ${me && !me.bankrupt ? `
-    <div style="font-size:9px;color:#888;margin-top:4px;">
-      ${getIdolStage(me.looks).emoji} ${getIdolStage(me.looks).name}
-    </div>` : ''}
   `;
 }
 
@@ -1200,11 +1207,21 @@ function idolShowSelectPhase() {
   if (resBar) resBar.style.display = 'none';
 
   if (panel) {
+    // 선택 화면이 전체 높이를 차지하도록 패널 확장
+    panel.style.flex = '1';
+    panel.style.overflowY = 'auto';
+    panel.style.maxHeight = '';
+
     const idolTypeOptions = IDOL_TYPES.map(t => `
-      <div class="idol-type-card" id="idolTypeCard_${t.id}" onclick="idolSelectType('${t.id}')">
-        <div class="idol-type-emoji">${t.emoji}</div>
-        <div class="idol-type-name">${t.type} ${t.name}</div>
-        <div class="idol-type-bonus">${t.desc}</div>
+      <div class="idol-type-card" id="idolTypeCard_${t.id}" data-type="${t.id}" onclick="idolSelectType('${t.id}')">
+        <div class="idol-type-img-wrap">
+          <img src="${t.img}" alt="${t.name}" class="idol-type-img" loading="lazy">
+          <div class="idol-type-img-overlay"></div>
+        </div>
+        <div class="idol-type-info">
+          <div class="idol-type-name">${t.name} <span class="idol-type-tag">${t.type}</span></div>
+          <div class="idol-type-bonus">${t.desc}</div>
+        </div>
       </div>`).join('');
 
     panel.innerHTML = `
@@ -1212,8 +1229,8 @@ function idolShowSelectPhase() {
         <div class="idol-select-title">🎤 아이돌 선택</div>
         <div class="idol-type-grid">${idolTypeOptions}</div>
         <input id="idolNameInput" class="input-field" placeholder="아이돌 이름 (선택)" maxlength="8"
-          style="margin-top:8px;padding:10px 12px;font-size:14px;">
-        <button class="idol-btn idol-btn-primary" onclick="idolConfirmSelection()" style="margin-top:8px;">
+          style="margin-top:4px;padding:10px 12px;font-size:14px;">
+        <button class="idol-btn idol-btn-primary" onclick="idolConfirmSelection()" style="margin-top:6px;">
           선택 완료
         </button>
       </div>`;

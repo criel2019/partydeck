@@ -2,773 +2,614 @@
 
 /* ─── 기본 레이아웃 ─────────────────────────── */
 #idolGame {
-  background: linear-gradient(160deg, #0d0d1a 0%, #1a0a2e 50%, #0a1a2e 100%);
+  background: #080810;
   overflow: hidden;
   flex-direction: column;
   height: 100%;
 }
 
+/* ─── 헤더 ──────────────────────────────────── */
 .idol-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
-  background: rgba(0,0,0,0.4);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.6);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
   flex-shrink: 0;
+  gap: 8px;
 }
 
 .idol-header-title {
   font-family: 'Black Han Sans', sans-serif;
   font-size: 16px;
   color: #ffd700;
-  text-shadow: 0 0 12px rgba(255,215,0,0.5);
+  letter-spacing: 0.03em;
 }
 
 .idol-turn-badge {
-  font-size: 12px;
+  font-size: 11px;
   color: #aaa;
   background: rgba(255,255,255,0.08);
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 20px;
+  white-space: nowrap;
 }
 
 /* ─── 자원 바 ───────────────────────────────── */
 .idol-resource-bar {
   display: flex;
-  gap: 6px;
-  padding: 8px 12px;
-  background: rgba(0,0,0,0.3);
+  gap: 5px;
+  padding: 8px 10px;
+  background: rgba(0,0,0,0.4);
   flex-shrink: 0;
   overflow-x: auto;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.idol-resource-bar::-webkit-scrollbar { display: none; }
 
 .idol-res-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 10px;
   padding: 5px 10px;
-  min-width: 58px;
+  min-width: 52px;
   flex-shrink: 0;
 }
 
-.idol-res-icon { font-size: 14px; line-height: 1; }
-.idol-res-label { font-size: 9px; color: #888; margin: 2px 0; text-align: center; }
-.idol-res-value { font-size: 13px; font-weight: 700; color: #fff; font-family: 'Outfit', sans-serif; }
+.idol-res-icon  { font-size: 14px; line-height: 1.2; }
+.idol-res-label { font-size: 9px; color: #666; margin: 2px 0 0; }
+.idol-res-value { font-size: 15px; font-weight: 800; color: #fff; font-family: 'Outfit', sans-serif; line-height: 1.1; }
 
-.idol-res-item.res-money  { border-color: rgba(255,215,0,0.3); }
-.idol-res-item.res-fame   { border-color: rgba(255,100,50,0.3); }
-.idol-res-item.res-talent { border-color: rgba(100,200,255,0.3); }
-.idol-res-item.res-looks  { border-color: rgba(255,100,200,0.3); }
+.idol-res-item.res-money  { border-color: rgba(255,215,0,0.35); }
+.idol-res-item.res-fame   { border-color: rgba(255,80,40,0.35); }
+.idol-res-item.res-talent { border-color: rgba(64,196,255,0.35); }
+.idol-res-item.res-looks  { border-color: rgba(255,100,200,0.35); }
 
-/* ─── 보드 ──────────────────────────────────── */
+/* ─── 보드 래퍼 ─────────────────────────────── */
 .idol-board-wrapper {
   position: relative;
-  width: 100%;
   flex: 1;
-  overflow: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  overflow: hidden;
+  padding: 5px;
   box-sizing: border-box;
 }
 
+/* ─── 보드 그리드 ───────────────────────────── */
 .idol-board {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   grid-template-rows: repeat(10, 1fr);
-  width: min(340px, 95vw);
-  height: min(340px, 95vw);
-  gap: 2px;
+  width: min(390px, calc(100vw - 8px));
+  height: min(390px, calc(100vw - 8px));
+  gap: 1.5px;
   flex-shrink: 0;
 }
 
+/* ─── 셀 공통 ───────────────────────────────── */
 .idol-cell {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 4px;
+  background: rgba(18,18,32,0.85);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 3px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   position: relative;
-  transition: background 0.2s;
   overflow: hidden;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
+.idol-cell:active { opacity: 0.75; }
 
-.idol-cell:hover { background: rgba(255,255,255,0.1); }
+/* 카테고리 컬러 상단 바 (샵 전용) */
+.idol-cell::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 2px 2px 0 0;
+}
+.cell-shop-music::before  { background: #e91e63; }
+.cell-shop-media::before  { background: #9c27b0; }
+.cell-shop-beauty::before { background: #f06292; }
+.cell-shop-event::before  { background: #ff9800; }
 
-.idol-cell.cell-start  { background: rgba(50,200,100,0.15); border-color: rgba(50,200,100,0.4); }
-.idol-cell.cell-police { background: rgba(100,150,255,0.15); border-color: rgba(100,150,255,0.4); }
-.idol-cell.cell-tax    { background: rgba(255,50,50,0.15); border-color: rgba(255,50,50,0.4); }
-.idol-cell.cell-event  { background: rgba(255,200,50,0.1); border-color: rgba(255,200,50,0.3); }
-.idol-cell.cell-gacha  { background: rgba(200,100,255,0.1); border-color: rgba(200,100,255,0.3); }
-.idol-cell.cell-chance { background: rgba(100,200,255,0.1); border-color: rgba(100,200,255,0.3); }
-.idol-cell.cell-free   { background: rgba(100,255,150,0.1); border-color: rgba(100,255,150,0.3); }
-.idol-cell.cell-stage  { background: rgba(255,150,50,0.15); border-color: rgba(255,150,50,0.4); }
+/* 특수 칸 */
+.cell-start  { background: rgba(40,180,80,0.2);  border-color: rgba(40,180,80,0.4); }
+.cell-police { background: rgba(50,120,255,0.15); border-color: rgba(50,120,255,0.35); }
+.cell-tax    { background: rgba(255,50,50,0.15);  border-color: rgba(255,50,50,0.35); }
+.cell-event  { background: rgba(255,210,50,0.12); border-color: rgba(255,210,50,0.3); }
+.cell-gacha  { background: rgba(170,80,255,0.12); border-color: rgba(170,80,255,0.3); }
+.cell-chance { background: rgba(0,210,255,0.1);   border-color: rgba(0,210,255,0.25); }
+.cell-free   { background: rgba(70,210,120,0.12); border-color: rgba(70,210,120,0.3); }
+.cell-stage  { background: rgba(255,140,40,0.15); border-color: rgba(255,140,40,0.35); }
 
-.idol-cell.cell-shop-music  { border-color: rgba(233,30,99,0.5); }
-.idol-cell.cell-shop-media  { border-color: rgba(156,39,176,0.5); }
-.idol-cell.cell-shop-beauty { border-color: rgba(240,98,146,0.5); }
-.idol-cell.cell-shop-event  { border-color: rgba(255,152,0,0.5); }
+/* 소유 표시 */
+.idol-cell.owned-mine  { background: rgba(60,190,80,0.18); }
+.idol-cell.owned-other { background: rgba(255,70,70,0.12); }
 
-.idol-cell.owned-mine   { background: rgba(100,200,100,0.15); }
-.idol-cell.owned-other  { background: rgba(255,100,100,0.1); }
-
-/* 현재 플레이어 위치 강조 */
+/* 내 위치 강조 */
 .idol-cell.player-here {
-  outline: 2px solid #ffd700;
-  outline-offset: -2px;
-  animation: cellPulse 1.2s ease-in-out infinite;
+  box-shadow: inset 0 0 0 1.5px #ffd700, 0 0 8px rgba(255,215,0,0.5);
+  animation: cellPulse 1.4s ease-in-out infinite;
   z-index: 2;
 }
-
 @keyframes cellPulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(255,215,0,0.6); }
-  50%       { box-shadow: 0 0 14px rgba(255,215,0,1); }
+  0%, 100% { box-shadow: inset 0 0 0 1.5px #ffd700, 0 0 5px rgba(255,215,0,0.4); }
+  50%       { box-shadow: inset 0 0 0 1.5px #ffd700, 0 0 14px rgba(255,215,0,0.85); }
 }
 
-.idol-cell-emoji { font-size: 12px; line-height: 1; }
-.idol-cell-name  { font-size: 5px; color: #aaa; text-align: center; word-break: keep-all; line-height: 1.1; margin-top: 1px; max-width: 100%; padding: 0 1px; }
-.idol-cell-rent  { font-size: 5px; color: #ffd700; }
+/* 셀 내용 */
+.idol-cell-emoji { font-size: 14px; line-height: 1; pointer-events: none; }
+.idol-cell-name  { font-size: 5px; color: #888; text-align: center; word-break: keep-all; line-height: 1.1; margin-top: 1px; max-width: 100%; padding: 0 1px; pointer-events: none; }
+.idol-cell-rent  { font-size: 5px; color: #ffd700; pointer-events: none; }
 
-/* 보드 중앙 (2x2 grid 영역) */
+/* 소유자 도트 */
+.cell-owner-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  position: absolute;
+  top: 4px; right: 3px;
+  box-shadow: 0 0 3px rgba(0,0,0,0.6);
+}
+
+/* 플레이어 토큰 */
+.cell-tokens {
+  display: flex; flex-wrap: wrap; gap: 1px;
+  position: absolute; bottom: 1px; left: 1px;
+}
+.player-token {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.5);
+  font-size: 6px;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+/* ─── 보드 중앙 ──────────────────────────────── */
 .idol-board-center {
   grid-column: 2 / 10;
   grid-row: 2 / 10;
-  background: rgba(0,0,0,0.3);
-  border-radius: 8px;
+  background: rgba(6,6,18,0.8);
+  border-radius: 6px;
   border: 1px solid rgba(255,255,255,0.06);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 4px;
-  gap: 3px;
+  gap: 4px;
+  overflow: hidden;
 }
 
+/* 보드 중앙 제목 (폴백) */
 .idol-center-title {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 10px;
-  color: #ffd700;
-  text-align: center;
+  font-size: 10px; color: #ffd700; text-align: center;
 }
 
-/* 플레이어 토큰 (셀 위 오버레이) */
-.cell-tokens {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1px;
-  position: absolute;
-  bottom: 1px;
-  left: 1px;
-}
-
-.player-token {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.5);
-  font-size: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-/* 소유자 표시 도트 */
-.cell-owner-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  position: absolute;
-  top: 2px;
-  right: 2px;
-}
-
-/* ─── 아이돌 캐릭터 ──────────────────────────── */
-.idol-character {
-  position: relative;
-  width: 60px;
-  height: 80px;
+/* 현재 아이돌 초상화 */
+.idol-center-portrait {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-}
-
-.idol-char-body {
-  font-size: 36px;
-  line-height: 1;
-  transition: all 0.4s ease;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
-}
-
-.idol-char-name {
-  font-size: 9px;
-  color: #fff;
-  font-weight: 700;
-  margin-top: 2px;
-  text-shadow: 0 1px 3px #000;
-}
-
-/* 성장 단계별 이펙트 */
-.idol-stage-0 .idol-char-body { filter: grayscale(0.4) drop-shadow(0 2px 4px rgba(0,0,0,0.4)); }
-.idol-stage-1 .idol-char-body { filter: drop-shadow(0 2px 8px rgba(66,165,245,0.6)); }
-.idol-stage-2 .idol-char-body { filter: drop-shadow(0 2px 10px rgba(171,71,188,0.8)); }
-.idol-stage-3 .idol-char-body { filter: drop-shadow(0 2px 14px rgba(255,215,0,1)); animation: superstarGlow 2s ease-in-out infinite; }
-
-@keyframes superstarGlow {
-  0%, 100% { filter: drop-shadow(0 2px 14px rgba(255,215,0,0.9)); transform: scale(1); }
-  50%       { filter: drop-shadow(0 4px 20px rgba(255,215,0,1)); transform: scale(1.05); }
-}
-
-/* ─── 하단 액션 패널 ─────────────────────────── */
-.idol-action-panel {
-  padding: 10px 12px;
-  background: rgba(0,0,0,0.5);
-  border-top: 1px solid rgba(255,255,255,0.08);
+  gap: 2px;
   flex-shrink: 0;
 }
+.idol-center-img {
+  width: 54px; height: 70px;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255,215,0,0.35);
+  display: block;
+}
+.idol-center-img-placeholder {
+  width: 54px; height: 70px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255,215,0,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  background: rgba(255,255,255,0.04);
+}
+.idol-center-name {
+  font-size: 8px;
+  color: #ffd700;
+  font-weight: 700;
+  text-align: center;
+  font-family: 'Black Han Sans', sans-serif;
+  max-width: 68px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.idol-center-stage { font-size: 7px; text-align: center; }
+
+/* 성장 단계별 이펙트 */
+.idol-stage-1 .idol-center-img { filter: drop-shadow(0 0 5px rgba(66,165,245,0.7)); }
+.idol-stage-2 .idol-center-img { filter: drop-shadow(0 0 7px rgba(171,71,188,0.9)); }
+.idol-stage-3 .idol-center-img { animation: superstarGlow 2s ease-in-out infinite; }
+@keyframes superstarGlow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(255,215,0,0.8)); }
+  50%       { filter: drop-shadow(0 0 18px rgba(255,215,0,1)); }
+}
+
+/* 플레이어 미니 카드 */
+.idol-players-mini {
+  display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; width: 100%;
+}
+.idol-player-mini {
+  display: flex; flex-direction: column; align-items: center;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 5px;
+  padding: 3px 4px;
+  min-width: 36px;
+}
+.idol-player-mini.is-current  { border-color: #ffd700; background: rgba(255,215,0,0.08); }
+.idol-player-mini.is-bankrupt { opacity: 0.3; }
+.idol-mini-img {
+  width: 22px; height: 22px;
+  object-fit: cover; object-position: top center;
+  border-radius: 50%; display: block;
+}
+.idol-player-mini-emoji { font-size: 14px; line-height: 1.2; }
+.idol-player-mini-name  { font-size: 7px; color: #888; text-align: center; max-width: 38px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.idol-player-mini-fame  { font-size: 9px; color: #ff6b35; font-weight: 700; font-family: 'Outfit', sans-serif; }
+
+/* ─── 액션 패널 ──────────────────────────────── */
+.idol-action-panel {
+  padding: 10px 14px 14px;
+  background: rgba(0,0,0,0.55);
+  border-top: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+  max-height: 42vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.idol-action-panel::-webkit-scrollbar { display: none; }
 
 .idol-action-title {
-  font-size: 12px;
-  color: #ccc;
+  font-size: 12px; color: #ccc;
   margin-bottom: 8px;
   text-align: center;
+  line-height: 1.5;
 }
-
 .idol-action-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
 }
 
+/* ─── 버튼 ───────────────────────────────────── */
 .idol-btn {
   flex: 1;
-  min-width: 80px;
-  max-width: 160px;
-  padding: 12px 8px;
-  border: none;
-  border-radius: 12px;
+  min-width: 80px; max-width: 160px;
+  padding: 12px 10px;
+  border: none; border-radius: 12px;
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 13px; font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: transform 0.1s, opacity 0.15s;
   background: rgba(255,255,255,0.1);
   color: #fff;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.15);
+  -webkit-tap-highlight-color: transparent;
 }
+.idol-btn:active   { transform: scale(0.93); }
+.idol-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-.idol-btn:active { transform: scale(0.96); }
-.idol-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.idol-btn-primary { background: linear-gradient(135deg, #ff2d78, #c2185b); border-color: transparent; }
+.idol-btn-gold    { background: linear-gradient(135deg, #ffd700, #e65100); color: #000; border-color: transparent; }
+.idol-btn-purple  { background: linear-gradient(135deg, #9c44f7, #4a148c); border-color: transparent; }
+.idol-btn-danger  { background: linear-gradient(135deg, #c62828, #7f0000); border-color: transparent; }
+.idol-btn-safe    { background: linear-gradient(135deg, #00c853, #1b5e20); border-color: transparent; }
 
-.idol-btn-primary  { background: linear-gradient(135deg, #e91e63, #c2185b); border-color: transparent; }
-.idol-btn-gold     { background: linear-gradient(135deg, #ffd700, #ff8f00); color: #000; border-color: transparent; }
-.idol-btn-purple   { background: linear-gradient(135deg, #7b1fa2, #4a148c); border-color: transparent; }
-.idol-btn-danger   { background: linear-gradient(135deg, #c62828, #7f0000); border-color: transparent; }
-.idol-btn-safe     { background: linear-gradient(135deg, #2e7d32, #1b5e20); border-color: transparent; }
-
-/* ─── 팝업 공통 ──────────────────────────────── */
+/* ─── 팝업 오버레이 ──────────────────────────── */
 .idol-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  align-items: flex-end; justify-content: center;
   z-index: 200;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
-
 .idol-popup {
-  background: linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%);
-  border: 1px solid rgba(255,255,255,0.15);
+  background: #111120;
+  border: 1px solid rgba(255,255,255,0.11);
   border-bottom: none;
-  border-radius: 20px 20px 0 0;
-  padding: 20px 16px 28px;
-  width: 100%;
-  max-width: 440px;
+  border-radius: 22px 22px 0 0;
+  padding: 8px 18px 32px;
+  width: 100%; max-width: 440px;
   max-height: 80vh;
   overflow-y: auto;
-  animation: slideUp 0.28s ease-out;
+  scrollbar-width: none;
+  animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
 }
+.idol-popup::-webkit-scrollbar { display: none; }
 
+/* 드래그 핸들 */
+.idol-popup::before {
+  content: '';
+  display: block;
+  width: 36px; height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.2);
+  margin: 4px auto 16px;
+}
 @keyframes slideUp {
-  from { transform: translateY(100%); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }
 
 .idol-popup-title {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 18px;
-  color: #fff;
-  margin-bottom: 8px;
-  text-align: center;
+  font-size: 18px; color: #fff;
+  margin-bottom: 6px; text-align: center;
 }
-
 .idol-popup-sub {
-  font-size: 12px;
-  color: #aaa;
-  text-align: center;
-  margin-bottom: 16px;
+  font-size: 12px; color: #888;
+  text-align: center; margin-bottom: 16px;
 }
-
 .idol-choice-btn {
   width: 100%;
-  padding: 14px 16px;
-  margin-bottom: 8px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.07);
+  padding: 14px 16px; margin-bottom: 8px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
   color: #fff;
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.15s;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; text-align: left;
+  transition: background 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
 }
-
-.idol-choice-btn:hover  { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3); }
-.idol-choice-btn:active { transform: scale(0.98); }
+.idol-choice-btn:active { transform: scale(0.97); background: rgba(255,255,255,0.1); }
 
 /* ─── 주사위 ─────────────────────────────────── */
 .idol-dice-area {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
-  margin: 12px 0;
+  display: flex; gap: 14px; justify-content: center; align-items: center; margin: 12px 0;
 }
-
 .idol-dice {
-  width: 52px;
-  height: 52px;
-  background: linear-gradient(135deg, #fff, #e0e0e0);
+  width: 52px; height: 52px;
+  background: linear-gradient(145deg, #fff, #d0d0d0);
   border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  color: #1a1a2e;
-  font-weight: 900;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.8);
-  transition: transform 0.08s;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; color: #1a1a2e; font-weight: 900;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 3px rgba(255,255,255,0.8);
 }
-
-.idol-dice.rolling {
-  animation: diceRoll 0.5s ease-out;
-}
-
+.idol-dice.rolling { animation: diceRoll 0.45s ease-out; }
 @keyframes diceRoll {
-  0%   { transform: rotate(0deg)   scale(1); }
-  20%  { transform: rotate(72deg)  scale(1.1); }
-  40%  { transform: rotate(144deg) scale(0.95); }
-  60%  { transform: rotate(216deg) scale(1.08); }
-  80%  { transform: rotate(288deg) scale(1); }
+  0%   { transform: rotate(0) scale(1); }
+  25%  { transform: rotate(90deg) scale(1.15); }
+  50%  { transform: rotate(180deg) scale(0.9); }
+  75%  { transform: rotate(270deg) scale(1.1); }
   100% { transform: rotate(360deg) scale(1); }
 }
-
 .idol-dice-sum {
-  font-size: 24px;
-  font-weight: 900;
-  color: #ffd700;
+  font-size: 28px; font-weight: 900; color: #ffd700;
   font-family: 'Outfit', sans-serif;
+  min-width: 40px; text-align: center;
 }
 
-/* ─── 가챠 슬롯머신 ──────────────────────────── */
-.idol-gacha-slot {
-  text-align: center;
-  padding: 16px;
-}
-
+/* ─── 가챠 ───────────────────────────────────── */
+.idol-gacha-slot { text-align: center; padding: 8px 0 16px; }
 .idol-gacha-reel {
-  font-size: 48px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 12px 0;
-  border: 2px solid rgba(255,255,255,0.2);
-  border-radius: 16px;
-  background: rgba(0,0,0,0.3);
-  overflow: hidden;
+  font-size: 52px; height: 72px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 10px 0;
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 16px; background: rgba(0,0,0,0.3); overflow: hidden;
 }
-
-.idol-gacha-reel.spinning {
-  animation: reelSpin 0.6s steps(1) infinite;
-}
-
+.idol-gacha-reel.spinning { animation: reelSpin 0.08s steps(1) infinite; }
 @keyframes reelSpin {
-  0%   { content: '🎰'; }
-  25%  { transform: translateY(-4px); }
-  50%  { transform: translateY(0); }
-  75%  { transform: translateY(4px); }
-  100% { transform: translateY(0); }
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-4px); }
+  100% { transform: translateY(4px); }
 }
-
-.idol-gacha-result-grade {
-  font-size: 20px;
-  font-weight: 700;
-  margin: 8px 0;
-}
-
-.grade-legend { color: #ffd700; text-shadow: 0 0 12px rgba(255,215,0,0.8); }
-.grade-hit    { color: #ab47bc; }
-.grade-common { color: #78909c; }
+.idol-gacha-result-grade { font-size: 20px; font-weight: 700; margin: 8px 0 4px; }
+.grade-legend { color: #ffd700; text-shadow: 0 0 16px rgba(255,215,0,0.9); }
+.grade-hit    { color: #c084fc; }
+.grade-common { color: #94a3b8; }
 
 .gacha-legend-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.88);
+  display: flex; align-items: center; justify-content: center;
   z-index: 300;
-  animation: legendIn 0.4s ease-out;
+  animation: legendIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
 }
-
 @keyframes legendIn {
-  from { opacity: 0; transform: scale(0.8); }
+  from { opacity: 0; transform: scale(0.6); }
   to   { opacity: 1; transform: scale(1); }
 }
-
-.gacha-legend-content {
-  text-align: center;
-  padding: 32px;
-}
-
-.gacha-legend-emoji { font-size: 80px; animation: floatUp 0.8s ease-out; }
-
+.gacha-legend-content { text-align: center; padding: 32px; }
+.gacha-legend-emoji   { font-size: 90px; animation: floatUp 0.7s ease-out; }
 @keyframes floatUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from { transform: translateY(28px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
 }
 
 /* ─── 5턴 결산 ───────────────────────────────── */
-.idol-settlement-popup {
-  text-align: center;
-}
-
-.idol-settlement-idol {
-  font-size: 56px;
-  margin: 12px 0;
-  animation: settleIdolIn 0.5s ease-out;
-}
-
+.idol-settlement-popup { text-align: center; }
+.idol-settlement-idol  { font-size: 60px; margin: 12px 0 4px; animation: settleIdolIn 0.45s cubic-bezier(0.34,1.56,0.64,1); }
 @keyframes settleIdolIn {
-  from { transform: scale(0) rotate(-20deg); opacity: 0; }
-  to   { transform: scale(1) rotate(0deg);   opacity: 1; }
+  from { transform: scale(0) rotate(-15deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0); opacity: 1; }
 }
-
 .idol-fame-counter {
   font-family: 'Outfit', sans-serif;
-  font-size: 36px;
-  font-weight: 900;
-  color: #ffd700;
-  text-shadow: 0 0 20px rgba(255,215,0,0.7);
+  font-size: 40px; font-weight: 900; color: #ffd700;
+  text-shadow: 0 0 24px rgba(255,215,0,0.6); line-height: 1;
 }
-
-.idol-fame-delta {
-  font-size: 20px;
-  font-weight: 700;
-  color: #69f0ae;
-  margin-bottom: 8px;
-}
+.idol-fame-delta { font-size: 20px; font-weight: 700; color: #00e676; margin-bottom: 8px; }
 
 /* 순위 카드 */
-.idol-rank-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 12px 0;
-}
-
-.idol-rank-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background: rgba(255,255,255,0.06);
-  border-radius: 10px;
-}
-
-.idol-rank-num { font-size: 16px; font-weight: 900; color: #ffd700; width: 24px; }
+.idol-rank-list { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+.idol-rank-row  { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: 10px; }
+.idol-rank-num    { font-size: 16px; font-weight: 900; color: #ffd700; width: 24px; }
 .idol-rank-avatar { font-size: 20px; }
-.idol-rank-name { flex: 1; font-size: 13px; color: #fff; }
-.idol-rank-fame { font-size: 14px; font-weight: 700; color: #ff6b35; font-family: 'Outfit', sans-serif; }
-.idol-rank-stage { font-size: 12px; color: #888; }
+.idol-rank-name   { flex: 1; font-size: 13px; color: #fff; }
+.idol-rank-fame   { font-size: 14px; font-weight: 700; color: #ff6b35; font-family: 'Outfit', sans-serif; }
+.idol-rank-stage  { font-size: 11px; color: #666; }
 
 /* ─── 엔딩 화면 ──────────────────────────────── */
 .idol-ending-screen {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 500;
-  padding: 24px;
-  text-align: center;
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 500; padding: 24px; text-align: center;
   animation: endingFadeIn 1s ease-out;
 }
-
-@keyframes endingFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
+@keyframes endingFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .idol-ending-emoji {
-  font-size: 72px;
-  margin-bottom: 16px;
-  animation: endingEmojiIn 0.8s 0.3s ease-out both;
+  font-size: 80px; margin-bottom: 16px;
+  animation: endingEmojiIn 0.8s 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
 }
-
 @keyframes endingEmojiIn {
   from { transform: scale(0) translateY(-20px); opacity: 0; }
-  to   { transform: scale(1) translateY(0);     opacity: 1; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
 }
-
-.idol-ending-title {
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: 24px;
-  color: #fff;
-  margin-bottom: 12px;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
-}
-
-.idol-ending-text {
-  font-size: 15px;
-  color: rgba(255,255,255,0.85);
-  line-height: 1.6;
-  max-width: 320px;
-  margin: 0 auto 24px;
-}
-
-.idol-ending-text span {
-  display: block;
-  opacity: 0;
-  animation: typeIn 0.04s ease-out forwards;
-}
+.idol-ending-title { font-family: 'Black Han Sans', sans-serif; font-size: 26px; color: #fff; margin-bottom: 12px; }
+.idol-ending-text  { font-size: 15px; color: rgba(255,255,255,0.8); line-height: 1.7; max-width: 320px; margin: 0 auto 24px; }
 
 /* ─── 샵 팝업 ────────────────────────────────── */
-.idol-shop-popup .shop-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.shop-cat-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.shop-level-bar {
-  display: flex;
-  gap: 4px;
-  margin: 10px 0;
-}
-
+.idol-shop-popup .shop-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.shop-cat-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; color: #fff; }
+.shop-level-bar { display: flex; gap: 4px; margin: 10px 0; }
 .shop-level-dot {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
-  color: #888;
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #666;
 }
-
 .shop-level-dot.active { background: #ffd700; border-color: #ffd700; color: #000; }
-
-.shop-rent-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-  margin: 8px 0;
-}
-
-.shop-rent-table td {
-  padding: 4px 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  color: #ccc;
-}
-
+.shop-rent-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0; }
+.shop-rent-table td { padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #ccc; }
 .shop-rent-table td:last-child { text-align: right; color: #ffd700; font-weight: 700; }
 
-/* ─── 호감도 알림 토스트 ─────────────────────── */
+/* ─── 호감도 토스트 ──────────────────────────── */
 .idol-favor-toast {
-  position: fixed;
-  top: 80px;
-  left: 50%;
+  position: fixed; top: 80px; left: 50%;
   transform: translateX(-50%);
-  background: rgba(255,105,180,0.9);
-  color: #fff;
-  padding: 8px 20px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 700;
-  z-index: 1000;
-  pointer-events: none;
+  background: rgba(255,45,120,0.92);
+  color: #fff; padding: 8px 20px;
+  border-radius: 20px; font-size: 13px; font-weight: 700;
+  z-index: 1000; pointer-events: none; white-space: nowrap;
   animation: favorToast 2.5s ease-out forwards;
 }
-
 @keyframes favorToast {
-  0%   { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  0%   { opacity: 0; transform: translateX(-50%) translateY(-8px); }
   15%  { opacity: 1; transform: translateX(-50%) translateY(0); }
   75%  { opacity: 1; }
   100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
 }
 
-/* ─── 이동 경로 애니메이션 ───────────────────── */
-.idol-cell.moving-highlight {
-  animation: movingCell 0.2s ease-out;
-}
-
+/* ─── 이동 하이라이트 ────────────────────────── */
+.idol-cell.moving-highlight { animation: movingCell 0.25s ease-out; }
 @keyframes movingCell {
-  0%   { background: rgba(255,215,0,0.4); }
-  100% { background: rgba(255,255,255,0.05); }
+  0%   { background: rgba(255,215,0,0.35); }
+  100% { }
 }
 
-/* ─── 폭죽 이펙트 ────────────────────────────── */
-.confetti-wrapper {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 999;
-  overflow: hidden;
-}
-
-.confetti-piece {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  animation: confettiFall linear forwards;
-}
-
+/* ─── 폭죽 ───────────────────────────────────── */
+.confetti-wrapper { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+.confetti-piece   { position: absolute; width: 8px; height: 8px; border-radius: 2px; animation: confettiFall linear forwards; }
 @keyframes confettiFall {
-  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  0%   { transform: translateY(-20px) rotate(0); opacity: 1; }
   100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
 }
 
-/* ─── 플레이어 패널 (보드 중앙) ──────────────── */
-.idol-players-mini {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: center;
+/* ─── 경찰서 배지 ────────────────────────────── */
+.idol-jail-badge {
+  background: rgba(50,120,255,0.2); border: 1px solid rgba(50,120,255,0.4);
+  border-radius: 8px; padding: 4px 8px; font-size: 10px; color: #90caf9;
 }
 
-.idol-player-mini {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
-  padding: 4px 6px;
-  min-width: 44px;
-}
+/* ─── 훈련 결과 ──────────────────────────────── */
+.idol-train-result { text-align: center; padding: 8px; }
+.idol-train-die    { font-size: 36px; margin: 8px 0; }
+.idol-train-gain   { font-size: 22px; font-weight: 700; color: #00e676; }
 
-.idol-player-mini.is-current { border-color: #ffd700; background: rgba(255,215,0,0.1); }
-.idol-player-mini.is-bankrupt { opacity: 0.4; }
-.idol-player-mini-emoji { font-size: 16px; }
-.idol-player-mini-name  { font-size: 7px; color: #aaa; }
-.idol-player-mini-fame  { font-size: 10px; color: #ff6b35; font-weight: 700; font-family: 'Outfit', sans-serif; }
-
-/* ─── 선택 화면 (아이돌/이름 선택) ─────────── */
+/* ─── 아이돌 선택 화면 ───────────────────────── */
 .idol-select-screen {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  height: 100%;
-  overflow-y: auto;
+  padding: 14px 14px 12px;
+  display: flex; flex-direction: column; gap: 9px;
+  overflow-y: auto; scrollbar-width: none;
 }
+.idol-select-screen::-webkit-scrollbar { display: none; }
+.idol-select-title { font-family: 'Black Han Sans', sans-serif; font-size: 20px; color: #fff; text-align: center; }
 
-.idol-select-title {
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: 20px;
-  color: #fff;
-  text-align: center;
-}
-
-.idol-type-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
+/* 아이돌 타입 카드 — 가로형 */
+.idol-type-grid { display: flex; flex-direction: column; gap: 8px; }
 
 .idol-type-card {
-  padding: 16px 12px;
-  border-radius: 16px;
+  display: flex; align-items: stretch;
+  border-radius: 14px;
   border: 2px solid rgba(255,255,255,0.1);
   background: rgba(255,255,255,0.04);
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.15s;
+  cursor: pointer; overflow: hidden;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  height: 80px;
+}
+.idol-type-card:active { transform: scale(0.98); }
+
+/* 선택 시 타입별 하이라이트 */
+.idol-type-card[data-type="luna"].selected { border-color: #ff6b9d; background: rgba(255,107,157,0.09); box-shadow: 0 0 18px rgba(255,107,157,0.3); }
+.idol-type-card[data-type="bibi"].selected { border-color: #ff9500; background: rgba(255,149,0,0.09);   box-shadow: 0 0 18px rgba(255,149,0,0.3); }
+.idol-type-card[data-type="jun"].selected  { border-color: #c084fc; background: rgba(192,132,252,0.09); box-shadow: 0 0 18px rgba(192,132,252,0.3); }
+.idol-type-card[data-type="ai"].selected   { border-color: #22d3ee; background: rgba(34,211,238,0.09);  box-shadow: 0 0 18px rgba(34,211,238,0.3); }
+
+.idol-type-img-wrap {
+  position: relative; width: 60px; flex-shrink: 0; overflow: hidden;
+}
+.idol-type-img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: top center; display: block;
+}
+.idol-type-img-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 55%, rgba(8,8,16,0.75));
 }
 
-.idol-type-card.selected {
-  border-color: #ffd700;
-  background: rgba(255,215,0,0.1);
+.idol-type-info {
+  flex: 1; padding: 10px 12px 10px 10px;
+  display: flex; flex-direction: column; justify-content: center; gap: 4px;
 }
-
-.idol-type-emoji { font-size: 32px; margin-bottom: 6px; }
-.idol-type-name  { font-size: 14px; font-weight: 700; color: #fff; }
-.idol-type-bonus { font-size: 11px; color: #888; margin-top: 4px; }
-
-/* ─── 경찰서 ─────────────────────────────────── */
-.idol-jail-badge {
-  background: rgba(100,150,255,0.2);
-  border: 1px solid rgba(100,150,255,0.4);
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 10px;
-  color: #90caf9;
+.idol-type-name {
+  font-size: 15px; font-weight: 700; color: #fff;
+  display: flex; align-items: center; gap: 6px;
 }
-
-/* ─── 샵 훈련 결과 ───────────────────────────── */
-.idol-train-result {
-  text-align: center;
-  padding: 8px;
+.idol-type-tag {
+  font-size: 10px; font-weight: 600;
+  padding: 1px 7px; border-radius: 20px;
 }
+/* 타입 태그 색상 */
+.idol-type-card[data-type="luna"] .idol-type-tag { color: #ff6b9d; background: rgba(255,107,157,0.18); }
+.idol-type-card[data-type="bibi"] .idol-type-tag { color: #ff9500; background: rgba(255,149,0,0.18); }
+.idol-type-card[data-type="jun"]  .idol-type-tag { color: #c084fc; background: rgba(192,132,252,0.18); }
+.idol-type-card[data-type="ai"]   .idol-type-tag { color: #22d3ee; background: rgba(34,211,238,0.18); }
 
-.idol-train-die {
-  font-size: 32px;
-  margin: 8px 0;
-}
+.idol-type-bonus { font-size: 11px; color: #888; line-height: 1.35; }
+.idol-type-emoji { display: none; }
 
-.idol-train-gain {
-  font-size: 20px;
-  font-weight: 700;
-  color: #69f0ae;
-}
-
-/* ─── 반응형 ─────────────────────────────────── */
+/* ─── 반응형 ──────────────────────────────────── */
 @media (max-height: 640px) {
-  .idol-board {
-    width: min(260px, 90vw);
-    height: min(260px, 90vw);
-  }
-  .idol-cell-emoji { font-size: 10px; }
-  .idol-cell-name  { display: none; }
+  .idol-board { width: min(270px, 92vw); height: min(270px, 92vw); }
+  .idol-action-panel { max-height: 35vh; }
+  .idol-type-card { height: 68px; }
+}
+@media (min-width: 430px) {
+  .idol-board { width: min(400px, calc(100vw - 20px)); height: min(400px, calc(100vw - 20px)); }
 }
