@@ -338,26 +338,21 @@ function calcYahtzeeScore(dice, category) {
     case 'fives': return dice.filter(d => d === 5).length * 5;
     case 'sixes': return dice.filter(d => d === 6).length * 6;
 
-    case 'four-kind':
-      return Object.values(counts).some(c => c >= 4) ? sum : 0;
+    case 'four-kind': {
+      const entry = Object.entries(counts).find(([, c]) => c >= 4);
+      return entry ? parseInt(entry[0]) * 4 : 0;
+    }
 
     case 'full-house': {
       const vals = Object.values(counts).sort((a, b) => b - a);
-      return (vals[0] === 3 && vals[1] === 2) ? 25 : 0;
+      return (vals[0] === 3 && vals[1] === 2) ? sum : 0;
     }
 
-    case 'small-straight': {
-      const unique = [...new Set(sorted)];
-      const patterns = [[1,2,3,4], [2,3,4,5], [3,4,5,6]];
-      return patterns.some(p => p.every(n => unique.includes(n))) ? 30 : 0;
-    }
+    case 'small-straight':
+      return sorted.join('') === '12345' ? 30 : 0;
 
-    case 'large-straight': {
-      const str1 = [1,2,3,4,5];
-      const str2 = [2,3,4,5,6];
-      return (JSON.stringify(sorted) === JSON.stringify(str1) ||
-              JSON.stringify(sorted) === JSON.stringify(str2)) ? 40 : 0;
-    }
+    case 'large-straight':
+      return sorted.join('') === '23456' ? 30 : 0;
 
     case 'yahtzee':
       return Object.values(counts).some(c => c === 5) ? 50 : 0;
@@ -388,11 +383,8 @@ function getYahtzeeComboName(dice) {
   if (vals[0] === 5) return 'YAHTZEE!';
   if (vals[0] === 4) return 'Four of a Kind';
   if (vals[0] === 3 && vals[1] === 2) return 'Full House';
-  if (sorted.join('') === '12345' || sorted.join('') === '23456') return 'Large Straight';
-  // small straight check
-  const unique = [...new Set(sorted)];
-  const uStr = unique.join('');
-  if (uStr.includes('1234') || uStr.includes('2345') || uStr.includes('3456')) return 'Small Straight';
+  if (sorted.join('') === '23456') return 'Large Straight';
+  if (sorted.join('') === '12345') return 'Small Straight';
 
   if (vals[0] === 2 && vals[1] === 2) return 'Two Pair';
   if (vals[0] === 2) return 'One Pair';
@@ -699,6 +691,15 @@ function handleYahtzeeGameOver() {
 function closeYahtzeeGame() {
   document.getElementById('yahtzeeGameOver').style.display = 'none';
   returnToLobby();
+}
+
+function showYahHelp() {
+  document.getElementById('yahtzeeHelpOverlay').style.display = 'flex';
+}
+
+function hideYahHelp(e) {
+  if (e && e.target !== document.getElementById('yahtzeeHelpOverlay')) return;
+  document.getElementById('yahtzeeHelpOverlay').style.display = 'none';
 }
 
 function handleYahAction(peerId, msg) {
