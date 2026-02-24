@@ -30,6 +30,7 @@
 <link rel="stylesheet" href="css/games/pupil.css">
 <link rel="stylesheet" href="css/games/blackjack.css">
 <link rel="stylesheet" href="css/games/tamagotchi.css">
+<link rel="stylesheet" href="css/games/idol.css">
 <link rel="stylesheet" href="css/games/mobile.css">
 </head>
 <body>
@@ -105,6 +106,7 @@
       <button class="debug-game-btn" onclick="debugGame('pupil')">👁 동공탐지</button>
       <button class="debug-game-btn" onclick="debugGame('blackjack')">🃏 블랙잭</button>
       <button class="debug-game-btn" onclick="debugGame('tamagotchi')">🐉 다마고치</button>
+      <button class="debug-game-btn" onclick="debugGame('idol')">🎤 아이돌</button>
     </div>
   </div>
 
@@ -141,6 +143,7 @@
       <button class="practice-game-btn" onclick="startPracticeGame('jewel')">💎 보석맞추기</button>
       <button class="practice-game-btn" onclick="startPracticeGame('colorchain')">🔗 컬러체인</button>
       <button class="practice-game-btn" onclick="startPracticeGame('slinkystairs')">🌀 슬링키</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('idol')">🎤 아이돌</button>
     </div>
   </div>
 </div>
@@ -240,6 +243,9 @@
       </div>
       <div class="game-option" data-game="pupil" onclick="selectGame(this)">
         <span class="game-emoji">👁</span>동공탐지
+      </div>
+      <div class="game-option" data-game="idol" onclick="selectGame(this)">
+        <span class="game-emoji">🎤</span>아이돌
       </div>
     </div>
     <div class="game-info-panel" id="gameInfoPanel" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
@@ -2294,6 +2300,25 @@
   </div>
 </div>
 
+<!-- IDOL MANAGEMENT GAME -->
+<div class="screen" id="idolGame">
+  <div class="idol-header">
+    <button class="pk-close-btn" onclick="leaveGame()" style="font-size:18px;background:none;border:none;color:#fff;cursor:pointer;">✕</button>
+    <div class="idol-header-title">🎤 아이돌 매니지먼트</div>
+    <div class="idol-turn-badge" id="idolTurnBadge">1 / 25턴</div>
+  </div>
+
+  <div class="idol-resource-bar" id="idolResourceBar"></div>
+
+  <div class="idol-board-wrapper" id="idolBoardWrapper">
+    <div class="idol-board" id="idolBoard"></div>
+  </div>
+
+  <div class="idol-action-panel" id="idolActionPanel">
+    <div class="idol-action-title" style="color:#888;">게임 로딩 중...</div>
+  </div>
+</div>
+
 <!-- QR Code library -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="js/core.js?v=3"></script>
@@ -2317,6 +2342,8 @@
 <script src="js/games/slinkystairs.js?v=1"></script>
 <script src="js/games/pupil.js?v=1"></script>
 <script src="js/games/tamagotchi.js?v=2"></script>
+<script src="js/games/idol-data.js"></script>
+<script src="js/games/idol.js"></script>
 <script src="js/ai.js?v=3"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>

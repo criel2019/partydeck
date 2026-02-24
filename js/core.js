@@ -60,8 +60,8 @@ function loadPeerJS() {
 }
 
 // ===== CONSTANTS & STATE =====
-const SOLO_GAMES = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil'];
-const SOLO_ONLY_GAMES = ['pupil']; // 1인 전용 (다인 시 비활성화)
+const SOLO_GAMES = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil', 'tamagotchi', 'blackjack', 'idol'];
+const SOLO_ONLY_GAMES = ['pupil', 'tamagotchi']; // 1인 전용 (다인 시 비활성화)
 const AVATARS = ['😎','🤠','👻','🦊','🐱','🐼','🦁','🐸','🎃','🤖','👽','🦄'];
 const SUITS = ['♠','♥','♦','♣'];
 const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
@@ -154,6 +154,10 @@ function showScreen(id) {
   // Cleanup pupil camera/mediapipe when leaving
   if(prev && prev.id === 'pupilGame' && id !== 'pupilGame') {
     if(typeof pplCleanup === 'function') pplCleanup();
+  }
+  // Cleanup tamagotchi tick/save when leaving
+  if(prev && prev.id === 'tamagotchiGame' && id !== 'tamagotchiGame') {
+    if(typeof tamaCleanup === 'function') tamaCleanup();
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -438,7 +442,7 @@ function handleMessage(peerId, raw) {
       // Update waiting text
       const waitingText = document.getElementById('waitingText');
       if (waitingText) {
-        const gameNames = { poker:'포커', mafia:'마피아', sutda:'섯다', quickdraw:'총잡이', roulette:'룰렛', lottery:'뽑기', ecard:'E카드', yahtzee:'야추', updown:'업다운', truth:'진실게임', fortress:'요새', bombshot:'폭탄주', stairs:'무한계단', tetris:'테트리스', jewel:'보석맞추기', colorchain:'컬러체인' };
+        const gameNames = { poker:'포커', mafia:'마피아', sutda:'섯다', quickdraw:'총잡이', roulette:'룰렛', lottery:'뽑기', ecard:'E카드', yahtzee:'야추', updown:'업다운', truth:'진실게임', fortress:'요새', bombshot:'폭탄주', blackjack:'블랙잭', stairs:'무한계단', tetris:'테트리스', jewel:'보석맞추기', colorchain:'컬러체인' };
         waitingText.textContent = `${gameNames[msg.game] || msg.game} 게임 대기 중...`;
       }
     },
@@ -531,6 +535,11 @@ function handleMessage(peerId, raw) {
     'bs-spin': () => { if(state.isHost) processBSSpin(peerId); },
     'bs-anim': () => { handleBSAnim(msg); },
     'bs-result': () => { handleBSResult(msg); },
+    // Blackjack handlers
+    'bj-state': () => { showScreen('blackjackGame'); renderBJView(msg); },
+    'bj-action': () => { if(state.isHost) processBJAction(peerId, msg.action); },
+    'bj-bet': () => { if(state.isHost) processBJBet(peerId, msg.amount); },
+    'bj-result': () => handleBJResult(msg),
     // Stairs handlers
     'stairs-dead': () => { if(state.isHost) processStairsDead(msg); },
     'stairs-update': () => {
@@ -546,6 +555,9 @@ function handleMessage(peerId, raw) {
     // ColorChain handlers
     'cc-dead': () => { if(state.isHost && typeof processColorChainDead === 'function') processColorChainDead({ ...msg, id: peerId }); },
     'cc-rankings': () => { if(typeof ccShowRankings === 'function') ccShowRankings(msg.rankings); },
+    // Idol Management handlers
+    'idol-state': () => { if(typeof renderIdolView === 'function') { showScreen('idolGame'); renderIdolView(msg.state); } },
+    'idol-player-select': () => { if(state.isHost && typeof handleIdolMsg === 'function') handleIdolMsg({ ...msg, from: peerId }); },
     'player-left': () => {
       state.players = state.players.filter(p => p.id !== msg.playerId);
       updateLobbyUI();
@@ -753,6 +765,7 @@ function returnToLobby() {
   }
   if (typeof ccCleanup === 'function') ccCleanup();
   if (typeof slkCleanup === 'function') slkCleanup();
+  if (typeof closeBJCleanup === 'function') closeBJCleanup();
   // Clean up AI timers (lobby CPU mode)
   if(typeof cleanupAI === 'function') cleanupAI();
   showScreen('lobby');
@@ -775,6 +788,7 @@ function restartCurrentGame() {
   if(g === 'yahtzee') { document.getElementById('yahtzeeGameOver').style.display='none'; startYahtzee(); }
   else if(g === 'fortress') { closeFortressCleanup(); startFortress(); }
   else if(g === 'bombshot') { closeBombShotCleanup(); startBombShot(); }
+  else if(g === 'blackjack') { if(typeof closeBJCleanup==='function') closeBJCleanup(); startBlackjack(); }
   else if(g === 'stairs') { if(typeof stCleanup==='function') stCleanup(); document.getElementById('stResultsOverlay').style.display='none'; startStairs(); }
   else if(g === 'ecard') startECard();
   else if(g === 'truth') startTruthGame();
@@ -807,18 +821,20 @@ const HAND_RANKINGS = {
     content: `<div style="display:flex;flex-direction:column;gap:4px;">
 <div style="color:#ffd700;font-weight:700;margin-bottom:4px;">[ 땡 ]</div>
 <div><b>장땡</b> 10+10 (최강)</div>
+<div><b>38광땡</b> 3광+8광</div>
+<div><b>18광땡</b> 1광+8광</div>
+<div><b>13광땡</b> 1광+3광</div>
 <div><b>9땡~1땡</b> 같은 숫자 페어</div>
 <div style="color:#ff6b35;font-weight:700;margin:8px 0 4px;">[ 특수패 ]</div>
-<div><b>광땡 (3+8광)</b> — 땡잡이만 이김</div>
-<div><b>광땡 (1+8광)</b></div>
-<div><b>광땡 (1+3광)</b></div>
-<div><b>땡잡이 (3+7)</b> — 땡을 이김</div>
-<div><b>암행어사 (4+7)</b> — 광땡을 이김</div>
-<div><b>세륙 (4+6)</b> — 밀기 or 깽판</div>
+<div><b>세륙 (4+6)</b> — 콜 받으면 밀기(10끗) or 깽판(패 재분배, 9땡이하만)</div>
+<div><b>암행어사 (4+7)</b> — 13광땡·18광땡만 잡음</div>
+<div><b>땡잡이 (3+7)</b> — 땡만 잡음, 일반패에겐 짐</div>
 <div style="color:#4fc3f7;font-weight:700;margin:8px 0 4px;">[ 끗 ]</div>
 <div><b>갑오 (9끗)</b> — 두 패 합 끝자리 9</div>
 <div><b>8끗~1끗</b></div>
 <div><b>망통 (0끗)</b> — 최하</div>
+<div style="font-size:11px;color:#aaa;margin-top:6px;">※ 같은 끗: 두 수의 곱이 큰 쪽 승리 (비김 없음)</div>
+<div style="font-size:11px;color:#aaa;">※ 콜 받는 사람이 패를 먼저 공개</div>
 </div>`
   },
   ecard: {
@@ -971,6 +987,12 @@ function selectGame(el) {
     cfgDisplay.style.display = (state.selectedGame === 'mafia' && typeof mfSetupDone !== 'undefined' && mfSetupDone) ? 'block' : 'none';
   }
 
+  // Show/hide bet mode lobby area (poker/sutda/blackjack)
+  const betModeLobbyArea = document.getElementById('betModeLobbyArea');
+  if (betModeLobbyArea) {
+    betModeLobbyArea.style.display = (state.selectedGame === 'poker' || state.selectedGame === 'sutda' || state.selectedGame === 'blackjack') ? 'block' : 'none';
+  }
+
   // Show/hide bombshot lobby area
   const bsLobbyArea = document.getElementById('bsLobbyArea');
   const bsSetupBtn = document.getElementById('bsSetupBtn');
@@ -1011,12 +1033,15 @@ const GAME_INFO = {
   truth:    { emoji:'⭕', name:'진실게임', desc:'질문을 하고, 비밀투표를 통해 다른 사람의 속마음을 엿볼 수 있어요.', players:'3~14명', time:'10~20분', type:'파티' },
   fortress: { emoji:'🏰', name:'요새', desc:'탱크 포격전! 각도와 파워를 조절해서 상대 요새를 파괴하세요.', players:'2~14명', time:'5~10분', type:'전략' },
   bombshot: { emoji:'🍺', name:'폭탄주', desc:'거짓말로 술을 섞는 라이어를 찾아라. 거짓말을 간파하고 폭탄주 룰렛을 피하자!', players:'2~4명', time:'5~15분', type:'블러프' },
+  blackjack:{ emoji:'🃏', name:'블랙잭', desc:'딜러와의 21점 대결! 히트, 스탠드, 더블로 최적의 전략을 펼치세요.', players:'1~14명', time:'5~15분', type:'카드' },
   stairs:   { emoji:'🪜', name:'무한계단', desc:'끝없이 올라가는 계단! 좌우 타이밍을 맞춰 최고 기록 도전.', players:'1~14명', time:'3~10분', type:'레이싱' },
   tetris:   { emoji:'🧩', name:'테트리스', desc:'클래식 퍼즐! 블록을 쌓고 줄을 지워 최고 점수에 도전.', players:'1~14명', time:'5~10분', type:'퍼즐' },
   jewel:    { emoji:'💎', name:'보석맞추기', desc:'같은 보석 3개를 맞춰 제거! 콤보와 연쇄로 고득점.', players:'1~14명', time:'5~10분', type:'퍼즐' },
   colorchain:{ emoji:'🔗', name:'컬러체인', desc:'같은 색 구슬을 연결해서 터뜨려라! 중력과 연쇄 콤보.', players:'1~14명', time:'5~10분', type:'퍼즐' },
   slinkystairs:{ emoji:'🌀', name:'슬링키 스테어즈', desc:'무너지는 계단 위에서 슬링키를 조종해 살아남으세요! 좌우 타이밍이 핵심.', players:'1~14명', time:'3~10분', type:'아케이드' },
-  pupil:{ emoji:'👁', name:'동공 탐지기', desc:'카메라로 동공 반응을 분석하여 진술의 신뢰도를 측정합니다. 혼자서만 플레이 가능!', players:'1명 전용', time:'5~10분', type:'분석' }
+  pupil:{ emoji:'👁', name:'동공 탐지기', desc:'카메라로 동공 반응을 분석하여 진술의 신뢰도를 측정합니다. 혼자서만 플레이 가능!', players:'1명 전용', time:'5~10분', type:'분석' },
+  tamagotchi:{ emoji:'🐉', name:'다마고치', desc:'나만의 포트리스 펫을 키워보세요! 먹이, 돌봄, 훈련으로 성장시키고 진화하세요.', players:'1명 전용', time:'상시', type:'육성' },
+  idol:      { emoji:'🎤', name:'아이돌 매니지먼트', desc:'블루마블 보드판에서 내 아이돌을 스타로 키우는 전략 보드게임! 샵을 사고, 훈련하고, 가챠로 역전을 노려라.', players:'1~4명', time:'45~60분', type:'보드게임' }
 };
 
 function updateGameInfoPanel(game) {
@@ -1051,12 +1076,15 @@ function startGame() {
   else if(g === 'truth') startTruthGame();
   else if(g === 'fortress') startFortress();
   else if(g === 'bombshot') startBombShot();
+  else if(g === 'blackjack') startBlackjack();
   else if(g === 'stairs') startStairs();
   else if(g === 'tetris') startTetris();
   else if(g === 'jewel') startJewel();
   else if(g === 'colorchain') startColorChain();
   else if(g === 'slinkystairs') startSlinkyStairs();
   else if(g === 'pupil') { if(state.players.length > 1) { showToast('👁 동공 탐지기는 1인 전용입니다'); return; } startPupil(); }
+  else if(g === 'tamagotchi') { if(state.players.length > 1) { showToast('🐉 다마고치는 1인 전용입니다'); return; } startTamagotchi(); }
+  else if(g === 'idol') startIdolManagement();
   else showToast('준비 중인 게임입니다');
 }
 
@@ -1112,6 +1140,10 @@ function handleGameStart(msg) {
     initBSCanvas();
     // State will arrive via bs-state message
   }
+  else if(msg.game === 'blackjack') {
+    showScreen('blackjackGame');
+    if(msg.state) renderBJView(msg.state);
+  }
   else if(msg.game === 'stairs') {
     showScreen('stairsGame');
     renderStairsView(msg.state);
@@ -1134,6 +1166,10 @@ function handleGameStart(msg) {
   }
   else if(msg.game === 'pupil') {
     startPupil();
+  }
+  else if(msg.game === 'idol') {
+    showScreen('idolGame');
+    if(msg.state) renderIdolView(msg.state);
   }
 }
 
@@ -1178,17 +1214,34 @@ function debugGame(game) {
     truth: 'truthGame',
     fortress: 'fortressGame',
     bombshot: 'bombshotGame',
+    blackjack: 'blackjackGame',
     stairs: 'stairsGame',
     tetris: 'tetrisGame',
     jewel: 'jewelGame',
     colorchain: 'colorchainGame',
     slinkystairs: 'slinkyStairsGame',
-    pupil: 'pupilGame'
+    pupil: 'pupilGame',
+    tamagotchi: 'tamagotchiGame'
   };
 
   if(game === 'pupil') {
     state.players = [{ id: 'debug-me', name: '테스터', avatar: '😎' }];
     startPupil();
+    return;
+  }
+
+  if(game === 'tamagotchi') {
+    state.players = [{ id: 'debug-me', name: '테스터', avatar: '😎' }];
+    startTamagotchi();
+    return;
+  }
+
+  if(game === 'idol') {
+    state.players = [
+      { id: 'debug-me', name: '테스터', avatar: '😎' },
+      { id: 'debug-cpu1', name: 'CPU 루나', avatar: '🎤' },
+    ];
+    startIdolManagement();
     return;
   }
 
@@ -1244,11 +1297,42 @@ function debugGame(game) {
     return;
   }
 
+  if(game === 'blackjack') {
+    startBlackjack();
+    return;
+  }
+
   const screenId = screenMap[game];
   if(screenId) {
     showScreen(screenId);
   }
 }
+
+// ===== BET MODE =====
+let _betMode = 'free-1000';
+
+function getStartChips() {
+  if (_betMode === 'gold') {
+    const eco = getEconomy();
+    return eco.gold;
+  }
+  const val = parseInt(_betMode.split('-')[1]);
+  return val || 1000;
+}
+
+function isBetModeGold() { return _betMode === 'gold'; }
+
+// Setup bet mode radio buttons
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('#betModeOptions .bet-mode-option').forEach(label => {
+    label.addEventListener('click', () => {
+      document.querySelectorAll('#betModeOptions .bet-mode-option').forEach(l => l.classList.remove('selected'));
+      label.classList.add('selected');
+      const radio = label.querySelector('input');
+      if (radio) { radio.checked = true; _betMode = radio.value; }
+    });
+  });
+});
 
 // ===== EVENTS =====
 document.getElementById('nameInput').addEventListener('change', saveProfile);

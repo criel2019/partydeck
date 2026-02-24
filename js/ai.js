@@ -26,6 +26,7 @@ let _truthNextScheduled = false; // one-shot flag for truth processTruthNext
 let _fortAIKey = ''; // guard: prevent fortress AI re-entry during same turn
 let _bsSpinScheduled = false; // guard: prevent duplicate roulette spin
 let _bsPracticeReady = false; // flag: bombshot setup modal shown in practice mode
+let _originalCloseBJResult = null;
 let _originalCloseStairsGame = null;
 
 const AI_NAMES = ['봇짱', '로봇킹', '알파봇', 'AI마스터', '사이보그'];
@@ -48,6 +49,8 @@ const AI_COUNTS = {
   jewel: 0,
   colorchain: 0,
   slinkystairs: 0,
+  blackjack: 2,
+  idol: 2,
 };
 
 // ========== ENTRY / EXIT ==========
@@ -141,6 +144,12 @@ function startPracticeGame(gameName) {
   // ColorChain: solo game — skip startGame() validation, go directly
   if (gameName === 'colorchain') {
     startColorChain();
+    return;
+  }
+
+  // Idol Management: go directly (handles own select screen)
+  if (gameName === 'idol') {
+    startIdolManagement();
     return;
   }
 
@@ -248,6 +257,19 @@ function interceptNetworking() {
     if (_originalCloseStairsGame) _originalCloseStairsGame();
   };
 
+  _originalCloseBJResult = window.closeBJResult;
+  window.closeBJResult = function() {
+    document.getElementById('bjResultOverlay').classList.remove('active');
+    if (practiceMode) {
+      var betInput = document.getElementById('bjBetAmount');
+      if (betInput) delete betInput.dataset.init;
+      var t = setTimeout(function() { if (practiceMode) startBlackjack(); }, 300);
+      _aiTimers.push(t);
+      return;
+    }
+    if (_originalCloseBJResult) _originalCloseBJResult();
+  };
+
   _originalCloseBombShotGame = window.closeBombShotGame;
   window.closeBombShotGame = function() {
     _bsTimers.forEach(t => clearTimeout(t));
@@ -277,6 +299,7 @@ function restoreNetworking() {
   if (_originalCloseYahtzeeGame) { window.closeYahtzeeGame = _originalCloseYahtzeeGame; _originalCloseYahtzeeGame = null; }
   if (_originalCloseFortressGame) { window.closeFortressGame = _originalCloseFortressGame; _originalCloseFortressGame = null; }
   if (_originalCloseStairsGame) { window.closeStairsGame = _originalCloseStairsGame; _originalCloseStairsGame = null; }
+  if (_originalCloseBJResult) { window.closeBJResult = _originalCloseBJResult; _originalCloseBJResult = null; }
   if (_originalCloseBombShotGame) { window.closeBombShotGame = _originalCloseBombShotGame; _originalCloseBombShotGame = null; }
 }
 
@@ -426,6 +449,7 @@ function executeAIAction() {
     case 'mafia': aiMafia(); break;
     case 'fortress': aiFortress(); break;
     case 'bombshot': aiBombShot(); break;
+    case 'blackjack': aiBlackjack(); break;
     case 'stairs': aiStairs(); break;
     // lottery: no AI needed
   }
@@ -1085,6 +1109,61 @@ function aiBombShot() {
 
 // Also: AI liar calls when it's NOT their turn (react to broadcasts)
 // This is handled in handleBroadcastForAI via general scheduleAIAction
+
+// ========== BLACKJACK AI ==========
+
+function aiBlackjack() {
+  if (!bjState) return;
+
+  // Betting phase: AI auto-bets
+  if (bjState.phase === 'betting') {
+    bjState.players.forEach(function(p) {
+      if (!p.id.startsWith('ai-') || p.bet > 0) return;
+      var betAmt = Math.min(bjState.baseBet + Math.floor(Math.random() * bjState.baseBet), p.chips);
+      if (betAmt > 0) processBJBet(p.id, betAmt);
+    });
+    // Auto-deal only when ALL human players have also bet (or are broke)
+    var allHumansBet = bjState.players.every(function(p) {
+      if (p.id.startsWith('ai-')) return true;
+      return p.bet > 0 || p.status === 'broke';
+    });
+    if (allHumansBet) {
+      var t = setTimeout(function() {
+        if (!isAIActive() || !bjState || bjState.phase !== 'betting') return;
+        bjDeal();
+      }, 500);
+      _aiTimers.push(t);
+    }
+    return;
+  }
+
+  if (bjState.phase !== 'playing') return;
+
+  var current = bjState.players[bjState.turnIdx];
+  if (!current || !current.id.startsWith('ai-') || current.status !== 'playing') return;
+
+  var total = bjHandTotal(current.cards);
+
+  // Simple strategy: stand on 17+, hit on 16-
+  var action;
+  if (total >= 17) {
+    action = 'stand';
+  } else if (total === 11 && current.cards.length === 2 && current.chips >= current.bet) {
+    action = 'double'; // double on 11
+  } else if (total === 10 && current.cards.length === 2 && current.chips >= current.bet && Math.random() < 0.6) {
+    action = 'double'; // sometimes double on 10
+  } else {
+    action = 'hit';
+  }
+
+  var t2 = setTimeout(function() {
+    if (!isAIActive() || !bjState || bjState.phase !== 'playing') return;
+    var cp = bjState.players[bjState.turnIdx];
+    if (!cp || cp.id !== current.id) return;
+    processBJAction(current.id, action);
+  }, 500 + Math.random() * 800);
+  _aiTimers.push(t2);
+}
 
 // ========== STAIRS AI ==========
 
