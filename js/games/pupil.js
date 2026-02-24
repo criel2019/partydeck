@@ -718,7 +718,7 @@ async function pplAnsCalib(a) {
     const blinkRate = pplCalcBlinkRate(pplStreamStartT, Date.now());
     pplCalibData.push({ frames: res.frames, slope, blinkRate, responseTime });
     if (pplQIdx < PPL_CALIB_QS.length - 1) pplShowCQ(pplQIdx + 1);
-    else { pplEndVoiceSession(); pplPhase = 'cq'; pplShowInternal('ppl-cq'); }
+    else { pplPauseListening(); pplPhase = 'cq'; pplShowInternal('ppl-cq'); }
   } else {
     if (camUi) camUi.style.opacity = '1';
     const qins = ppl$('pplQins');
@@ -741,7 +741,7 @@ function pplBeginTest() {
   pplTestData = []; pplTestMeta = []; pplQIdx = 0;
   pplPhase = 'test'; pplShowInternal('ppl-test');
   pplBuildPh('pplTPh', 1); pplBuildStr('pplStr2', PPL_CAP, true);
-  pplStartVoiceSession();
+  pplEnsureRecActive();
   pplShowTQ(0);
 }
 
@@ -776,7 +776,7 @@ async function pplAnsTest(a) {
     pplTestData.push({ frames: res.frames, slope, blinkRate, responseTime });
     pplTestMeta.push({ isCritical: true, responseTime });
     if (pplQIdx < pplTQs.length - 1) pplShowTQ(pplQIdx + 1);
-    else { pplEndVoiceSession(); pplPhase = 'az'; pplShowInternal('ppl-az'); pplAnalyze(); }
+    else { pplPauseListening(); pplPhase = 'az'; pplShowInternal('ppl-az'); pplAnalyze(); }
   } else {
     if (camUi) camUi.style.opacity = '1';
     const tqins = ppl$('pplTqins');
@@ -982,7 +982,19 @@ function pplCleanup() {
   pplEyeOk = false; pplEyeQ = 0; pplLostN = 0;
 }
 
+// 같은 사람 재질문 — 캘리브레이션 데이터 유지, 테스트만 리셋
+function pplRetestSame() {
+  pplTestData = []; pplTestMeta = []; pplQIdx = 0; pplTotV = 0; pplTotA = 0;
+  pplPupilStream = []; pplBlinkStream = []; pplStreamStartT = 0;
+  const qMain = ppl$('pplQMain'); if (qMain) qMain.value = '';
+  const rArc = ppl$('pplRArc'); if (rArc) rArc.style.strokeDasharray = '0 428';
+  const rPct = ppl$('pplRPct'); if (rPct) rPct.textContent = '0%';
+  pplPhase = 'cq'; pplShowInternal('ppl-cq');
+}
+
+// 다른 사람 (처음부터) — 전체 리셋 + 캘리브레이션 재시작
 function pplResetAll() {
+  pplEndVoiceSession();
   pplCalibData = []; pplTestData = []; pplTestMeta = []; pplTQs = []; pplCritIdx = -1; pplQIdx = 0; pplTotV = 0; pplTotA = 0;
   pplPupilStream = []; pplBlinkStream = [];
   pplEyeOk = false; pplEyeQ = 0; pplLostN = 0; pplStreamStartT = 0;
