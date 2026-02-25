@@ -215,19 +215,35 @@
   box-shadow: 0 0 3px rgba(0,0,0,0.6);
 }
 
-/* 플레이어 토큰 */
+/* 플레이어 토큰 (말) */
 .cell-tokens {
-  display: flex; flex-wrap: wrap; gap: 1px;
-  position: absolute; bottom: 1px; left: 1px;
+  display: flex; flex-wrap: wrap; gap: 2px;
+  position: absolute; bottom: 2px; left: 2px; right: 2px;
+  justify-content: flex-start;
+  pointer-events: none;
+  z-index: 3;
 }
+/* 토큰이 많을 때 겹치기 */
+.cell-tokens.cnt3 .player-token,
+.cell-tokens.cnt4 .player-token { margin-left: -5px; }
+.cell-tokens.cnt3 .player-token:first-child,
+.cell-tokens.cnt4 .player-token:first-child { margin-left: 0; }
+
 .player-token {
-  width: 9px; height: 9px;
+  width: 18px; height: 18px;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.5);
-  font-size: 6px;
+  border: 2px solid var(--tok-color, #ffd700);
+  background: rgba(10,10,24,0.82);
   display: flex; align-items: center; justify-content: center;
   line-height: 1;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.8), 0 0 6px color-mix(in srgb, var(--tok-color, #ffd700) 40%, transparent);
+  flex-shrink: 0;
+}
+.player-token-inner {
+  font-size: 11px;
+  line-height: 1;
+  pointer-events: none;
+  display: block;
 }
 
 /* ─── 보드 중앙 ──────────────────────────────── */
@@ -312,12 +328,32 @@
 }
 .idol-player-mini.is-current  { border-color: #ffd700; background: rgba(255,215,0,0.08); }
 .idol-player-mini.is-bankrupt { opacity: 0.3; }
-.idol-mini-img {
-  width: 22px; height: 22px;
-  object-fit: cover; object-position: top center;
-  border-radius: 50%; display: block;
+
+/* 소형: 두 초상화 가로 정렬 */
+.idol-player-mini-portraits { display: flex; gap: 2px; flex-direction: row; }
+.idol-mini-producer {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tok-color, #ffd700) 20%, rgba(10,10,24,0.9));
+  border: 1.5px solid var(--tok-color, #ffd700);
+  display: grid; place-items: center;
 }
-.idol-player-mini-emoji { font-size: 14px; line-height: 1.2; }
+.idol-mini-producer-emoji { font-size: 11px; line-height: 1; display: block; }
+.idol-mini-idol {
+  width: 20px; height: 20px;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  display: grid; place-items: center;
+  overflow: hidden;
+}
+.idol-mini-idol-img {
+  width: 20px; height: 20px;
+  object-fit: cover; object-position: top center;
+  display: block;
+}
+.idol-mini-idol-emoji { font-size: 11px; line-height: 1; display: block; }
+
 .idol-player-mini-name  { font-size: 7px; color: #888; text-align: center; max-width: 38px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .idol-player-mini-fame  { font-size: 9px; color: #ff6b35; font-weight: 700; font-family: 'Outfit', sans-serif; }
 
@@ -801,16 +837,58 @@
   box-shadow: inset 3px 0 0 var(--idol-accent, #ffd166);
 }
 
-.idol-res-hero-avatar {
+/* 우측 사이드바 두 초상화 */
+.idol-res-portraits {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+/* 프로듀서 (이모지 원형) */
+.idol-res-producer-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--tok-color, #ffd700) 20%, rgba(10,10,24,0.9));
+  border: 2px solid var(--tok-color, #ffd700);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--tok-color, #ffd700) 30%, transparent);
+  flex-shrink: 0;
+}
+
+.idol-res-producer-emoji {
+  font-size: 18px;
+  line-height: 1;
+  display: block;
+}
+
+/* 아이돌 이미지 */
+.idol-res-idol-wrap {
   width: 34px;
   height: 34px;
   border-radius: 10px;
   display: grid;
   place-items: center;
-  font-size: 18px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  overflow: hidden;
   flex-shrink: 0;
+}
+
+.idol-res-idol-img {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+.idol-res-idol-emoji {
+  font-size: 18px;
+  line-height: 1;
+  display: block;
 }
 
 .idol-res-hero-texts {
@@ -970,15 +1048,18 @@
 
 .cell-tokens {
   gap: 2px;
-  bottom: 2px;
-  left: 2px;
+  bottom: 3px;
+  left: 3px;
+  right: 3px;
 }
 
 .player-token {
-  width: 10px;
-  height: 10px;
-  font-size: 6px;
-  border-color: rgba(255,255,255,0.55);
+  width: 22px;
+  height: 22px;
+}
+
+.player-token-inner {
+  font-size: 13px;
 }
 
 .idol-cell:focus-visible {
@@ -1224,26 +1305,56 @@
   opacity: 0.45;
 }
 
-.idol-player-mini-portrait {
+/* 두 초상화 컨테이너 */
+.idol-player-mini-portraits {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* 프로듀서 아바타 (이모지 원형) */
+.idol-mini-producer {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tok-color, #ffd700) 20%, rgba(10,10,24,0.9));
+  border: 2px solid var(--tok-color, #ffd700);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tok-color, #ffd700) 35%, transparent);
+}
+
+.idol-mini-producer-emoji {
+  font-size: 15px;
+  line-height: 1;
+  display: block;
+}
+
+/* 아이돌 이미지 */
+.idol-mini-idol {
   width: 28px;
   height: 28px;
   border-radius: 8px;
   background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
   display: grid;
   place-items: center;
-  flex-shrink: 0;
+  overflow: hidden;
 }
 
-.idol-mini-img {
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
+.idol-mini-idol-img {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
 }
 
-.idol-player-mini-emoji {
+.idol-mini-idol-emoji {
   font-size: 15px;
   line-height: 1;
+  display: block;
 }
 
 .idol-player-mini-body {
@@ -1361,6 +1472,18 @@
   background: rgba(0,0,0,0.16);
   border: 1px solid rgba(255,255,255,0.05);
   box-shadow: inset 3px 0 0 var(--idol-accent, #ffd166);
+}
+
+/* 행동안내 패널 두 초상화 — 아이콘 크기 살짝 축소 */
+.idol-action-portraits .idol-res-producer-wrap,
+.idol-action-portraits .idol-res-idol-wrap {
+  width: 30px;
+  height: 30px;
+}
+
+.idol-action-portraits .idol-res-idol-img {
+  width: 30px;
+  height: 30px;
 }
 
 .idol-action-context-avatar {

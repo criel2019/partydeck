@@ -1498,6 +1498,11 @@ function idolRenderResourceBar() {
   const currentCell = idolUxGetBoardCellMeta(me);
   const actionMeta = idolUxGetActionMeta(idolState.pendingAction);
 
+  const meType = IDOL_TYPES.find(t => t.id === me.idolType);
+  const idolPortraitHTML = meType?.img
+    ? `<img src="${meType.img}" alt="${meType.name}" class="idol-res-idol-img">`
+    : `<span class="idol-res-idol-emoji">${meType?.emoji ?? '🌟'}</span>`;
+
   bar.innerHTML = `
     <div class="idol-topdash">
       <div class="idol-res-hero">
@@ -1506,8 +1511,15 @@ function idolRenderResourceBar() {
           <span class="idol-status-chip tone-muted">${rank}위 / ${activePlayers.length}명</span>
         </div>
 
-        <div class="idol-res-hero-name" style="--idol-accent:${idolUxGetPlayerAccent(me.id)};">
-          <span class="idol-res-hero-avatar">${me.avatar ?? '🎤'}</span>
+        <div class="idol-res-hero-name" style="--idol-accent:${idolUxGetPlayerAccent(me.id)}; --tok-color:${idolUxGetPlayerAccent(me.id)};">
+          <div class="idol-res-portraits">
+            <div class="idol-res-producer-wrap" title="${escapeHTML(me.name)} (프로듀서)">
+              <span class="idol-res-producer-emoji">${me.avatar ?? '🎤'}</span>
+            </div>
+            <div class="idol-res-idol-wrap" title="${escapeHTML(me.idolName ?? meType?.name ?? '아이돌')}">
+              ${idolPortraitHTML}
+            </div>
+          </div>
           <div class="idol-res-hero-texts">
             <div class="idol-res-hero-title">${escapeHTML(me.idolName ?? me.name)}</div>
             <div class="idol-res-hero-sub">
@@ -1619,12 +1631,17 @@ function idolCreateCellElement(cell, idx) {
 
   if (here.length > 0) {
     const tokenWrap = document.createElement('div');
-    tokenWrap.className = 'cell-tokens';
+    tokenWrap.className = `cell-tokens cnt${here.length}`;
     here.forEach(p => {
       const token = document.createElement('div');
       token.className = 'player-token';
-      token.style.background = idolUxGetPlayerAccent(p.id);
-      token.textContent = p.avatar || '🙂';
+      token.style.setProperty('--tok-color', idolUxGetPlayerAccent(p.id));
+      token.title = p.name;
+      // 프로듀서 아바타 이모지
+      const inner = document.createElement('span');
+      inner.className = 'player-token-inner';
+      inner.textContent = p.avatar || '🙂';
+      token.appendChild(inner);
       tokenWrap.appendChild(token);
     });
     el.appendChild(tokenWrap);
@@ -1663,10 +1680,18 @@ function idolRenderCenterHTML() {
     const pRank = idolGetRank(p.id);
     const pStage = getIdolStage(p.looks);
 
+    const idolImgHTML = pType?.img
+      ? `<img src="${pType.img}" alt="${pType.name}" class="idol-mini-idol-img">`
+      : `<span class="idol-mini-idol-emoji">${pType?.emoji ?? '🌟'}</span>`;
     return `
       <div class="idol-player-mini ${isCurrent ? 'is-current' : ''} ${p.bankrupt ? 'is-bankrupt' : ''}" style="--idol-accent:${idolUxGetPlayerAccent(p.id)};">
-        <div class="idol-player-mini-portrait">
-          ${pType?.img ? `<img src="${pType.img}" alt="" class="idol-mini-img">` : `<div class="idol-player-mini-emoji">${p.avatar}</div>`}
+        <div class="idol-player-mini-portraits">
+          <div class="idol-mini-producer" title="${escapeHTML(p.name)} (프로듀서)" style="--tok-color:${idolUxGetPlayerAccent(p.id)}">
+            <span class="idol-mini-producer-emoji">${p.avatar || '🙂'}</span>
+          </div>
+          <div class="idol-mini-idol" title="${pType?.name ?? '아이돌'}">
+            ${idolImgHTML}
+          </div>
         </div>
         <div class="idol-player-mini-body">
           <div class="idol-player-mini-top">
@@ -1747,6 +1772,10 @@ function idolUxRenderActionContextCard(currentP, action, isMyTurn) {
   const actionHint = idolUxGetActionHint(action, currentP, isMyTurn);
   const cellMeta = idolUxGetBoardCellMeta(currentP);
   const stage = getIdolStage(currentP.looks);
+  const cpType = IDOL_TYPES.find(t => t.id === currentP.idolType);
+  const cpIdolImg = cpType?.img
+    ? `<img src="${cpType.img}" alt="${cpType.name}" class="idol-res-idol-img">`
+    : `<span class="idol-res-idol-emoji">${cpType?.emoji ?? '🌟'}</span>`;
 
   return `
     <div class="idol-action-context">
@@ -1758,8 +1787,15 @@ function idolUxRenderActionContextCard(currentP, action, isMyTurn) {
         </div>
       </div>
 
-      <div class="idol-action-context-player" style="--idol-accent:${idolUxGetPlayerAccent(currentP.id)};">
-        <span class="idol-action-context-avatar">${currentP.avatar ?? '🎤'}</span>
+      <div class="idol-action-context-player" style="--idol-accent:${idolUxGetPlayerAccent(currentP.id)}; --tok-color:${idolUxGetPlayerAccent(currentP.id)};">
+        <div class="idol-res-portraits idol-action-portraits">
+          <div class="idol-res-producer-wrap" title="${escapeHTML(currentP.name)} (프로듀서)">
+            <span class="idol-res-producer-emoji">${currentP.avatar ?? '🎤'}</span>
+          </div>
+          <div class="idol-res-idol-wrap" title="${cpType?.name ?? '아이돌'}">
+            ${cpIdolImg}
+          </div>
+        </div>
         <div class="idol-action-context-player-texts">
           <div class="idol-action-context-player-name">${escapeHTML(currentP.name)}</div>
           <div class="idol-action-context-player-meta">
