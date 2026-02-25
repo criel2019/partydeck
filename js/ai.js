@@ -75,6 +75,8 @@ function leavePracticeMode() {
   if (typeof ecState !== 'undefined') ecState = null;
   if (typeof sutdaHost !== 'undefined') sutdaHost = null;
   if (typeof bsState !== 'undefined') bsState = null;
+  if (typeof idolState !== 'undefined') idolState = null;
+  if (typeof idolResetSelectionState === 'function') idolResetSelectionState();
   if (typeof stCleanup === 'function') stCleanup();
   if (typeof tetCleanup === 'function') tetCleanup();
   if (typeof ccCleanup === 'function') ccCleanup();
@@ -452,6 +454,7 @@ function executeAIAction() {
     case 'bombshot': aiBombShot(); break;
     case 'blackjack': aiBlackjack(); break;
     case 'stairs': aiStairs(); break;
+    case 'idol': aiIdol(); break;
     // lottery: no AI needed
   }
 }
@@ -1198,3 +1201,141 @@ function aiStairs() {
 
 // ========== LOTTERY AI ==========
 // Lottery is solo (player picks cells) — no AI needed
+
+// ========== IDOL AI ==========
+
+function aiIdol() {
+  if (typeof idolState === 'undefined' || !idolState) return;
+  if (idolState.phase !== 'playing') return;
+
+  if (typeof idolCurrentPlayer !== 'function') return;
+  const currentP = idolCurrentPlayer();
+  if (!currentP) return;
+
+  // CPU 플레이어 턴에만 동작
+  if (typeof idolIsCpuPlayerId !== 'function' || !idolIsCpuPlayerId(currentP.id)) return;
+  if (currentP.bankrupt) return; // bankrupt는 idolCheckBankruptcy에서 자동 처리됨
+
+  const action = idolState.pendingAction;
+  const actionType = action ? action.type : 'waiting-roll';
+
+  switch (actionType) {
+    // ── 주사위 굴리기 ──────────────────────────
+    case 'waiting-roll':
+    case 'roll-again':
+      if (typeof idolRollDice === 'function') idolRollDice();
+      break;
+
+    // ── 샵 구매 결정 ──────────────────────────
+    case 'shop-buy': {
+      if (!action.playerId || action.playerId !== currentP.id) return;
+      const shop = (typeof SHOPS !== 'undefined') ? SHOPS.find(s => s.id === action.shopId) : null;
+      if (!shop) { if (typeof idolPassShop === 'function') idolPassShop(); return; }
+      // 구매 기준: 잔고가 가격의 1.1배 이상 && 랜덤 70% 확률
+      const canAfford = currentP.money >= shop.price * 1.1;
+      if (canAfford && Math.random() < 0.70 && typeof idolBuyShop === 'function') {
+        idolBuyShop(action.shopId);
+      } else if (typeof idolPassShop === 'function') {
+        idolPassShop();
+      }
+      break;
+    }
+
+    // ── 업그레이드 결정 ───────────────────────
+    case 'shop-upgrade': {
+      if (!action.playerId || action.playerId !== currentP.id) return;
+      const level = idolState.shopLevels ? (idolState.shopLevels[action.shopId] ?? 0) : 0;
+      const upgCost = (typeof SHOP_UPGRADE_COST !== 'undefined') ? SHOP_UPGRADE_COST[level] : Infinity;
+      // 최대 레벨 아니고 잔고 1.5배 이상 && 60% 확률
+      const shouldUpgrade = level < 3 && currentP.money >= upgCost * 1.5 && Math.random() < 0.60;
+      if (shouldUpgrade && typeof idolUpgradeShop === 'function') {
+        idolUpgradeShop(action.shopId);
+      } else if (typeof idolPassShop === 'function') {
+        idolPassShop();
+      }
+      break;
+    }
+
+    // ── 전속 샵 훈련 (항상 훈련) ──────────────
+    case 'shop-train-self':
+      if (!action.playerId || action.playerId !== currentP.id) return;
+      if (typeof idolTrainAtShop === 'function') idolTrainAtShop(action.shopId, true);
+      break;
+
+    // ── 타인 샵 훈련 (75% 확률로 훈련) ───────
+    case 'shop-train-other':
+      if (!action.playerId || action.playerId !== currentP.id) return;
+      if (Math.random() < 0.75 && typeof idolTrainAtShop === 'function') {
+        idolTrainAtShop(action.shopId, false);
+      } else if (typeof idolSkipTrain === 'function') {
+        idolSkipTrain();
+      }
+      break;
+
+    // ── 이벤트 카드 선택 ──────────────────────
+    case 'event-card': {
+      if (!action.playerId || action.playerId !== currentP.id) return;
+      const card = action.card;
+      if (!card) return;
+      if (typeof idolChooseEvent !== 'function') return;
+      if (card.type === 'reversal') {
+        idolChooseEvent(card.id, 0);
+      } else {
+        const choiceIdx = idolAiPickEventChoice(card, currentP);
+        idolChooseEvent(card.id, choiceIdx);
+      }
+      break;
+    }
+
+    // ── 가챠 ──────────────────────────────────
+    case 'gacha':
+    case 'stage-gacha':
+      if (!action.playerId || action.playerId !== currentP.id) return;
+      if (typeof idolDoGacha === 'function') idolDoGacha();
+      break;
+
+    // ── 찬스 카드 ─────────────────────────────
+    case 'chance-card': {
+      if (!action.playerId || action.playerId !== currentP.id) return;
+      const chCard = action.card;
+      if (!chCard || typeof idolApplyChance !== 'function') return;
+      if (chCard.target) {
+        // 살아있는 다른 플레이어 중 랜덤 대상
+        const others = idolState.players.filter(p => p.id !== currentP.id && !p.bankrupt);
+        const target = others.length > 0 ? others[Math.floor(Math.random() * others.length)] : null;
+        idolApplyChance(chCard.id, target ? target.id : null);
+      } else {
+        idolApplyChance(chCard.id, null);
+      }
+      break;
+    }
+
+    // ── 자동 처리 상태들 (AI 개입 불필요) ─────
+    // rolling, landed, gacha-result, train-result, turn-end-auto,
+    // settlement, bankrupt, goto-jail, ending → 모두 자동 진행됨
+    default:
+      break;
+  }
+}
+
+// 이벤트 카드 선택지 중 AI에게 가장 유리한 인덱스를 반환
+function idolAiPickEventChoice(card, p) {
+  if (!card || !card.choices || card.choices.length === 0) return 0;
+  let bestIdx = 0;
+  let bestScore = -Infinity;
+  card.choices.forEach(function(choice, i) {
+    try {
+      const eff = typeof choice.effect === 'function'
+        ? choice.effect(p, idolState)
+        : (choice.effect || {});
+      // 인기도 3점, 재능/외모 2점, 돈/100 1점, 호감도 1점
+      const score = (eff.fame || 0) * 3
+        + (eff.talent || 0) * 2
+        + (eff.looks || 0) * 2
+        + (eff.money || 0) / 100
+        + (eff.favor || 0);
+      if (score > bestScore) { bestScore = score; bestIdx = i; }
+    } catch (e) { /* effect 함수 오류 무시 */ }
+  });
+  return bestIdx;
+}

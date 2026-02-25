@@ -111,9 +111,11 @@ function idolIsMyTurn() {
 
 // ─── 주사위 굴리기 ────────────────────────────
 function idolRollDice() {
-  if (!state.isHost || !idolIsMyTurn()) return;
-
+  if (!state.isHost) return;
   const p = idolCurrentPlayer();
+  if (!p) return;
+  // 내 턴이거나 CPU 플레이어 턴일 때만 허용
+  if (p.id !== state.myId && !idolIsCpuPlayerId(p.id)) return;
   if (p.bankrupt) { idolAdvanceTurn(); return; }
 
   // 경찰서 수감 처리
@@ -135,6 +137,10 @@ function idolRollDice() {
       idolState.pendingAction = { type: 'goto-jail', dice: [d1, d2] };
       broadcastIdolState();
       idolRenderAll();
+      // 자동 턴 진행 (1.5초 후) — 렌더 패널 타임아웃 대신 여기서 단 한 번 설정
+      setTimeout(() => {
+        if (idolState?.pendingAction?.type === 'goto-jail') idolOnTurnEnd(false);
+      }, 1500);
       return;
     }
   } else {
@@ -504,7 +510,7 @@ function idolApplyEffect(p, effect) {
 function idolRunSettlement() {
   const bonuses = idolState.players.map(p => {
     if (p.bankrupt) return { playerId: p.id, bonus: 0 };
-    const ownedShopObjs = p.ownedShops.map(id => SHOPS.find(s => s.id === id));
+    const ownedShopObjs = p.ownedShops.map(id => SHOPS.find(s => s.id === id)).filter(Boolean);
     const bonus = calcSettlementBonus(p.talent, p.looks, ownedShopObjs);
     p.fame += bonus;
 
@@ -540,6 +546,13 @@ function idolCheckBankruptcy(p) {
   idolState.pendingAction = { type: 'bankrupt', playerId: p.id };
   broadcastIdolState();
   idolRenderAll();
+
+  // 2.5초 후 자동으로 다음 턴 진행 (bankrupt 패널 표시 후)
+  setTimeout(() => {
+    if (idolState && idolState.pendingAction?.type === 'bankrupt' && idolState.pendingAction.playerId === p.id) {
+      idolAdvanceTurn();
+    }
+  }, 2500);
 }
 
 // ─── 샵 매각 (파산 방지용) ────────────────────
@@ -698,43 +711,6 @@ function idolRenderHeader() {
   if (el) el.textContent = `${idolState.turnNum} / ${IDOL_TOTAL_TURNS}턴`;
 }
 
-// ─── 자원 바 렌더 ─────────────────────────────
-function idolRenderResourceBar() {
-  const me = idolState.players.find(p => p.id === state.myId);
-  if (!me) return;
-
-  const bar = document.getElementById('idolResourceBar');
-  if (!bar) return;
-
-  bar.innerHTML = `
-    <div class="idol-res-item res-money">
-      <span class="idol-res-icon">💰</span>
-      <span class="idol-res-label">돈</span>
-      <span class="idol-res-value">${me.money.toLocaleString()}</span>
-    </div>
-    <div class="idol-res-item res-fame">
-      <span class="idol-res-icon">⭐</span>
-      <span class="idol-res-label">인기도</span>
-      <span class="idol-res-value">${me.fame}</span>
-    </div>
-    <div class="idol-res-item res-talent">
-      <span class="idol-res-icon">🎵</span>
-      <span class="idol-res-label">재능</span>
-      <span class="idol-res-value">${me.talent}</span>
-    </div>
-    <div class="idol-res-item res-looks">
-      <span class="idol-res-icon">💄</span>
-      <span class="idol-res-label">외모</span>
-      <span class="idol-res-value">${me.looks}</span>
-    </div>
-    <div class="idol-res-item" style="border-color:rgba(255,100,150,0.3);">
-      <span class="idol-res-icon">💗</span>
-      <span class="idol-res-label">호감도</span>
-      <span class="idol-res-value">?</span>
-    </div>
-  `;
-}
-
 // ─── 보드 렌더 ────────────────────────────────
 function idolRenderBoard() {
   const board = document.getElementById('idolBoard');
@@ -743,7 +719,6 @@ function idolRenderBoard() {
 
   const cellCoords = idolGetCellGridCoords();
 
-  // 실제 셀 렌더
   BOARD_CELLS.forEach((cell, idx) => {
     const [col, row] = cellCoords[idx];
     const el = idolCreateCellElement(cell, idx);
@@ -764,196 +739,18 @@ function idolRenderBoard() {
 // 36칸 → 10x10 외곽 그리드 좌표
 function idolGetCellGridCoords() {
   const coords = [];
-  // 하단: 0~9 (row=9, col=0→9)
-  for (let i = 0; i <= 9; i++) coords.push([i, 9]);
-  // 우측: 10~18 (col=9, row=8→0)  — 9칸
-  for (let i = 8; i >= 0; i--) coords.push([9, i]);
-  // 상단: 19~27 (row=0, col=8→0) — 9칸
-  for (let i = 8; i >= 0; i--) coords.push([i, 0]);
-  // 좌측: 28~35 (col=0, row=1→8) — 8칸
-  for (let i = 1; i <= 8; i++) coords.push([0, i]);
+  for (let i = 0; i <= 9; i++) coords.push([i, 9]);       // 하단: 0~9
+  for (let i = 8; i >= 0; i--) coords.push([9, i]);        // 우측: 10~18
+  for (let i = 8; i >= 0; i--) coords.push([i, 0]);        // 상단: 19~27
+  for (let i = 1; i <= 8; i++) coords.push([0, i]);         // 좌측: 28~35
   return coords;
 }
 
-function idolCreateCellElement(cell, idx) {
-  const el = document.createElement('div');
-  el.className = 'idol-cell';
-  el.dataset.cellIdx = idx;
-
-  // 타입별 클래스
-  el.classList.add(`cell-${cell.type}`);
-  if (cell.type === 'shop') {
-    const shop = SHOPS.find(s => s.id === cell.shopId);
-    if (shop) el.classList.add(`cell-shop-${shop.cat}`);
-  }
-
-  // 플레이어 위치 표시
-  const here = idolState.players.filter(p => p.pos === idx && !p.bankrupt);
-  if (here.length > 0) el.classList.add('player-here');
-
-  // 소유자 표시
-  if (cell.type === 'shop') {
-    const ownerId = idolState.shopOwners[cell.shopId];
-    if (ownerId === state.myId) el.classList.add('owned-mine');
-    else if (ownerId) el.classList.add('owned-other');
-
-    if (ownerId) {
-      const owner = idolState.players.find(p => p.id === ownerId);
-      if (owner) {
-        const dot = document.createElement('div');
-        dot.className = 'cell-owner-dot';
-        const colors = ['#ff6b35','#00e5ff','#ff2d78','#ffd700'];
-        const ownerIdx = idolState.order.indexOf(ownerId);
-        dot.style.background = colors[ownerIdx % colors.length];
-        el.appendChild(dot);
-      }
-    }
-  }
-
-  // 셀 내용
-  const info = getCellInfo(idx);
-  const shop = cell.type === 'shop' ? SHOPS.find(s => s.id === cell.shopId) : null;
-  const level = shop ? (idolState.shopLevels[cell.shopId] ?? 0) : 0;
-
-  el.innerHTML += `
-    <span class="idol-cell-emoji">${info?.emoji ?? '⬜'}</span>
-    <span class="idol-cell-name">${info?.name ?? ''}</span>
-    ${shop ? `<span class="idol-cell-rent">${shop.rent[level]}만</span>` : ''}
-  `;
-
-  // 플레이어 토큰
-  if (here.length > 0) {
-    const tokenWrap = document.createElement('div');
-    tokenWrap.className = 'cell-tokens';
-    here.forEach((p, i) => {
-      const token = document.createElement('div');
-      token.className = 'player-token';
-      const colors = ['#ff6b35','#00e5ff','#ff2d78','#ffd700'];
-      const pi = idolState.order.indexOf(p.id);
-      token.style.background = colors[pi % colors.length];
-      token.textContent = p.avatar || '😎';
-      tokenWrap.appendChild(token);
-    });
-    el.appendChild(tokenWrap);
-  }
-
-  el.onclick = () => idolOnCellTap(idx);
-  return el;
-}
-
-function idolRenderCenterHTML() {
-  const currentP = idolCurrentPlayer();
-  if (!currentP) return '<div class="idol-center-title">🎤</div>';
-
-  const stage = getIdolStage(currentP.looks);
-  const currentType = IDOL_TYPES.find(t => t.id === currentP.idolType);
-
-  const playersHTML = idolState.order.map(id => {
-    const p = idolState.players.find(pl => pl.id === id);
-    if (!p) return '';
-    const isCurrent = id === currentP.id;
-    const pType = IDOL_TYPES.find(t => t.id === p.idolType);
-    return `<div class="idol-player-mini ${isCurrent ? 'is-current' : ''} ${p.bankrupt ? 'is-bankrupt' : ''}">
-      ${pType?.img ? `<img src="${pType.img}" alt="" class="idol-mini-img">` : `<div class="idol-player-mini-emoji">${p.avatar}</div>`}
-      <div class="idol-player-mini-name">${escapeHTML(p.name)}</div>
-      <div class="idol-player-mini-fame">${p.fame}⭐</div>
-    </div>`;
-  }).join('');
-
-  return `
-    <div class="idol-center-portrait idol-stage-${stage.stage}">
-      ${currentType?.img
-        ? `<img src="${currentType.img}" alt="${escapeHTML(currentP.idolName ?? '')}" class="idol-center-img">`
-        : `<div class="idol-center-img-placeholder">${currentType?.emoji ?? '🎤'}</div>`}
-      <div class="idol-center-name">${escapeHTML(currentP.idolName ?? currentP.name)}</div>
-      <div class="idol-center-stage" style="color:${stage.color}">${stage.emoji} ${stage.name}</div>
-    </div>
-    <div class="idol-players-mini">${playersHTML}</div>
-  `;
-}
+// idolRenderResourceBar, idolCreateCellElement, idolRenderCenterHTML →
+// 파일 하단 UX 개선 버전에서 정의됩니다.
 
 // ─── 액션 패널 렌더 ───────────────────────────
-function idolRenderActionPanel() {
-  const panel = document.getElementById('idolActionPanel');
-  if (!panel) return;
-
-  const action = idolState.pendingAction;
-  const isMyTurn = idolIsMyTurn();
-  const currentP = idolCurrentPlayer();
-  const isHost = state.isHost;
-
-  if (idolState.phase === 'ending') {
-    panel.innerHTML = idolRenderEndingPanel();
-    return;
-  }
-
-  if (!action || action.type === 'waiting-roll') {
-    if (isMyTurn) {
-      panel.innerHTML = `
-        <div class="idol-action-title">내 턴 — 주사위를 굴리세요!</div>
-        <div class="idol-action-buttons">
-          <button class="idol-btn idol-btn-primary" onclick="idolRollDice()">🎲 주사위 굴리기</button>
-        </div>`;
-    } else {
-      panel.innerHTML = `
-        <div class="idol-action-title" style="color:#888;">
-          ${escapeHTML(currentP?.name ?? '?')}의 턴 — 대기 중...
-        </div>`;
-    }
-    return;
-  }
-
-  switch (action.type) {
-    case 'rolling':
-      panel.innerHTML = idolRenderDicePanel(action.dice, action.isDouble);
-      break;
-    case 'shop-buy':
-      panel.innerHTML = isMyTurn ? idolRenderShopBuyPanel(action.shopId) : `<div class="idol-action-title">샵 구매 결정 중...</div>`;
-      break;
-    case 'shop-upgrade':
-      panel.innerHTML = isMyTurn ? idolRenderShopUpgradePanel(action.shopId) : `<div class="idol-action-title">업그레이드 결정 중...</div>`;
-      break;
-    case 'shop-train-self':
-    case 'shop-train-other':
-      panel.innerHTML = isMyTurn ? idolRenderTrainPanel(action.shopId, action.type === 'shop-train-self') : `<div class="idol-action-title">훈련 결정 중...</div>`;
-      break;
-    case 'train-result':
-      panel.innerHTML = idolRenderTrainResult(action);
-      break;
-    case 'event-card':
-      panel.innerHTML = isMyTurn ? idolRenderEventPanel(action.card) : `<div class="idol-action-title">이벤트 선택 중...</div>`;
-      break;
-    case 'gacha':
-    case 'stage-gacha':
-      panel.innerHTML = isMyTurn ? idolRenderGachaPanel() : `<div class="idol-action-title">가챠 중...</div>`;
-      break;
-    case 'gacha-result':
-      panel.innerHTML = idolRenderGachaResult(action.result);
-      break;
-    case 'chance-card':
-      panel.innerHTML = isMyTurn ? idolRenderChancePanel(action.card) : `<div class="idol-action-title">찬스 카드 처리 중...</div>`;
-      break;
-    case 'settlement':
-      panel.innerHTML = idolRenderSettlementPanel(action);
-      break;
-    case 'bankrupt':
-      panel.innerHTML = idolRenderBankruptPanel(action.playerId);
-      break;
-    case 'roll-again':
-      panel.innerHTML = isMyTurn
-        ? `<div class="idol-action-title">🎲 더블! 한 번 더!</div>
-           <div class="idol-action-buttons"><button class="idol-btn idol-btn-gold" onclick="idolRollDice()">한 번 더 굴리기</button></div>`
-        : `<div class="idol-action-title">더블! 추가 이동 중...</div>`;
-      break;
-    case 'goto-jail':
-      panel.innerHTML = `<div class="idol-action-title">🚓 3연속 더블! 경찰서 직행!</div>`;
-      if (isHost) setTimeout(() => idolOnTurnEnd(false), 1500);
-      break;
-    case 'turn-end-auto':
-      panel.innerHTML = `<div class="idol-action-title">처리 중...</div>`;
-      break;
-  }
-}
+// idolRenderActionPanel() → 파일 하단 UX 개선 버전에서 정의됩니다.
 
 // ─── 패널 렌더 헬퍼들 ─────────────────────────
 function idolRenderDicePanel(dice, isDouble) {
@@ -1065,6 +862,15 @@ function idolRenderChancePanel(card) {
   if (!card) return '';
   if (card.target) {
     const others = idolState.players.filter(p => p.id !== state.myId && !p.bankrupt);
+    if (others.length === 0) {
+      // 대상이 없으면 자신에게 적용
+      return `
+        <div class="idol-action-title">⚡ ${escapeHTML(card.title)}</div>
+        <div class="idol-popup-sub">대상 플레이어 없음 — 자신에게 적용됩니다</div>
+        <div class="idol-action-buttons">
+          <button class="idol-btn idol-btn-gold" onclick="idolApplyChance('${card.id}', null)">확인</button>
+        </div>`;
+    }
     const targetsHTML = others.map(p =>
       `<button class="idol-choice-btn" onclick="idolApplyChance('${card.id}', '${p.id}')">
         ${p.avatar} ${escapeHTML(p.name)}
@@ -1072,7 +878,7 @@ function idolRenderChancePanel(card) {
     ).join('');
     return `
       <div class="idol-action-title">⚡ ${escapeHTML(card.title)}</div>
-      <div class="idol-popup-sub">${card.desc} — 대상을 선택하세요</div>
+      <div class="idol-popup-sub">${escapeHTML(card.desc)} — 대상을 선택하세요</div>
       ${targetsHTML}`;
   }
   return `
@@ -1424,16 +1230,23 @@ function handleIdolMsg(msg) {
 
 // ─── 연습 모드 (AI) ───────────────────────────
 function idolStartPractice() {
-  const cpus = Math.min(3, (_cpuCount || 0) + 1);
-  // state.players 에 AI 플레이어 추가
-  const fakePlayers = [
-    { id: state.myId, name: state.myName, avatar: state.myAvatar },
-    ...Array.from({ length: cpus }, (_, i) => ({
-      id: `cpu${i}`, name: `CPU ${i + 1}`, avatar: ['🤖','👾','🎭'][i % 3],
-    })),
-  ];
-  state.players = fakePlayers;
-  state.isHost  = true;
+  // startPracticeGame('idol')이 state.players에 ai-* ID로 설정한 플레이어들을 cpu* 형식으로 변환
+  if (state.players && state.players.some(p => p.id && p.id.startsWith('ai-'))) {
+    state.players = state.players.map((p) => {
+      if (!p.id || !p.id.startsWith('ai-')) return p;
+      const idx = parseInt(p.id.replace('ai-', ''), 10);
+      return { id: `cpu${idx}`, name: p.name || `CPU ${idx + 1}`, avatar: p.avatar || ['🤖','👾','🎭'][idx % 3] };
+    });
+  } else if (!state.players || state.players.length <= 1) {
+    // 단독 호출 시 기본 플레이어 구성 (인간 1 + CPU 2)
+    state.players = [
+      { id: state.myId || ('p-' + Math.random().toString(36).substr(2, 5)), name: state.myName || '플레이어', avatar: state.myAvatar || '😎' },
+      ...Array.from({ length: 2 }, (_, i) => ({
+        id: `cpu${i}`, name: `CPU ${i + 1}`, avatar: ['🤖','👾','🎭'][i % 3],
+      })),
+    ];
+  }
+  state.isHost = true;
   idolState = null;
   idolResetSelectionState();
   showScreen('idolGame');
@@ -1940,7 +1753,7 @@ function idolRenderActionPanel() {
         <div class="idol-action-title">🚓 3연속 더블! 경찰서 직행</div>
         <div class="idol-popup-sub">이번 턴 이동이 종료되고 수감 상태가 적용됩니다.</div>
       `;
-      if (isHost) setTimeout(() => idolOnTurnEnd(false), 1500);
+      // 자동 진행은 idolRollDice()에서 단 한 번 설정됨
       break;
     case 'turn-end-auto':
       contentHtml = `<div class="idol-action-title">다음 턴 준비 중...</div>`;
