@@ -1170,6 +1170,7 @@ function handleGameStart(msg) {
   else if(msg.game === 'idol') {
     showScreen('idolGame');
     if(msg.state) renderIdolView(msg.state);
+    else if(typeof idolShowSelectPhase === 'function') idolShowSelectPhase();
   }
 }
 

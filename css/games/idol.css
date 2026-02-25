@@ -1552,3 +1552,340 @@
     transition: none !important;
   }
 }
+
+/* ===== Idol UX layout overhaul v2 (board-first + one-tap flow) ===== */
+#idolGame.active {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+#idolGame .idol-header {
+  grid-column: 1;
+  grid-row: 1;
+  z-index: 3;
+}
+
+#idolGame .idol-resource-bar {
+  grid-column: 1;
+  grid-row: 2;
+  z-index: 2;
+  padding: 8px 10px 6px;
+}
+
+#idolGame .idol-board-wrapper {
+  grid-column: 1;
+  grid-row: 3;
+  min-height: 0;
+  padding: 8px 10px 6px;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+}
+
+#idolGame .idol-board-wrapper::before {
+  content: 'BOARD';
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  z-index: 1;
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: rgba(226, 232, 240, 0.72);
+  pointer-events: none;
+}
+
+#idolGame .idol-board-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 6px 10px 4px;
+  border-radius: 18px;
+  background:
+    radial-gradient(80% 70% at 10% 0%, rgba(255, 111, 145, 0.08), transparent 70%),
+    radial-gradient(70% 70% at 100% 10%, rgba(0, 217, 255, 0.06), transparent 75%),
+    linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.006));
+  border: 1px solid rgba(255,255,255,0.06);
+  pointer-events: none;
+}
+
+#idolGame .idol-board {
+  position: relative;
+  z-index: 2;
+  width: min(100%, calc(100vw - 20px), calc(100dvh - 390px), 860px);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  gap: 2px;
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)),
+    rgba(5, 7, 14, 0.92);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 22px 48px rgba(0,0,0,0.34),
+    0 0 0 1px rgba(255,255,255,0.02) inset;
+}
+
+#idolGame .idol-cell {
+  border-radius: 9px;
+}
+
+#idolGame .idol-cell-emoji {
+  font-size: clamp(12px, 2.6vw, 17px);
+}
+
+#idolGame .idol-cell-name {
+  font-size: clamp(6px, 1.6vw, 10px);
+  line-height: 1.15;
+}
+
+#idolGame .idol-cell-rent {
+  font-size: clamp(7px, 1.45vw, 10px);
+}
+
+#idolGame .idol-board-center {
+  border-radius: 16px;
+  padding: 10px;
+}
+
+#idolGame .idol-center-shell {
+  gap: 10px;
+}
+
+#idolGame .idol-center-hint {
+  line-height: 1.45;
+}
+
+#idolGame .idol-action-panel {
+  grid-column: 1;
+  grid-row: 4;
+  min-height: 0;
+  max-height: min(26vh, 236px);
+  padding: 8px 10px calc(12px + env(safe-area-inset-bottom, 0));
+  border-top: 1px solid rgba(255,255,255,0.07);
+  background: rgba(5, 7, 13, 0.78);
+}
+
+#idolGame .idol-action-shell {
+  gap: 8px;
+}
+
+#idolGame .idol-action-context,
+#idolGame .idol-task-card {
+  border-radius: 14px;
+}
+
+#idolGame .idol-task-card {
+  padding: 12px;
+}
+
+#idolGame .idol-task-card .idol-action-buttons {
+  gap: 10px;
+}
+
+#idolGame .idol-btn,
+#idolGame .idol-choice-btn {
+  min-height: 52px;
+}
+
+#idolGame .idol-task-card .idol-btn {
+  flex: 1 1 120px;
+}
+
+#idolGame .idol-turn-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+}
+
+#idolGame .idol-turn-progress-track {
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+
+#idolGame .idol-turn-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, #ff4f9a 0%, #ffd166 55%, #00d9ff 100%);
+  box-shadow: 0 0 14px rgba(255, 209, 102, 0.25);
+}
+
+#idolGame .idol-turn-progress-label {
+  color: #cbd5e1;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+#idolGame .idol-res-item.res-favor .idol-res-value {
+  font-size: 12px;
+  letter-spacing: -0.01em;
+}
+
+#idolGame .idol-select-progress,
+#idolGame .idol-select-help,
+#idolGame .idol-select-wait {
+  border-radius: 12px;
+  padding: 9px 11px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+#idolGame .idol-select-progress {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  color: #dbe4f0;
+}
+
+#idolGame .idol-select-progress b {
+  color: #ffe082;
+}
+
+#idolGame .idol-select-help {
+  background: rgba(0,217,255,0.05);
+  border: 1px solid rgba(0,217,255,0.1);
+  color: #b8f4ff;
+}
+
+#idolGame .idol-select-wait {
+  background: rgba(255,209,102,0.06);
+  border: 1px solid rgba(255,209,102,0.12);
+  color: #ffe7a8;
+}
+
+#idolGame .idol-type-card.is-locked {
+  cursor: default;
+  opacity: 0.72;
+}
+
+#idolGame .idol-type-card.is-locked:active {
+  transform: none;
+}
+
+#idolGame.idol-select-mode.active {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+#idolGame.idol-select-mode .idol-action-panel {
+  grid-column: 1;
+  grid-row: 2;
+  max-height: none;
+  border-top: none;
+  background: transparent;
+  padding: 8px 10px calc(12px + env(safe-area-inset-bottom, 0));
+}
+
+#idolGame.idol-select-mode .idol-action-shell,
+#idolGame.idol-select-mode .idol-action-context {
+  display: block;
+}
+
+#idolGame.idol-select-mode .idol-task-card {
+  padding: 14px;
+}
+
+#idolGame.idol-select-mode .idol-select-screen {
+  min-height: 100%;
+}
+
+@media (min-width: 980px) {
+  #idolGame.active {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    column-gap: 2px;
+  }
+
+  #idolGame .idol-header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    padding: 12px 16px;
+  }
+
+  #idolGame .idol-board-wrapper {
+    grid-column: 1;
+    grid-row: 2 / 4;
+    padding: 12px 12px 12px 14px;
+  }
+
+  #idolGame .idol-board-wrapper::after {
+    inset: 10px 10px 10px 12px;
+  }
+
+  #idolGame .idol-board {
+    width: min(100%, calc(100dvh - 120px), 860px);
+  }
+
+  #idolGame .idol-resource-bar {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 10px 12px 6px 8px;
+  }
+
+  #idolGame .idol-topdash {
+    gap: 8px;
+  }
+
+  #idolGame .idol-res-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #idolGame .idol-res-item.res-money,
+  #idolGame .idol-res-item.res-fame {
+    grid-column: span 1;
+  }
+
+  #idolGame .idol-action-panel {
+    grid-column: 2;
+    grid-row: 3;
+    max-height: none;
+    padding: 8px 12px 12px 8px;
+    border-top: none;
+    border-left: 1px solid rgba(255,255,255,0.07);
+    background: transparent;
+  }
+
+  #idolGame .idol-action-shell {
+    height: 100%;
+    min-height: 0;
+  }
+
+  #idolGame .idol-action-context {
+    flex: 0 0 auto;
+  }
+
+  #idolGame .idol-task-card {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  #idolGame.idol-select-mode.active {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  #idolGame .idol-board {
+    width: min(100%, calc(100vw - 16px), calc(100dvh - 360px));
+    padding: 6px;
+  }
+
+  #idolGame .idol-board-wrapper::before {
+    top: 10px;
+    left: 14px;
+    font-size: 10px;
+  }
+
+  #idolGame .idol-action-panel {
+    max-height: min(28vh, 228px);
+  }
+}

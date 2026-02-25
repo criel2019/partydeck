@@ -33,6 +33,14 @@ function idolCreatePlayer(p, idolTypeId, idolName) {
 function startIdolManagement() {
   if (!state.isHost) return;
 
+  idolState = null;
+  idolResetSelectionState();
+
+  // 비호스트도 선택 화면으로 진입할 수 있도록 표준 game-started 신호 전송
+  if ((state.players?.length ?? 0) > 1) {
+    broadcast({ type: 'game-started', game: 'idol' });
+  }
+
   // 선택 화면으로 이동 (각 플레이어가 아이돌 선택)
   showScreen('idolGame');
   idolShowSelectPhase();
@@ -64,6 +72,7 @@ function idolInitGame(selections) {
     pendingAction: null,
   };
 
+  _idolSelectionLocked = false;
   broadcastIdolState();
   idolRenderAll();
 }
@@ -667,8 +676,14 @@ function renderIdolView(gs) {
 function idolRenderAll() {
   if (!idolState) return;
   // 선택 화면 인라인 스타일 초기화
+  const screen = document.getElementById('idolGame');
   const panel = document.getElementById('idolActionPanel');
+  const board = document.getElementById('idolBoardWrapper');
+  const resBar = document.getElementById('idolResourceBar');
+  if (screen) screen.classList.remove('idol-select-mode');
   if (panel) { panel.style.flex = ''; panel.style.overflowY = ''; panel.style.maxHeight = ''; }
+  if (board) board.style.display = '';
+  if (resBar) resBar.style.display = '';
   idolRenderHeader();
   idolRenderResourceBar();
   idolRenderBoard();
@@ -1197,14 +1212,76 @@ function idolShowJailPop(p) {
 
 // ─── 선택 화면 ────────────────────────────────
 let _idolSelections = {};
+let _idolSelectionLocked = false;
+
+function idolIsCpuPlayerId(pid) {
+  return /^cpu\d+$/.test(String(pid ?? ''));
+}
+
+function idolResetSelectionState() {
+  _idolSelections = {};
+  _idolSelectionLocked = false;
+}
+
+function idolAutoFillCpuSelections() {
+  const fallbackType = _idolSelections[state.myId]?.typeId ?? 'ai';
+  (state.players || []).forEach((p, idx) => {
+    if (!idolIsCpuPlayerId(p.id)) return;
+    if (_idolSelections[p.id]) return;
+    const typeId = IDOL_TYPES[idx % IDOL_TYPES.length]?.id ?? fallbackType;
+    _idolSelections[p.id] = { typeId, name: p.name };
+  });
+}
+
+function idolGetSelectionProgress() {
+  const humans = (state.players || []).filter(p => !idolIsCpuPlayerId(p.id));
+  const selected = humans.filter(p => _idolSelections[p.id]).length;
+  return {
+    total: Math.max(1, humans.length),
+    selected,
+    waiting: humans.filter(p => !_idolSelections[p.id]),
+  };
+}
+
+function idolTryStartGameFromSelections() {
+  if (!state.isHost || idolState) return false;
+
+  idolAutoFillCpuSelections();
+
+  const allSelected = (state.players || []).every(p => !!_idolSelections[p.id]);
+  if (!allSelected) return false;
+
+  const selections = state.players.map(p => ({
+    playerId: p.id,
+    idolTypeId: _idolSelections[p.id]?.typeId ?? 'ai',
+    idolName: _idolSelections[p.id]?.name ?? null,
+  }));
+
+  idolInitGame(selections);
+  return true;
+}
 
 function idolShowSelectPhase() {
+  if (idolState) {
+    idolRenderAll();
+    return;
+  }
+
+  const screen = document.getElementById('idolGame');
   const panel = document.getElementById('idolActionPanel');
   const board  = document.getElementById('idolBoardWrapper');
   const resBar = document.getElementById('idolResourceBar');
+  const selectedType = _idolSelections._selectedType ?? 'ai';
+  const mySaved = _idolSelections[state.myId] || null;
+  const locked = !!_idolSelectionLocked;
+  const progress = idolGetSelectionProgress();
+  const waitingNames = state.isHost
+    ? progress.waiting.filter(p => p.id !== state.myId).map(p => p.name).slice(0, 3)
+    : [];
 
   if (board)  board.style.display  = 'none';
   if (resBar) resBar.style.display = 'none';
+  if (screen) screen.classList.add('idol-select-mode');
 
   if (panel) {
     // 선택 화면이 전체 높이를 차지하도록 패널 확장
@@ -1213,7 +1290,7 @@ function idolShowSelectPhase() {
     panel.style.maxHeight = '';
 
     const idolTypeOptions = IDOL_TYPES.map(t => `
-      <div class="idol-type-card" id="idolTypeCard_${t.id}" data-type="${t.id}" onclick="idolSelectType('${t.id}')">
+      <div class="idol-type-card ${selectedType === t.id ? 'selected' : ''} ${locked ? 'is-locked' : ''}" id="idolTypeCard_${t.id}" data-type="${t.id}" onclick="idolSelectType('${t.id}')">
         <div class="idol-type-img-wrap">
           <img src="${t.img}" alt="${t.name}" class="idol-type-img" loading="lazy">
           <div class="idol-type-img-overlay"></div>
@@ -1227,17 +1304,29 @@ function idolShowSelectPhase() {
     panel.innerHTML = `
       <div class="idol-select-screen">
         <div class="idol-select-title">🎤 아이돌 선택</div>
+        <div class="idol-select-progress">
+          ${state.isHost
+            ? `선택 진행: <b>${progress.selected}</b> / ${progress.total}명`
+            : (locked ? '선택 제출 완료 · 호스트 시작 대기 중' : '아이돌은 한 번 선택하면 변경할 수 없습니다')}
+        </div>
+        ${state.isHost && waitingNames.length
+          ? `<div class="idol-select-help">대기 중: ${escapeHTML(waitingNames.join(', '))}${progress.waiting.length - waitingNames.length > 0 ? ' 외' : ''}</div>`
+          : ''}
         <div class="idol-type-grid">${idolTypeOptions}</div>
         <input id="idolNameInput" class="input-field" placeholder="아이돌 이름 (선택)" maxlength="8"
+          value="${escapeHTML(mySaved?.name ?? '')}"
+          ${locked ? 'disabled' : ''}
           style="margin-top:4px;padding:10px 12px;font-size:14px;">
-        <button class="idol-btn idol-btn-primary" onclick="idolConfirmSelection()" style="margin-top:6px;">
-          선택 완료
+        <button id="idolSelectConfirmBtn" class="idol-btn idol-btn-primary" onclick="idolConfirmSelection()" style="margin-top:6px;" ${locked ? 'disabled' : ''}>
+          ${locked ? '선택 제출됨' : '선택 완료'}
         </button>
+        ${locked ? `<div class="idol-select-wait">선택이 확정되었습니다. 게임 시작 전까지는 변경할 수 없습니다.</div>` : ''}
       </div>`;
   }
 }
 
 function idolSelectType(typeId) {
+  if (_idolSelectionLocked || idolState) return;
   document.querySelectorAll('.idol-type-card').forEach(el => el.classList.remove('selected'));
   const el = document.getElementById(`idolTypeCard_${typeId}`);
   if (el) el.classList.add('selected');
@@ -1245,26 +1334,21 @@ function idolSelectType(typeId) {
 }
 
 function idolConfirmSelection() {
+  if (idolState || _idolSelectionLocked) return;
   const typeId = _idolSelections._selectedType ?? 'ai';
   const name   = document.getElementById('idolNameInput')?.value.trim() || '';
+  _idolSelections[state.myId] = { typeId, name };
+  _idolSelectionLocked = true;
 
   if (state.isHost) {
-    // 호스트: 바로 게임 시작 (싱글 플레이어로도 동작)
-    const selections = state.players.map(p => ({
-      playerId: p.id,
-      idolTypeId: p.id === state.myId ? typeId : 'ai',
-      idolName: p.id === state.myId ? name : null,
-    }));
-
-    const board  = document.getElementById('idolBoardWrapper');
-    const resBar = document.getElementById('idolResourceBar');
-    if (board)  board.style.display  = '';
-    if (resBar) resBar.style.display = '';
-
-    idolInitGame(selections);
+    if (!idolTryStartGameFromSelections()) {
+      showToast('선택 완료! 다른 플레이어를 기다리는 중...');
+      idolShowSelectPhase();
+    }
   } else {
     broadcast({ type: 'idol-player-select', typeId, name });
-    showToast('선택 완료! 호스트를 기다리는 중...');
+    showToast('선택 완료! 변경 불가 · 호스트 시작 대기 중');
+    idolShowSelectPhase();
   }
 }
 
@@ -1272,25 +1356,14 @@ function idolConfirmSelection() {
 function handleIdolMsg(msg) {
   switch (msg.type) {
     case 'idol-state':
+      _idolSelectionLocked = false;
       renderIdolView(msg.state);
       break;
     case 'idol-player-select':
       if (state.isHost) {
+        if (idolState || !msg.from || _idolSelections[msg.from]) break;
         _idolSelections[msg.from] = { typeId: msg.typeId, name: msg.name };
-        // 모든 플레이어 선택 완료 시 시작
-        const allSelected = state.players.every(p => p.id === state.myId || _idolSelections[p.id]);
-        if (allSelected) {
-          const selections = state.players.map(p => ({
-            playerId: p.id,
-            idolTypeId: p.id === state.myId ? (_idolSelections['_host']?.typeId ?? 'ai') : _idolSelections[p.id]?.typeId ?? 'ai',
-            idolName: _idolSelections[p.id]?.name ?? null,
-          }));
-          const board  = document.getElementById('idolBoardWrapper');
-          const resBar = document.getElementById('idolResourceBar');
-          if (board)  board.style.display  = '';
-          if (resBar) resBar.style.display = '';
-          idolInitGame(selections);
-        }
+        if (!idolTryStartGameFromSelections()) idolShowSelectPhase();
       }
       break;
   }
@@ -1308,6 +1381,8 @@ function idolStartPractice() {
   ];
   state.players = fakePlayers;
   state.isHost  = true;
+  idolState = null;
+  idolResetSelectionState();
   showScreen('idolGame');
   idolShowSelectPhase();
 }
@@ -1420,8 +1495,9 @@ function idolRenderResourceBar() {
   const activePlayers = idolState.players.filter(p => !p.bankrupt);
   const rank = idolGetRank(me.id);
   const stage = getIdolStage(me.looks);
-  const favor = idolState._myFavor ?? me.favor;
-  const favorText = Number.isFinite(favor) ? String(favor) : '?';
+  const favorDir = idolState._myFavorDir ?? me.lastFavorDir ?? null;
+  const favorIcon = favorDir === 'up' ? '💗⬆' : favorDir === 'down' ? '💗⬇' : '💗';
+  const turnProgress = Math.max(0, Math.min(100, Math.round((idolState.turnNum / IDOL_TOTAL_TURNS) * 100)));
   const currentP = idolCurrentPlayer();
   const currentCell = idolUxGetBoardCellMeta(me);
   const actionMeta = idolUxGetActionMeta(idolState.pendingAction);
@@ -1444,6 +1520,13 @@ function idolRenderResourceBar() {
               <span style="color:${stage.color};">${stage.emoji} ${stage.name}</span>
             </div>
           </div>
+        </div>
+
+        <div class="idol-turn-progress" role="progressbar" aria-label="턴 진행률" aria-valuemin="0" aria-valuemax="${IDOL_TOTAL_TURNS}" aria-valuenow="${idolState.turnNum}">
+          <div class="idol-turn-progress-track">
+            <div class="idol-turn-progress-fill" style="width:${turnProgress}%"></div>
+          </div>
+          <div class="idol-turn-progress-label">${idolState.turnNum} / ${IDOL_TOTAL_TURNS}턴 진행</div>
         </div>
 
         <div class="idol-res-hero-meta">
@@ -1475,9 +1558,9 @@ function idolRenderResourceBar() {
           <span class="idol-res-value">${me.looks}</span>
         </div>
         <div class="idol-res-item res-favor" role="listitem">
-          <span class="idol-res-icon">💗</span>
+          <span class="idol-res-icon">${favorIcon}</span>
           <span class="idol-res-label">호감도</span>
-          <span class="idol-res-value">${favorText}</span>
+          <span class="idol-res-value">비공개</span>
         </div>
       </div>
     </div>
