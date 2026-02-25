@@ -310,7 +310,7 @@ function idolProcessCell(p, pos, isDouble) {
       idolDrawChanceCard(p);
       return;
     case 'shop':
-      idolHandleShop(p, cell.shopId);
+      idolHandleShop(p, cell.shopId, isDouble);
       return;
   }
 
@@ -323,16 +323,16 @@ function idolProcessCell(p, pos, isDouble) {
 }
 
 // ─── 샵 처리 ──────────────────────────────────
-function idolHandleShop(p, shopId) {
+function idolHandleShop(p, shopId, isDouble) {
   const shop = SHOPS.find(s => s.id === shopId);
   const ownerId = idolState.shopOwners[shopId];
 
   if (!ownerId) {
     // 미분양 → 구매 여부 팝업
-    idolState.pendingAction = { type: 'shop-buy', shopId, playerId: p.id };
+    idolState.pendingAction = { type: 'shop-buy', shopId, playerId: p.id, isDouble: !!isDouble };
   } else if (ownerId === p.id) {
     // 내 샵 → 업그레이드 팝업
-    idolState.pendingAction = { type: 'shop-upgrade', shopId, playerId: p.id };
+    idolState.pendingAction = { type: 'shop-upgrade', shopId, playerId: p.id, isDouble: !!isDouble };
   } else {
     // 타인 샵 → 수수료 자동 납부
     const owner = idolState.players.find(pl => pl.id === ownerId);
@@ -357,7 +357,7 @@ function idolHandleShop(p, shopId) {
     idolShowCellResult(p, `💰 ${shop.name} 수수료 ${rent}만원`);
 
     // 훈련 여부 팝업 (수수료 낸 후)
-    idolState.pendingAction = { type: 'shop-train-other', shopId, playerId: p.id };
+    idolState.pendingAction = { type: 'shop-train-other', shopId, playerId: p.id, isDouble: !!isDouble };
   }
 
   broadcastIdolState();
@@ -381,17 +381,19 @@ function idolBuyShop(shopId) {
   // 뷰티 카테고리 독점 확인
   idolCheckBeautyMonopoly(p);
 
-  idolState.pendingAction = { type: 'shop-train-self', shopId, playerId: p.id };
+  const prevIsDouble = idolState.pendingAction?.isDouble ?? false;
+  idolState.pendingAction = { type: 'shop-train-self', shopId, playerId: p.id, isDouble: prevIsDouble };
   broadcastIdolState();
   idolRenderAll();
 }
 
 function idolPassShop() {
   if (!state.isHost) return;
+  const isDouble = idolState.pendingAction?.isDouble ?? false;
   idolState.pendingAction = { type: 'turn-end-auto' };
   broadcastIdolState();
   idolRenderAll();
-  setTimeout(() => idolOnTurnEnd(false), 400);
+  setTimeout(() => idolOnTurnEnd(isDouble), 400);
 }
 
 // ─── 샵 업그레이드 ────────────────────────────
@@ -407,7 +409,8 @@ function idolUpgradeShop(shopId) {
   p.money -= cost;
   idolState.shopLevels[shopId] = level + 1;
 
-  idolState.pendingAction = { type: 'shop-train-self', shopId, playerId: p.id };
+  const prevIsDouble = idolState.pendingAction?.isDouble ?? false;
+  idolState.pendingAction = { type: 'shop-train-self', shopId, playerId: p.id, isDouble: prevIsDouble };
   broadcastIdolState();
   idolRenderAll();
 }
@@ -418,6 +421,7 @@ function idolTrainAtShop(shopId, isOwned) {
   const p = idolCurrentPlayer();
   const shop = SHOPS.find(s => s.id === shopId);
   if (!p || !shop) return;
+  const isDouble = idolState.pendingAction?.isDouble ?? false;
 
   const die = Math.floor(Math.random() * 6) + 1;
   let gain = die <= 2 ? 1 : die <= 4 ? 2 : 3;
@@ -449,6 +453,7 @@ function idolTrainAtShop(shopId, isOwned) {
   idolState.pendingAction = {
     type: 'train-result',
     die, gain, stat, playerId: p.id,
+    isDouble,
   };
   broadcastIdolState();
   idolRenderAll();
@@ -456,18 +461,20 @@ function idolTrainAtShop(shopId, isOwned) {
 
 function idolConfirmTrainResult() {
   if (!state.isHost) return;
-  if (idolState.pendingAction?.type !== 'train-result') return;
-  idolOnTurnEnd(false);
+  const action = idolState.pendingAction;
+  if (!action || action.type !== 'train-result') return;
+  idolOnTurnEnd(action.isDouble ?? false);
 }
 
 function idolSkipTrain() {
   if (!state.isHost) return;
   const p = idolCurrentPlayer();
+  const isDouble = idolState.pendingAction?.isDouble ?? false;
   p.skipTrainCount++;
 
   // 3연속 훈련 스킵 → 호감도 하락
   if (p.skipTrainCount >= 3) {
-    p.favor -= 2;
+    p.favor = Math.max(0, p.favor - 2);
     p.skipTrainCount = 0;
     p.lastFavorDir = 'down';
     idolShowFavorToast(p.id, 'down', null);
@@ -476,7 +483,7 @@ function idolSkipTrain() {
   idolState.pendingAction = { type: 'turn-end-auto' };
   broadcastIdolState();
   idolRenderAll();
-  setTimeout(() => idolOnTurnEnd(false), 300);
+  setTimeout(() => idolOnTurnEnd(isDouble), 300);
 }
 
 // ─── 샵 인수 제안 ─────────────────────────────
@@ -490,12 +497,14 @@ function idolProposeTakeover(shopId) {
   const price = Math.floor(shop.price * 1.5);
   if (p.money < price) { showToast('돈이 부족합니다'); return; }
 
+  const isDouble = idolState.pendingAction?.isDouble ?? false;
   idolState.pendingAction = {
     type: 'shop-takeover-offer',
     shopId,
     fromId: p.id,
     toId: ownerId,
     price,
+    isDouble,
   };
   broadcastIdolState();
   idolRenderAll();
@@ -547,7 +556,7 @@ function idolAcceptTakeover() {
   idolState.pendingAction = { type: 'turn-end-auto' };
   broadcastIdolState();
   idolRenderAll();
-  setTimeout(() => idolOnTurnEnd(false), 400);
+  setTimeout(() => idolOnTurnEnd(action.isDouble ?? false), 400);
 }
 
 function idolDeclineTakeover() {
@@ -555,10 +564,10 @@ function idolDeclineTakeover() {
   const action = idolState.pendingAction;
   if (!action || action.type !== 'shop-takeover-offer') return;
 
-  // 거절하면 오너 호감도 -1 (룰북 6-2)
+  // 거절하면 오너 호감도 -1 (룰북 6-2), 0 미만 불가
   const owner = idolState.players.find(p => p.id === action.toId);
   if (owner) {
-    owner.favor -= 1;
+    owner.favor = Math.max(0, owner.favor - 1);
     owner.lastFavorDir = 'down';
     idolShowFavorToast(owner.id, 'down', null);
   }
@@ -566,7 +575,7 @@ function idolDeclineTakeover() {
   idolState.pendingAction = { type: 'turn-end-auto' };
   broadcastIdolState();
   idolRenderAll();
-  setTimeout(() => idolOnTurnEnd(false), 400);
+  setTimeout(() => idolOnTurnEnd(action.isDouble ?? false), 400);
 }
 
 function idolRenderTakeoverPanel(action) {
