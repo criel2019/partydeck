@@ -1341,10 +1341,24 @@ function aiIdol() {
       break;
 
     // ── 인수 제안 수신 (CPU 오너 응답은 idolProposeTakeover에서 이미 예약됨)
-    case 'shop-takeover-offer':
-      // CPU 오너의 응답은 idolProposeTakeover() 내부 setTimeout에서 처리됨
-      // 여기서는 별도 처리 불필요 (watchdog만 필요)
+    case 'shop-takeover-offer': {
+      // CPU 오너의 1차 응답은 idolProposeTakeover() setTimeout에서 처리됨
+      // 혹시 타이머가 소실된 경우 대비 watchdog
+      const taSnap = actionType;
+      const taIdx = idolState.currentIdx;
+      const taTurn = idolState.turnNum;
+      const tw = setTimeout(() => {
+        if (!idolState || idolState.phase !== 'playing') return;
+        if (idolState.currentIdx !== taIdx || idolState.turnNum !== taTurn) return;
+        if (idolState.pendingAction?.type !== taSnap) return;
+        const ownerId = idolState.pendingAction?.toId;
+        if (!ownerId || !idolIsCpuPlayerId(ownerId)) return;
+        // 여전히 CPU 오너가 응답 안 함 → 강제 거절
+        if (typeof idolDeclineTakeover === 'function') idolDeclineTakeover();
+      }, 5000);
+      if (typeof _aiTimers !== 'undefined') _aiTimers.push(tw);
       break;
+    }
 
     // ── 자동 처리 상태들 (AI 개입 불필요) ─────
     // rolling, landed, gacha-result, turn-end-auto,

@@ -775,15 +775,11 @@ function idolCheckBankruptcy(p) {
   if (p.bankrupt) return;
   if (p.money > 0) return;
 
-  // 팔 수 있는 샵이 있으면 유예
+  // 팔 수 있는 샵이 있으면 유예 (매각 패널에서 플레이어가 직접 처리)
   if (p.ownedShops.length > 0) return;
 
   // 진짜 파산
   p.bankrupt = true;
-  p.ownedShops.forEach(shopId => {
-    delete idolState.shopOwners[shopId];
-    delete idolState.shopLevels[shopId];
-  });
   p.ownedShops = [];
 
   idolState.pendingAction = { type: 'bankrupt', playerId: p.id };
@@ -813,6 +809,9 @@ function idolSellShop(shopId) {
   delete idolState.shopOwners[shopId];
   delete idolState.shopLevels[shopId];
 
+  // 매각 후에도 자금 부족 → 파산 재체크
+  if (p.money <= 0) idolCheckBankruptcy(p);
+
   broadcastIdolState();
   idolRenderAll();
 }
@@ -821,9 +820,10 @@ function idolSellShop(shopId) {
 function idolCheckBeautyMonopoly(p) {
   const beautyShops = SHOPS.filter(s => s.cat === 'beauty').map(s => s.id);
   const owned = beautyShops.filter(id => p.ownedShops.includes(id));
-  if (owned.length >= 3) {
+  // === 3 으로 정확히 독점 달성 시에만 보너스 (이미 독점 상태에서 추가 구매 시 중복 방지)
+  if (owned.length === 3) {
     p.looks += 3;
-    p.favor += 1;
+    p.favor = Math.min(p.favor + 1, 10);
     p.lastFavorDir = 'up';
     const oldStage = getIdolStage(p.looks - 3).stage;
     const newStage = getIdolStage(p.looks).stage;
@@ -843,8 +843,8 @@ function idolOnTurnEnd(isDouble) {
     return;
   }
 
-  // 5턴 결산 체크
-  if (idolState.turnNum % 5 === 0) {
+  // 5턴 결산 체크 (이미 settlement 중이면 중복 방지)
+  if (idolState.turnNum % 5 === 0 && idolState.pendingAction?.type !== 'settlement') {
     idolRunSettlement();
     setTimeout(() => {
       idolAdvanceTurn();
@@ -973,8 +973,11 @@ function idolRenderBoard() {
   const board = document.getElementById('idolBoard');
   if (!board) return;
 
-  // 토큰 레이어 보존 (innerHTML 초기화 전에 detach)
+  // 토큰 레이어 먼저 분리 (innerHTML = '' 전에 detach해야 transition 상태 보존)
   const savedTokenLayer = document.getElementById('idolTokenLayer');
+  if (savedTokenLayer && savedTokenLayer.parentNode === board) {
+    board.removeChild(savedTokenLayer);
+  }
 
   board.innerHTML = '';
 
@@ -1421,7 +1424,7 @@ function idolShowCellResult(p, msg) {
 }
 
 function idolShowJailPop(p) {
-  showToast(`🚓 ${escapeHTML(p.name)} 수감 중... (남은 턴: ${p.jailTurns + 1})`);
+  showToast(`🚓 ${escapeHTML(p.name)} 수감 중... (남은 턴: ${p.jailTurns})`);
   idolState.pendingAction = { type: 'turn-end-auto' };
   broadcastIdolState();
   idolRenderAll();
@@ -1625,7 +1628,8 @@ function idolConfirmSelection() {
 function handleIdolMsg(msg) {
   switch (msg.type) {
     case 'idol-state':
-      _idolSelectionLocked = false;
+      // 게임이 실제 시작된(playing) 경우에만 선택 잠금 해제 (race condition 방지)
+      if (msg.state?.phase === 'playing') _idolSelectionLocked = false;
       renderIdolView(msg.state);
       break;
     case 'idol-player-select':
