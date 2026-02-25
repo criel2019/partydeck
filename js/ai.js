@@ -81,6 +81,7 @@ function leavePracticeMode() {
   if (typeof tetCleanup === 'function') tetCleanup();
   if (typeof ccCleanup === 'function') ccCleanup();
   if (typeof destroyBombShotThree === 'function') destroyBombShotThree();
+  if (typeof destroyIdolDiceThree === 'function') destroyIdolDiceThree();
   showScreen('mainMenu');
 }
 
@@ -1228,9 +1229,13 @@ function aiIdol() {
 
     // ── 샵 구매 결정 ──────────────────────────
     case 'shop-buy': {
-      if (!action.playerId || action.playerId !== currentP.id) return;
+      // playerId 불일치 시 패스로 안전 처리
+      if (!action.playerId || action.playerId !== currentP.id) {
+        if (typeof idolPassShop === 'function') idolPassShop();
+        break;
+      }
       const shop = (typeof SHOPS !== 'undefined') ? SHOPS.find(s => s.id === action.shopId) : null;
-      if (!shop) { if (typeof idolPassShop === 'function') idolPassShop(); return; }
+      if (!shop) { if (typeof idolPassShop === 'function') idolPassShop(); break; }
       // 구매 기준: 잔고가 가격의 1.1배 이상 && 랜덤 70% 확률
       const canAfford = currentP.money >= shop.price * 1.1;
       if (canAfford && Math.random() < 0.70 && typeof idolBuyShop === 'function') {
@@ -1243,7 +1248,10 @@ function aiIdol() {
 
     // ── 업그레이드 결정 ───────────────────────
     case 'shop-upgrade': {
-      if (!action.playerId || action.playerId !== currentP.id) return;
+      if (!action.playerId || action.playerId !== currentP.id) {
+        if (typeof idolPassShop === 'function') idolPassShop();
+        break;
+      }
       const level = idolState.shopLevels ? (idolState.shopLevels[action.shopId] ?? 0) : 0;
       const upgCost = (typeof SHOP_UPGRADE_COST !== 'undefined') ? SHOP_UPGRADE_COST[level] : Infinity;
       // 최대 레벨 아니고 잔고 1.5배 이상 && 60% 확률
@@ -1258,13 +1266,19 @@ function aiIdol() {
 
     // ── 전속 샵 훈련 (항상 훈련) ──────────────
     case 'shop-train-self':
-      if (!action.playerId || action.playerId !== currentP.id) return;
+      if (!action.playerId || action.playerId !== currentP.id) {
+        if (typeof idolSkipTrain === 'function') idolSkipTrain();
+        break;
+      }
       if (typeof idolTrainAtShop === 'function') idolTrainAtShop(action.shopId, true);
       break;
 
     // ── 타인 샵 훈련 (75% 확률로 훈련) ───────
     case 'shop-train-other':
-      if (!action.playerId || action.playerId !== currentP.id) return;
+      if (!action.playerId || action.playerId !== currentP.id) {
+        if (typeof idolSkipTrain === 'function') idolSkipTrain();
+        break;
+      }
       if (Math.random() < 0.75 && typeof idolTrainAtShop === 'function') {
         idolTrainAtShop(action.shopId, false);
       } else if (typeof idolSkipTrain === 'function') {
@@ -1274,10 +1288,10 @@ function aiIdol() {
 
     // ── 이벤트 카드 선택 ──────────────────────
     case 'event-card': {
-      if (!action.playerId || action.playerId !== currentP.id) return;
+      if (!action.playerId || action.playerId !== currentP.id) break; // 자동진행 대기
       const card = action.card;
-      if (!card) return;
-      if (typeof idolChooseEvent !== 'function') return;
+      if (!card) break;
+      if (typeof idolChooseEvent !== 'function') break;
       if (card.type === 'reversal') {
         idolChooseEvent(card.id, 0);
       } else {
@@ -1290,15 +1304,15 @@ function aiIdol() {
     // ── 가챠 ──────────────────────────────────
     case 'gacha':
     case 'stage-gacha':
-      if (!action.playerId || action.playerId !== currentP.id) return;
+      if (!action.playerId || action.playerId !== currentP.id) break;
       if (typeof idolDoGacha === 'function') idolDoGacha();
       break;
 
     // ── 찬스 카드 ─────────────────────────────
     case 'chance-card': {
-      if (!action.playerId || action.playerId !== currentP.id) return;
+      if (!action.playerId || action.playerId !== currentP.id) break;
       const chCard = action.card;
-      if (!chCard || typeof idolApplyChance !== 'function') return;
+      if (!chCard || typeof idolApplyChance !== 'function') break;
       if (chCard.target) {
         // 살아있는 다른 플레이어 중 랜덤 대상
         const others = idolState.players.filter(p => p.id !== currentP.id && !p.bankrupt);
@@ -1313,8 +1327,39 @@ function aiIdol() {
     // ── 자동 처리 상태들 (AI 개입 불필요) ─────
     // rolling, landed, gacha-result, train-result, turn-end-auto,
     // settlement, bankrupt, goto-jail, ending → 모두 자동 진행됨
-    default:
+    // 단, 이 상태에서 자동진행이 멈춘 경우 대비 watchdog 예약
+    default: {
+      const autoStates = ['rolling', 'landed', 'gacha-result', 'train-result',
+        'turn-end-auto', 'settlement', 'bankrupt', 'goto-jail'];
+      if (autoStates.includes(actionType) && idolIsCpuPlayerId(currentP.id)) {
+        // 자동진행 상태에서 너무 오래 머물면 nudge
+        const snapIdx = idolState.currentIdx;
+        const snapTurn = idolState.turnNum;
+        const snapAction = actionType;
+        const t = setTimeout(() => {
+          if (!idolState || idolState.phase !== 'playing') return;
+          if (idolState.currentIdx !== snapIdx || idolState.turnNum !== snapTurn) return;
+          if (idolState.pendingAction?.type !== snapAction) return;
+          // 여전히 같은 상태 → 강제 진행
+          if (snapAction === 'bankrupt') {
+            idolAdvanceTurn();
+          } else if (snapAction === 'rolling') {
+            // 다이스 애니메이션이 막혔을 때 → 이동 처리 강제 실행
+            if (typeof idolHideDiceOverlay === 'function') idolHideDiceOverlay();
+            const cp2 = typeof idolCurrentPlayer === 'function' ? idolCurrentPlayer() : null;
+            const dice = idolState.pendingAction?.dice;
+            if (cp2 && dice) {
+              const isDouble = dice[0] === dice[1];
+              if (typeof idolMovePlayer === 'function') idolMovePlayer(cp2, dice[0] + dice[1], isDouble);
+            }
+          } else if (['turn-end-auto', 'gacha-result', 'train-result'].includes(snapAction)) {
+            if (typeof idolOnTurnEnd === 'function') idolOnTurnEnd(false);
+          }
+        }, 5000); // 5초 대기 (다이스 애니메이션 최대 2초 + 여유)
+        if (typeof _aiTimers !== 'undefined') _aiTimers.push(t);
+      }
       break;
+    }
   }
 }
 

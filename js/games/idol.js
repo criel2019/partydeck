@@ -1,5 +1,95 @@
 // ===== 팟플 아이돌 매니지먼트 — 메인 게임 엔진 =====
 
+// ─── 3D 다이스 로더 ──────────────────────────
+let _idolThreeState = 'none'; // 'none' | 'loading' | 'ready'
+let _idolThreeQueue = [];
+
+function loadIdolDiceThree(onReady) {
+  if (_idolThreeState === 'ready') { if (onReady) onReady(); return; }
+  if (typeof onReady === 'function') _idolThreeQueue.push(onReady);
+  if (_idolThreeState === 'loading') return; // 로드 중 — 큐에 추가됨
+
+  _idolThreeState = 'loading';
+
+  const _flush = () => {
+    _idolThreeState = 'ready';
+    const q = _idolThreeQueue.splice(0);
+    q.forEach(fn => { try { fn(); } catch (e) {} });
+  };
+  const _fail = () => {
+    _idolThreeState = 'none'; // 재시도 가능하도록
+    const q = _idolThreeQueue.splice(0);
+    q.forEach(fn => { try { fn(); } catch (e) {} }); // 실패해도 콜백 호출
+  };
+
+  const _loadDiceScript = () => {
+    // idol-dice-three.js가 이미 로드됐으면 초기화만
+    if (typeof idolDiceThreeRoll === 'function') {
+      const canvas = document.getElementById('idolDiceCanvas');
+      if (canvas && typeof initIdolDiceThree === 'function') initIdolDiceThree(canvas);
+      _flush();
+      return;
+    }
+    const s2 = document.createElement('script');
+    s2.src = 'js/idol-dice-three.js';
+    s2.onload = () => {
+      const canvas = document.getElementById('idolDiceCanvas');
+      if (canvas && typeof initIdolDiceThree === 'function') initIdolDiceThree(canvas);
+      _flush();
+    };
+    s2.onerror = _fail;
+    document.head.appendChild(s2);
+  };
+
+  // Three.js가 이미 로드된 경우(yahtzee 등에서) 재로드 불필요
+  if (typeof THREE !== 'undefined') {
+    _loadDiceScript();
+    return;
+  }
+
+  const s1 = document.createElement('script');
+  s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  s1.onload = _loadDiceScript;
+  s1.onerror = _fail;
+  document.head.appendChild(s1);
+}
+
+function idolShowDiceOverlay(d1, d2, isDouble, onDone) {
+  const overlay = document.getElementById('idolDiceOverlay');
+  if (!overlay) { if (onDone) onDone(); return; }
+  overlay.style.display = 'flex';
+
+  const badge = document.getElementById('idolDiceResultBadge');
+  if (badge) { badge.textContent = ''; badge.className = 'idol-dice-result-badge'; }
+
+  const doRoll = () => {
+    const canvas = document.getElementById('idolDiceCanvas');
+    // Three.js가 준비됐으면 초기화(이미 된 경우 no-op)
+    if (canvas && typeof initIdolDiceThree === 'function') initIdolDiceThree(canvas);
+
+    if (typeof idolDiceThreeRoll === 'function') {
+      idolDiceThreeRoll(d1, d2, () => {
+        if (badge) {
+          const EMOJIS = ['','⚀','⚁','⚂','⚃','⚄','⚅'];
+          badge.textContent = `${EMOJIS[d1]}  ${d1 + d2}  ${EMOJIS[d2]}${isDouble ? '  🎲 더블!' : ''}`;
+          badge.className = `idol-dice-result-badge visible${isDouble ? ' double' : ''}`;
+        }
+        setTimeout(() => { idolHideDiceOverlay(); if (onDone) onDone(); }, 700);
+      });
+    } else {
+      // Three.js 없음 → 즉시 완료
+      setTimeout(() => { idolHideDiceOverlay(); if (onDone) onDone(); }, 200);
+    }
+  };
+
+  loadIdolDiceThree(doRoll);
+}
+
+function idolHideDiceOverlay() {
+  const overlay = document.getElementById('idolDiceOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
 // ─── 게임 상태 ────────────────────────────────
 let idolState = null;
 
@@ -48,6 +138,8 @@ function startIdolManagement() {
 
 // 호스트가 초기 게임 생성 (모든 플레이어 선택 완료 후)
 function idolInitGame(selections) {
+  // Three.js 미리 로드 (첫 주사위 전에 완료되도록)
+  loadIdolDiceThree();
   // selections: [{ playerId, idolTypeId, idolName }]
   const players = state.players.map(p => {
     const sel = selections.find(s => s.playerId === p.id);
@@ -137,10 +229,10 @@ function idolRollDice() {
       idolState.pendingAction = { type: 'goto-jail', dice: [d1, d2] };
       broadcastIdolState();
       idolRenderAll();
-      // 자동 턴 진행 (1.5초 후) — 렌더 패널 타임아웃 대신 여기서 단 한 번 설정
-      setTimeout(() => {
+      // 다이스 애니메이션 후 자동 턴 진행
+      idolShowDiceOverlay(d1, d2, true, () => {
         if (idolState?.pendingAction?.type === 'goto-jail') idolOnTurnEnd(false);
-      }, 1500);
+      });
       return;
     }
   } else {
@@ -151,8 +243,10 @@ function idolRollDice() {
   broadcastIdolState();
   idolRenderAll();
 
-  // 이동 처리
-  setTimeout(() => idolMovePlayer(p, d1 + d2, isDouble), 600);
+  // 3D 다이스 애니메이션 → 완료 후 이동 처리
+  idolShowDiceOverlay(d1, d2, isDouble, () => {
+    idolMovePlayer(p, d1 + d2, isDouble);
+  });
 }
 
 // ─── 플레이어 이동 ────────────────────────────
@@ -202,7 +296,8 @@ function idolProcessCell(p, pos, isDouble) {
       if (p.money < 0) p.money = 0;
       idolShowCellResult(p, `💸 세금 ${cell.amount}만원 납부`);
       idolCheckBankruptcy(p);
-      idolState.pendingAction = { type: 'turn-end-auto' };
+      // 파산하면 idolCheckBankruptcy가 pendingAction='bankrupt'+자동진행 예약 → 덮어쓰지 않음
+      if (!p.bankrupt) idolState.pendingAction = { type: 'turn-end-auto' };
       break;
     case 'event':
       idolDrawEventCard(p);
@@ -250,6 +345,13 @@ function idolHandleShop(p, shopId) {
     if (owner) owner.money += rent;
     if (p.money < 0) p.money = 0;
     idolCheckBankruptcy(p);
+
+    // 파산이면 idolCheckBankruptcy가 pendingAction을 'bankrupt'로 설정하고 자동진행 예약함
+    if (p.bankrupt) {
+      broadcastIdolState();
+      idolRenderAll();
+      return;
+    }
 
     idolShowCellResult(p, `💰 ${shop.name} 수수료 ${rent}만원`);
 
@@ -415,6 +517,13 @@ function idolChooseEvent(cardId, choiceIdx) {
     }
   }
 
+  // 파산 발생 시 idolCheckBankruptcy가 이미 pendingAction='bankrupt' + 자동진행 예약
+  if (p.bankrupt) {
+    broadcastIdolState();
+    idolRenderAll();
+    return;
+  }
+
   idolState.pendingAction = { type: 'turn-end-auto' };
   broadcastIdolState();
   idolRenderAll();
@@ -478,6 +587,13 @@ function idolApplyChance(cardId, targetId) {
     if (target) idolApplyEffect(target, card.effect);
   } else {
     idolApplyEffect(p, card.effect);
+  }
+
+  // 파산 발생 시 idolCheckBankruptcy가 이미 pendingAction='bankrupt' + 자동진행 예약
+  if (p.bankrupt) {
+    broadcastIdolState();
+    idolRenderAll();
+    return;
   }
 
   idolState.pendingAction = { type: 'turn-end-auto' };
@@ -651,6 +767,20 @@ function idolAdvanceTurn() {
   idolState.pendingAction = { type: 'waiting-roll' };
   broadcastIdolState();
   idolRenderAll();
+
+  // Watchdog: CPU 턴이면 AI가 응답하지 않을 경우 3.5초 후 재시도
+  const watchdogIdx = idolState.currentIdx;
+  const watchdogTurn = idolState.turnNum;
+  setTimeout(() => {
+    if (!idolState || idolState.phase !== 'playing') return;
+    if (idolState.currentIdx !== watchdogIdx || idolState.turnNum !== watchdogTurn) return;
+    if (idolState.pendingAction?.type !== 'waiting-roll') return;
+    const cp = idolCurrentPlayer();
+    if (!cp || !idolIsCpuPlayerId(cp.id)) return;
+    // CPU가 아직 주사위를 굴리지 않음 → 강제 실행
+    if (typeof aiIdol === 'function') aiIdol();
+    else idolRollDice();
+  }, 3500);
 }
 
 // ─── 게임 종료 ────────────────────────────────

@@ -766,6 +766,8 @@ function returnToLobby() {
   if (typeof ccCleanup === 'function') ccCleanup();
   if (typeof slkCleanup === 'function') slkCleanup();
   if (typeof closeBJCleanup === 'function') closeBJCleanup();
+  if (typeof destroyIdolDiceThree === 'function') destroyIdolDiceThree();
+  if (typeof idolHideDiceOverlay === 'function') idolHideDiceOverlay();
   // Clean up AI timers (lobby CPU mode)
   if(typeof cleanupAI === 'function') cleanupAI();
   showScreen('lobby');

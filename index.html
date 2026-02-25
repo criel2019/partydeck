@@ -2317,6 +2317,14 @@
   <div class="idol-action-panel" id="idolActionPanel" role="region" aria-live="polite" aria-label="행동 안내">
     <div class="idol-action-title" style="color:#888;">게임 로딩 중...</div>
   </div>
+
+  <!-- 3D 다이스 오버레이 (주사위 굴릴 때만 표시) -->
+  <div id="idolDiceOverlay" class="idol-dice-overlay" style="display:none;" aria-hidden="true">
+    <div class="idol-dice-3d-wrap">
+      <canvas id="idolDiceCanvas"></canvas>
+    </div>
+    <div id="idolDiceResultBadge" class="idol-dice-result-badge"></div>
+  </div>
 </div>
 
 <!-- QR Code library -->
