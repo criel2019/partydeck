@@ -681,7 +681,9 @@ function idolRenderAll() {
   const board = document.getElementById('idolBoardWrapper');
   const resBar = document.getElementById('idolResourceBar');
   if (screen) screen.classList.remove('idol-select-mode');
+  idolRemoveSelectOverlay();
   if (panel) { panel.style.flex = ''; panel.style.overflowY = ''; panel.style.maxHeight = ''; }
+  if (panel) panel.style.display = '';
   if (board) board.style.display = '';
   if (resBar) resBar.style.display = '';
   idolRenderHeader();
@@ -1261,6 +1263,28 @@ function idolTryStartGameFromSelections() {
   return true;
 }
 
+function idolGetSelectOverlay() {
+  const screen = document.getElementById('idolGame');
+  if (!screen) return null;
+
+  let overlay = screen.querySelector('#idolSelectOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'idolSelectOverlay';
+    overlay.className = 'idol-select-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', '아이돌 선택');
+    screen.appendChild(overlay);
+  }
+  return overlay;
+}
+
+function idolRemoveSelectOverlay() {
+  const overlay = document.getElementById('idolSelectOverlay');
+  if (overlay) overlay.remove();
+}
+
 function idolShowSelectPhase() {
   if (idolState) {
     idolRenderAll();
@@ -1271,6 +1295,7 @@ function idolShowSelectPhase() {
   const panel = document.getElementById('idolActionPanel');
   const board  = document.getElementById('idolBoardWrapper');
   const resBar = document.getElementById('idolResourceBar');
+  const overlay = idolGetSelectOverlay();
   const selectedType = _idolSelections._selectedType ?? 'ai';
   const mySaved = _idolSelections[state.myId] || null;
   const locked = !!_idolSelectionLocked;
@@ -1278,19 +1303,48 @@ function idolShowSelectPhase() {
   const waitingNames = state.isHost
     ? progress.waiting.filter(p => p.id !== state.myId).map(p => p.name).slice(0, 3)
     : [];
+  const selectedMeta = IDOL_TYPES.find(t => t.id === (mySaved?.typeId ?? selectedType));
 
   if (board)  board.style.display  = 'none';
   if (resBar) resBar.style.display = 'none';
+  if (panel) panel.style.display = 'none';
   if (screen) screen.classList.add('idol-select-mode');
+  if (!overlay) return;
 
-  if (panel) {
-    // 선택 화면이 전체 높이를 차지하도록 패널 확장
-    panel.style.flex = '1';
-    panel.style.overflowY = 'auto';
-    panel.style.maxHeight = '';
+  const waitingText = state.isHost
+    ? (progress.waiting.filter(p => p.id !== state.myId).length > 0
+        ? `다른 플레이어 선택 대기 중 (${progress.selected}/${progress.total})`
+        : '게임 시작 준비 중...')
+    : '선택이 제출되었습니다. 호스트 시작을 기다리는 중입니다.';
 
-    const idolTypeOptions = IDOL_TYPES.map(t => `
-      <div class="idol-type-card ${selectedType === t.id ? 'selected' : ''} ${locked ? 'is-locked' : ''}" id="idolTypeCard_${t.id}" data-type="${t.id}" onclick="idolSelectType('${t.id}')">
+  if (locked) {
+    overlay.innerHTML = `
+      <div class="idol-select-overlay-card idol-select-wait-card">
+        <div class="idol-select-title">🎤 선택 완료</div>
+        <div class="idol-select-progress">
+          ${state.isHost ? `선택 진행: <b>${progress.selected}</b> / ${progress.total}명` : '아이돌이 확정되었습니다'}
+        </div>
+        <div class="idol-select-picked">
+          <div class="idol-select-picked-media">
+            ${selectedMeta?.img ? `<img src="${selectedMeta.img}" alt="${escapeHTML(selectedMeta.name)}" class="idol-select-picked-img">` : '<div class="idol-select-picked-img idol-select-picked-fallback">🎤</div>'}
+          </div>
+          <div class="idol-select-picked-body">
+            <div class="idol-select-picked-name">${escapeHTML(mySaved?.name || selectedMeta?.name || '아이돌')}</div>
+            <div class="idol-select-picked-sub">${escapeHTML(selectedMeta?.type || '')}</div>
+            <div class="idol-select-picked-desc">${escapeHTML(selectedMeta?.desc || '')}</div>
+          </div>
+        </div>
+        <div class="idol-select-wait">${escapeHTML(waitingText)}</div>
+        ${state.isHost && waitingNames.length
+          ? `<div class="idol-select-help">대기 중: ${escapeHTML(waitingNames.join(', '))}${progress.waiting.length - waitingNames.length > 0 ? ' 외' : ''}</div>`
+          : ''}
+      </div>
+    `;
+    return;
+  }
+
+  const idolTypeOptions = IDOL_TYPES.map(t => `
+      <div class="idol-type-card ${selectedType === t.id ? 'selected' : ''}" id="idolTypeCard_${t.id}" data-type="${t.id}" onclick="idolSelectType('${t.id}')">
         <div class="idol-type-img-wrap">
           <img src="${t.img}" alt="${t.name}" class="idol-type-img" loading="lazy">
           <div class="idol-type-img-overlay"></div>
@@ -1301,13 +1355,14 @@ function idolShowSelectPhase() {
         </div>
       </div>`).join('');
 
-    panel.innerHTML = `
+  overlay.innerHTML = `
+      <div class="idol-select-overlay-card">
       <div class="idol-select-screen">
         <div class="idol-select-title">🎤 아이돌 선택</div>
         <div class="idol-select-progress">
           ${state.isHost
             ? `선택 진행: <b>${progress.selected}</b> / ${progress.total}명`
-            : (locked ? '선택 제출 완료 · 호스트 시작 대기 중' : '아이돌은 한 번 선택하면 변경할 수 없습니다')}
+            : '아이돌은 한 번 선택하면 변경할 수 없습니다'}
         </div>
         ${state.isHost && waitingNames.length
           ? `<div class="idol-select-help">대기 중: ${escapeHTML(waitingNames.join(', '))}${progress.waiting.length - waitingNames.length > 0 ? ' 외' : ''}</div>`
@@ -1315,14 +1370,12 @@ function idolShowSelectPhase() {
         <div class="idol-type-grid">${idolTypeOptions}</div>
         <input id="idolNameInput" class="input-field" placeholder="아이돌 이름 (선택)" maxlength="8"
           value="${escapeHTML(mySaved?.name ?? '')}"
-          ${locked ? 'disabled' : ''}
           style="margin-top:4px;padding:10px 12px;font-size:14px;">
-        <button id="idolSelectConfirmBtn" class="idol-btn idol-btn-primary" onclick="idolConfirmSelection()" style="margin-top:6px;" ${locked ? 'disabled' : ''}>
-          ${locked ? '선택 제출됨' : '선택 완료'}
+        <button id="idolSelectConfirmBtn" class="idol-btn idol-btn-primary" onclick="idolConfirmSelection()" style="margin-top:6px;">
+          선택 완료
         </button>
-        ${locked ? `<div class="idol-select-wait">선택이 확정되었습니다. 게임 시작 전까지는 변경할 수 없습니다.</div>` : ''}
+      </div>
       </div>`;
-  }
 }
 
 function idolSelectType(typeId) {

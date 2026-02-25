@@ -1904,6 +1904,144 @@
   }
 }
 
+/* ===== Dedicated pre-game idol selection overlay ===== */
+#idolGame {
+  position: relative;
+}
+
+#idolGame .idol-select-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 79, 154, 0.16), transparent 60%),
+    radial-gradient(120% 100% at 100% 0%, rgba(0, 217, 255, 0.12), transparent 62%),
+    rgba(4, 6, 12, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+#idolGame .idol-select-overlay-card {
+  width: min(640px, 100%);
+  max-height: min(92dvh, 820px);
+  overflow: auto;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)),
+    rgba(7, 10, 18, 0.95);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.42);
+}
+
+#idolGame .idol-select-overlay-card .idol-select-screen {
+  padding: 16px;
+}
+
+#idolGame .idol-select-wait-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#idolGame .idol-select-picked {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  padding: 10px;
+}
+
+#idolGame .idol-select-picked-media {
+  width: 72px;
+  flex-shrink: 0;
+}
+
+#idolGame .idol-select-picked-img {
+  width: 72px;
+  height: 92px;
+  border-radius: 12px;
+  object-fit: cover;
+  object-position: top center;
+  border: 1px solid rgba(255,255,255,0.09);
+  display: block;
+}
+
+#idolGame .idol-select-picked-fallback {
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  background: rgba(255,255,255,0.04);
+}
+
+#idolGame .idol-select-picked-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+}
+
+#idolGame .idol-select-picked-name {
+  color: #f8fafc;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+#idolGame .idol-select-picked-sub {
+  color: #ffe082;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#idolGame .idol-select-picked-desc {
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+#idolGame.idol-select-mode .idol-header {
+  z-index: 41;
+}
+
+@media (max-width: 600px) {
+  #idolGame .idol-select-overlay {
+    padding: 10px;
+    place-items: stretch;
+  }
+
+  #idolGame .idol-select-overlay-card {
+    width: 100%;
+    max-height: none;
+    border-radius: 16px;
+  }
+
+  #idolGame .idol-select-picked {
+    gap: 10px;
+    padding: 9px;
+  }
+
+  #idolGame .idol-select-picked-media {
+    width: 62px;
+  }
+
+  #idolGame .idol-select-picked-img {
+    width: 62px;
+    height: 82px;
+    border-radius: 10px;
+  }
+
+  #idolGame .idol-select-picked-name {
+    font-size: 14px;
+  }
+}
+
 /* ===== 보드 입체감 + 셀 가독성 개선 ===== */
 
 /* 보드 원근감 — 위에서 비스듬히 내려다보는 시점 */
