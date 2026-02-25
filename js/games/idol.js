@@ -253,19 +253,20 @@ function idolRollDice() {
 function idolMovePlayer(p, steps, isDouble) {
   const oldPos = p.pos;
   const newPos = (p.pos + steps) % BOARD_CELLS.length;
+  const passedStart = newPos < oldPos && newPos !== 0;
 
-  // 출발 칸 통과 → 월급 (출발 칸에 도착하는 경우는 processCell에서 처리)
-  if (newPos < oldPos && newPos !== 0) {
-    p.money += IDOL_SALARY;
-    idolShowFavorToast(p.id, null, `출발 통과! 월급 +${IDOL_SALARY}만`);
-  }
-
-  p.pos = newPos;
-  idolState.pendingAction = { type: 'landed', dice: idolState.pendingAction?.dice, pos: newPos, isDouble };
-  broadcastIdolState();
-  idolRenderAll();
-
-  setTimeout(() => idolProcessCell(p, newPos, isDouble), 400);
+  // 토큰 애니메이션 → 완료 후 상태 확정
+  idolAnimateMoveToken(p.id, oldPos, newPos, () => {
+    if (passedStart) {
+      p.money += IDOL_SALARY;
+      idolShowFavorToast(p.id, null, `출발 통과! 월급 +${IDOL_SALARY}만`);
+    }
+    p.pos = newPos;
+    idolState.pendingAction = { type: 'landed', dice: idolState.pendingAction?.dice, pos: newPos, isDouble };
+    broadcastIdolState();
+    idolRenderAll();
+    setTimeout(() => idolProcessCell(p, newPos, isDouble), 400);
+  });
 }
 
 // ─── 칸 처리 ──────────────────────────────────
@@ -845,6 +846,10 @@ function idolRenderHeader() {
 function idolRenderBoard() {
   const board = document.getElementById('idolBoard');
   if (!board) return;
+
+  // 토큰 레이어 보존 (innerHTML 초기화 전에 detach)
+  const savedTokenLayer = document.getElementById('idolTokenLayer');
+
   board.innerHTML = '';
 
   const cellCoords = idolGetCellGridCoords();
@@ -864,6 +869,142 @@ function idolRenderBoard() {
   center.style.gridRow    = '2 / 10';
   center.innerHTML = idolRenderCenterHTML();
   board.appendChild(center);
+
+  // 토큰 레이어 복원 / 생성 및 위치 동기화
+  idolSyncTokenLayer(board, savedTokenLayer);
+}
+
+// ─── 토큰 레이어 관련 ─────────────────────────
+
+// 셀 인덱스 → 보드 로컬 좌표계 중심 {x, y}
+// offsetLeft/Top은 board-local 좌표계이므로 perspective 변환과 무관하게 동작
+function idolGetCellCenter(cellIdx) {
+  const board = document.getElementById('idolBoard');
+  if (!board) return null;
+  const cell = board.querySelector(`[data-cell-idx="${cellIdx}"]`);
+  if (!cell) return null;
+  return {
+    x: cell.offsetLeft + cell.offsetWidth  / 2,
+    y: cell.offsetTop  + cell.offsetHeight / 2,
+  };
+}
+
+// 토큰 레이어 동기화 (애니메이션 중인 토큰은 위치 유지)
+function idolSyncTokenLayer(board, existingLayer) {
+  if (!board) board = document.getElementById('idolBoard');
+  if (!board || !idolState) return;
+
+  let layer = existingLayer || document.getElementById('idolTokenLayer');
+  if (!layer) {
+    layer = document.createElement('div');
+    layer.id = 'idolTokenLayer';
+    layer.className = 'idol-token-layer';
+  }
+  board.appendChild(layer); // 레이어를 board 맨 뒤에 붙임
+
+  // 파산 플레이어 토큰 제거
+  layer.querySelectorAll('[data-tok-id]').forEach(el => {
+    const pid = el.dataset.tokId;
+    const player = idolState.players.find(p => p.id === pid);
+    if (!player || player.bankrupt) el.remove();
+  });
+
+  // 활성 플레이어 토큰 생성 / 위치 즉시 갱신
+  idolState.players.filter(p => !p.bankrupt).forEach(p => {
+    let tokenEl = layer.querySelector(`[data-tok-id="${p.id}"]`);
+    if (!tokenEl) {
+      tokenEl = document.createElement('div');
+      tokenEl.className = 'idol-board-token';
+      tokenEl.dataset.tokId = p.id;
+      tokenEl.style.setProperty('--tok-color', idolUxGetPlayerAccent(p.id));
+      tokenEl.title = p.name;
+      const inner = document.createElement('span');
+      inner.className = 'idol-board-token-inner';
+      inner.textContent = p.avatar || '🙂';
+      tokenEl.appendChild(inner);
+      layer.appendChild(tokenEl);
+    }
+
+    // 애니메이션 중이 아닌 경우에만 위치 업데이트
+    if (!tokenEl.classList.contains('tok-moving')) {
+      const c = idolGetCellCenter(p.pos);
+      if (c) {
+        // transition 잠시 끄고 즉시 배치
+        tokenEl.style.transition = 'none';
+        tokenEl.style.left = c.x + 'px';
+        tokenEl.style.top  = c.y + 'px';
+        // 다음 프레임부터 transition 복원
+        requestAnimationFrame(() => { tokenEl.style.transition = ''; });
+      }
+    }
+  });
+}
+
+// 토큰을 fromPos → toPos까지 한 칸씩 이동
+function idolAnimateMoveToken(playerId, fromPos, toPos, onDone) {
+  const totalCells = BOARD_CELLS.length; // 36
+
+  // 이동 경로 (시계방향)
+  const path = [];
+  let cur = fromPos;
+  while (cur !== toPos) {
+    cur = (cur + 1) % totalCells;
+    path.push(cur);
+  }
+
+  if (path.length === 0) { if (onDone) onDone(); return; }
+
+  // 칸 수에 따라 스텝 간격 조정 (1칸=250ms, 12칸+=120ms)
+  const stepMs = Math.max(120, Math.min(250, 120 + (14 - path.length) * 10));
+
+  const board = document.getElementById('idolBoard');
+  // 레이어가 없으면 먼저 생성
+  if (!document.getElementById('idolTokenLayer')) idolSyncTokenLayer(board, null);
+
+  const layer = document.getElementById('idolTokenLayer');
+  const tokenEl = layer ? layer.querySelector(`[data-tok-id="${playerId}"]`) : null;
+
+  if (!tokenEl) { if (onDone) onDone(); return; }
+
+  tokenEl.classList.add('tok-moving');
+
+  let step = 0;
+  function nextStep() {
+    if (step >= path.length) {
+      // 완료
+      tokenEl.classList.remove('tok-moving', 'tok-bounce', 'tok-land');
+      if (board) board.querySelectorAll('.cell-step-hl').forEach(e => e.classList.remove('cell-step-hl'));
+      if (onDone) onDone();
+      return;
+    }
+
+    const pos = path[step];
+    const isLast = (step === path.length - 1);
+
+    // 토큰 이동 (CSS transition이 처리)
+    const c = idolGetCellCenter(pos);
+    if (c) {
+      tokenEl.style.left = c.x + 'px';
+      tokenEl.style.top  = c.y + 'px';
+    }
+
+    // 바운스 애니메이션 클래스 교체
+    tokenEl.classList.remove('tok-bounce', 'tok-land');
+    void tokenEl.offsetWidth; // reflow
+    tokenEl.classList.add(isLast ? 'tok-land' : 'tok-bounce');
+
+    // 현재 밟는 칸 하이라이트
+    if (board) {
+      board.querySelectorAll('.cell-step-hl').forEach(e => e.classList.remove('cell-step-hl'));
+      const cellEl = board.querySelector(`[data-cell-idx="${pos}"]`);
+      if (cellEl) cellEl.classList.add('cell-step-hl');
+    }
+
+    step++;
+    setTimeout(nextStep, stepMs);
+  }
+
+  nextStep();
 }
 
 // 36칸 → 10x10 외곽 그리드 좌표
@@ -1629,23 +1770,7 @@ function idolCreateCellElement(cell, idx) {
     ${shop ? `<span class="idol-cell-rent">${rentText}</span>` : ''}
   `;
 
-  if (here.length > 0) {
-    const tokenWrap = document.createElement('div');
-    tokenWrap.className = `cell-tokens cnt${here.length}`;
-    here.forEach(p => {
-      const token = document.createElement('div');
-      token.className = 'player-token';
-      token.style.setProperty('--tok-color', idolUxGetPlayerAccent(p.id));
-      token.title = p.name;
-      // 프로듀서 아바타 이모지
-      const inner = document.createElement('span');
-      inner.className = 'player-token-inner';
-      inner.textContent = p.avatar || '🙂';
-      token.appendChild(inner);
-      tokenWrap.appendChild(token);
-    });
-    el.appendChild(tokenWrap);
-  }
+  // 토큰은 별도의 idol-token-layer에서 렌더링
 
   const openCellInfo = () => idolOnCellTap(idx);
   el.onclick = openCellInfo;
