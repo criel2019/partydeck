@@ -467,7 +467,7 @@ function idolApplyChance(cardId, targetId) {
   const card = CHANCE_CARDS.find(c => c.id === cardId);
   if (!card) return;
 
-  if (card.effect.target && targetId) {
+  if (card.target && targetId) {
     const target = idolState.players.find(pl => pl.id === targetId);
     if (target) idolApplyEffect(target, card.effect);
   } else {
@@ -766,10 +766,10 @@ function idolGetCellGridCoords() {
   const coords = [];
   // 하단: 0~9 (row=9, col=0→9)
   for (let i = 0; i <= 9; i++) coords.push([i, 9]);
-  // 우측: 10~18 (col=9, row=8→1)  — 9칸
-  for (let i = 8; i >= 1; i--) coords.push([9, i]);
-  // 상단: 19~27 (row=0, col=9→1) — 9칸
-  for (let i = 9; i >= 1; i--) coords.push([i, 0]);
+  // 우측: 10~18 (col=9, row=8→0)  — 9칸
+  for (let i = 8; i >= 0; i--) coords.push([9, i]);
+  // 상단: 19~27 (row=0, col=8→0) — 9칸
+  for (let i = 8; i >= 0; i--) coords.push([i, 0]);
   // 좌측: 28~35 (col=0, row=1→8) — 8칸
   for (let i = 1; i <= 8; i++) coords.push([0, i]);
   return coords;
@@ -1063,7 +1063,7 @@ function idolRenderGachaResult(result) {
 
 function idolRenderChancePanel(card) {
   if (!card) return '';
-  if (card.effect?.target) {
+  if (card.target) {
     const others = idolState.players.filter(p => p.id !== state.myId && !p.bankrupt);
     const targetsHTML = others.map(p =>
       `<button class="idol-choice-btn" onclick="idolApplyChance('${card.id}', '${p.id}')">
