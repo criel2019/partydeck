@@ -1761,6 +1761,15 @@
   color: #ffe7a8;
 }
 
+#idolGame .idol-select-screen #idolSelectConfirmBtn {
+  width: min(220px, 100%);
+  min-height: 46px;
+  align-self: center;
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
 #idolGame .idol-type-card.is-locked {
   cursor: default;
   opacity: 0.72;
@@ -1887,5 +1896,10 @@
 
   #idolGame .idol-action-panel {
     max-height: min(28vh, 228px);
+  }
+
+  #idolGame .idol-select-screen #idolSelectConfirmBtn {
+    width: 100%;
+    min-height: 48px;
   }
 }

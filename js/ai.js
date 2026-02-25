@@ -149,7 +149,8 @@ function startPracticeGame(gameName) {
 
   // Idol Management: go directly (handles own select screen)
   if (gameName === 'idol') {
-    startIdolManagement();
+    if (typeof idolStartPractice === 'function') idolStartPractice();
+    else startIdolManagement();
     return;
   }
 
