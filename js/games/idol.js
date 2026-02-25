@@ -1311,3 +1311,508 @@ function idolStartPractice() {
   showScreen('idolGame');
   idolShowSelectPhase();
 }
+
+// ===== UX refresh overrides (UI/UX best-practice pass) =====
+function idolUxGetPlayerAccent(playerId) {
+  const palette = ['#ff6b35', '#00d9ff', '#ff4f9a', '#ffd166'];
+  const idx = idolState?.order?.indexOf(playerId) ?? 0;
+  return palette[(idx >= 0 ? idx : 0) % palette.length];
+}
+
+function idolUxGetBoardCellMeta(player) {
+  if (!idolState || !player) return null;
+  const info = getCellInfo(player.pos);
+  if (!info) return null;
+
+  const meta = {
+    emoji: info.emoji ?? '⬜',
+    name: info.name ?? '알 수 없음',
+    detail: '',
+    ownerName: null,
+    level: null,
+  };
+
+  if (info.type === 'shop') {
+    const level = idolState.shopLevels?.[info.shopId] ?? 0;
+    const shop = SHOPS.find(s => s.id === info.shopId);
+    const ownerId = idolState.shopOwners?.[info.shopId];
+    const owner = ownerId ? idolState.players.find(p => p.id === ownerId) : null;
+    meta.level = level + 1;
+    meta.ownerName = owner?.name ?? null;
+    if (shop) meta.detail = `Lv.${level + 1} · 통행료 ${shop.rent[level]}만`;
+  } else if (info.type === 'tax' && typeof info.amount === 'number') {
+    meta.detail = `세금 ${info.amount}만`;
+  } else if (info.type === 'event' || info.type === 'chance') {
+    meta.detail = '카드 선택 이벤트';
+  } else if (info.type === 'gacha' || info.type === 'stage') {
+    meta.detail = '즉시 결과 이벤트';
+  }
+
+  return meta;
+}
+
+function idolUxGetActionMeta(action) {
+  const type = action?.type ?? 'waiting-roll';
+  switch (type) {
+    case 'waiting-roll': return { label: '주사위 대기', tone: 'primary' };
+    case 'rolling': return { label: '이동 중', tone: 'info' };
+    case 'shop-buy': return { label: '구매 결정', tone: 'gold' };
+    case 'shop-upgrade': return { label: '업그레이드', tone: 'gold' };
+    case 'shop-train-self': return { label: '내 시설 훈련', tone: 'success' };
+    case 'shop-train-other': return { label: '훈련 선택', tone: 'warn' };
+    case 'train-result': return { label: '훈련 결과', tone: 'success' };
+    case 'event-card': return { label: '이벤트 카드', tone: 'warn' };
+    case 'gacha':
+    case 'stage-gacha': return { label: '가챠 진행', tone: 'gold' };
+    case 'gacha-result': return { label: '가챠 결과', tone: 'gold' };
+    case 'chance-card': return { label: '찬스 카드', tone: 'info' };
+    case 'settlement': return { label: '턴 결산', tone: 'info' };
+    case 'bankrupt': return { label: '파산 처리', tone: 'danger' };
+    case 'roll-again': return { label: '더블 보너스', tone: 'gold' };
+    case 'goto-jail': return { label: '경찰서 이동', tone: 'danger' };
+    case 'turn-end-auto': return { label: '자동 처리', tone: 'muted' };
+    case 'ending': return { label: '게임 종료', tone: 'gold' };
+    default: return { label: '진행 중', tone: 'muted' };
+  }
+}
+
+function idolUxGetActionHint(action, currentP, isMyTurn) {
+  const type = action?.type ?? 'waiting-roll';
+  if (!currentP) return '현재 턴 정보를 불러오는 중입니다.';
+  if (!action || type === 'waiting-roll') {
+    return isMyTurn ? '주사위를 굴려 이동을 시작하세요.' : `${currentP.name}님의 입력을 기다리는 중입니다.`;
+  }
+  switch (type) {
+    case 'rolling': return '주사위 결과가 적용되어 이동 중입니다.';
+    case 'shop-buy': return isMyTurn ? '시설 구매 여부를 결정하세요.' : '구매 결정을 기다리는 중입니다.';
+    case 'shop-upgrade': return isMyTurn ? '업그레이드 여부를 결정하세요.' : '업그레이드 결정을 기다리는 중입니다.';
+    case 'shop-train-self':
+    case 'shop-train-other': return isMyTurn ? '훈련을 진행할지 선택하세요.' : '훈련 선택을 기다리는 중입니다.';
+    case 'event-card': return isMyTurn ? '이벤트 선택지 중 하나를 고르세요.' : '이벤트 카드 처리 중입니다.';
+    case 'chance-card': return isMyTurn ? '찬스 카드 효과를 처리하세요.' : '찬스 카드 처리 중입니다.';
+    case 'gacha':
+    case 'stage-gacha': return isMyTurn ? '가챠를 실행해 결과를 확인하세요.' : '가챠 연출이 재생 중입니다.';
+    case 'gacha-result': return '가챠 보상이 반영되었습니다.';
+    case 'settlement': return '현재 순위와 보너스를 확인하세요.';
+    case 'roll-again': return isMyTurn ? '더블 보너스로 한 번 더 굴릴 수 있습니다.' : '더블 보너스 턴 처리 중입니다.';
+    case 'goto-jail': return '3연속 더블로 경찰서로 이동합니다.';
+    case 'turn-end-auto': return '다음 턴으로 전환 중입니다.';
+    case 'bankrupt': return '파산 플레이어가 발생했습니다.';
+    case 'ending': return '최종 결과를 확인하세요.';
+    default: return '게임 진행 중입니다.';
+  }
+}
+
+function idolUxToneClass(tone) {
+  return `tone-${tone || 'muted'}`;
+}
+
+function idolRenderResourceBar() {
+  const me = idolState?.players?.find(p => p.id === state.myId);
+  if (!me) return;
+
+  const bar = document.getElementById('idolResourceBar');
+  if (!bar) return;
+
+  bar.setAttribute('role', 'region');
+  bar.setAttribute('aria-label', '내 상태 요약');
+
+  const activePlayers = idolState.players.filter(p => !p.bankrupt);
+  const rank = idolGetRank(me.id);
+  const stage = getIdolStage(me.looks);
+  const favor = idolState._myFavor ?? me.favor;
+  const favorText = Number.isFinite(favor) ? String(favor) : '?';
+  const currentP = idolCurrentPlayer();
+  const currentCell = idolUxGetBoardCellMeta(me);
+  const actionMeta = idolUxGetActionMeta(idolState.pendingAction);
+
+  bar.innerHTML = `
+    <div class="idol-topdash">
+      <div class="idol-res-hero">
+        <div class="idol-res-hero-top">
+          <span class="idol-status-chip ${idolUxToneClass(actionMeta.tone)}">${actionMeta.label}</span>
+          <span class="idol-status-chip tone-muted">${rank}위 / ${activePlayers.length}명</span>
+        </div>
+
+        <div class="idol-res-hero-name" style="--idol-accent:${idolUxGetPlayerAccent(me.id)};">
+          <span class="idol-res-hero-avatar">${me.avatar ?? '🎤'}</span>
+          <div class="idol-res-hero-texts">
+            <div class="idol-res-hero-title">${escapeHTML(me.idolName ?? me.name)}</div>
+            <div class="idol-res-hero-sub">
+              <span>${escapeHTML(me.name)}</span>
+              <span class="idol-dot-sep" aria-hidden="true"></span>
+              <span style="color:${stage.color};">${stage.emoji} ${stage.name}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="idol-res-hero-meta">
+          <span class="idol-res-meta-pill ${currentP?.id === me.id ? 'is-active' : ''}">${currentP?.id === me.id ? '내 턴' : '대기'}</span>
+          <span class="idol-res-meta-pill">${currentCell ? `${currentCell.emoji} ${escapeHTML(currentCell.name)}` : '위치 확인 중'}</span>
+          ${currentCell?.detail ? `<span class="idol-res-meta-pill">${escapeHTML(currentCell.detail)}</span>` : ''}
+        </div>
+      </div>
+
+      <div class="idol-res-grid" role="list">
+        <div class="idol-res-item res-money" role="listitem">
+          <span class="idol-res-icon">💰</span>
+          <span class="idol-res-label">자금</span>
+          <span class="idol-res-value">${me.money.toLocaleString()}</span>
+        </div>
+        <div class="idol-res-item res-fame" role="listitem">
+          <span class="idol-res-icon">⭐</span>
+          <span class="idol-res-label">인기도</span>
+          <span class="idol-res-value">${me.fame}</span>
+        </div>
+        <div class="idol-res-item res-talent" role="listitem">
+          <span class="idol-res-icon">🎵</span>
+          <span class="idol-res-label">재능</span>
+          <span class="idol-res-value">${me.talent}</span>
+        </div>
+        <div class="idol-res-item res-looks" role="listitem">
+          <span class="idol-res-icon">💄</span>
+          <span class="idol-res-label">외모</span>
+          <span class="idol-res-value">${me.looks}</span>
+        </div>
+        <div class="idol-res-item res-favor" role="listitem">
+          <span class="idol-res-icon">💗</span>
+          <span class="idol-res-label">호감도</span>
+          <span class="idol-res-value">${favorText}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function idolCreateCellElement(cell, idx) {
+  const el = document.createElement('div');
+  el.className = 'idol-cell';
+  el.dataset.cellIdx = idx;
+  el.setAttribute('role', 'button');
+  el.tabIndex = 0;
+
+  el.classList.add(`cell-${cell.type}`);
+  if (cell.type === 'shop') {
+    const shopMeta = SHOPS.find(s => s.id === cell.shopId);
+    if (shopMeta) el.classList.add(`cell-shop-${shopMeta.cat}`);
+  }
+
+  const here = idolState.players.filter(p => p.pos === idx && !p.bankrupt);
+  if (here.length > 0) el.classList.add('player-here');
+
+  let ownerId = null;
+  if (cell.type === 'shop') {
+    ownerId = idolState.shopOwners[cell.shopId];
+    if (ownerId === state.myId) el.classList.add('owned-mine');
+    else if (ownerId) el.classList.add('owned-other');
+  }
+
+  const info = getCellInfo(idx);
+  const shop = cell.type === 'shop' ? SHOPS.find(s => s.id === cell.shopId) : null;
+  const level = shop ? (idolState.shopLevels[cell.shopId] ?? 0) : 0;
+  const cellName = info?.name ?? '';
+  const displayName = cellName.length > 8 ? `${cellName.slice(0, 8)}…` : cellName;
+  const rentText = shop ? `${shop.rent[level]}만` : '';
+  const ownerName = ownerId ? (idolState.players.find(p => p.id === ownerId)?.name ?? '알 수 없음') : null;
+
+  const ariaParts = [
+    `${idx + 1}번 칸`,
+    cellName || '이름 없음',
+    shop ? `레벨 ${level + 1}` : '',
+    shop ? `통행료 ${rentText}` : '',
+    ownerName ? `소유자 ${ownerName}` : '',
+  ].filter(Boolean);
+  el.setAttribute('aria-label', ariaParts.join(', '));
+  el.title = ownerName ? `${cellName} (Lv.${level + 1}, ${rentText}, 소유: ${ownerName})` : (shop ? `${cellName} (Lv.${level + 1}, ${rentText})` : cellName);
+
+  if (ownerId) {
+    const dot = document.createElement('div');
+    dot.className = 'cell-owner-dot';
+    dot.style.background = idolUxGetPlayerAccent(ownerId);
+    el.appendChild(dot);
+  }
+
+  el.innerHTML += `
+    <span class="idol-cell-emoji">${info?.emoji ?? '⬜'}</span>
+    <span class="idol-cell-name">${escapeHTML(displayName)}</span>
+    ${shop ? `<span class="idol-cell-rent">${rentText}</span>` : ''}
+  `;
+
+  if (here.length > 0) {
+    const tokenWrap = document.createElement('div');
+    tokenWrap.className = 'cell-tokens';
+    here.forEach(p => {
+      const token = document.createElement('div');
+      token.className = 'player-token';
+      token.style.background = idolUxGetPlayerAccent(p.id);
+      token.textContent = p.avatar || '🙂';
+      tokenWrap.appendChild(token);
+    });
+    el.appendChild(tokenWrap);
+  }
+
+  const openCellInfo = () => idolOnCellTap(idx);
+  el.onclick = openCellInfo;
+  el.onkeydown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      openCellInfo();
+    }
+  };
+
+  return el;
+}
+
+function idolRenderCenterHTML() {
+  const currentP = idolCurrentPlayer();
+  if (!currentP) {
+    return `<div class="idol-center-shell"><div class="idol-center-empty">현재 턴 정보를 불러오는 중...</div></div>`;
+  }
+
+  const stage = getIdolStage(currentP.looks);
+  const currentType = IDOL_TYPES.find(t => t.id === currentP.idolType);
+  const currentRank = idolGetRank(currentP.id);
+  const actionMeta = idolUxGetActionMeta(idolState.pendingAction);
+  const actionHint = idolUxGetActionHint(idolState.pendingAction, currentP, idolIsMyTurn());
+  const cellMeta = idolUxGetBoardCellMeta(currentP);
+
+  const playersHTML = idolState.order.map(id => {
+    const p = idolState.players.find(pl => pl.id === id);
+    if (!p) return '';
+    const isCurrent = id === currentP.id;
+    const pType = IDOL_TYPES.find(t => t.id === p.idolType);
+    const pRank = idolGetRank(p.id);
+    const pStage = getIdolStage(p.looks);
+
+    return `
+      <div class="idol-player-mini ${isCurrent ? 'is-current' : ''} ${p.bankrupt ? 'is-bankrupt' : ''}" style="--idol-accent:${idolUxGetPlayerAccent(p.id)};">
+        <div class="idol-player-mini-portrait">
+          ${pType?.img ? `<img src="${pType.img}" alt="" class="idol-mini-img">` : `<div class="idol-player-mini-emoji">${p.avatar}</div>`}
+        </div>
+        <div class="idol-player-mini-body">
+          <div class="idol-player-mini-top">
+            <div class="idol-player-mini-name">${escapeHTML(p.name)}</div>
+            <div class="idol-player-mini-rank">${p.bankrupt ? '탈락' : `${pRank}위`}</div>
+          </div>
+          <div class="idol-player-mini-stats">
+            <span class="idol-player-mini-fame">${p.fame}⭐</span>
+            <span class="idol-player-mini-money">${p.money.toLocaleString()}만</span>
+            <span class="idol-player-mini-stage" style="color:${pStage.color};">${pStage.emoji}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="idol-center-shell">
+      <div class="idol-center-head">
+        <div class="idol-center-title-wrap">
+          <div class="idol-center-title">현재 턴</div>
+          <div class="idol-center-subtitle">${idolState.turnNum} / ${IDOL_TOTAL_TURNS}턴 · ${currentRank}위</div>
+        </div>
+        <div class="idol-center-statuses">
+          <span class="idol-status-chip ${idolUxToneClass(actionMeta.tone)}">${actionMeta.label}</span>
+          <span class="idol-status-chip tone-muted">${idolIsMyTurn() ? '내 차례' : '관전'}</span>
+        </div>
+      </div>
+
+      <div class="idol-center-main">
+        <div class="idol-center-portrait idol-stage-${stage.stage}">
+          ${currentType?.img
+            ? `<img src="${currentType.img}" alt="${escapeHTML(currentP.idolName ?? '')}" class="idol-center-img">`
+            : `<div class="idol-center-img-placeholder">${currentType?.emoji ?? '🎤'}</div>`}
+          <div class="idol-center-name">${escapeHTML(currentP.idolName ?? currentP.name)}</div>
+          <div class="idol-center-stage" style="color:${stage.color};">${stage.emoji} ${stage.name}</div>
+        </div>
+
+        <div class="idol-center-summary">
+          <div class="idol-center-current-name" style="--idol-accent:${idolUxGetPlayerAccent(currentP.id)};">
+            ${currentP.avatar ?? '🎤'} ${escapeHTML(currentP.name)}
+          </div>
+          <div class="idol-center-current-meta">
+            <span>💰 ${currentP.money.toLocaleString()}만</span>
+            <span>⭐ ${currentP.fame}</span>
+            <span>🎵 ${currentP.talent}</span>
+            <span>💄 ${currentP.looks}</span>
+          </div>
+
+          <div class="idol-center-cell-card">
+            <div class="idol-center-cell-title">현재 위치</div>
+            <div class="idol-center-cell-name">${cellMeta ? `${cellMeta.emoji} ${escapeHTML(cellMeta.name)}` : '위치 확인 중'}</div>
+            <div class="idol-center-cell-detail">${cellMeta?.detail ? escapeHTML(cellMeta.detail) : '효과 없음'}</div>
+            ${cellMeta?.ownerName ? `<div class="idol-center-cell-detail">소유자: ${escapeHTML(cellMeta.ownerName)}</div>` : ''}
+          </div>
+
+          <div class="idol-center-hint">${escapeHTML(actionHint)}</div>
+        </div>
+      </div>
+
+      <div class="idol-center-roster-label">플레이어 현황</div>
+      <div class="idol-players-mini">${playersHTML}</div>
+    </div>
+  `;
+}
+
+function idolUxRenderActionContextCard(currentP, action, isMyTurn) {
+  if (!currentP) {
+    return `
+      <div class="idol-action-context">
+        <div class="idol-action-context-title">행동 안내</div>
+        <div class="idol-action-context-hint">현재 턴 정보를 불러오는 중...</div>
+      </div>
+    `;
+  }
+
+  const actionMeta = idolUxGetActionMeta(action);
+  const actionHint = idolUxGetActionHint(action, currentP, isMyTurn);
+  const cellMeta = idolUxGetBoardCellMeta(currentP);
+  const stage = getIdolStage(currentP.looks);
+
+  return `
+    <div class="idol-action-context">
+      <div class="idol-action-context-row">
+        <div class="idol-action-context-title">행동 안내</div>
+        <div class="idol-action-context-chips">
+          <span class="idol-status-chip ${idolUxToneClass(actionMeta.tone)}">${actionMeta.label}</span>
+          <span class="idol-status-chip tone-muted">${isMyTurn ? '입력 가능' : '관전'}</span>
+        </div>
+      </div>
+
+      <div class="idol-action-context-player" style="--idol-accent:${idolUxGetPlayerAccent(currentP.id)};">
+        <span class="idol-action-context-avatar">${currentP.avatar ?? '🎤'}</span>
+        <div class="idol-action-context-player-texts">
+          <div class="idol-action-context-player-name">${escapeHTML(currentP.name)}</div>
+          <div class="idol-action-context-player-meta">
+            <span>${idolState.turnNum} / ${IDOL_TOTAL_TURNS}턴</span>
+            <span>${idolGetRank(currentP.id)}위</span>
+            <span style="color:${stage.color};">${stage.emoji} ${stage.name}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="idol-action-context-grid">
+        <div class="idol-context-stat">
+          <span class="label">위치</span>
+          <span class="value">${cellMeta ? `${cellMeta.emoji} ${escapeHTML(cellMeta.name)}` : '확인 중'}</span>
+        </div>
+        <div class="idol-context-stat">
+          <span class="label">상세</span>
+          <span class="value">${cellMeta?.detail ? escapeHTML(cellMeta.detail) : '효과 없음'}</span>
+        </div>
+      </div>
+
+      <div class="idol-action-context-hint">${escapeHTML(actionHint)}</div>
+    </div>
+  `;
+}
+
+function idolUxWrapActionPanelHTML(contentHtml, currentP, action, isMyTurn) {
+  return `
+    <div class="idol-action-shell">
+      ${idolUxRenderActionContextCard(currentP, action, isMyTurn)}
+      <div class="idol-task-card">
+        ${contentHtml}
+      </div>
+    </div>
+  `;
+}
+
+function idolRenderActionPanel() {
+  const panel = document.getElementById('idolActionPanel');
+  if (!panel || !idolState) return;
+
+  const action = idolState.pendingAction;
+  const isMyTurn = idolIsMyTurn();
+  const currentP = idolCurrentPlayer();
+  const isHost = state.isHost;
+
+  panel.setAttribute('role', 'region');
+  panel.setAttribute('aria-live', 'polite');
+  panel.setAttribute('aria-label', '행동 안내 패널');
+
+  let contentHtml = '';
+
+  if (idolState.phase === 'ending') {
+    contentHtml = idolRenderEndingPanel();
+    panel.innerHTML = idolUxWrapActionPanelHTML(contentHtml, currentP, action, isMyTurn);
+    return;
+  }
+
+  if (!action || action.type === 'waiting-roll') {
+    contentHtml = isMyTurn
+      ? `
+        <div class="idol-action-title">다음 행동: 주사위를 굴리세요</div>
+        <div class="idol-popup-sub">이동 후 칸 이벤트는 자동으로 이어집니다.</div>
+        <div class="idol-action-buttons">
+          <button class="idol-btn idol-btn-primary" onclick="idolRollDice()">🎲 주사위 굴리기</button>
+        </div>
+      `
+      : `
+        <div class="idol-action-title">대기 중</div>
+        <div class="idol-popup-sub">${escapeHTML(currentP?.name ?? '플레이어')}님의 입력을 기다리는 중입니다.</div>
+      `;
+    panel.innerHTML = idolUxWrapActionPanelHTML(contentHtml, currentP, action, isMyTurn);
+    return;
+  }
+
+  switch (action.type) {
+    case 'rolling':
+      contentHtml = idolRenderDicePanel(action.dice, action.isDouble);
+      break;
+    case 'shop-buy':
+      contentHtml = isMyTurn ? idolRenderShopBuyPanel(action.shopId) : `<div class="idol-action-title">시설 구매 결정 대기 중...</div>`;
+      break;
+    case 'shop-upgrade':
+      contentHtml = isMyTurn ? idolRenderShopUpgradePanel(action.shopId) : `<div class="idol-action-title">업그레이드 결정 대기 중...</div>`;
+      break;
+    case 'shop-train-self':
+    case 'shop-train-other':
+      contentHtml = isMyTurn ? idolRenderTrainPanel(action.shopId, action.type === 'shop-train-self') : `<div class="idol-action-title">훈련 선택 대기 중...</div>`;
+      break;
+    case 'train-result':
+      contentHtml = idolRenderTrainResult(action);
+      break;
+    case 'event-card':
+      contentHtml = isMyTurn ? idolRenderEventPanel(action.card) : `<div class="idol-action-title">이벤트 처리 중...</div>`;
+      break;
+    case 'gacha':
+    case 'stage-gacha':
+      contentHtml = isMyTurn ? idolRenderGachaPanel() : `<div class="idol-action-title">가챠 연출 진행 중...</div>`;
+      break;
+    case 'gacha-result':
+      contentHtml = idolRenderGachaResult(action.result);
+      break;
+    case 'chance-card':
+      contentHtml = isMyTurn ? idolRenderChancePanel(action.card) : `<div class="idol-action-title">찬스 카드 처리 중...</div>`;
+      break;
+    case 'settlement':
+      contentHtml = idolRenderSettlementPanel(action);
+      break;
+    case 'bankrupt':
+      contentHtml = idolRenderBankruptPanel(action.playerId);
+      break;
+    case 'roll-again':
+      contentHtml = isMyTurn
+        ? `<div class="idol-action-title">🎲 더블 보너스</div>
+           <div class="idol-popup-sub">추가 턴을 바로 진행할 수 있습니다.</div>
+           <div class="idol-action-buttons"><button class="idol-btn idol-btn-gold" onclick="idolRollDice()">한 번 더 굴리기</button></div>`
+        : `<div class="idol-action-title">더블 보너스 처리 중...</div>`;
+      break;
+    case 'goto-jail':
+      contentHtml = `
+        <div class="idol-action-title">🚓 3연속 더블! 경찰서 직행</div>
+        <div class="idol-popup-sub">이번 턴 이동이 종료되고 수감 상태가 적용됩니다.</div>
+      `;
+      if (isHost) setTimeout(() => idolOnTurnEnd(false), 1500);
+      break;
+    case 'turn-end-auto':
+      contentHtml = `<div class="idol-action-title">다음 턴 준비 중...</div>`;
+      break;
+    default:
+      contentHtml = `<div class="idol-action-title">진행 중...</div>`;
+      break;
+  }
+
+  panel.innerHTML = idolUxWrapActionPanelHTML(contentHtml, currentP, action, isMyTurn);
+}
