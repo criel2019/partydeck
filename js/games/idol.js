@@ -452,7 +452,12 @@ function idolTrainAtShop(shopId, isOwned) {
   };
   broadcastIdolState();
   idolRenderAll();
-  setTimeout(() => idolOnTurnEnd(false), 1200);
+}
+
+function idolConfirmTrainResult() {
+  if (!state.isHost) return;
+  if (idolState.pendingAction?.type !== 'train-result') return;
+  idolOnTurnEnd(false);
 }
 
 function idolSkipTrain() {
@@ -472,6 +477,118 @@ function idolSkipTrain() {
   broadcastIdolState();
   idolRenderAll();
   setTimeout(() => idolOnTurnEnd(false), 300);
+}
+
+// ─── 샵 인수 제안 ─────────────────────────────
+function idolProposeTakeover(shopId) {
+  if (!state.isHost) return;
+  const p = idolCurrentPlayer();
+  const shop = SHOPS.find(s => s.id === shopId);
+  const ownerId = idolState.shopOwners[shopId];
+  if (!p || !shop || !ownerId) return;
+
+  const price = Math.floor(shop.price * 1.5);
+  if (p.money < price) { showToast('돈이 부족합니다'); return; }
+
+  idolState.pendingAction = {
+    type: 'shop-takeover-offer',
+    shopId,
+    fromId: p.id,
+    toId: ownerId,
+    price,
+  };
+  broadcastIdolState();
+  idolRenderAll();
+
+  // CPU 오너 자동 응답
+  if (idolIsCpuPlayerId(ownerId)) {
+    setTimeout(() => {
+      if (idolState.pendingAction?.type !== 'shop-takeover-offer') return;
+      const shopLevel = idolState.shopLevels[shopId] ?? 0;
+      // 높은 레벨 샵일수록 거절 확률 높아짐
+      const acceptChance = shopLevel >= 2 ? 0.2 : shopLevel >= 1 ? 0.4 : 0.65;
+      if (Math.random() < acceptChance) {
+        idolAcceptTakeover();
+      } else {
+        idolDeclineTakeover();
+      }
+    }, 1800);
+  }
+}
+
+function idolAcceptTakeover() {
+  if (!state.isHost) return;
+  const action = idolState.pendingAction;
+  if (!action || action.type !== 'shop-takeover-offer') return;
+
+  const buyer = idolState.players.find(p => p.id === action.fromId);
+  const seller = idolState.players.find(p => p.id === action.toId);
+  const shop = SHOPS.find(s => s.id === action.shopId);
+  if (!buyer || !seller || !shop) return;
+
+  if (buyer.money < action.price) {
+    showToast('구매자 자금 부족 — 거절 처리합니다');
+    idolDeclineTakeover();
+    return;
+  }
+
+  buyer.money -= action.price;
+  seller.money += action.price;
+
+  // 소유권 이전
+  idolState.shopOwners[action.shopId] = action.fromId;
+  const sellerIdx = seller.ownedShops.indexOf(action.shopId);
+  if (sellerIdx !== -1) seller.ownedShops.splice(sellerIdx, 1);
+  if (!buyer.ownedShops.includes(action.shopId)) buyer.ownedShops.push(action.shopId);
+
+  idolCheckBeautyMonopoly(buyer);
+  idolCheckBeautyMonopoly(seller);
+
+  idolState.pendingAction = { type: 'turn-end-auto' };
+  broadcastIdolState();
+  idolRenderAll();
+  setTimeout(() => idolOnTurnEnd(false), 400);
+}
+
+function idolDeclineTakeover() {
+  if (!state.isHost) return;
+  const action = idolState.pendingAction;
+  if (!action || action.type !== 'shop-takeover-offer') return;
+
+  // 거절하면 오너 호감도 -1 (룰북 6-2)
+  const owner = idolState.players.find(p => p.id === action.toId);
+  if (owner) {
+    owner.favor -= 1;
+    owner.lastFavorDir = 'down';
+    idolShowFavorToast(owner.id, 'down', null);
+  }
+
+  idolState.pendingAction = { type: 'turn-end-auto' };
+  broadcastIdolState();
+  idolRenderAll();
+  setTimeout(() => idolOnTurnEnd(false), 400);
+}
+
+function idolRenderTakeoverPanel(action) {
+  const shop = SHOPS.find(s => s.id === action.shopId);
+  const buyer = idolState.players.find(p => p.id === action.fromId);
+  const owner = idolState.players.find(p => p.id === action.toId);
+  const canAfford = (buyer?.money ?? 0) >= action.price;
+  const isOwnerMe = action.toId === state.myId;
+  const showButtons = state.isHost;
+
+  return `
+    <div class="idol-action-title">🏠 인수 제안</div>
+    <div class="idol-popup-sub">
+      ${escapeHTML(buyer?.name ?? '?')}이(가) <b>${escapeHTML(shop?.name ?? '?')}</b> 인수를 제안합니다
+    </div>
+    <div class="idol-popup-sub" style="color:#ffd700;font-size:15px;">제안 금액: ${action.price}만원</div>
+    <div class="idol-popup-sub" style="opacity:.75;">${escapeHTML(owner?.name ?? '?')}님의 결정</div>
+    ${showButtons ? `
+    <div class="idol-action-buttons">
+      <button class="idol-btn idol-btn-primary" onclick="idolAcceptTakeover()" ${canAfford ? '' : 'disabled'}>수락</button>
+      <button class="idol-btn idol-btn-danger" onclick="idolDeclineTakeover()">거절 (호감도 -1)</button>
+    </div>` : `<div class="idol-popup-sub" style="opacity:.6;">결정 대기 중...</div>`}`;
 }
 
 // ─── 이벤트 카드 ──────────────────────────────
@@ -1070,11 +1187,20 @@ function idolRenderShopUpgradePanel(shopId) {
 function idolRenderTrainPanel(shopId, isOwned) {
   const shop = SHOPS.find(s => s.id === shopId);
   const stat = shop.trainStat === 'talent' ? '재능' : shop.trainStat === 'looks' ? '외모' : '인기도';
+  const takeoverPrice = Math.floor(shop.price * 1.5);
+  const currentP = idolCurrentPlayer();
+  const canPropose = !isOwned && currentP && currentP.money >= takeoverPrice;
+  const takeoverBtn = !isOwned
+    ? `<button class="idol-btn idol-btn-gold" onclick="idolProposeTakeover('${shopId}')" ${canPropose ? '' : 'disabled'}>
+        🏠 인수 제안 (${takeoverPrice}만)
+       </button>`
+    : '';
   return `
     <div class="idol-action-title">🎓 ${escapeHTML(shop.name)} 훈련</div>
     <div class="idol-popup-sub">${stat} 훈련 ${isOwned ? '(전속 보너스 +1)' : '(효율 -1)'}</div>
     <div class="idol-action-buttons">
       <button class="idol-btn idol-btn-primary" onclick="idolTrainAtShop('${shopId}', ${isOwned})">훈련하기</button>
+      ${takeoverBtn}
       <button class="idol-btn" onclick="idolSkipTrain()">건너뛰기</button>
     </div>`;
 }
@@ -1082,11 +1208,15 @@ function idolRenderTrainPanel(shopId, isOwned) {
 function idolRenderTrainResult(action) {
   const DICE_EMOJIS = ['','⚀','⚁','⚂','⚃','⚄','⚅'];
   const statLabel = action.stat === 'talent' ? '재능' : action.stat === 'looks' ? '외모' : '인기도';
+  const confirmBtn = state.isHost
+    ? `<div class="idol-action-buttons"><button class="idol-btn idol-btn-primary" onclick="idolConfirmTrainResult()">확인</button></div>`
+    : `<div class="idol-popup-sub" style="opacity:.6;">결과 확인 대기 중...</div>`;
   return `
     <div class="idol-train-result">
       <div class="idol-action-title">훈련 결과!</div>
       <div class="idol-train-die">${DICE_EMOJIS[action.die]}</div>
       <div class="idol-train-gain">+${action.gain} ${statLabel}</div>
+      ${confirmBtn}
     </div>`;
 }
 
@@ -1573,6 +1703,7 @@ function idolUxGetActionMeta(action) {
     case 'shop-train-self': return { label: '내 시설 훈련', tone: 'success' };
     case 'shop-train-other': return { label: '훈련 선택', tone: 'warn' };
     case 'train-result': return { label: '훈련 결과', tone: 'success' };
+    case 'shop-takeover-offer': return { label: '인수 제안', tone: 'gold' };
     case 'event-card': return { label: '이벤트 카드', tone: 'warn' };
     case 'gacha':
     case 'stage-gacha': return { label: '가챠 진행', tone: 'gold' };
@@ -1600,6 +1731,7 @@ function idolUxGetActionHint(action, currentP, isMyTurn) {
     case 'shop-upgrade': return isMyTurn ? '업그레이드 여부를 결정하세요.' : '업그레이드 결정을 기다리는 중입니다.';
     case 'shop-train-self':
     case 'shop-train-other': return isMyTurn ? '훈련을 진행할지 선택하세요.' : '훈련 선택을 기다리는 중입니다.';
+    case 'shop-takeover-offer': return state.isHost ? '인수 제안 수락/거절 여부를 결정하세요.' : '인수 제안 처리 중입니다.';
     case 'event-card': return isMyTurn ? '이벤트 선택지 중 하나를 고르세요.' : '이벤트 카드 처리 중입니다.';
     case 'chance-card': return isMyTurn ? '찬스 카드 효과를 처리하세요.' : '찬스 카드 처리 중입니다.';
     case 'gacha':
@@ -2012,6 +2144,9 @@ function idolRenderActionPanel() {
       break;
     case 'train-result':
       contentHtml = idolRenderTrainResult(action);
+      break;
+    case 'shop-takeover-offer':
+      contentHtml = idolRenderTakeoverPanel(action);
       break;
     case 'event-card':
       contentHtml = isMyTurn ? idolRenderEventPanel(action.card) : `<div class="idol-action-title">이벤트 처리 중...</div>`;

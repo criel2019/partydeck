@@ -1273,16 +1273,25 @@ function aiIdol() {
       if (typeof idolTrainAtShop === 'function') idolTrainAtShop(action.shopId, true);
       break;
 
-    // ── 타인 샵 훈련 (75% 확률로 훈련) ───────
+    // ── 타인 샵 훈련 (70% 확률로 훈련, 15%로 인수 제안) ──
     case 'shop-train-other':
       if (!action.playerId || action.playerId !== currentP.id) {
         if (typeof idolSkipTrain === 'function') idolSkipTrain();
         break;
       }
-      if (Math.random() < 0.75 && typeof idolTrainAtShop === 'function') {
-        idolTrainAtShop(action.shopId, false);
-      } else if (typeof idolSkipTrain === 'function') {
-        idolSkipTrain();
+      {
+        const shopLevel = idolState.shopLevels[action.shopId] ?? 0;
+        const takeoverPrice = Math.floor((SHOPS.find(s => s.id === action.shopId)?.price ?? 999) * 1.5);
+        const canAfford = currentP.money >= takeoverPrice;
+        const r = Math.random();
+        if (canAfford && shopLevel <= 1 && r < 0.15 && typeof idolProposeTakeover === 'function') {
+          // 낮은 레벨 샵은 인수 시도 (15%)
+          idolProposeTakeover(action.shopId);
+        } else if (r < 0.70 && typeof idolTrainAtShop === 'function') {
+          idolTrainAtShop(action.shopId, false);
+        } else if (typeof idolSkipTrain === 'function') {
+          idolSkipTrain();
+        }
       }
       break;
 
@@ -1324,12 +1333,25 @@ function aiIdol() {
       break;
     }
 
+    // ── 훈련 결과 확인 (CPU는 즉시 확인) ─────
+    case 'train-result':
+      if (idolIsCpuPlayerId(currentP.id) && typeof idolConfirmTrainResult === 'function') {
+        idolConfirmTrainResult();
+      }
+      break;
+
+    // ── 인수 제안 수신 (CPU 오너 응답은 idolProposeTakeover에서 이미 예약됨)
+    case 'shop-takeover-offer':
+      // CPU 오너의 응답은 idolProposeTakeover() 내부 setTimeout에서 처리됨
+      // 여기서는 별도 처리 불필요 (watchdog만 필요)
+      break;
+
     // ── 자동 처리 상태들 (AI 개입 불필요) ─────
-    // rolling, landed, gacha-result, train-result, turn-end-auto,
+    // rolling, landed, gacha-result, turn-end-auto,
     // settlement, bankrupt, goto-jail, ending → 모두 자동 진행됨
     // 단, 이 상태에서 자동진행이 멈춘 경우 대비 watchdog 예약
     default: {
-      const autoStates = ['rolling', 'landed', 'gacha-result', 'train-result',
+      const autoStates = ['rolling', 'landed', 'gacha-result',
         'turn-end-auto', 'settlement', 'bankrupt', 'goto-jail'];
       if (autoStates.includes(actionType) && idolIsCpuPlayerId(currentP.id)) {
         // 자동진행 상태에서 너무 오래 머물면 nudge
@@ -1352,7 +1374,7 @@ function aiIdol() {
               const isDouble = dice[0] === dice[1];
               if (typeof idolMovePlayer === 'function') idolMovePlayer(cp2, dice[0] + dice[1], isDouble);
             }
-          } else if (['turn-end-auto', 'gacha-result', 'train-result'].includes(snapAction)) {
+          } else if (['turn-end-auto', 'gacha-result'].includes(snapAction)) {
             if (typeof idolOnTurnEnd === 'function') idolOnTurnEnd(false);
           }
         }, 5000); // 5초 대기 (다이스 애니메이션 최대 2초 + 여유)
