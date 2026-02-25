@@ -296,7 +296,21 @@ body {
 .game-option:active { transform: scale(0.95); }
 .game-option.selected { border-color: var(--accent); background: rgba(255,107,53,0.15); }
 .game-option .game-emoji { font-size: 24px; display: block; }
-.game-option.disabled { opacity: 0.4; pointer-events: none; }
+.game-option.disabled { opacity: 0.4; pointer-events: none; position: relative; }
+.game-disabled-tag { display: block; font-size: 9px; color: #ff6b6b; margin-top: 2px; }
+
+/* Bet mode selector */
+.bet-mode-option {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 6px 14px; border-radius: 20px; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: var(--text-dim);
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  transition: all 0.2s;
+}
+.bet-mode-option.selected {
+  background: rgba(255,107,53,0.2); border-color: var(--accent); color: var(--accent);
+}
+.bet-mode-option:active { transform: scale(0.95); }
 
 /* ===== POKER TABLE — Felt casino redesign ===== */
 #pokerGame { padding: 0; gap: 0; position: relative; overflow: hidden; }

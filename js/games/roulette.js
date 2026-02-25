@@ -122,13 +122,27 @@ function renderRouletteView(data) {
     cylinder.appendChild(indicator);
   }
 
+  // Build turn order for alive players starting from current turn
+  const aliveOrder = [];
+  if(rs.phase !== 'gameover') {
+    let idx = rs.turnIdx;
+    for(let i = 0; i < rs.players.length; i++) {
+      if(rs.players[idx].alive) aliveOrder.push(idx);
+      idx = (idx + 1) % rs.players.length;
+    }
+  }
+
   const survivorsList = document.getElementById('survivorsList');
-  survivorsList.innerHTML = rs.players.map((p, i) => `
-    <div class="survivor-item ${!p.alive ? 'dead' : ''}">
+  survivorsList.innerHTML = rs.players.map((p, i) => {
+    const isCurrent = i === rs.turnIdx && p.alive && rs.phase !== 'gameover';
+    const orderNum = aliveOrder.indexOf(i);
+    const orderLabel = isCurrent ? 'NOW' : (orderNum > 0 && orderNum <= 3 ? (orderNum + 1) + '번째' : '');
+    return `<div class="survivor-item ${!p.alive ? 'dead' : ''} ${isCurrent ? 'current-turn' : ''}">
       <div class="survivor-avatar-sm" style="background:${PLAYER_COLORS[i % PLAYER_COLORS.length]};">${p.avatar}</div>
       <div class="survivor-name">${escapeHTML(p.name)}</div>
-    </div>
-  `).join('');
+      ${orderLabel ? `<div class="survivor-order ${isCurrent ? 'now' : ''}">${orderLabel}</div>` : ''}
+    </div>`;
+  }).join('');
 
   const isMyTurn = currentPlayer?.id === state.myId;
   const spinBtn = document.getElementById('spinBtn');

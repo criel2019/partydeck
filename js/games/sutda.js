@@ -37,7 +37,10 @@ function getSutdaRank(card1, card2) {
   if ((n1 === 1 && g1 && n2 === 8 && g2) || (n1 === 8 && g1 && n2 === 1 && g2)) {
     return { rank: 99, name: '18광땡', tier: 'gwangttaeng' };
   }
-  // 13광땡 제거 — 1광+3광은 일반 4끗으로 처리 (암행어사용 플래그만 유지)
+  // 13광땡: 1광 + 3광
+  if ((n1 === 1 && g1 && n2 === 3 && g2) || (n1 === 3 && g1 && n2 === 1 && g2)) {
+    return { rank: 98, name: '13광땡', tier: 'gwangttaeng' };
+  }
 
   // === 땡 (같은 숫자 2장) ===
   if (n1 === n2) {
@@ -65,17 +68,14 @@ function getSutdaRank(card1, card2) {
   const kkut = (n1 + n2) % 10;
   const mult = n1 * n2; // 같은 끗일 때 곱으로 비교
 
-  // 1광+3광 조합인지 체크 (암행어사가 잡을 수 있도록 플래그)
-  const is13Gwang = ((n1 === 1 && g1 && n2 === 3 && g2) || (n1 === 3 && g1 && n2 === 1 && g2));
-
   if (kkut === 9) {
-    return { rank: 60, name: '갑오', tier: 'kkut', kkut: 9, mult: mult, is13Gwang: false };
+    return { rank: 60, name: '갑오', tier: 'kkut', kkut: 9, mult: mult };
   }
   if (kkut === 0) {
-    return { rank: 50, name: '망통', tier: 'kkut', kkut: 0, mult: mult, is13Gwang: false };
+    return { rank: 50, name: '망통', tier: 'kkut', kkut: 0, mult: mult };
   }
   // 1끗~8끗
-  return { rank: 50 + kkut, name: kkut + '끗', tier: 'kkut', kkut: kkut, mult: mult, is13Gwang: is13Gwang };
+  return { rank: 50 + kkut, name: kkut + '끗', tier: 'kkut', kkut: kkut, mult: mult };
 }
 
 // =========================
@@ -92,9 +92,9 @@ function sutdaCompare(r1, r2) {
     return 1; // 땡잡이는 일반패들에게 무조건 진다
   }
 
-  // === 2순위: 암행어사(47) - 18광땡(99), 13광땡(1광+3광 조합)만 잡음 ===
-  if (r1.special === '47' && (r2.rank === 99 || r2.is13Gwang)) return 1;
-  if (r2.special === '47' && (r1.rank === 99 || r1.is13Gwang)) return -1;
+  // === 2순위: 암행어사(47) - 13광땡(98)과 18광땡(99)만 잡음 ===
+  if (r1.special === '47' && (r2.rank === 99 || r2.rank === 98)) return 1;
+  if (r2.special === '47' && (r1.rank === 99 || r1.rank === 98)) return -1;
   if (r1.special === '47') {
     const r1asKkut = { rank: 51, name: '1끗', tier: 'kkut', kkut: 1, mult: 28 };
     return sutdaCompare(r1asKkut, r2);
@@ -174,6 +174,10 @@ function startSutda() {
   const prevHost = sutdaHost;
   const n = state.players.length;
 
+  const startChips = typeof getStartChips === 'function' ? getStartChips() : 500000;
+  // Map start chips to sutda scale (sutda uses larger numbers)
+  const sutdaStartChips = startChips >= 10000 ? startChips : startChips * 500;
+
   sutdaHost = {
     deck: deck,
     players: state.players.map((p, i) => ({
@@ -181,7 +185,7 @@ function startSutda() {
       name: p.name,
       avatar: p.avatar,
       cards: [deck[deckIdx++], deck[deckIdx++]],
-      chips: prevHost ? (prevHost.players.find(pp => pp.id === p.id)?.chips ?? 500000) : 500000,
+      chips: prevHost ? (prevHost.players.find(pp => pp.id === p.id)?.chips ?? sutdaStartChips) : sutdaStartChips,
       bet: 0,
       totalBet: 0,
       died: false,
@@ -748,6 +752,11 @@ function closeSutdaResult() {
     // 다음 라운드 시작
     setTimeout(() => startSutda(), 500);
   }
+}
+
+function closeSutdaResultToLobby() {
+  document.getElementById('sutdaResultOverlay').classList.remove('active');
+  returnToLobby();
 }
 
 

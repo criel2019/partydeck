@@ -16,18 +16,21 @@ function startPoker() {
   const deck = createDeck();
   const n = state.players.length;
   const prevChips = state.poker?.players;
-  
+  const startChips = typeof getStartChips === 'function' ? getStartChips() : 1000;
+  const bbSize = Math.max(10, Math.round(startChips / 50));
+  const sbSize = Math.round(bbSize / 2);
+
   const ps = {
     deck, deckIdx: 0,
     players: state.players.map((p, i) => ({
       id: p.id, name: p.name, avatar: p.avatar,
-      cards: [], chips: prevChips ? (prevChips.find(pp => pp.id === p.id)?.chips ?? 1000) : 1000,
+      cards: [], chips: prevChips ? (prevChips.find(pp => pp.id === p.id)?.chips ?? startChips) : startChips,
       bet: 0, totalBet: 0, folded: false, allIn: false, seatIdx: i, acted: false,
     })),
-    community: [], pot: 0, currentBet: 0, minRaise: 20,
+    community: [], pot: 0, currentBet: 0, minRaise: bbSize,
     phase: 'preflop', turnIdx: 0,
     dealerIdx: state.poker ? (state.poker.dealerIdx + 1) % n : 0,
-    sb: 10, bb: 20,
+    sb: sbSize, bb: bbSize,
   };
   
   // Bankruptcy: fold players with 0 chips
@@ -341,6 +344,7 @@ function advancePokerPhase() {
   
   ps.players.forEach(p => { p.bet = 0; p.acted = false; });
   ps.currentBet = 0;
+  ps.minRaise = ps.bb;
   const nextIdx = findNextActive(ps, (ps.dealerIdx + 1) % ps.players.length);
   ps.turnIdx = nextIdx === -1 ? 0 : nextIdx;
   
@@ -457,7 +461,10 @@ function endPokerHand(winner, potAmount) {
 
 function handlePokerResult(msg) {
   const won = msg.winnerId === state.myId;
-  recordGame(won, won ? msg.pot : 5);
+  const goldMode = typeof isBetModeGold === 'function' && isBetModeGold();
+  recordGame(won, goldMode ? 0 : (won ? msg.pot : 5));
+  if (goldMode && won) addGold(msg.pot);
+  if (goldMode && !won) addGold(-Math.min(50, getEconomy().gold));
   
   document.getElementById('resultTitle').textContent = won ? '🏆 승리!' : '😢 패배...';
   document.getElementById('resultTitle').style.color = won ? 'var(--gold)' : 'var(--text-dim)';
@@ -477,6 +484,11 @@ function closeResult() {
     else if (g === 'ecard') setTimeout(() => startECard(), 300);
     else returnToLobby();
   }
+}
+
+function closeResultToLobby() {
+  document.getElementById('resultOverlay').classList.remove('active');
+  returnToLobby();
 }
 
 // ===== HAND EVALUATION =====

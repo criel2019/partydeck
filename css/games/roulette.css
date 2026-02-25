@@ -260,6 +260,31 @@
   opacity: 0.5;
 }
 
+/* Current turn highlight */
+.survivor-item.current-turn {
+  border-color: #d4af37;
+  background: rgba(212,175,55,0.15);
+  box-shadow: 0 0 12px rgba(212,175,55,0.4);
+  animation: rr-turn-glow 1.5s ease-in-out infinite alternate;
+}
+@keyframes rr-turn-glow {
+  from { box-shadow: 0 0 8px rgba(212,175,55,0.3); }
+  to { box-shadow: 0 0 16px rgba(212,175,55,0.6); }
+}
+.survivor-order {
+  font-size: 9px; font-weight: 700; padding: 1px 6px;
+  border-radius: 8px; color: #aaa;
+  background: rgba(255,255,255,0.08);
+}
+.survivor-order.now {
+  color: #ffd700; background: rgba(212,175,55,0.2);
+  font-size: 10px; animation: rr-pulse-label 1s ease-in-out infinite alternate;
+}
+@keyframes rr-pulse-label {
+  from { opacity: 0.8; }
+  to { opacity: 1; }
+}
+
 /* -- Action Buttons -- */
 .roulette-actions {
   display: flex; flex-direction: column; gap: 8px; padding: 8px 14px 14px;

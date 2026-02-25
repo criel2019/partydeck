@@ -1,0 +1,1046 @@
+/* ===== TAMAGOTCHI CSS ===== */
+
+/* --- FTUE Screens --- */
+.tama-ftue-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  min-height: 100vh;
+  text-align: center;
+}
+.tama-ftue-screen.active { display: flex; }
+
+.tama-ftue-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.tama-ftue-sub {
+  font-size: 14px;
+  color: #aaa;
+  margin-bottom: 24px;
+}
+
+/* Tribe Selection */
+.tama-tribe-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  max-width: 340px;
+  width: 100%;
+  margin-bottom: 20px;
+}
+.tama-tribe-btn {
+  width: calc(33.33% - 10px);
+  min-width: 90px;
+  background: var(--bg-card, #1a1a2e);
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 16px 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.tama-tribe-btn:hover,
+.tama-tribe-btn:active {
+  transform: scale(1.05);
+  border-color: rgba(255,255,255,0.3);
+}
+.tama-tribe-btn.selected {
+  border-color: #ffd700;
+  background: rgba(255,215,0,0.1);
+  box-shadow: 0 0 20px rgba(255,215,0,0.2);
+}
+.tama-tribe-emoji {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 8px;
+}
+.tama-tribe-name {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  color: #fff;
+}
+.tama-tribe-desc {
+  font-size: 11px;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* Egg Hatch */
+.tama-egg-area {
+  position: relative;
+  width: 160px;
+  height: 200px;
+  margin: 20px auto;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tama-egg {
+  font-size: 120px;
+  line-height: 1;
+  transition: transform 0.1s;
+  display: block;
+  text-align: center;
+}
+.tama-egg.shake {
+  animation: tamaEggShake 0.3s ease;
+}
+.tama-egg-crack {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  color: #ffd700;
+  opacity: 0;
+  pointer-events: none;
+}
+.tama-egg-crack.visible {
+  opacity: 1;
+}
+.tama-egg-progress {
+  width: 120px;
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  margin: 12px auto 0;
+  overflow: hidden;
+}
+.tama-egg-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd700, #ff6b35);
+  border-radius: 3px;
+  transition: width 0.3s;
+  width: 0%;
+}
+.tama-tap-hint {
+  font-size: 13px;
+  color: #888;
+  margin-top: 12px;
+  animation: tamaPulse 1.5s ease infinite;
+}
+
+/* Name Input */
+.tama-name-input {
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  outline: none;
+  width: 220px;
+  max-width: 80%;
+  margin: 16px 0;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.tama-name-input:focus {
+  border-color: #ffd700;
+}
+.tama-name-preview {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+/* FTUE Feed Tutorial */
+.tama-ftue-pet-display {
+  font-size: 80px;
+  margin: 16px 0;
+}
+
+/* --- Home Screen --- */
+.tama-home {
+  display: none;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+.tama-home.active { display: flex; }
+
+.tama-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.3);
+}
+.tama-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tama-back-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.tama-pet-name {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: #fff;
+}
+.tama-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #ccc;
+}
+.tama-personality {
+  font-size: 11px;
+  color: #b388ff;
+  font-weight: 600;
+}
+.tama-pet-age {
+  font-size: 11px;
+  color: #888;
+}
+.tama-gold-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Level / EXP */
+.tama-level-bar {
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tama-level-badge {
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffd700;
+  white-space: nowrap;
+}
+.tama-exp-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.tama-exp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd700, #ff6b35);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+.tama-exp-text {
+  font-size: 10px;
+  color: #888;
+  white-space: nowrap;
+  min-width: 50px;
+  text-align: right;
+}
+.tama-stage-label {
+  font-size: 12px;
+  color: #aaa;
+  white-space: nowrap;
+}
+
+/* Pet Display Area */
+.tama-pet-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 260px;
+  padding: 16px;
+}
+.tama-sprite {
+  font-size: 96px;
+  transition: transform 0.3s;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 4px 20px rgba(0,0,0,0.5));
+}
+.tama-sprite.idle-bounce {
+  animation: tamaIdleBounce 2s ease infinite;
+}
+.tama-sprite.sleeping {
+  animation: tamaSleep 3s ease infinite;
+  opacity: 0.7;
+}
+.tama-sprite.happy {
+  animation: tamaHappy 0.5s ease;
+}
+.tama-sprite.eating {
+  animation: tamaEat 0.6s ease;
+}
+.tama-sprite.bathing {
+  animation: tamaBath 0.8s ease;
+}
+
+/* Element Glow by Tribe */
+.tama-sprite.tribe-fire { filter: drop-shadow(0 0 20px rgba(255,100,0,0.6)); }
+.tama-sprite.tribe-rock { filter: drop-shadow(0 0 20px rgba(139,119,101,0.6)); }
+.tama-sprite.tribe-wind { filter: drop-shadow(0 0 20px rgba(100,255,200,0.6)); }
+.tama-sprite.tribe-thunder { filter: drop-shadow(0 0 20px rgba(255,255,0,0.6)); }
+.tama-sprite.tribe-spirit { filter: drop-shadow(0 0 20px rgba(180,100,255,0.6)); }
+
+/* Mood indicator */
+.tama-mood {
+  font-size: 13px;
+  color: #ccc;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Speech Bubble */
+.tama-speech {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.95);
+  color: #222;
+  border-radius: 16px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  max-width: 240px;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.tama-speech::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.95);
+}
+.tama-speech.visible {
+  opacity: 1;
+}
+
+/* Needs Bars */
+.tama-needs {
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.tama-need-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.tama-need-icon { font-size: 18px; flex-shrink: 0; }
+.tama-need-info { flex: 1; min-width: 0; }
+.tama-need-label {
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 3px;
+}
+.tama-need-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tama-need-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease, background 0.3s;
+}
+.tama-need-fill.high { background: linear-gradient(90deg, #4caf50, #8bc34a); }
+.tama-need-fill.mid  { background: linear-gradient(90deg, #ff9800, #ffc107); }
+.tama-need-fill.low  { background: linear-gradient(90deg, #f44336, #ff5722); }
+.tama-need-val {
+  font-size: 10px;
+  color: #aaa;
+  font-weight: 600;
+  flex-shrink: 0;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* Affinity Bar */
+.tama-affinity-section {
+  padding: 4px 16px 8px;
+}
+.tama-affinity-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tama-affinity-label {
+  font-size: 11px;
+  color: #e91e63;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.tama-affinity-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tama-affinity-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e91e63, #ff5252);
+  border-radius: 3px;
+  transition: width 0.5s;
+}
+.tama-affinity-tier {
+  font-size: 11px;
+  color: #e91e63;
+  white-space: nowrap;
+}
+.tama-affinity-val {
+  font-size: 10px;
+  color: #888;
+  white-space: nowrap;
+  min-width: 20px;
+  text-align: right;
+}
+
+/* Stats Display */
+.tama-stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 16px;
+  flex-wrap: wrap;
+}
+.tama-stat-chip {
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tama-stat-chip .val {
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Action Buttons */
+.tama-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(transparent, rgba(10,10,18,0.95) 30%);
+  justify-content: center;
+  z-index: 20;
+}
+.tama-action-btn {
+  flex: 1;
+  max-width: 90px;
+  background: var(--bg-card, #1a1a2e);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 10px 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  color: #fff;
+}
+.tama-action-btn:hover,
+.tama-action-btn:active {
+  transform: scale(1.05);
+  border-color: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.08);
+}
+.tama-action-btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.tama-action-btn .icon { font-size: 24px; display: block; margin-bottom: 4px; }
+.tama-action-btn .label { font-size: 11px; font-weight: 600; }
+.tama-action-btn .cooldown {
+  font-size: 9px;
+  color: #f44336;
+  margin-top: 2px;
+}
+.tama-action-btn.pulse {
+  animation: tamaActionPulse 1.5s ease infinite;
+  border-color: #ffd700;
+}
+
+/* --- Overlay Panels --- */
+.tama-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.85);
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 20px;
+}
+.tama-overlay.active { display: flex; }
+.tama-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.tama-overlay-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: #fff;
+}
+.tama-overlay-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+/* Food Category Tabs */
+.tama-food-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.tama-food-tab {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #aaa;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.tama-food-tab:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
+.tama-food-tab.active {
+  background: rgba(255,215,0,0.15);
+  border-color: #ffd700;
+  color: #ffd700;
+}
+
+/* Feed Overlay */
+.tama-food-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-width: 360px;
+  margin: 0 auto;
+}
+.tama-food-item {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tama-food-item:hover,
+.tama-food-item:active {
+  border-color: #ffd700;
+  background: rgba(255,215,0,0.08);
+}
+.tama-food-item:disabled,
+.tama-food-item.disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.tama-food-emoji { font-size: 32px; display: block; margin-bottom: 4px; }
+.tama-food-name { font-size: 11px; color: #fff; font-weight: 600; }
+.tama-food-info { font-size: 10px; color: #888; margin-top: 4px; display: block; }
+.tama-food-cost {
+  font-size: 11px;
+  color: #ffd700;
+  margin-top: 4px;
+  font-weight: 700;
+}
+
+/* Stat Allocation Overlay */
+.tama-stat-alloc {
+  max-width: 360px;
+  margin: 0 auto;
+  width: 100%;
+}
+.tama-stat-alloc-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.tama-stat-points-badge {
+  font-family: 'Oswald', sans-serif;
+  font-size: 16px;
+  color: #ffd700;
+  background: rgba(255,215,0,0.1);
+  border-radius: 20px;
+  padding: 6px 16px;
+  display: inline-block;
+}
+.tama-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.tama-stat-row .stat-icon { font-size: 24px; }
+.tama-stat-row .stat-info { flex: 1; }
+.tama-stat-row .stat-name { font-size: 13px; color: #fff; font-weight: 700; }
+.tama-stat-row .stat-val { font-size: 12px; color: #aaa; margin-top: 2px; }
+.tama-stat-row .stat-add-btn {
+  background: rgba(255,215,0,0.15);
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: #ffd700;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tama-stat-row .stat-add-btn:hover { background: rgba(255,215,0,0.25); }
+.tama-stat-row .stat-add-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+/* Evolution Overlay */
+.tama-evolve-overlay {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.tama-evolve-sprite {
+  font-size: 120px;
+  margin: 20px 0;
+}
+.tama-evolve-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 28px;
+  color: #ffd700;
+  margin-bottom: 8px;
+}
+.tama-evolve-desc {
+  font-size: 14px;
+  color: #ccc;
+  margin-bottom: 20px;
+}
+.tama-evolve-choices {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 16px 0;
+}
+.tama-evolve-choice {
+  background: rgba(255,255,255,0.06);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 16px;
+  padding: 16px 12px;
+  width: 140px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tama-evolve-choice:hover,
+.tama-evolve-choice:active {
+  border-color: #ffd700;
+  background: rgba(255,215,0,0.08);
+  transform: scale(1.03);
+}
+.tama-evolve-choice .evo-emoji { font-size: 40px; display: block; margin-bottom: 8px; }
+.tama-evolve-choice .evo-name {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  color: #fff;
+}
+.tama-evolve-choice .evo-desc { font-size: 11px; color: #888; margin-top: 4px; }
+
+/* Sleep Overlay */
+.tama-sleep-overlay {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: rgba(0,0,20,0.95);
+}
+.tama-sleep-sprite { font-size: 100px; animation: tamaSleep 3s ease infinite; }
+.tama-sleep-zzz {
+  font-size: 36px;
+  color: rgba(255,255,255,0.4);
+  animation: tamaZzz 2s ease infinite;
+}
+.tama-sleep-timer {
+  font-size: 14px;
+  color: #aaa;
+  margin-top: 16px;
+}
+
+/* --- Level Up Flash --- */
+.tama-levelup-flash {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.8);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
+.tama-levelup-flash.active { display: flex; }
+.tama-levelup-flash .lu-text {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 36px;
+  color: #ffd700;
+  animation: tamaLevelUp 0.8s ease;
+}
+.tama-levelup-flash .lu-sub {
+  font-size: 14px;
+  color: #ccc;
+  margin-top: 8px;
+}
+
+/* Affinity up flash */
+.tama-affinity-flash {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.8);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
+.tama-affinity-flash.active { display: flex; }
+.tama-affinity-flash .af-text {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 28px;
+  color: #e91e63;
+  animation: tamaLevelUp 0.8s ease;
+}
+
+/* --- Hatch animation --- */
+.tama-hatch-flash {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(255,255,255,0.95);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.tama-hatch-flash.active {
+  display: flex;
+  animation: tamaHatchFlash 1.5s ease forwards;
+}
+.tama-hatch-flash.active .tama-hatch-baby {
+  animation: tamaHatchReveal 1s ease 0.5s both;
+}
+.tama-hatch-baby {
+  font-size: 100px;
+}
+
+/* --- Common Buttons --- */
+.tama-btn {
+  background: linear-gradient(135deg, #ffd700, #ff8f00);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1a2e;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.tama-btn:hover { transform: scale(1.03); }
+.tama-btn:active { transform: scale(0.97); }
+.tama-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+.tama-btn.secondary {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+/* --- Reset Button --- */
+.tama-reset-btn {
+  margin-top: 20px;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 11px;
+  color: #666;
+  cursor: pointer;
+}
+.tama-reset-btn:hover { color: #f44336; border-color: #f44336; }
+
+/* --- Animations --- */
+@keyframes tamaEggShake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+  75% { transform: rotate(-4deg); }
+}
+
+@keyframes tamaPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes tamaIdleBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes tamaSleep {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-4px) rotate(5deg); }
+}
+
+@keyframes tamaHappy {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.15) rotate(-5deg); }
+  50% { transform: scale(1.15) rotate(5deg); }
+  75% { transform: scale(1.1) rotate(-3deg); }
+  100% { transform: scale(1); }
+}
+
+@keyframes tamaEat {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(1.1) translateY(-5px); }
+  60% { transform: scale(0.95) translateY(3px); }
+}
+
+@keyframes tamaBath {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg) translateY(-5px); }
+  50% { transform: rotate(10deg); }
+  75% { transform: rotate(-5deg) translateY(-3px); }
+}
+
+@keyframes tamaZzz {
+  0% { transform: translateY(0) scale(1); opacity: 0.4; }
+  50% { transform: translateY(-20px) scale(1.2); opacity: 0.8; }
+  100% { transform: translateY(-40px) scale(0.8); opacity: 0; }
+}
+
+@keyframes tamaLevelUp {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes tamaHatchFlash {
+  0% { background: rgba(255,255,255,0.95); }
+  60% { background: rgba(255,255,255,0.95); }
+  100% { background: rgba(0,0,0,0); }
+}
+
+@keyframes tamaHatchReveal {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes tamaEvolveGlow {
+  0% { box-shadow: 0 0 20px rgba(255,215,0,0.3); }
+  50% { box-shadow: 0 0 60px rgba(255,215,0,0.8); }
+  100% { box-shadow: 0 0 20px rgba(255,215,0,0.3); }
+}
+
+/* Idle anim particles */
+.tama-particle {
+  position: absolute;
+  pointer-events: none;
+  font-size: 20px;
+  animation: tamaParticleFloat 2s ease forwards;
+  z-index: 5;
+}
+@keyframes tamaParticleFloat {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-60px) scale(0.5); opacity: 0; }
+}
+
+/* Offline return overlay */
+.tama-offline-overlay {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.tama-offline-overlay .offline-icon { font-size: 60px; margin-bottom: 12px; }
+.tama-offline-overlay .offline-msg {
+  font-size: 15px;
+  color: #ccc;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  max-width: 280px;
+}
+.tama-offline-overlay .offline-bonus {
+  font-size: 13px;
+  color: #ffd700;
+  margin-bottom: 16px;
+}
+
+/* Main menu tamagotchi quick-access button */
+.tama-menu-btn {
+  max-width: 380px;
+  background: linear-gradient(135deg, #7c4dff, #e040fb);
+  border: none;
+  border-radius: 14px;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-family: 'Noto Sans KR', sans-serif;
+  margin-bottom: 8px;
+}
+.tama-menu-btn:hover { transform: scale(1.02); }
+.tama-menu-btn:active { transform: scale(0.98); }
+.tama-menu-btn .tama-menu-preview {
+  font-size: 20px;
+}
+
+/* Train mini-game */
+.tama-train-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+}
+.tama-train-target {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60px;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tama-train-target:active {
+  transform: scale(0.95);
+  background: rgba(255,215,0,0.1);
+}
+.tama-train-counter {
+  font-family: 'Oswald', sans-serif;
+  font-size: 24px;
+  color: #ffd700;
+}
+.tama-train-progress {
+  width: 200px;
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.tama-train-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd700, #ff6b35);
+  border-radius: 4px;
+  transition: width 0.2s;
+}
+
+/* --- Info Panel --- */
+.tama-info-body {
+  max-width: 360px;
+  margin: 0 auto;
+  width: 100%;
+}
+.tama-info-sprite {
+  font-size: 80px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.tama-info-name {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.tama-info-row {
+  font-size: 13px;
+  color: #ccc;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  line-height: 1.5;
+}
+.tama-info-section {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  color: #ffd700;
+  margin-top: 16px;
+  padding: 8px 0 4px;
+}
+.tama-info-evo {
+  font-size: 12px;
+  color: #aaa;
+  line-height: 1.8;
+  white-space: pre-line;
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* --- Action Pulse keyframe --- */
+@keyframes tamaActionPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(255,215,0,0); }
+  50% { box-shadow: 0 0 12px rgba(255,215,0,0.5); }
+}

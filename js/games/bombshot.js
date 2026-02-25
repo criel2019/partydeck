@@ -461,29 +461,9 @@ function processBSSpin(peerId) {
       var t5 = setTimeout(function() {
         if (!bsState) return;
 
-        if (landedSlot.type === 'bombshot') {
-          // BOMB SHOT → game over immediately!
-          bsState.phase = 'gameover';
-          var totalMixes = (bsState.bombshotMixes || 0) + 1;
-          var result = {
-            type: 'bs-result',
-            bombshotPlayer: { id: target.id, name: target.name },
-            reason: 'bombshot',
-            bombshotMixes: totalMixes,
-            rankings: bsState.players.map(function(p) {
-              return {
-                id: p.id, name: p.name, avatar: p.avatar,
-                isBombshot: p.id === target.id,
-                isWinner: p.id !== target.id
-              };
-            })
-          };
-          broadcast(result);
-          handleBSResult(result);
-        } else {
-          // penalty or safe → continue game
-          bsResumeAfterRoulette();
-        }
+        // All roulette results → redeal and restart from beginning
+        // (bombshot/penalty/safe all continue the game)
+        bsResumeAfterRoulette();
       }, 1000);
       _bsTimers.push(t5);
     }, 3000);
@@ -527,21 +507,8 @@ function bsResumeAfterRoulette() {
   if (!bs.bombshotMixes) bs.bombshotMixes = 0;
   bs.bombshotMixes++;
 
-  // Restore turn to saved position
-  if (bs.savedTurnIdx >= 0) {
-    bs.turnIdx = bs.savedTurnIdx;
-    bs.savedTurnIdx = -1;
-  }
-
-  if (wasLastCard) {
-    // 마지막 카드였으면 게임 재시작 (카드 재분배, 폭탄주 누적 유지)
-    bsRestartRound();
-  } else {
-    // Check redeal
-    bsCheckRedeal();
-    // Advance to next player
-    bsAdvanceTurn();
-  }
+  // Always redeal and restart from beginning after roulette
+  bsRestartRound();
   broadcastBSState();
 }
 

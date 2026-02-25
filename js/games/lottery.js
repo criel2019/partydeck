@@ -26,21 +26,43 @@ function startLottery() {
   renderLotterySetup();
 }
 
+function getLotteryFieldItems(containerId) {
+  const container = document.getElementById(containerId);
+  if(!container) return [];
+  return Array.from(container.querySelectorAll('.lottery-field-input'))
+    .map(inp => inp.value.trim()).filter(s => s);
+}
+
+function addLotteryField(containerId) {
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  const count = container.querySelectorAll('.lottery-field-row').length;
+  if(count >= 20) { showToast('최대 20개까지 가능합니다'); return; }
+  const row = document.createElement('div');
+  row.className = 'lottery-field-row';
+  row.innerHTML = `<span class="lottery-field-num">${count + 1}</span><input type="text" class="lottery-field-input" maxlength="20" placeholder="항목 입력"><button class="lottery-field-del" onclick="removeLotteryField(this)">✕</button>`;
+  container.appendChild(row);
+  row.querySelector('input').focus();
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeLotteryField(btn) {
+  const container = btn.closest('.lottery-fields-container');
+  const rows = container.querySelectorAll('.lottery-field-row');
+  if(rows.length <= 2) { showToast('최소 2개 항목 필요'); return; }
+  btn.closest('.lottery-field-row').remove();
+  // Renumber
+  container.querySelectorAll('.lottery-field-num').forEach((el, i) => el.textContent = i + 1);
+}
+
 function startLotteryGame() {
   if(!state.isHost) return;
 
-  const itemsText = document.getElementById('lotteryItemsInput').value.trim();
+  const items = getLotteryFieldItems('lotteryFieldsContainer');
   const gridSize = parseInt(document.getElementById('gridSizeSelect').value);
 
-  if(!itemsText) {
-    showToast('항목을 입력하세요');
-    return;
-  }
-
-  const items = itemsText.split('\n').map(s => s.trim()).filter(s => s);
-
   if(items.length < 2) {
-    showToast('최소 2개 항목 필요');
+    showToast('최소 2개 항목을 입력하세요');
     return;
   }
 
@@ -82,17 +104,10 @@ function startLotteryGame() {
 function startRouletteGame() {
   if(!state.isHost) return;
 
-  const itemsText = document.getElementById('rouletteItemsInput').value.trim();
-
-  if(!itemsText) {
-    showToast('항목을 입력하세요');
-    return;
-  }
-
-  const items = itemsText.split('\n').map(s => s.trim()).filter(s => s);
+  const items = getLotteryFieldItems('rouletteFieldsContainer');
 
   if(items.length < 2 || items.length > 12) {
-    showToast('2~12개 항목 필요');
+    showToast('2~12개 항목을 입력하세요');
     return;
   }
 
