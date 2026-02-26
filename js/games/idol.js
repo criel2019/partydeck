@@ -846,8 +846,12 @@ function idolOnTurnEnd(isDouble) {
   // 5턴 결산 체크 (이미 settlement 중이면 중복 방지)
   if (idolState.turnNum % 5 === 0 && idolState.pendingAction?.type !== 'settlement') {
     idolRunSettlement();
+    const settleTurn = idolState.turnNum;
     setTimeout(() => {
-      idolAdvanceTurn();
+      if (idolState?.pendingAction?.type === 'settlement'
+          && idolState.turnNum === settleTurn) {
+        idolAdvanceTurn();
+      }
     }, 3500);
     return;
   }
@@ -938,7 +942,17 @@ function idolGetRank(playerId) {
 
 // ─── 렌더링 진입점 ────────────────────────────
 function renderIdolView(gs) {
-  if (gs) idolState = gs;  // 비호스트: 서버 상태 수신
+  if (gs) {
+    idolState = gs;
+    // 브로드캐스트 시 숨겨진 내 호감도 복원
+    if (idolState._myFavor !== undefined) {
+      const me = idolState.players.find(p => p.id === state.myId);
+      if (me) {
+        me.favor = idolState._myFavor;
+        me.lastFavorDir = idolState._myFavorDir ?? null;
+      }
+    }
+  }
   showScreen('idolGame');
   idolRenderAll();
 }
