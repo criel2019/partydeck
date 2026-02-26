@@ -185,7 +185,7 @@ function idolInitGame(selections) {
     if (_w && typeof ISO_BOARD !== 'undefined') {
       const wW = _w.offsetWidth, wH = _w.offsetHeight;
       if (wW > 0 && wH > 0) {
-        const fz = Math.min(wW / ISO_BOARD.SVG_W, wH / ISO_BOARD.SVG_H) * 1.35;
+        const fz = Math.min(wW / ISO_BOARD.SVG_W, wH / ISO_BOARD.SVG_H) * 1.9;
         _idolCam.x = _idolCam.tx = 0;
         _idolCam.y = _idolCam.ty = 0;
         _idolCam.zoom = _idolCam.tzoom = fz;
@@ -1047,6 +1047,19 @@ function idolGetCellCenter(cellIdx) {
   };
 }
 
+// 같은 칸에 여러 토큰이 있을 때 퍼뜨리는 오프셋 (ISO SVG 좌표 기준)
+const _TOK_SCATTER = [
+  [[0, 0]],
+  [[-20, -8], [20, -8]],
+  [[-20, -8], [20, -8], [0, 14]],
+  [[-20, -8], [20, -8], [-20, 12], [20, 12]],
+];
+function _idolTokOffset(totalOnCell, myIdx) {
+  const pat = _TOK_SCATTER[Math.min(totalOnCell, 4) - 1];
+  const o   = pat[myIdx % pat.length];
+  return { dx: o[0], dy: o[1] };
+}
+
 // 토큰 레이어 동기화 (ISO 보드: viewport 안에 토큰 레이어 배치)
 function idolSyncTokenLayer(parent, _unused) {
   if (!parent) parent = document.getElementById('idolBoardViewport');
@@ -1087,11 +1100,12 @@ function idolSyncTokenLayer(parent, _unused) {
     if (!tokenEl.classList.contains('tok-moving')) {
       const c = idolGetCellCenter(p.pos);
       if (c) {
-        // transition 잠시 끄고 즉시 배치
+        const sameCellPlayers = idolState.players.filter(pp => pp.pos === p.pos && !pp.bankrupt);
+        const myIdx = sameCellPlayers.findIndex(pp => pp.id === p.id);
+        const off = _idolTokOffset(sameCellPlayers.length, myIdx);
         tokenEl.style.transition = 'none';
-        tokenEl.style.left = c.x + 'px';
-        tokenEl.style.top  = c.y + 'px';
-        // 다음 프레임부터 transition 복원
+        tokenEl.style.left = (c.x + off.dx) + 'px';
+        tokenEl.style.top  = (c.y + off.dy) + 'px';
         requestAnimationFrame(() => { tokenEl.style.transition = ''; });
       }
     }
@@ -1142,9 +1156,15 @@ function idolAnimateMoveToken(playerId, fromPos, toPos, onDone) {
     // 토큰 이동 (CSS transition이 처리)
     const c = idolGetCellCenter(pos);
     if (c) {
-      tokenEl.style.left = c.x + 'px';
-      tokenEl.style.top  = c.y + 'px';
-      // 카메라가 이동 중인 토큰을 lerp로 부드럽게 따라가도록
+      let dx = 0, dy = 0;
+      if (isLast && idolState) {
+        const sameCellPlayers = idolState.players.filter(pp => pp.pos === pos && !pp.bankrupt);
+        const myIdx = sameCellPlayers.findIndex(pp => pp.id === playerId);
+        const off = _idolTokOffset(sameCellPlayers.length, myIdx);
+        dx = off.dx; dy = off.dy;
+      }
+      tokenEl.style.left = (c.x + dx) + 'px';
+      tokenEl.style.top  = (c.y + dy) + 'px';
       idolCamFollowPos(c.x, c.y);
     }
 
@@ -1267,7 +1287,7 @@ function idolCamReset() {
   const wrapper = document.getElementById('idolBoardWrapper');
   if (wrapper && typeof ISO_BOARD !== 'undefined') {
     const wW = wrapper.offsetWidth, wH = wrapper.offsetHeight;
-    if (wW > 0 && wH > 0) fitZoom = Math.min(wW / ISO_BOARD.SVG_W, wH / ISO_BOARD.SVG_H) * 1.35;
+    if (wW > 0 && wH > 0) fitZoom = Math.min(wW / ISO_BOARD.SVG_W, wH / ISO_BOARD.SVG_H) * 1.9;
   }
   _idolCam.tx = 0; _idolCam.ty = 0; _idolCam.tzoom = fitZoom;
   _idolCamKick();
