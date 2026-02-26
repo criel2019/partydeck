@@ -3,15 +3,15 @@
 
 // ─── 상수 ────────────────────────────────────────────
 const ISO_BOARD = {
-  TILE_W: 56,   // 다이아몬드 타일 너비
-  TILE_H: 28,   // = TILE_W/2 (2:1 비율)
-  HW:     28,   // 반너비
-  HH:     14,   // 반높이
-  DEPTH:  10,   // 3D 벽 두께 (px)
-  OX:     290,  // SVG 수평 중심 오프셋
-  OY:     10,   // 상단 여백
-  SVG_W:  580,  // SVG 전체 너비
-  SVG_H:  320,  // SVG 전체 높이 (벽 depth 포함)
+  TILE_W: 80,   // 다이아몬드 타일 너비
+  TILE_H: 40,   // = TILE_W/2 (2:1 비율)
+  HW:     40,   // 반너비
+  HH:     20,   // 반높이
+  DEPTH:  14,   // 3D 벽 두께 (px)
+  OX:     450,  // SVG 수평 중심 오프셋
+  OY:     20,   // 상단 여백
+  SVG_W:  900,  // SVG 전체 너비
+  SVG_H:  460,  // SVG 전체 높이 (벽 depth 포함)
 };
 
 // ─── 셀 타입 색상 팔레트 ─────────────────────────────
@@ -126,7 +126,7 @@ function _isoCenterHTML() {
 function _isoCreateCellGroup(idx, c, r, state) {
   const { DEPTH } = ISO_BOARD;
   const isCorner  = _ISO_CORNERS.has(idx);
-  const depth     = isCorner ? 14 : DEPTH;
+  const depth     = isCorner ? 20 : DEPTH;
 
   const vtx  = _isoVtx(c, r);
   const cell = BOARD_CELLS[idx];
@@ -177,7 +177,7 @@ function _isoCreateCellGroup(idx, c, r, state) {
   const cx = (vtx.top.x + vtx.right.x + vtx.bottom.x + vtx.left.x) / 4;
   const cy = (vtx.top.y + vtx.right.y + vtx.bottom.y + vtx.left.y) / 4;
   const iconPath = _isoGetIconPath(idx, cell);
-  const iconSize = isCorner ? 22 : 18;
+  const iconSize = isCorner ? 32 : 26;
   const halfIcon = iconSize / 2;
   if (iconPath) {
     const imgEl = document.createElementNS(ns, 'image');
@@ -190,6 +190,13 @@ function _isoCreateCellGroup(idx, c, r, state) {
     imgEl.setAttribute('preserveAspectRatio', 'xMidYMid slice');
     imgEl.setAttribute('clip-path', 'url(#isoIconClip)');
     imgEl.setAttribute('pointer-events', 'none');
+    // 셀마다 다른 타이밍으로 둥실 애니메이션 (음수 딜레이 = 즉시 다른 위상에서 시작)
+    const floatDur  = (2.4 + (idx % 4) * 0.3).toFixed(1);
+    const floatDel  = `-${((idx * 0.17) % floatDur).toFixed(2)}s`;
+    const glowDel   = `-${((idx * 0.31) % 4.5).toFixed(2)}s`;
+    imgEl.style.animation =
+      `isoIconFloat ${floatDur}s ease-in-out infinite ${floatDel},` +
+      `isoIconGlow 4.5s ease-in-out infinite ${glowDel}`;
     g.appendChild(imgEl);
   }
 

@@ -2369,7 +2369,7 @@
 
 /* ── 전체 화면 배경 ─────────────────────────────────────────── */
 #idolGame {
-  background: linear-gradient(145deg, #f5cdde 0%, #ede0f5 45%, #ddd0f5 75%, #d5cdf0 100%) !important;
+  background: #f5eefb !important;
 }
 
 /* ── 헤더 바 ─────────────────────────────────────────────────── */
@@ -3192,12 +3192,12 @@
    카메라(translate + scale)는 여전히 #idolBoardViewport에 적용됨.
    ================================================================ */
 
-/* 뷰포트 — 고정 580×320, 블록 박스 (flex 제거) */
+/* 뷰포트 — 고정 900×460, 블록 박스 (flex 제거) */
 #idolGame #idolBoardViewport {
   display: block !important;
   position: relative !important;
-  width:  580px !important;
-  height: 320px !important;
+  width:  900px !important;
+  height: 460px !important;
   /* transform-origin 중심 유지 */
   transform-origin: 50% 50%;
 }
@@ -3215,8 +3215,8 @@
   position: absolute !important;
   top:  0 !important;
   left: 0 !important;
-  width:  580px !important;
-  height: 320px !important;
+  width:  900px !important;
+  height: 460px !important;
   inset: unset !important; /* 기존 inset:0 재정의 */
   pointer-events: none;
 }
@@ -3226,10 +3226,20 @@
   display: none !important;
 }
 
-/* ISO 아이콘 이미지 스타일 */
+/* ── ISO 아이콘 — 둥실 + 글로우 이펙트 ─── */
+@keyframes isoIconFloat {
+  0%, 100% { transform: translateY(0px);   }
+  50%       { transform: translateY(-4px);  }
+}
+@keyframes isoIconGlow {
+  0%, 60%, 100% { filter: brightness(1)   drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }
+  80%           { filter: brightness(1.35) drop-shadow(0 0 8px rgba(255,210,120,0.85)); }
+}
+
 #idolGame #idolIsoBoardSvg .iso-icon {
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: auto;
+  transform-box:    fill-box;
+  transform-origin: center;
+  image-rendering:  auto;
 }
 
 /* 플레이어 위치 링 — 반짝임 애니메이션 */
@@ -3252,16 +3262,16 @@
 }
 
 /* ===== ISO 보드 중앙 패널 =====
-   SVG 센터 다이아몬드(left=66,top=38,w=448,h=224) 위에
+   SVG 센터 다이아몬드(left=130,top=60,w=640,h=320) 위에
    clip-path 다이아몬드로 정확히 겹침
    =============================== */
 #idolGame .idol-iso-center-panel,
 #idolGame .idol-iso-center-overlay {
   position: absolute;
-  left:   66px;
-  top:    38px;
-  width:  448px;
-  height: 224px;
+  left:   130px;
+  top:    60px;
+  width:  640px;
+  height: 320px;
   /* 정확히 SVG 센터 다이아몬드와 같은 모양으로 클리핑 */
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   pointer-events: none;
@@ -3282,13 +3292,13 @@
 .iso-cp-row {
   display: flex;
   align-items: center;
-  gap: 5px;
-  width: 200px;
+  gap: 6px;
+  width: 260px;
   background: rgba(20, 10, 30, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 20px;
-  padding: 2px 8px 2px 5px;
-  font-size: 10px;
+  border-radius: 24px;
+  padding: 4px 12px 4px 7px;
+  font-size: 11px;
   color: #f0e8f8;
   transition: background 0.2s;
 }
