@@ -596,6 +596,10 @@ async function createRoom() {
           broadcast({ type: 'player-list', players: state.players });
           updateLobbyUI();
           if(p) showToast(p.name + ' 퇴장');
+          // 게임 중 disconnect → 게임별 정리
+          if (state.isHost && state.selectedGame === 'idol' && typeof idolHandlePlayerDisconnect === 'function') {
+            idolHandlePlayerDisconnect(conn.peer);
+          }
         });
       });
     });

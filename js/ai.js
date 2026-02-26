@@ -1333,10 +1333,14 @@ function aiIdol() {
       break;
     }
 
-    // ── 훈련 결과 확인 (CPU는 즉시 확인) ─────
+    // ── 훈련 결과 확인 (CPU는 결과 표시 후 확인) ─────
     case 'train-result':
       if (idolIsCpuPlayerId(currentP.id) && typeof idolConfirmTrainResult === 'function') {
-        idolConfirmTrainResult();
+        setTimeout(() => {
+          if (idolState?.pendingAction?.type === 'train-result') {
+            idolConfirmTrainResult();
+          }
+        }, 1200);
       }
       break;
 

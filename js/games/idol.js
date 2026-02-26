@@ -1439,6 +1439,52 @@ function idolIsCpuPlayerId(pid) {
   return /^cpu\d+$/.test(String(pid ?? ''));
 }
 
+// ─── 플레이어 연결 끊김 처리 ──────────────────
+// core.js disconnect 핸들러에서 호출됨 (호스트 전용)
+function idolHandlePlayerDisconnect(playerId) {
+  if (!state.isHost || !idolState || !idolState.players) return;
+  const p = idolState.players.find(pl => pl.id === playerId);
+  if (!p || p.bankrupt) return;
+
+  // 보유 샵 전부 반환 (소유권 제거)
+  p.ownedShops.forEach(shopId => {
+    delete idolState.shopOwners[shopId];
+    idolState.shopLevels[shopId] = 0;
+  });
+  p.ownedShops = [];
+  idolCheckBeautyMonopoly();
+
+  // 파산 처리로 이후 턴에서 자동 스킵
+  p.bankrupt = true;
+
+  showToast(`${p.name} 연결 끊김 — 게임에서 제외됩니다`);
+
+  // 남은 활성 플레이어가 1명 이하면 게임 종료
+  const alive = idolState.players.filter(pl => !pl.bankrupt);
+  if (alive.length <= 1) {
+    broadcastIdolState();
+    idolRenderAll();
+    setTimeout(() => idolEndGame(), 1000);
+    return;
+  }
+
+  // 현재 턴이 끊긴 플레이어 차례였으면 즉시 다음 턴으로
+  const currentId = idolState.order[idolState.currentIdx];
+  if (currentId === playerId) {
+    idolState.pendingAction = { type: 'turn-end-auto' };
+    broadcastIdolState();
+    idolRenderAll();
+    setTimeout(() => {
+      if (idolState?.pendingAction?.type === 'turn-end-auto') {
+        idolAdvanceTurn();
+      }
+    }, 800);
+  } else {
+    broadcastIdolState();
+    idolRenderAll();
+  }
+}
+
 function idolResetSelectionState() {
   _idolSelections = {};
   _idolSelectionLocked = false;
