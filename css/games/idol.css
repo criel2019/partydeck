@@ -3251,3 +3251,77 @@
   40%  { opacity: 1; }
   100% { opacity: 0.8; }
 }
+
+/* ===== ISO 보드 중앙 패널 =====
+   SVG 센터 다이아몬드(left=66,top=38,w=448,h=224) 위에
+   clip-path 다이아몬드로 정확히 겹침
+   =============================== */
+#idolGame .idol-iso-center-panel,
+#idolGame .idol-iso-center-overlay {
+  position: absolute;
+  left:   66px;
+  top:    38px;
+  width:  448px;
+  height: 224px;
+  /* 정확히 SVG 센터 다이아몬드와 같은 모양으로 클리핑 */
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* ── 스탯 패널 ─────────────────────────────── */
+#idolGame .idol-iso-center-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 28px 60px; /* 다이아몬드 꼭짓점 근처 여백 */
+}
+
+/* 플레이어 한 줄 */
+.iso-cp-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 200px;
+  background: rgba(20, 10, 30, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 20px;
+  padding: 2px 8px 2px 5px;
+  font-size: 10px;
+  color: #f0e8f8;
+  transition: background 0.2s;
+}
+
+/* 현재 턴 플레이어 강조 */
+.iso-cp-row.is-current {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: var(--cp-accent, #ff6b35);
+  border-width: 1.5px;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 0 8px rgba(255,255,255,0.12);
+}
+
+/* 파산 플레이어 */
+.iso-cp-row.is-bankrupt {
+  opacity: 0.40;
+  text-decoration: line-through;
+}
+
+.iso-cp-rank  { min-width: 22px; font-size: 9px; color: rgba(255,255,255,0.55); text-align: right; }
+.iso-cp-av    { font-size: 12px; line-height: 1; }
+.iso-cp-name  { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+.iso-cp-fame  { font-size: 9px; color: #ffe082; white-space: nowrap; }
+.iso-cp-money { font-size: 9px; color: #a5f3a0; white-space: nowrap; }
+
+/* ── 오버라이드 패널 (이벤트 연출 자리) ─────── */
+#idolGame .idol-iso-center-overlay {
+  background: rgba(255, 255, 255, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #444;
+}
