@@ -179,6 +179,20 @@ function idolInitGame(selections) {
   _idolCam = { x: 0, y: 0, zoom: 1, tx: 0, ty: 0, tzoom: 1 };
   broadcastIdolState();
   idolRenderAll();
+  // ISO 보드 fit-zoom: 레이아웃 완료 후 래퍼에 맞는 줌 계산
+  requestAnimationFrame(() => {
+    const _w = document.getElementById('idolBoardWrapper');
+    if (_w && typeof ISO_BOARD !== 'undefined') {
+      const wW = _w.offsetWidth, wH = _w.offsetHeight;
+      if (wW > 0 && wH > 0) {
+        const fz = Math.min(wW / ISO_BOARD.SVG_W, wH / ISO_BOARD.SVG_H) * 0.9;
+        _idolCam.x = _idolCam.tx = 0;
+        _idolCam.y = _idolCam.ty = 0;
+        _idolCam.zoom = _idolCam.tzoom = fz;
+        _idolCamFlush();
+      }
+    }
+  });
 }
 
 // ─── 브로드캐스트 ─────────────────────────────
@@ -1000,66 +1014,50 @@ function idolRenderHeader() {
 
 // ─── 보드 렌더 ────────────────────────────────
 function idolRenderBoard() {
-  const board = document.getElementById('idolBoard');
-  if (!board) return;
+  const viewport = document.getElementById('idolBoardViewport');
+  if (!viewport) return;
 
-  // 토큰 레이어 먼저 분리 (innerHTML = '' 전에 detach해야 transition 상태 보존)
-  const savedTokenLayer = document.getElementById('idolTokenLayer');
-  if (savedTokenLayer && savedTokenLayer.parentNode === board) {
-    board.removeChild(savedTokenLayer);
+  const existingSvg = document.getElementById('idolIsoBoardSvg');
+  if (existingSvg && typeof idolIsoUpdateCellHighlights === 'function') {
+    // 이미 SVG가 있으면 하이라이트/소유자 점만 갱신 (가벼운 업데이트)
+    idolIsoUpdateCellHighlights(idolState);
+  } else if (typeof idolRenderIsoBoard === 'function') {
+    // 최초 렌더 또는 SVG 소실 시 전체 재빌드
+    idolRenderIsoBoard(viewport, idolState);
   }
 
-  board.innerHTML = '';
-
-  const cellCoords = idolGetCellGridCoords();
-
-  BOARD_CELLS.forEach((cell, idx) => {
-    const [col, row] = cellCoords[idx];
-    const el = idolCreateCellElement(cell, idx);
-    el.style.gridColumn = col + 1;
-    el.style.gridRow    = row + 1;
-    board.appendChild(el);
-  });
-
-  // 중앙 영역
-  const center = document.createElement('div');
-  center.className = 'idol-board-center';
-  center.style.gridColumn = '2 / 10';
-  center.style.gridRow    = '2 / 10';
-  center.innerHTML = idolRenderCenterHTML();
-  board.appendChild(center);
-
-  // 토큰 레이어 복원 / 생성 및 위치 동기화
-  idolSyncTokenLayer(board, savedTokenLayer);
+  // 토큰 레이어 동기화 (viewport 기준)
+  idolSyncTokenLayer(viewport, null);
 }
 
 // ─── 토큰 레이어 관련 ─────────────────────────
 
 // 셀 인덱스 → 보드 로컬 좌표계 중심 {x, y}
-// offsetLeft/Top은 board-local 좌표계이므로 perspective 변환과 무관하게 동작
+// ISO 수학 기반 (DOM 측정 없음, 항상 정확)
 function idolGetCellCenter(cellIdx) {
-  const board = document.getElementById('idolBoard');
-  if (!board) return null;
-  const cell = board.querySelector(`[data-cell-idx="${cellIdx}"]`);
-  if (!cell) return null;
+  if (typeof ISO_BOARD === 'undefined') return null;
+  const coords = idolGetCellGridCoords();
+  const cr = coords[cellIdx];
+  if (!cr) return null;
+  const [c, r] = cr;
   return {
-    x: cell.offsetLeft + cell.offsetWidth  / 2,
-    y: cell.offsetTop  + cell.offsetHeight / 2,
+    x: ISO_BOARD.OX + (c - r)     * ISO_BOARD.HW,
+    y: ISO_BOARD.OY + (c + r + 1) * ISO_BOARD.HH,
   };
 }
 
-// 토큰 레이어 동기화 (애니메이션 중인 토큰은 위치 유지)
-function idolSyncTokenLayer(board, existingLayer) {
-  if (!board) board = document.getElementById('idolBoard');
-  if (!board || !idolState) return;
+// 토큰 레이어 동기화 (ISO 보드: viewport 안에 토큰 레이어 배치)
+function idolSyncTokenLayer(parent, _unused) {
+  if (!parent) parent = document.getElementById('idolBoardViewport');
+  if (!parent || !idolState) return;
 
-  let layer = existingLayer || document.getElementById('idolTokenLayer');
+  let layer = document.getElementById('idolTokenLayer');
   if (!layer) {
     layer = document.createElement('div');
     layer.id = 'idolTokenLayer';
     layer.className = 'idol-token-layer';
   }
-  board.appendChild(layer); // 레이어를 board 맨 뒤에 붙임
+  parent.appendChild(layer); // 뷰포트 맨 뒤에 배치 (SVG 위에 오도록)
 
   // 파산 플레이어 토큰 제거
   layer.querySelectorAll('[data-tok-id]').forEach(el => {
@@ -1116,11 +1114,11 @@ function idolAnimateMoveToken(playerId, fromPos, toPos, onDone) {
   // 칸 수에 따라 스텝 간격 조정 (1칸=250ms, 12칸+=120ms)
   const stepMs = Math.max(120, Math.min(250, 120 + (14 - path.length) * 10));
 
-  const board = document.getElementById('idolBoard');
-  // 레이어가 없으면 먼저 생성
-  if (!document.getElementById('idolTokenLayer')) idolSyncTokenLayer(board, null);
+  // 레이어가 없으면 먼저 생성 (viewport 기준)
+  const viewport = document.getElementById('idolBoardViewport');
+  if (!document.getElementById('idolTokenLayer')) idolSyncTokenLayer(viewport, null);
 
-  const layer = document.getElementById('idolTokenLayer');
+  const layer   = document.getElementById('idolTokenLayer');
   const tokenEl = layer ? layer.querySelector(`[data-tok-id="${playerId}"]`) : null;
 
   if (!tokenEl) { if (onDone) onDone(); return; }
@@ -1132,12 +1130,12 @@ function idolAnimateMoveToken(playerId, fromPos, toPos, onDone) {
     if (step >= path.length) {
       // 완료
       tokenEl.classList.remove('tok-moving', 'tok-bounce', 'tok-land');
-      if (board) board.querySelectorAll('.cell-step-hl').forEach(e => e.classList.remove('cell-step-hl'));
+      if (typeof _idolIsoSetStepHL === 'function') _idolIsoSetStepHL(null);
       if (onDone) onDone();
       return;
     }
 
-    const pos = path[step];
+    const pos    = path[step];
     const isLast = (step === path.length - 1);
 
     // 토큰 이동 (CSS transition이 처리)
@@ -1154,12 +1152,8 @@ function idolAnimateMoveToken(playerId, fromPos, toPos, onDone) {
     void tokenEl.offsetWidth; // reflow
     tokenEl.classList.add(isLast ? 'tok-land' : 'tok-bounce');
 
-    // 현재 밟는 칸 하이라이트
-    if (board) {
-      board.querySelectorAll('.cell-step-hl').forEach(e => e.classList.remove('cell-step-hl'));
-      const cellEl = board.querySelector(`[data-cell-idx="${pos}"]`);
-      if (cellEl) cellEl.classList.add('cell-step-hl');
-    }
+    // ISO 보드: 현재 스텝 칸 하이라이트
+    if (typeof _idolIsoSetStepHL === 'function') _idolIsoSetStepHL(pos);
 
     step++;
     setTimeout(nextStep, stepMs);
@@ -1220,10 +1214,8 @@ function _idolCamKick() {
 
 // 목표 pan 클램프 (보드 범위 밖으로 못 나가게)
 function _idolCamClamp() {
-  const board = document.getElementById('idolBoard');
-  if (!board) return;
-  const bW = board.offsetWidth  || 390;
-  const bH = board.offsetHeight || 390;
+  const bW = (typeof ISO_BOARD !== 'undefined') ? ISO_BOARD.SVG_W : 580;
+  const bH = (typeof ISO_BOARD !== 'undefined') ? ISO_BOARD.SVG_H : 320;
   const maxX = bW * Math.max(0, _idolCam.tzoom - 1) * 0.55 + bW * 0.08;
   const maxY = bH * Math.max(0, _idolCam.tzoom - 1) * 0.55 + bH * 0.08;
   _idolCam.tx = Math.max(-maxX, Math.min(maxX, _idolCam.tx));
@@ -1246,10 +1238,8 @@ function _idolCamZoomAt(newZoom, sx, sy) {
 
 // 보드 로컬 좌표 → 화면 중심으로 lerp 이동
 function idolCamFollowPos(cx, cy) {
-  const board = document.getElementById('idolBoard');
-  if (!board) return;
-  const bW = board.offsetWidth  || 390;
-  const bH = board.offsetHeight || 390;
+  const bW = (typeof ISO_BOARD !== 'undefined') ? ISO_BOARD.SVG_W : 580;
+  const bH = (typeof ISO_BOARD !== 'undefined') ? ISO_BOARD.SVG_H : 320;
   _idolCam.tx = -_idolCam.tzoom * (cx - bW / 2);
   _idolCam.ty = -_idolCam.tzoom * (cy - bH / 2);
   _idolCamClamp();
@@ -1272,7 +1262,13 @@ function idolCamZoomOut() {
   _idolCamKick();
 }
 function idolCamReset() {
-  _idolCam.tx = 0; _idolCam.ty = 0; _idolCam.tzoom = 1;
+  let fitZoom = 1;
+  const wrapper = document.getElementById('idolBoardWrapper');
+  if (wrapper && typeof ISO_BOARD !== 'undefined') {
+    const wW = wrapper.offsetWidth, wH = wrapper.offsetHeight;
+    if (wW > 0 && wH > 0) fitZoom = Math.min(wW / ISO_BOARD.SVG_W, wH / ISO_BOARD.SVG_H) * 0.9;
+  }
+  _idolCam.tx = 0; _idolCam.ty = 0; _idolCam.tzoom = fitZoom;
   _idolCamKick();
 }
 

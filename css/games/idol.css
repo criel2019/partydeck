@@ -3009,3 +3009,245 @@
     background: linear-gradient(180deg, #f5cdde 0%, #ddd0f5 100%) !important;
   }
 }
+
+/* ===================================================================
+   COMMERCIAL VISUAL POLISH  —  에셋 준비 없이 바로 적용 가능한 개선
+   =================================================================== */
+
+/* ─── 1. 보드 3D 그림자 강화 ─────────────────────────────────── */
+#idolGame .idol-board {
+  box-shadow:
+    0 44px 88px rgba(0,0,0,0.52),
+    0 18px 36px rgba(0,0,0,0.32),
+    0 5px 10px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.09) !important;
+}
+
+/* ─── 2. 보드 중앙 — 스포트라이트 분위기 + 에셋 활용 ─────────── */
+#idolGame .idol-board-center {
+  background:
+    url('../../assets/idol/radial-shine.png') center center / 90% auto no-repeat,
+    rgba(255,240,252,0.62) !important;
+  border: 1.5px solid rgba(201,168,76,0.38) !important;
+  overflow: hidden !important;
+}
+
+/* ─── 3. 플레이어 토큰 — 플레이어 컬러 일치 글로우 ───────────── */
+/* 기존 코드가 흰색 테두리로 고정하는 !important를 재오버라이드    */
+#idolGame .idol-board-token {
+  border: 2.5px solid var(--tok-color, #ffd700) !important;
+  background: radial-gradient(
+    circle at 35% 30%,
+    rgba(255,255,255,0.26) 0%,
+    rgba(8,8,20,0.93) 65%
+  ) !important;
+  box-shadow:
+    0 3px 12px rgba(0,0,0,0.85),
+    0 0 18px color-mix(in srgb, var(--tok-color, #ffd700) 65%, transparent),
+    inset 0 1px 0 rgba(255,255,255,0.22) !important;
+}
+
+/* ─── 4. 현재 위치 칸 — 드라마틱한 펄스 ─────────────────────── */
+@keyframes playerHereDrama {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 0 2.5px #c9a84c,
+      0 0 12px rgba(201,168,76,0.65),
+      0 0 24px rgba(201,168,76,0.30);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 3px #ffd700,
+      0 0 24px rgba(201,168,76,1.0),
+      0 0 46px rgba(255,215,0,0.55);
+  }
+}
+#idolGame .idol-cell.player-here {
+  animation: playerHereDrama 1.3s ease-in-out infinite !important;
+  z-index: 4 !important;
+}
+
+/* ─── 5. Primary 버튼 — 게임 최고 CTA 강조 ──────────────────── */
+#idolGame .idol-btn-primary {
+  background: linear-gradient(135deg, #ff5a9e 0%, #d040ac 50%, #aa28c0 100%) !important;
+  box-shadow:
+    0 4px 22px rgba(210,50,170,0.62),
+    0 0 54px rgba(210,50,170,0.30),
+    inset 0 1px 0 rgba(255,255,255,0.34),
+    inset 0 -2px 0 rgba(0,0,0,0.22) !important;
+  animation: primaryBtnPulse 2.4s ease-in-out infinite !important;
+}
+@keyframes primaryBtnPulse {
+  0%, 100% {
+    box-shadow:
+      0 4px 22px rgba(210,50,170,0.62),
+      0 0 54px rgba(210,50,170,0.30),
+      inset 0 1px 0 rgba(255,255,255,0.34),
+      inset 0 -2px 0 rgba(0,0,0,0.22);
+  }
+  50% {
+    box-shadow:
+      0 5px 30px rgba(210,50,170,0.85),
+      0 0 80px rgba(210,50,170,0.48),
+      inset 0 1px 0 rgba(255,255,255,0.34),
+      inset 0 -2px 0 rgba(0,0,0,0.22);
+  }
+}
+
+/* ─── 6. 카테고리 상단 바 — 두꺼운 그라디언트 ───────────────── */
+#idolGame .idol-cell.cell-shop-music::before {
+  height: 6px !important;
+  background: linear-gradient(90deg, #f50057, #e91e63, #ff4081) !important;
+  box-shadow: 0 1px 6px rgba(233,30,99,0.55) !important;
+}
+#idolGame .idol-cell.cell-shop-media::before {
+  height: 6px !important;
+  background: linear-gradient(90deg, #aa00ff, #9c27b0, #ba68c8) !important;
+  box-shadow: 0 1px 6px rgba(156,39,176,0.55) !important;
+}
+#idolGame .idol-cell.cell-shop-beauty::before {
+  height: 6px !important;
+  background: linear-gradient(90deg, #e91e63, #f06292, #ff80ab) !important;
+  box-shadow: 0 1px 6px rgba(240,98,146,0.55) !important;
+}
+#idolGame .idol-cell.cell-shop-event::before {
+  height: 6px !important;
+  background: linear-gradient(90deg, #f57c00, #ff9800, #ffcc02) !important;
+  box-shadow: 0 1px 6px rgba(255,152,0,0.55) !important;
+}
+
+/* ─── 7. 특수 칸 — 카테고리별 펄스 애니메이션 ───────────────── */
+@keyframes startPulse {
+  0%, 100% {
+    border-color: rgba(200,160,40,0.60);
+    box-shadow: 0 0 6px rgba(200,160,40,0.22);
+  }
+  50% {
+    border-color: rgba(200,160,40,1.0);
+    box-shadow: 0 0 18px rgba(200,160,40,0.65), inset 0 0 10px rgba(255,215,0,0.12);
+  }
+}
+#idolGame .idol-cell.cell-start {
+  animation: startPulse 3s ease-in-out infinite !important;
+}
+
+@keyframes gachaPulse {
+  0%, 100% {
+    border-color: rgba(160,80,220,0.50);
+    box-shadow: 0 0 6px rgba(160,80,220,0.18);
+  }
+  50% {
+    border-color: rgba(160,80,220,0.95);
+    box-shadow: 0 0 20px rgba(160,80,220,0.60), inset 0 0 12px rgba(160,80,220,0.12);
+  }
+}
+#idolGame .idol-cell.cell-gacha {
+  animation: gachaPulse 2.2s ease-in-out infinite !important;
+}
+
+@keyframes eventBorderPulse {
+  0%, 100% { border-color: rgba(220,100,170,0.50); }
+  50%       {
+    border-color: rgba(220,100,170,0.92);
+    box-shadow: 0 0 12px rgba(220,100,170,0.38);
+  }
+}
+#idolGame .idol-cell.cell-event {
+  animation: eventBorderPulse 2.8s ease-in-out infinite !important;
+}
+
+/* ─── 8. 이동 하이라이트 칸 강화 ─────────────────────────────── */
+#idolGame .idol-cell.cell-step-hl {
+  background: rgba(255,200,235,0.40) !important;
+  box-shadow: inset 0 0 0 2px #ff5a9e, 0 0 16px rgba(255,90,158,0.70) !important;
+}
+
+/* ─── 9. 아이돌 선택 카드 — 선택 시 확실한 글로우 ───────────── */
+#idolGame .idol-type-card[data-type="luna"].selected {
+  box-shadow: 0 0 24px rgba(255,107,157,0.52), 0 0 52px rgba(255,107,157,0.24) !important;
+}
+#idolGame .idol-type-card[data-type="bibi"].selected {
+  box-shadow: 0 0 24px rgba(255,149,0,0.52),   0 0 52px rgba(255,149,0,0.24)   !important;
+}
+#idolGame .idol-type-card[data-type="jun"].selected {
+  box-shadow: 0 0 24px rgba(192,132,252,0.52), 0 0 52px rgba(192,132,252,0.24) !important;
+}
+#idolGame .idol-type-card[data-type="ai"].selected {
+  box-shadow: 0 0 24px rgba(34,211,238,0.52),  0 0 52px rgba(34,211,238,0.24)  !important;
+}
+
+/* ─── 10. 모바일 배경 — 스테이지 조명 분위기 ────────────────── */
+@media (max-width: 600px) {
+  #idolGame {
+    background:
+      radial-gradient(ellipse 80% 28% at 50% -2%, rgba(255,175,212,0.55) 0%, transparent 58%),
+      radial-gradient(ellipse 55% 38% at 88% 22%, rgba(215,165,255,0.32) 0%, transparent 52%),
+      radial-gradient(ellipse 50% 38% at 12% 68%, rgba(255,155,210,0.28) 0%, transparent 52%),
+      linear-gradient(175deg, #fad2ea 0%, #f0d2f5 48%, #deccf5 100%) !important;
+  }
+}
+
+/* ===== ISO 보드 컨테이너 =====
+   SVG + 토큰 레이어가 모두 #idolBoardViewport 안에 절대 위치로 배치됨.
+   카메라(translate + scale)는 여전히 #idolBoardViewport에 적용됨.
+   ================================================================ */
+
+/* 뷰포트 — 고정 580×320, 블록 박스 (flex 제거) */
+#idolGame #idolBoardViewport {
+  display: block !important;
+  position: relative !important;
+  width:  580px !important;
+  height: 320px !important;
+  /* transform-origin 중심 유지 */
+  transform-origin: 50% 50%;
+}
+
+/* ISO SVG 보드 */
+#idolGame #idolIsoBoardSvg {
+  position: absolute;
+  top:  0;
+  left: 0;
+  display: block;
+}
+
+/* 토큰 레이어 — ISO 보드 위에 정확히 겹침 */
+#idolGame #idolTokenLayer {
+  position: absolute !important;
+  top:  0 !important;
+  left: 0 !important;
+  width:  580px !important;
+  height: 320px !important;
+  inset: unset !important; /* 기존 inset:0 재정의 */
+  pointer-events: none;
+}
+
+/* 기존 CSS 그리드 보드 숨기기 */
+#idolGame .idol-board {
+  display: none !important;
+}
+
+/* ISO 이모지 텍스트 기본 스타일 */
+#idolGame #idolIsoBoardSvg .iso-emoji {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 플레이어 위치 링 — 반짝임 애니메이션 */
+#idolGame #idolIsoBoardSvg .iso-player-here {
+  animation: isoRingPulse 1.6s ease-in-out infinite;
+}
+@keyframes isoRingPulse {
+  0%, 100% { opacity: 0.60; }
+  50%       { opacity: 1.00; }
+}
+
+/* 이동 스텝 하이라이트 — 빠른 점멸 */
+#idolGame #idolIsoBoardSvg .iso-step-hl {
+  animation: isoStepFlash 0.25s ease-in-out;
+}
+@keyframes isoStepFlash {
+  0%   { opacity: 0; }
+  40%  { opacity: 1; }
+  100% { opacity: 0.8; }
+}
