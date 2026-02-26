@@ -60,7 +60,7 @@ function loadPeerJS() {
 }
 
 // ===== CONSTANTS & STATE =====
-const SOLO_GAMES = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil', 'tamagotchi', 'blackjack', 'idol'];
+const SOLO_GAMES = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil', 'tamagotchi', 'blackjack', 'idol', 'kingstagram'];
 const SOLO_ONLY_GAMES = ['pupil', 'tamagotchi']; // 1인 전용 (다인 시 비활성화)
 const AVATARS = ['😎','🤠','👻','🦊','🐱','🐼','🦁','🐸','🎃','🤖','👽','🦄'];
 const SUITS = ['♠','♥','♦','♣'];
@@ -270,6 +270,33 @@ function addDiamond(amount) {
   saveEconomy(_economy);
 }
 
+function getDiamond() {
+  if (!_economy) loadEconomy();
+  return _economy.diamond || 0;
+}
+
+function openDiamondShop() {
+  const ovl = document.getElementById('diamondShopOverlay');
+  if (!ovl) return;
+  const bal = document.getElementById('diamondShopBalance');
+  if (bal) bal.textContent = getDiamond();
+  ovl.style.display = 'block';
+}
+
+function closeDiamondShop() {
+  const ovl = document.getElementById('diamondShopOverlay');
+  if (ovl) ovl.style.display = 'none';
+}
+
+function buyDiamond(amount) {
+  addDiamond(amount);
+  showToast('💎 다이아 ' + amount + '개 획득!');
+  const bal = document.getElementById('diamondShopBalance');
+  if (bal) bal.textContent = getDiamond();
+  const mmDiamond = document.getElementById('mmDiamond');
+  if (mmDiamond) mmDiamond.textContent = getDiamond();
+}
+
 function startEnergyTimer() {
   if (_energyTimerId) clearInterval(_energyTimerId);
   _energyTimerId = setInterval(() => {
@@ -429,10 +456,17 @@ function handleMessage(peerId, raw) {
     'mf-config': () => { mfHandleConfig(msg); },
     'game-selected': () => {
       state.selectedGame = msg.game;
+      // 선택된 게임 디스플레이 업데이트
+      if (typeof _updateSelectedGameDisplay === 'function') _updateSelectedGameDisplay(msg.game);
       // Show mafia lobby area for non-host when mafia is selected
       const mfLobbyArea = document.getElementById('mfLobbyArea');
       if (mfLobbyArea) {
         mfLobbyArea.style.display = msg.game === 'mafia' ? 'block' : 'none';
+      }
+      // Show bet mode lobby area for non-host (poker/sutda/blackjack)
+      const betModeLobbyArea = document.getElementById('betModeLobbyArea');
+      if (betModeLobbyArea) {
+        betModeLobbyArea.style.display = (msg.game === 'poker' || msg.game === 'sutda' || msg.game === 'blackjack') ? 'block' : 'none';
       }
       // Show bombshot lobby area for non-host
       const bsLobbyArea = document.getElementById('bsLobbyArea');
@@ -442,8 +476,8 @@ function handleMessage(peerId, raw) {
       // Update waiting text
       const waitingText = document.getElementById('waitingText');
       if (waitingText) {
-        const gameNames = { poker:'포커', mafia:'마피아', sutda:'섯다', quickdraw:'총잡이', roulette:'룰렛', lottery:'뽑기', ecard:'E카드', yahtzee:'야추', updown:'업다운', truth:'진실게임', fortress:'요새', bombshot:'폭탄주', blackjack:'블랙잭', stairs:'무한계단', tetris:'테트리스', jewel:'보석맞추기', colorchain:'컬러체인' };
-        waitingText.textContent = `${gameNames[msg.game] || msg.game} 게임 대기 중...`;
+        const gameName = GAME_INFO[msg.game]?.name || msg.game;
+        waitingText.textContent = gameName + ' 게임 대기 중...';
       }
     },
     'bs-config': () => {
@@ -558,6 +592,17 @@ function handleMessage(peerId, raw) {
     // Idol Management handlers
     'idol-state': () => { if(typeof renderIdolView === 'function') { showScreen('idolGame'); renderIdolView(msg.state); } },
     'idol-player-select': () => { if(state.isHost && typeof handleIdolMsg === 'function') handleIdolMsg({ ...msg, from: peerId }); },
+    // DrinkPoker handlers
+    'dp-state': () => { showScreen('drinkpokerGame'); renderDPView(msg); },
+    'dp-send': () => { if(state.isHost) processDPSend(peerId, msg.cardIdx, msg.targetId, msg.claim); },
+    'dp-respond': () => { if(state.isHost) processDPRespond(peerId, msg.choice); },
+    'dp-peek-pass': () => { if(state.isHost) processDPPeekPass(peerId, msg.targetId, msg.claim); },
+    'dp-result': () => { if(typeof handleDPResult === 'function') handleDPResult(msg); },
+    // Kingstagram handlers
+    'king-state': () => { showScreen('kingstagramGame'); renderKingView(msg.state || msg); },
+    'king-roll': () => { if(state.isHost) processKingRoll(peerId); },
+    'king-choose': () => { if(state.isHost) processKingChoose(peerId, msg.number); },
+    'king-scoring': () => { if(typeof kingShowScoring === 'function') kingShowScoring(msg.results); },
     'player-left': () => {
       state.players = state.players.filter(p => p.id !== msg.playerId);
       updateLobbyUI();
@@ -605,12 +650,19 @@ async function createRoom() {
     });
 
     document.getElementById('roomCodeDisplay').textContent = state.roomCode;
-    document.getElementById('gameSelectArea').style.display = 'block';
+    document.getElementById('gameCatalogBtn').style.display = 'block';
     document.getElementById('startGameBtn').style.display = 'none';
     document.getElementById('waitingMsg').style.display = 'none';
     showScreen('lobby');
     updateLobbyUI();
     updateConnectionStatus('connected', '호스트 (방 코드: ' + state.roomCode + ')');
+    // 기본 게임(poker) 선택 표시 + 로비 설정 영역 초기화
+    state.selectedGame = 'poker';
+    _updateSelectedGameDisplay('poker');
+    // Show bet mode for default poker
+    var betModeLobbyArea = document.getElementById('betModeLobbyArea');
+    if (betModeLobbyArea) betModeLobbyArea.style.display = 'block';
+
     showToast('방이 만들어졌습니다! 코드: ' + state.roomCode);
 
     setTimeout(() => {
@@ -642,7 +694,7 @@ async function joinRoom() {
 
     // 로비 화면 먼저 표시 (연결 상태 표시용)
     document.getElementById('roomCodeDisplay').textContent = code;
-    document.getElementById('gameSelectArea').style.display = 'none';
+    document.getElementById('gameCatalogBtn').style.display = 'block';
     document.getElementById('startGameBtn').style.display = 'none';
     document.getElementById('waitingMsg').style.display = 'block';
     document.getElementById('waitingText').textContent = '호스트에 연결 중...';
@@ -735,6 +787,7 @@ function leaveLobby() {
   state.players = [];
   state.poker = null;
   state.mafia = null;
+  delete state._catalogPendingGame;
   _cpuCount = 0;
   if(typeof cleanupAI === 'function') cleanupAI();
   showScreen('mainMenu');
@@ -770,6 +823,8 @@ function returnToLobby() {
   if (typeof ccCleanup === 'function') ccCleanup();
   if (typeof slkCleanup === 'function') slkCleanup();
   if (typeof closeBJCleanup === 'function') closeBJCleanup();
+  if (typeof closeDPCleanup === 'function') closeDPCleanup();
+  if (typeof closeKingstagramCleanup === 'function') closeKingstagramCleanup();
   if (typeof destroyIdolDiceThree === 'function') destroyIdolDiceThree();
   if (typeof idolHideDiceOverlay === 'function') idolHideDiceOverlay();
   // Clean up AI timers (lobby CPU mode)
@@ -802,13 +857,15 @@ function restartCurrentGame() {
   else if(g === 'updown') startUpDown();
   else if(g === 'slinkystairs') { if(typeof slkCleanup==='function') slkCleanup(); startSlinkyStairs(); }
   else if(g === 'pupil') { pplCleanup(); startPupil(); }
+  else if(g === 'drinkpoker') { if(typeof closeDPCleanup==='function') closeDPCleanup(); startDrinkPoker(); }
+  else if(g === 'kingstagram') { if(typeof closeKingstagramCleanup==='function') closeKingstagramCleanup(); startKingstagram(); }
   else { showToast('이 게임은 자동 재시작됩니다'); }
 }
 
 // ===== HAND RANKING OVERLAY =====
 const HAND_RANKINGS = {
   poker: {
-    title: '🃏 포커 족보',
+    title: '🃏 홀덤 족보',
     content: `<div style="display:flex;flex-direction:column;gap:6px;">
 <div><b style="color:#ffd700;">1. 로얄 플러시</b> — A K Q J 10 같은 무늬</div>
 <div><b style="color:#e0e0e0;">2. 스트레이트 플러시</b> — 연속 5장 같은 무늬</div>
@@ -841,6 +898,72 @@ const HAND_RANKINGS = {
 <div><b>망통 (0끗)</b> — 최하</div>
 <div style="font-size:11px;color:#aaa;margin-top:6px;">※ 같은 끗: 두 수의 곱이 큰 쪽 승리 (비김 없음)</div>
 <div style="font-size:11px;color:#aaa;">※ 콜 받는 사람이 패를 먼저 공개</div>
+</div>`
+  },
+  updown: {
+    title: '🃏 업다운 규칙',
+    content: `<div style="display:flex;flex-direction:column;gap:6px;">
+<div style="color:#ffd700;font-weight:700;">기본 규칙</div>
+<div>현재 카드를 보고 다음 카드가 <b>높을지(UP)</b> <b>낮을지(DOWN)</b> 맞추세요.</div>
+<div>맞추면 다음 플레이어 차례, 틀리면 <b>벌칙!</b></div>
+<div style="color:#ff6b35;font-weight:700;margin-top:8px;">특수 카드</div>
+<div><b>J / Q</b> — 틀려도 벌칙 없음! 대신 다른 플레이어를 <b>지목</b>하여 그 사람에게 벌칙 가능</div>
+<div><b>K</b> — 틀려도 벌칙 없음! 원하는 플레이어에게 <b>강제 벌칙</b> 부여</div>
+<div style="color:#4fc3f7;font-weight:700;margin-top:8px;">벌칙 시스템</div>
+<div>플레이어들이 직접 벌칙을 추가할 수 있어요</div>
+<div>벌칙이 없으면 랜덤 기본 벌칙이 적용됩니다</div>
+<div style="font-size:11px;color:#aaa;margin-top:6px;">※ 같은 숫자가 나오면 틀린 것으로 처리</div>
+</div>`
+  },
+  truth: {
+    title: '⭕ 진실게임 규칙',
+    content: `<div style="display:flex;flex-direction:column;gap:6px;">
+<div style="color:#ffd700;font-weight:700;">진행 방식</div>
+<div><b>1. 질문</b> — 질문자가 전체에게 Yes/No 질문을 합니다</div>
+<div><b>2. 투표</b> — 모든 플레이어가 ⭕(예) 또는 ✕(아니오)로 비밀 투표</div>
+<div><b>3. 결과</b> — 투표 결과가 공개됩니다 (누가 뭘 했는지 공개!)</div>
+<div style="color:#ff6b35;font-weight:700;margin-top:8px;">팁</div>
+<div>질문자는 돌아가며 바뀝니다</div>
+<div>민감한 질문으로 분위기를 뜨겁게!</div>
+<div style="font-size:11px;color:#aaa;margin-top:6px;">예시: "여기서 OO를 이성적으로 좋아하는 사람이 있다?"</div>
+</div>`
+  },
+  bombshot: {
+    title: '🍺 폭탄주 규칙',
+    content: `<div style="display:flex;flex-direction:column;gap:6px;">
+<div style="color:#ffd700;font-weight:700;">기본 규칙</div>
+<div>매 라운드 <b>지정 음료</b>(맥주/소주/위스키)가 정해집니다</div>
+<div>카드를 제출해 지정 음료 카드를 내세요</div>
+<div style="color:#ff6b35;font-weight:700;margin-top:8px;">블러프</div>
+<div>지정 음료가 없으면 <b>다른 카드로 거짓말</b> 가능!</div>
+<div>다음 차례 플레이어가 <b>"라이어콜"</b>로 거짓말 의심 가능</div>
+<div style="color:#4fc3f7;font-weight:700;margin-top:8px;">라이어콜 결과</div>
+<div>거짓말이 맞으면 → 제출자가 <b>룰렛</b></div>
+<div>거짓말이 아니었으면 → 콜한 사람이 <b>룰렛</b></div>
+<div style="color:#e040fb;font-weight:700;margin-top:8px;">룰렛</div>
+<div>🍺 <b>폭탄주</b> — 누적된 술 모두 마시기!</div>
+<div>✅ <b>세이프</b> — 무사 통과</div>
+<div>🫗 <b>벌칙</b> — 잔 1잔 벌칙</div>
+<div style="font-size:11px;color:#aaa;margin-top:6px;">💧 탄산수 = 조커 (어떤 술로든 사용 가능)</div>
+</div>`
+  },
+  blackjack: {
+    title: '🃏 블랙잭 규칙',
+    content: `<div style="display:flex;flex-direction:column;gap:6px;">
+<div style="color:#ffd700;font-weight:700;">카드 값</div>
+<div><b>2~10</b> — 숫자 그대로</div>
+<div><b>J, Q, K</b> — 10으로 계산</div>
+<div><b>A</b> — 1 또는 11 (유리한 쪽 자동 선택)</div>
+<div style="color:#ff6b35;font-weight:700;margin-top:8px;">목표</div>
+<div>카드 합을 <b>21에 최대한 가깝게</b> 만들되, 21을 넘으면 <b>버스트(패배)</b>!</div>
+<div style="color:#4fc3f7;font-weight:700;margin-top:8px;">플레이어 액션</div>
+<div><b>히트</b> — 카드 1장 추가</div>
+<div><b>스탠드</b> — 현재 합으로 승부</div>
+<div><b>더블</b> — 베팅 2배 + 카드 1장만 받기 (첫 턴만)</div>
+<div style="color:#e040fb;font-weight:700;margin-top:8px;">딜러 규칙</div>
+<div>딜러는 16 이하면 무조건 히트, 17 이상이면 스탠드</div>
+<div>딜러보다 21에 가까우면 승리! (배팅금 2배 획득)</div>
+<div style="font-size:11px;color:#aaa;margin-top:6px;">※ 블랙잭(A+10값) = 배팅금 2.5배!</div>
 </div>`
   },
   ecard: {
@@ -912,15 +1035,14 @@ function updateLobbyUI() {
     if(cpuCountEl) cpuCountEl.textContent = _cpuCount;
   }
 
-  // Solo-only games: disable when >1 player
-  document.querySelectorAll('.game-option').forEach(el => {
+  // Solo-only games: disable when >1 player (catalog overlay)
+  document.querySelectorAll('#catalogGameOptions .game-option').forEach(el => {
     if (SOLO_ONLY_GAMES.includes(el.dataset.game)) {
       if (state.players.length > 1) {
         el.classList.add('solo-only-disabled');
         if (el.classList.contains('selected')) {
           el.classList.remove('selected');
-          // Auto-select first non-disabled game
-          const first = document.querySelector('.game-option:not(.solo-only-disabled)');
+          const first = document.querySelector('#catalogGameOptions .game-option:not(.solo-only-disabled):not(.disabled)');
           if (first) { first.classList.add('selected'); state.selectedGame = first.dataset.game; }
         }
       } else {
@@ -975,59 +1097,123 @@ function removeCPU() {
 
 function selectGame(el) {
   if(el.classList.contains('disabled') || el.classList.contains('solo-only-disabled')) return;
-  document.querySelectorAll('.game-option').forEach(o => o.classList.remove('selected'));
+  document.querySelectorAll('#catalogGameOptions .game-option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
-  state.selectedGame = el.dataset.game;
 
-  // Show/hide mafia lobby area (setup button + config display)
-  const mfLobbyArea = document.getElementById('mfLobbyArea');
-  const mfSetupBtn = document.getElementById('mfSetupBtn');
-  const cfgDisplay = document.getElementById('mfConfigDisplay');
-  if (mfLobbyArea) {
-    mfLobbyArea.style.display = state.selectedGame === 'mafia' ? 'block' : 'none';
-  }
-  if (mfSetupBtn) {
-    mfSetupBtn.style.display = (state.selectedGame === 'mafia' && state.isHost) ? 'block' : 'none';
-  }
-  if (cfgDisplay) {
-    cfgDisplay.style.display = (state.selectedGame === 'mafia' && typeof mfSetupDone !== 'undefined' && mfSetupDone) ? 'block' : 'none';
-  }
+  var game = el.dataset.game;
 
-  // Show/hide bet mode lobby area (poker/sutda/blackjack)
-  const betModeLobbyArea = document.getElementById('betModeLobbyArea');
-  if (betModeLobbyArea) {
-    betModeLobbyArea.style.display = (state.selectedGame === 'poker' || state.selectedGame === 'sutda' || state.selectedGame === 'blackjack') ? 'block' : 'none';
-  }
+  // Update game info panel (both host and non-host can see info)
+  updateGameInfoPanel(game);
 
-  // Show/hide bombshot lobby area
-  const bsLobbyArea = document.getElementById('bsLobbyArea');
-  const bsSetupBtn = document.getElementById('bsSetupBtn');
-  const bsCfgDisplay = document.getElementById('bsConfigDisplay');
-  if (bsLobbyArea) {
-    bsLobbyArea.style.display = state.selectedGame === 'bombshot' ? 'block' : 'none';
-  }
-  if (bsSetupBtn) {
-    bsSetupBtn.style.display = (state.selectedGame === 'bombshot' && state.isHost) ? 'block' : 'none';
-  }
-  if (bsCfgDisplay) {
-    bsCfgDisplay.style.display = (state.selectedGame === 'bombshot' && typeof _bsSetupDone !== 'undefined' && _bsSetupDone) ? 'block' : 'none';
-  }
-
-  // Update game info panel + start button visibility
-  updateGameInfoPanel(state.selectedGame);
-  if(state.isHost) {
-    const _minP = SOLO_GAMES.includes(state.selectedGame) ? 1 : 2;
-    document.getElementById('startGameBtn').style.display = state.players.length >= _minP ? 'block' : 'none';
-  }
-
-  // Broadcast game selection so non-host players can see mafia config
   if (state.isHost) {
-    broadcast({ type: 'game-selected', game: state.selectedGame });
+    // 호스트: "이 게임 선택" 버튼 표시
+    var selectBtn = document.getElementById('catalogSelectBtn');
+    if (selectBtn) selectBtn.style.display = 'block';
+    var readOnlyMsg = document.getElementById('catalogReadOnlyMsg');
+    if (readOnlyMsg) readOnlyMsg.style.display = 'none';
+    // 카탈로그 내에서 임시 선택 저장 (확정은 confirmGameFromCatalog에서)
+    state._catalogPendingGame = game;
+  } else {
+    // 비호스트: 읽기 전용 브라우징
+    var readOnlyMsg2 = document.getElementById('catalogReadOnlyMsg');
+    if (readOnlyMsg2) readOnlyMsg2.style.display = 'block';
+    var selectBtn2 = document.getElementById('catalogSelectBtn');
+    if (selectBtn2) selectBtn2.style.display = 'none';
   }
 }
 
+function openGameCatalog() {
+  var ovl = document.getElementById('gameCatalogOverlay');
+  if (!ovl) return;
+
+  // 현재 선택된 게임 하이라이트
+  document.querySelectorAll('#catalogGameOptions .game-option').forEach(function(o) {
+    o.classList.toggle('selected', o.dataset.game === state.selectedGame);
+  });
+
+  // Solo-only 비활성화 처리
+  document.querySelectorAll('#catalogGameOptions .game-option').forEach(function(el) {
+    if (SOLO_ONLY_GAMES.includes(el.dataset.game)) {
+      if (state.players.length > 1) {
+        el.classList.add('solo-only-disabled');
+      } else {
+        el.classList.remove('solo-only-disabled');
+      }
+    }
+  });
+
+  // 호스트/비호스트 구분
+  var selectBtn = document.getElementById('catalogSelectBtn');
+  var readOnlyMsg = document.getElementById('catalogReadOnlyMsg');
+  if (state.isHost) {
+    if (selectBtn) selectBtn.style.display = 'block';
+    if (readOnlyMsg) readOnlyMsg.style.display = 'none';
+    state._catalogPendingGame = state.selectedGame;
+  } else {
+    if (selectBtn) selectBtn.style.display = 'none';
+    if (readOnlyMsg) readOnlyMsg.style.display = 'block';
+  }
+
+  updateGameInfoPanel(state.selectedGame);
+  ovl.style.display = 'block';
+}
+
+function closeGameCatalog() {
+  var ovl = document.getElementById('gameCatalogOverlay');
+  if (ovl) ovl.style.display = 'none';
+}
+
+function confirmGameFromCatalog() {
+  if (!state.isHost) return;
+  var game = state._catalogPendingGame || state.selectedGame;
+  state.selectedGame = game;
+
+  // 로비에 선택된 게임 표시
+  _updateSelectedGameDisplay(game);
+
+  // Show/hide mafia lobby area
+  var mfLobbyArea = document.getElementById('mfLobbyArea');
+  var mfSetupBtn = document.getElementById('mfSetupBtn');
+  var cfgDisplay = document.getElementById('mfConfigDisplay');
+  if (mfLobbyArea) mfLobbyArea.style.display = game === 'mafia' ? 'block' : 'none';
+  if (mfSetupBtn) mfSetupBtn.style.display = (game === 'mafia' && state.isHost) ? 'block' : 'none';
+  if (cfgDisplay) cfgDisplay.style.display = (game === 'mafia' && typeof mfSetupDone !== 'undefined' && mfSetupDone) ? 'block' : 'none';
+
+  // Show/hide bet mode lobby area
+  var betModeLobbyArea = document.getElementById('betModeLobbyArea');
+  if (betModeLobbyArea) betModeLobbyArea.style.display = (game === 'poker' || game === 'sutda' || game === 'blackjack') ? 'block' : 'none';
+
+  // Show/hide bombshot lobby area
+  var bsLobbyArea = document.getElementById('bsLobbyArea');
+  var bsSetupBtn = document.getElementById('bsSetupBtn');
+  var bsCfgDisplay = document.getElementById('bsConfigDisplay');
+  if (bsLobbyArea) bsLobbyArea.style.display = game === 'bombshot' ? 'block' : 'none';
+  if (bsSetupBtn) bsSetupBtn.style.display = (game === 'bombshot' && state.isHost) ? 'block' : 'none';
+  if (bsCfgDisplay) bsCfgDisplay.style.display = (game === 'bombshot' && typeof _bsSetupDone !== 'undefined' && _bsSetupDone) ? 'block' : 'none';
+
+  // Start button visibility
+  var _minP = SOLO_GAMES.includes(game) ? 1 : 2;
+  document.getElementById('startGameBtn').style.display = state.players.length >= _minP ? 'block' : 'none';
+
+  // Broadcast
+  broadcast({ type: 'game-selected', game: game });
+
+  closeGameCatalog();
+  showToast((GAME_INFO[game]?.emoji || '') + ' ' + (GAME_INFO[game]?.name || game) + ' 선택!');
+}
+
+function _updateSelectedGameDisplay(game) {
+  var info = GAME_INFO[game];
+  var disp = document.getElementById('selectedGameDisplay');
+  if (!disp || !info) return;
+  disp.style.display = 'block';
+  document.getElementById('selectedGameEmoji').textContent = info.emoji;
+  document.getElementById('selectedGameName').textContent = info.name;
+  document.getElementById('selectedGameType').textContent = info.type;
+}
+
 const GAME_INFO = {
-  poker:    { emoji:'🃏', name:'포커', desc:'텍사스 홀덤 포커. 2장의 개인 카드와 5장의 공용 카드로 최강의 족보를 만드세요.', players:'2~14명', time:'10~30분', type:'카드' },
+  poker:    { emoji:'🃏', name:'홀덤', desc:'텍사스 홀덤. 2장의 개인 카드와 5장의 공용 카드로 최강의 족보를 만드세요.', players:'2~14명', time:'10~30분', type:'카드' },
   mafia:    { emoji:'🕵️', name:'마피아', desc:'마피아와 시민의 두뇌 싸움. 밤에 암살, 낮에 투표로 적을 찾아내세요.', players:'3~14명', time:'15~45분', type:'추리' },
   sutda:    { emoji:'🎴', name:'섯다', desc:'화투 2장으로 승부! 땡, 광땡, 끗 등 다양한 족보로 베팅 대결.', players:'2~6명', time:'5~10분', type:'카드' },
   quickdraw:{ emoji:'🤠', name:'총잡이', desc:'서부 결투! "Fire!" 신호에 가장 빠르게 반응하는 사람이 승리.', players:'2~14명', time:'2~5분', type:'반응속도' },
@@ -1047,7 +1233,9 @@ const GAME_INFO = {
   slinkystairs:{ emoji:'🌀', name:'슬링키 스테어즈', desc:'무너지는 계단 위에서 슬링키를 조종해 살아남으세요! 좌우 타이밍이 핵심.', players:'1~14명', time:'3~10분', type:'아케이드' },
   pupil:{ emoji:'👁', name:'동공 탐지기', desc:'카메라로 동공 반응을 분석하여 진술의 신뢰도를 측정합니다. 혼자서만 플레이 가능!', players:'1명 전용', time:'5~10분', type:'분석' },
   tamagotchi:{ emoji:'🐉', name:'다마고치', desc:'나만의 포트리스 펫을 키워보세요! 먹이, 돌봄, 훈련으로 성장시키고 진화하세요.', players:'1명 전용', time:'상시', type:'육성' },
-  idol:      { emoji:'🎤', name:'아이돌 매니지먼트', desc:'블루마블 보드판에서 내 아이돌을 스타로 키우는 전략 보드게임! 샵을 사고, 훈련하고, 가챠로 역전을 노려라.', players:'1~4명', time:'45~60분', type:'보드게임' }
+  idol:      { emoji:'🎤', name:'아이돌 매니지먼트', desc:'블루마블 보드판에서 내 아이돌을 스타로 키우는 전략 보드게임! 샵을 사고, 훈련하고, 가챠로 역전을 노려라.', players:'1~4명', time:'45~60분', type:'보드게임' },
+  drinkpoker:{ emoji:'🍶', name:'술피하기 포커', desc:'바퀴벌레 포커 변형! 술 카드를 상대에게 보내고, 거짓말로 속여라. 같은 종류 5장이 모이면 패배!', players:'2~6명', time:'10~20분', type:'블러프' },
+  kingstagram:{ emoji:'👑', name:'킹스타그램', desc:'주사위를 굴려 6개 땅에 배치하고, 팔로워 카드를 획득하라! 4라운드 후 최다 팔로워가 승리.', players:'1~6명', time:'15~25분', type:'주사위' }
 };
 
 function updateGameInfoPanel(game) {
@@ -1091,6 +1279,8 @@ function startGame() {
   else if(g === 'pupil') { if(state.players.length > 1) { showToast('👁 동공 탐지기는 1인 전용입니다'); return; } startPupil(); }
   else if(g === 'tamagotchi') { if(state.players.length > 1) { showToast('🐉 다마고치는 1인 전용입니다'); return; } startTamagotchi(); }
   else if(g === 'idol') startIdolManagement();
+  else if(g === 'drinkpoker') startDrinkPoker();
+  else if(g === 'kingstagram') startKingstagram();
   else showToast('준비 중인 게임입니다');
 }
 
@@ -1178,6 +1368,14 @@ function handleGameStart(msg) {
     if(msg.state) renderIdolView(msg.state);
     else if(typeof idolShowSelectPhase === 'function') idolShowSelectPhase();
   }
+  else if(msg.game === 'drinkpoker') {
+    showScreen('drinkpokerGame');
+    if(msg.state) renderDPView(msg.state);
+  }
+  else if(msg.game === 'kingstagram') {
+    showScreen('kingstagramGame');
+    if(msg.state) renderKingView(msg.state);
+  }
 }
 
 // ===== DEBUG / PREVIEW MODE =====
@@ -1228,7 +1426,9 @@ function debugGame(game) {
     colorchain: 'colorchainGame',
     slinkystairs: 'slinkyStairsGame',
     pupil: 'pupilGame',
-    tamagotchi: 'tamagotchiGame'
+    tamagotchi: 'tamagotchiGame',
+    drinkpoker: 'drinkpokerGame',
+    kingstagram: 'kingstagramGame'
   };
 
   if(game === 'pupil') {
@@ -1249,6 +1449,25 @@ function debugGame(game) {
       { id: 'debug-cpu1', name: 'CPU 루나', avatar: '🎤' },
     ];
     startIdolManagement();
+    return;
+  }
+
+  if(game === 'drinkpoker') {
+    state.players = [
+      { id: 'debug-me', name: '테스터', avatar: '😎' },
+      { id: 'debug-bot', name: '봇', avatar: '🤖' },
+      { id: 'debug-bot2', name: '봇2', avatar: '👾' },
+    ];
+    startDrinkPoker();
+    return;
+  }
+
+  if(game === 'kingstagram') {
+    state.players = [
+      { id: 'debug-me', name: '테스터', avatar: '😎' },
+      { id: 'debug-bot', name: '봇', avatar: '🤖' },
+    ];
+    startKingstagram();
     return;
   }
 

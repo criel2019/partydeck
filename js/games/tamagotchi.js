@@ -1008,7 +1008,9 @@ function tamaShowInfo(){
     h+='<pre class="tama-info-evo">'+tamaEvoCondText()+'</pre>';
   }
   h+='</div>';
-  h+='<div style="text-align:center;margin-top:16px"><button class="tama-reset-btn" onclick="tamaConfirmReset()">펫 초기화</button></div>';
+  var diamondCount = typeof getDiamond === 'function' ? getDiamond() : 0;
+  h+='<div style="text-align:center;margin-top:16px;font-size:12px;color:#aaa;">💎 보유 다이아: <b style="color:#b388ff;">'+diamondCount+'</b>개</div>';
+  h+='<div style="text-align:center;margin-top:8px"><button class="tama-reset-btn" onclick="tamaConfirmReset()">펫 초기화 (💎 1개)</button></div>';
   ovl.innerHTML=h;ovl.classList.add('active');
 }
 
@@ -1017,7 +1019,17 @@ function tamaDismissOffline(){
 }
 
 function tamaConfirmReset(){
-  if(confirm('정말 펫을 초기화하시겠습니까? 모든 데이터가 삭제됩니다.')){
+  var cost = 1;
+  var current = typeof getDiamond === 'function' ? getDiamond() : 0;
+  if(current < cost){
+    showToast('💎 다이아 ' + cost + '개가 필요합니다 (보유: ' + current + '개)');
+    return;
+  }
+  if(confirm('💎 다이아 ' + cost + '개를 소모하여 펫을 초기화하시겠습니까?\n모든 데이터가 삭제됩니다.')){
+    if(typeof addDiamond === 'function') addDiamond(-cost);
+    var mmDiamond = document.getElementById('mmDiamond');
+    if(mmDiamond && typeof getDiamond === 'function') mmDiamond.textContent = getDiamond();
+    showToast('💎 다이아 ' + cost + '개 사용! 펫 초기화 완료');
     tamaCleanup();tamaReset();startTamagotchi();
   }
 }

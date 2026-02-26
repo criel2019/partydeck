@@ -31,6 +31,8 @@
 <link rel="stylesheet" href="css/games/blackjack.css">
 <link rel="stylesheet" href="css/games/tamagotchi.css">
 <link rel="stylesheet" href="css/games/idol.css">
+<link rel="stylesheet" href="css/games/drinkpoker.css">
+<link rel="stylesheet" href="css/games/kingstagram.css">
 <link rel="stylesheet" href="css/games/mobile.css">
 </head>
 <body>
@@ -65,7 +67,7 @@
     <div class="economy-bar">
       <div class="eco-item eco-gold"><span class="eco-icon">🪙</span><span class="eco-value" id="mmGold">0</span></div>
       <div class="eco-item eco-energy"><span class="eco-icon">⚡</span><span class="eco-value" id="mmEnergy">0/10</span><span class="eco-countdown" id="energyCountdown">MAX</span></div>
-      <div class="eco-item eco-diamond"><span class="eco-icon">💎</span><span class="eco-value" id="mmDiamond">0</span></div>
+      <div class="eco-item eco-diamond" onclick="openDiamondShop()" style="cursor:pointer;"><span class="eco-icon">💎</span><span class="eco-value" id="mmDiamond">0</span></div>
     </div>
   </div>
 
@@ -87,7 +89,7 @@
   <div class="debug-game-selector" id="debugGameSelector" style="display:none;">
     <div class="debug-selector-title">게임 선택 (1인 미리보기)</div>
     <div class="debug-game-grid">
-      <button class="debug-game-btn" onclick="debugGame('poker')">🃏 포커</button>
+      <button class="debug-game-btn" onclick="debugGame('poker')">🃏 홀덤</button>
       <button class="debug-game-btn" onclick="debugGame('mafia')">🕵️ 마피아</button>
       <button class="debug-game-btn" onclick="debugGame('sutda')">🎴 섯다</button>
       <button class="debug-game-btn" onclick="debugGame('quickdraw')">🤠 총잡이</button>
@@ -107,6 +109,8 @@
       <button class="debug-game-btn" onclick="debugGame('blackjack')">🃏 블랙잭</button>
       <button class="debug-game-btn" onclick="debugGame('tamagotchi')">🐉 다마고치</button>
       <button class="debug-game-btn" onclick="debugGame('idol')">🎤 아이돌</button>
+      <button class="debug-game-btn" onclick="debugGame('drinkpoker')">🍶 술피하기</button>
+      <button class="debug-game-btn" onclick="debugGame('kingstagram')">👑 킹스타그램</button>
     </div>
   </div>
 
@@ -144,6 +148,8 @@
       <button class="practice-game-btn" onclick="startPracticeGame('colorchain')">🔗 컬러체인</button>
       <button class="practice-game-btn" onclick="startPracticeGame('slinkystairs')">🌀 슬링키</button>
       <button class="practice-game-btn" onclick="startPracticeGame('idol')">🎤 아이돌</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('drinkpoker')">🍶 술피하기</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('kingstagram')">👑 킹스타그램</button>
     </div>
   </div>
 </div>
@@ -184,82 +190,11 @@
     </div>
   </div>
 
-  <div class="game-select" id="gameSelectArea" style="display:none;">
-    <div class="game-select-title">게임 선택 (호스트만 가능)</div>
-    <div class="game-options">
-      <div class="game-option selected" data-game="poker" onclick="selectGame(this)">
-        <span class="game-emoji">🃏</span>포커
-      </div>
-      <div class="game-option" data-game="mafia" onclick="selectGame(this)">
-        <span class="game-emoji">🕵️</span>마피아
-      </div>
-      <div class="game-option" data-game="sutda" onclick="selectGame(this)">
-        <span class="game-emoji">🎴</span>섯다
-      </div>
-      <div class="game-option" data-game="quickdraw" onclick="selectGame(this)">
-        <span class="game-emoji">🤠</span>총잡이
-      </div>
-      <div class="game-option" data-game="roulette" onclick="selectGame(this)">
-        <span class="game-emoji">🔫</span>룰렛
-      </div>
-      <div class="game-option" data-game="lottery" onclick="selectGame(this)">
-        <span class="game-emoji">🎰</span>뽑기
-      </div>
-      <div class="game-option" data-game="ecard" onclick="selectGame(this)">
-        <span class="game-emoji">👑</span>E카드
-      </div>
-      <div class="game-option" data-game="yahtzee" onclick="selectGame(this)">
-        <span class="game-emoji">🎲</span>야추
-      </div>
-      <div class="game-option" data-game="updown" onclick="selectGame(this)">
-        <span class="game-emoji">🃏</span>업다운
-      </div>
-      <div class="game-option" data-game="truth" onclick="selectGame(this)">
-        <span class="game-emoji">⭕</span>진실게임
-      </div>
-      <div class="game-option" data-game="fortress" onclick="selectGame(this)">
-        <span class="game-emoji">🏰</span>요새
-      </div>
-      <div class="game-option" data-game="bombshot" onclick="selectGame(this)">
-        <span class="game-emoji">🍺</span>폭탄주
-      </div>
-      <div class="game-option" data-game="blackjack" onclick="selectGame(this)">
-        <span class="game-emoji">🃏</span>블랙잭
-      </div>
-      <div class="game-option disabled" data-game="stairs" onclick="selectGame(this)">
-        <span class="game-emoji">🪜</span>무한계단<span class="game-disabled-tag">저작권 검토중</span>
-      </div>
-      <div class="game-option disabled" data-game="tetris" onclick="selectGame(this)">
-        <span class="game-emoji">🧩</span>테트리스<span class="game-disabled-tag">저작권 검토중</span>
-      </div>
-      <div class="game-option" data-game="jewel" onclick="selectGame(this)">
-        <span class="game-emoji">💎</span>보석맞추기
-      </div>
-      <div class="game-option" data-game="colorchain" onclick="selectGame(this)">
-        <span class="game-emoji">🔗</span>컬러체인
-      </div>
-      <div class="game-option" data-game="slinkystairs" onclick="selectGame(this)">
-        <span class="game-emoji">🌀</span>슬링키
-      </div>
-      <div class="game-option" data-game="pupil" onclick="selectGame(this)">
-        <span class="game-emoji">👁</span>동공탐지
-      </div>
-      <div class="game-option" data-game="idol" onclick="selectGame(this)">
-        <span class="game-emoji">🎤</span>아이돌
-      </div>
-    </div>
-    <div class="game-info-panel" id="gameInfoPanel" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <span id="gameInfoEmoji" style="font-size:24px;"></span>
-        <span id="gameInfoName" style="font-size:16px;font-weight:700;color:#fff;"></span>
-      </div>
-      <div id="gameInfoDesc" style="font-size:12px;color:#aaa;line-height:1.5;margin-bottom:6px;"></div>
-      <div style="display:flex;gap:12px;font-size:11px;color:#888;">
-        <span id="gameInfoPlayers"></span>
-        <span id="gameInfoTime"></span>
-        <span id="gameInfoType"></span>
-      </div>
-    </div>
+  <button class="btn btn-secondary" id="gameCatalogBtn" style="display:none;width:100%;margin-top:8px;" onclick="openGameCatalog()">🎮 게임 목록 보기</button>
+  <div id="selectedGameDisplay" style="display:none;text-align:center;margin-top:8px;padding:10px 14px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
+    <span id="selectedGameEmoji" style="font-size:20px;"></span>
+    <span id="selectedGameName" style="font-size:15px;font-weight:700;color:#fff;margin-left:6px;"></span>
+    <span style="font-size:12px;color:#aaa;margin-left:8;" id="selectedGameType"></span>
   </div>
 
   <!-- Mafia: Host setup button + config display for all players -->
@@ -511,6 +446,7 @@
       <span class="truth-round-badge" id="truthRoundBadge">ROUND 1</span>
     </div>
     <div class="truth-questioner-display" id="truthQuestionerDisplay">질문자: ---</div>
+    <button onclick="toggleHandRanking('truth')" style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;cursor:pointer;">규칙</button>
   </div>
 
   <!-- 메인 콘텐츠 영역 -->
@@ -834,6 +770,7 @@
     <div class="ud-top-bar">
       <div class="ud-turn-name" id="updownTurnName">플레이어</div>
       <div class="ud-deck-count" id="updownDeckCount">남은 카드: 52</div>
+      <button onclick="toggleHandRanking('updown')" style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;cursor:pointer;">규칙</button>
       <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">&#10005;</button>
     </div>
 
@@ -1270,6 +1207,7 @@
       <span id="bsDrinkName">지정: 맥주</span>
     </div>
     <div class="bs-glass-info">🥃 <span id="bsGlassCount">누적: 0장</span></div>
+    <button onclick="toggleHandRanking('bombshot')" style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;cursor:pointer;">규칙</button>
   </div>
 
   <div class="bs-opponents" id="bsOpponents"></div>
@@ -1974,6 +1912,7 @@
         <span id="bjMyChips">0</span>
       </div>
       <span class="bj-phase-badge" id="bjPhaseBadge">베팅</span>
+      <button onclick="toggleHandRanking('blackjack')" style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;cursor:pointer;">규칙</button>
     </div>
     <button class="bj-close-btn" onclick="leaveGame()">✕</button>
   </div>
@@ -2289,6 +2228,115 @@
 
 </div>
 
+<!-- Game Catalog Overlay -->
+<div id="gameCatalogOverlay" class="game-catalog-overlay" style="display:none;" onclick="closeGameCatalog()">
+  <div class="game-catalog-container" onclick="event.stopPropagation()">
+    <div class="game-catalog-header">
+      <div style="font-size:18px;font-weight:900;color:#fff;">🎮 게임 목록</div>
+      <button onclick="closeGameCatalog()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div class="game-options" id="catalogGameOptions">
+      <div class="game-option selected" data-game="poker" onclick="selectGame(this)">
+        <span class="game-emoji">🃏</span>홀덤
+      </div>
+      <div class="game-option" data-game="mafia" onclick="selectGame(this)">
+        <span class="game-emoji">🕵️</span>마피아
+      </div>
+      <div class="game-option" data-game="sutda" onclick="selectGame(this)">
+        <span class="game-emoji">🎴</span>섯다
+      </div>
+      <div class="game-option" data-game="quickdraw" onclick="selectGame(this)">
+        <span class="game-emoji">🤠</span>총잡이
+      </div>
+      <div class="game-option" data-game="roulette" onclick="selectGame(this)">
+        <span class="game-emoji">🔫</span>룰렛
+      </div>
+      <div class="game-option" data-game="lottery" onclick="selectGame(this)">
+        <span class="game-emoji">🎰</span>뽑기
+      </div>
+      <div class="game-option" data-game="ecard" onclick="selectGame(this)">
+        <span class="game-emoji">👑</span>E카드
+      </div>
+      <div class="game-option" data-game="yahtzee" onclick="selectGame(this)">
+        <span class="game-emoji">🎲</span>야추
+      </div>
+      <div class="game-option" data-game="updown" onclick="selectGame(this)">
+        <span class="game-emoji">🃏</span>업다운
+      </div>
+      <div class="game-option" data-game="truth" onclick="selectGame(this)">
+        <span class="game-emoji">⭕</span>진실게임
+      </div>
+      <div class="game-option" data-game="fortress" onclick="selectGame(this)">
+        <span class="game-emoji">🏰</span>요새
+      </div>
+      <div class="game-option" data-game="bombshot" onclick="selectGame(this)">
+        <span class="game-emoji">🍺</span>폭탄주
+      </div>
+      <div class="game-option" data-game="blackjack" onclick="selectGame(this)">
+        <span class="game-emoji">🃏</span>블랙잭
+      </div>
+      <div class="game-option disabled" data-game="stairs" onclick="selectGame(this)">
+        <span class="game-emoji">🪜</span>무한계단<span class="game-disabled-tag">저작권 검토중</span>
+      </div>
+      <div class="game-option disabled" data-game="tetris" onclick="selectGame(this)">
+        <span class="game-emoji">🧩</span>테트리스<span class="game-disabled-tag">저작권 검토중</span>
+      </div>
+      <div class="game-option" data-game="jewel" onclick="selectGame(this)">
+        <span class="game-emoji">💎</span>보석맞추기
+      </div>
+      <div class="game-option" data-game="colorchain" onclick="selectGame(this)">
+        <span class="game-emoji">🔗</span>컬러체인
+      </div>
+      <div class="game-option" data-game="slinkystairs" onclick="selectGame(this)">
+        <span class="game-emoji">🌀</span>슬링키
+      </div>
+      <div class="game-option" data-game="pupil" onclick="selectGame(this)">
+        <span class="game-emoji">👁</span>동공탐지
+      </div>
+      <div class="game-option" data-game="idol" onclick="selectGame(this)">
+        <span class="game-emoji">🎤</span>아이돌
+      </div>
+      <div class="game-option" data-game="drinkpoker" onclick="selectGame(this)">
+        <span class="game-emoji">🍶</span>술피하기
+      </div>
+      <div class="game-option" data-game="kingstagram" onclick="selectGame(this)">
+        <span class="game-emoji">👑</span>킹스타그램
+      </div>
+    </div>
+    <div class="game-info-panel" id="gameInfoPanel" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span id="gameInfoEmoji" style="font-size:24px;"></span>
+        <span id="gameInfoName" style="font-size:16px;font-weight:700;color:#fff;"></span>
+      </div>
+      <div id="gameInfoDesc" style="font-size:12px;color:#aaa;line-height:1.5;margin-bottom:6px;"></div>
+      <div style="display:flex;gap:12px;font-size:11px;color:#888;">
+        <span id="gameInfoPlayers"></span>
+        <span id="gameInfoTime"></span>
+        <span id="gameInfoType"></span>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="catalogSelectBtn" style="display:none;width:100%;margin-top:12px;" onclick="confirmGameFromCatalog()">이 게임 선택</button>
+    <div id="catalogReadOnlyMsg" style="display:none;text-align:center;font-size:12px;color:#888;margin-top:10px;">호스트만 게임을 선택할 수 있습니다</div>
+  </div>
+</div>
+
+<!-- Diamond Shop Modal -->
+<div id="diamondShopOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);padding:20px;" onclick="closeDiamondShop()">
+  <div style="max-width:320px;margin:60px auto;background:var(--bg-card,#14142a);border-radius:16px;padding:24px;text-align:center;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:18px;font-weight:900;color:#fff;">💎 다이아 상점</div>
+      <button onclick="closeDiamondShop()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:14px;color:#aaa;margin-bottom:16px;">현재 보유: 💎 <span id="diamondShopBalance">0</span>개</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-primary" onclick="buyDiamond(1)" style="width:100%;">💎 1개 획득 (테스트)</button>
+      <button class="btn btn-primary" onclick="buyDiamond(5)" style="width:100%;">💎 5개 획득 (테스트)</button>
+      <button class="btn btn-primary" onclick="buyDiamond(10)" style="width:100%;">💎 10개 획득 (테스트)</button>
+    </div>
+    <div style="font-size:11px;color:#666;margin-top:14px;">* 결제 시스템 연동 전 테스트 버전</div>
+  </div>
+</div>
+
 <!-- Hand Ranking Overlay -->
 <div id="handRankingOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);overflow-y:auto;padding:20px;" onclick="this.style.display='none'">
   <div style="max-width:360px;margin:0 auto;background:var(--bg-card,#14142a);border-radius:16px;padding:20px;" onclick="event.stopPropagation()">
@@ -2311,7 +2359,16 @@
   <div class="idol-resource-bar" id="idolResourceBar" role="region" aria-label="아이돌 상태 요약"></div>
 
   <div class="idol-board-wrapper" id="idolBoardWrapper">
-    <div class="idol-board" id="idolBoard" role="grid" aria-label="아이돌 보드"></div>
+    <!-- 카메라 컨트롤 -->
+    <div class="idol-cam-controls" id="idolCamControls">
+      <button class="idol-cam-btn" onclick="idolCamZoomIn()" title="줌인">+</button>
+      <button class="idol-cam-btn idol-cam-btn-reset" onclick="idolCamReset()" title="전체보기">⊙</button>
+      <button class="idol-cam-btn" onclick="idolCamZoomOut()" title="줌아웃">−</button>
+    </div>
+    <!-- 줌/팬 뷰포트 -->
+    <div class="idol-board-viewport" id="idolBoardViewport">
+      <div class="idol-board" id="idolBoard" role="grid" aria-label="아이돌 보드"></div>
+    </div>
   </div>
 
   <div class="idol-action-panel" id="idolActionPanel" role="region" aria-live="polite" aria-label="행동 안내">
@@ -2325,6 +2382,46 @@
     </div>
     <div id="idolDiceResultBadge" class="idol-dice-result-badge"></div>
   </div>
+</div>
+
+<!-- DRINK-DODGE POKER -->
+<div class="screen" id="drinkpokerGame">
+  <div class="dp-header">
+    <button class="dp-back-btn" onclick="leaveGame()">←</button>
+    <div class="dp-header-title">🍶 술피하기 포커</div>
+    <button class="dp-tracker-btn" onclick="dpShowTracker()">📊</button>
+  </div>
+  <div class="dp-turn-indicator" id="dpTurnIndicator"></div>
+  <div class="dp-opponents" id="dpOpponents"></div>
+  <div class="dp-center" id="dpCenter"></div>
+  <div class="dp-my-faceup" id="dpMyFaceUp"></div>
+  <div class="dp-my-hand" id="dpMyHand"></div>
+  <div class="dp-actions" id="dpActions"></div>
+  <!-- Game Over -->
+  <div class="dp-gameover" id="dpGameOver" style="display:none;">
+    <div class="dp-gameover-title" id="dpGameOverTitle"></div>
+    <div class="dp-rankings" id="dpRankings"></div>
+    <div class="dp-gameover-actions">
+      <button class="dp-btn dp-btn-close" onclick="closeDPGame()">나가기</button>
+    </div>
+  </div>
+  <!-- Send Modal (content fully managed by dpSend()) -->
+  <div class="dp-modal dp-send-modal" id="dpSendModal" style="display:none;"></div>
+  <!-- Peek-Pass Modal (content fully managed by dpPeekPass()) -->
+  <div class="dp-modal dp-peek-modal" id="dpPeekPassModal" style="display:none;"></div>
+  <!-- Tracker Overlay -->
+  <div class="dp-tracker-overlay" id="dpTrackerOverlay" style="display:none;" onclick="dpCloseTracker()">
+    <div class="dp-tracker-box" onclick="event.stopPropagation()">
+      <div class="dp-tracker-title">📊 앞면 카드 현황</div>
+      <div class="dp-tracker-content" id="dpTrackerContent"></div>
+      <button class="dp-btn dp-btn-cancel" onclick="dpCloseTracker()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- KINGSTAGRAM -->
+<div class="screen" id="kingstagramGame">
+  <!-- Content fully rendered by renderKingView() -->
 </div>
 
 <!-- QR Code library -->
@@ -2352,6 +2449,8 @@
 <script src="js/games/tamagotchi.js?v=2"></script>
 <script src="js/games/idol-data.js"></script>
 <script src="js/games/idol.js"></script>
+<script src="js/games/drinkpoker.js"></script>
+<script src="js/games/kingstagram.js"></script>
 <script src="js/ai.js?v=3"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>

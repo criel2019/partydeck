@@ -28,6 +28,8 @@ let _bsSpinScheduled = false; // guard: prevent duplicate roulette spin
 let _bsPracticeReady = false; // flag: bombshot setup modal shown in practice mode
 let _originalCloseBJResult = null;
 let _originalCloseStairsGame = null;
+let _originalCloseDPGame = null;
+let _originalCloseKingstagramGame = null;
 
 const AI_NAMES = ['봇짱', '로봇킹', '알파봇', 'AI마스터', '사이보그'];
 const AI_AVATARS = ['🤖', '👾', '🎮', '🕹️', '💻'];
@@ -51,6 +53,8 @@ const AI_COUNTS = {
   slinkystairs: 0,
   blackjack: 2,
   idol: 2,
+  drinkpoker: 2,
+  kingstagram: 2,
 };
 
 // ========== ENTRY / EXIT ==========
@@ -82,6 +86,10 @@ function leavePracticeMode() {
   if (typeof ccCleanup === 'function') ccCleanup();
   if (typeof destroyBombShotThree === 'function') destroyBombShotThree();
   if (typeof destroyIdolDiceThree === 'function') destroyIdolDiceThree();
+  if (typeof dpState !== 'undefined') dpState = null;
+  if (typeof closeDPCleanup === 'function') closeDPCleanup();
+  if (typeof kingState !== 'undefined') kingState = null;
+  if (typeof closeKingstagramCleanup === 'function') closeKingstagramCleanup();
   showScreen('mainMenu');
 }
 
@@ -292,6 +300,26 @@ function interceptNetworking() {
     }
     if (_originalCloseBombShotGame) _originalCloseBombShotGame();
   };
+
+  _originalCloseDPGame = window.closeDPGame;
+  window.closeDPGame = function() {
+    if (typeof closeDPCleanup === 'function') closeDPCleanup();
+    if (practiceMode) {
+      showScreen('practiceSelect');
+      return;
+    }
+    if (_originalCloseDPGame) _originalCloseDPGame();
+  };
+
+  _originalCloseKingstagramGame = window.closeKingstagramGame;
+  window.closeKingstagramGame = function() {
+    if (typeof closeKingstagramCleanup === 'function') closeKingstagramCleanup();
+    if (practiceMode) {
+      showScreen('practiceSelect');
+      return;
+    }
+    if (_originalCloseKingstagramGame) _originalCloseKingstagramGame();
+  };
 }
 
 function restoreNetworking() {
@@ -305,6 +333,8 @@ function restoreNetworking() {
   if (_originalCloseStairsGame) { window.closeStairsGame = _originalCloseStairsGame; _originalCloseStairsGame = null; }
   if (_originalCloseBJResult) { window.closeBJResult = _originalCloseBJResult; _originalCloseBJResult = null; }
   if (_originalCloseBombShotGame) { window.closeBombShotGame = _originalCloseBombShotGame; _originalCloseBombShotGame = null; }
+  if (_originalCloseDPGame) { window.closeDPGame = _originalCloseDPGame; _originalCloseDPGame = null; }
+  if (_originalCloseKingstagramGame) { window.closeKingstagramGame = _originalCloseKingstagramGame; _originalCloseKingstagramGame = null; }
 }
 
 function cleanupAI() {
@@ -456,6 +486,8 @@ function executeAIAction() {
     case 'blackjack': aiBlackjack(); break;
     case 'stairs': aiStairs(); break;
     case 'idol': aiIdol(); break;
+    case 'drinkpoker': aiDrinkPoker(); break;
+    case 'kingstagram': aiKingstagram(); break;
     // lottery: no AI needed
   }
 }
@@ -1423,4 +1455,237 @@ function idolAiPickEventChoice(card, p) {
     } catch (e) { /* effect 함수 오류 무시 */ }
   });
   return bestIdx;
+}
+
+// ========== DRINK-DODGE POKER AI ==========
+
+function aiDrinkPoker() {
+  if (!dpState || dpState.phase === 'gameover' || dpState.phase === 'reveal') return;
+
+  var dp = dpState;
+
+  // === SEND PHASE: AI is the sender ===
+  if (dp.phase === 'send') {
+    var sender = dp.turnPlayerId;
+    if (!sender || !sender.startsWith('ai-')) return;
+    var hand = dp.hands[sender];
+    if (!hand || hand.length === 0) return;
+
+    // Pick a random card
+    var cardIdx = Math.floor(Math.random() * hand.length);
+    var card = hand[cardIdx];
+
+    // Pick target: prefer player closest to losing
+    var targets = dp.players.filter(function(p) { return p.id !== sender; });
+    if (targets.length === 0) return;
+
+    var bestTarget = targets[0];
+    var bestScore = -1;
+    targets.forEach(function(t) {
+      var fu = dp.faceUp[t.id];
+      if (!fu) return;
+      var maxSame = 0;
+      var allTypes = 0;
+      DP_TYPES.forEach(function(type) {
+        if (fu[type] > maxSame) maxSame = fu[type];
+        if (fu[type] >= DP_LOSE_EACH) allTypes++;
+      });
+      var danger = maxSame * 2 + allTypes;
+      if (danger > bestScore) { bestScore = danger; bestTarget = t; }
+    });
+
+    // 50% chance to lie about the claim
+    var claim = card;
+    if (Math.random() < 0.5) {
+      var otherTypes = DP_TYPES.filter(function(t) { return t !== card; });
+      claim = otherTypes[Math.floor(Math.random() * otherTypes.length)];
+    }
+
+    var capturedSender = sender;
+    var capturedCardIdx = cardIdx;
+    var capturedTarget = bestTarget.id;
+    var capturedClaim = claim;
+    var t = setTimeout(function() {
+      if (!dpState || dpState.phase !== 'send') return;
+      if (dpState.turnPlayerId !== capturedSender) return;
+      processDPSend(capturedSender, capturedCardIdx, capturedTarget, capturedClaim);
+    }, 800 + Math.random() * 600);
+    _aiTimers.push(t);
+    return;
+  }
+
+  // === RESPOND PHASE: AI is the target ===
+  if (dp.phase === 'respond') {
+    var cc = dp.currentCard;
+    if (!cc) return;
+    var target = cc.targetId;
+    if (!target || !target.startsWith('ai-')) return;
+
+    // Check eligible peek targets
+    var eligible = dpGetEligibleTargets(cc);
+    var canPeek = eligible.length > 0;
+
+    // Decide: 35% peek if possible, otherwise call true/false
+    if (canPeek && Math.random() < 0.35) {
+      var peekTarget = target;
+      var t2 = setTimeout(function() {
+        if (!dpState || dpState.phase !== 'respond') return;
+        if (!dpState.currentCard || dpState.currentCard.targetId !== peekTarget) return;
+        processDPRespond(peekTarget, 'peek');
+      }, 600 + Math.random() * 500);
+      _aiTimers.push(t2);
+      return;
+    }
+
+    // Decide true or false
+    // If claimed type is already heavily on face-up for sender, more likely it's a lie
+    var senderFu = dp.faceUp[cc.senderId];
+    var claimCount = senderFu ? (senderFu[cc.claim] || 0) : 0;
+    var callTrue = Math.random() < (claimCount >= 3 ? 0.3 : 0.55);
+
+    var callTarget = target;
+    var callChoice = callTrue ? 'true' : 'false';
+    var t3 = setTimeout(function() {
+      if (!dpState || dpState.phase !== 'respond') return;
+      if (!dpState.currentCard || dpState.currentCard.targetId !== callTarget) return;
+      processDPRespond(callTarget, callChoice);
+    }, 700 + Math.random() * 600);
+    _aiTimers.push(t3);
+    return;
+  }
+
+  // === PEEK-PASS PHASE: AI saw the card, needs to pass ===
+  if (dp.phase === 'peek-pass') {
+    var cc2 = dp.currentCard;
+    if (!cc2) return;
+    var peeker = cc2.fromId;
+    if (!peeker || !peeker.startsWith('ai-')) return;
+
+    var eligible2 = dpGetEligibleTargets(cc2);
+    if (eligible2.length === 0) return;
+
+    // Pick target closest to losing
+    var target2 = eligible2[0];
+    var bestDanger = -1;
+    eligible2.forEach(function(p) {
+      var fu2 = dp.faceUp[p.id];
+      if (!fu2) return;
+      var maxS = 0;
+      DP_TYPES.forEach(function(type) { if (fu2[type] > maxS) maxS = fu2[type]; });
+      if (maxS > bestDanger) { bestDanger = maxS; target2 = p; }
+    });
+
+    // Decide claim: if actual matches claim, maybe change it (strategic lie)
+    var newClaim = cc2.claim;
+    if (cc2.card === cc2.claim && Math.random() < 0.4) {
+      // Change claim to something else
+      var others = DP_TYPES.filter(function(t) { return t !== cc2.card; });
+      newClaim = others[Math.floor(Math.random() * others.length)];
+    } else if (cc2.card !== cc2.claim && Math.random() < 0.5) {
+      // Correct the lie or keep it
+      newClaim = Math.random() < 0.5 ? cc2.card : cc2.claim;
+    }
+
+    var passFrom = peeker;
+    var passTo = target2.id;
+    var passClaim = newClaim;
+    var t4 = setTimeout(function() {
+      if (!dpState || dpState.phase !== 'peek-pass') return;
+      if (!dpState.currentCard || dpState.currentCard.fromId !== passFrom) return;
+      processDPPeekPass(passFrom, passTo, passClaim);
+    }, 900 + Math.random() * 700);
+    _aiTimers.push(t4);
+  }
+}
+
+// ========== KINGSTAGRAM AI ==========
+
+function aiKingstagram() {
+  if (!kingState || kingState.phase === 'gameover' || kingState.phase === 'scoring' || kingState.phase === 'round-end') return;
+
+  var ks = kingState;
+  var currentPlayer = ks.players[ks.turnIdx];
+  if (!currentPlayer || !currentPlayer.id.startsWith('ai-')) return;
+
+  // === ROLLING PHASE ===
+  if (ks.phase === 'rolling') {
+    var rollPlayerId = currentPlayer.id;
+    var rollTurnIdx = ks.turnIdx;
+    var t = setTimeout(function() {
+      if (!kingState || kingState.phase !== 'rolling') return;
+      if (kingState.turnIdx !== rollTurnIdx) return;
+      processKingRoll(rollPlayerId);
+    }, 600 + Math.random() * 400);
+    _aiTimers.push(t);
+    return;
+  }
+
+  // === CHOOSING PHASE ===
+  if (ks.phase === 'choosing') {
+    if (!ks.currentRoll || ks.currentRoll.length === 0) return;
+
+    // Group dice by value
+    var groups = {};
+    for (var i = 0; i < ks.currentRoll.length; i++) {
+      var d = ks.currentRoll[i];
+      if (!groups[d.value]) groups[d.value] = { personal: 0, neutral: 0 };
+      if (d.isNeutral) groups[d.value].neutral++;
+      else groups[d.value].personal++;
+    }
+
+    // Score each option: land card value * chance to win
+    var bestNumber = null;
+    var bestScore = -Infinity;
+
+    for (var num in groups) {
+      if (!groups.hasOwnProperty(num)) continue;
+      var n = parseInt(num);
+      var landIdx = n - 1;
+      if (landIdx < 0 || landIdx >= ks.lands.length) continue;
+      var land = ks.lands[landIdx];
+
+      // Calculate total card value for this land
+      var landValue = 0;
+      if (land.cards) {
+        for (var c = 0; c < land.cards.length; c++) landValue += land.cards[c];
+      }
+
+      // My dice on this land after placement
+      var myExisting = (land.dice && land.dice[currentPlayer.id]) || 0;
+      var myTotal = myExisting + groups[num].personal;
+
+      // Find highest competitor
+      var maxOther = land.neutralCount || 0;
+      if (land.dice) {
+        for (var pid in land.dice) {
+          if (pid === currentPlayer.id) continue;
+          if (land.dice[pid] > maxOther) maxOther = land.dice[pid];
+        }
+      }
+
+      // Simple score: value * advantage_factor
+      var advantage = myTotal > maxOther ? 1.5 : (myTotal === maxOther ? 0.2 : 0.5);
+      var diceCount = groups[num].personal + groups[num].neutral;
+      var score = landValue * advantage + diceCount * 5000;
+
+      if (score > bestScore) { bestScore = score; bestNumber = n; }
+    }
+
+    if (bestNumber === null) {
+      // Fallback: pick first available
+      for (var num2 in groups) {
+        if (groups.hasOwnProperty(num2)) { bestNumber = parseInt(num2); break; }
+      }
+    }
+
+    var choosePlayerId = currentPlayer.id;
+    var chooseTurnIdx = ks.turnIdx;
+    var chooseNumber = bestNumber;
+    var t2 = setTimeout(function() {
+      if (!kingState || kingState.phase !== 'choosing') return;
+      if (kingState.turnIdx !== chooseTurnIdx) return;
+      processKingChoose(choosePlayerId, chooseNumber);
+    }, 700 + Math.random() * 500);
+    _aiTimers.push(t2);
+  }
 }
