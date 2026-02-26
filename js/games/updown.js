@@ -75,8 +75,11 @@ function broadcastUpDownState() {
   renderUpDownView(view);
 }
 
+var _lastUdView = null;
+
 function renderUpDownView(view) {
   if(!view) return;
+  _lastUdView = view;
 
   const currentPlayer = view.players[view.turnIdx];
   document.getElementById('updownTurnName').textContent =
@@ -232,9 +235,16 @@ function processUpDownChoice(playerId, choice) {
       udState.specialData.kingId = playerId;
       broadcastUpDownState();
     } else {
-      udState.phase = 'penalty';
-      const penaltyText = udState.currentBet || udState.penalties[Math.floor(Math.random() * udState.penalties.length)];
-      showUpDownPenalty(playerId, penaltyText);
+      // 일반 틀림: 먼저 "틀렸다!" 결과를 전체에 보여준 뒤 벌칙으로 전환
+      udState.phase = 'result';
+      broadcastUpDownState();
+
+      setTimeout(() => {
+        if(!state.isHost || !udState) return;
+        udState.phase = 'penalty';
+        const penaltyText = udState.currentBet || udState.penalties[Math.floor(Math.random() * udState.penalties.length)];
+        showUpDownPenalty(playerId, penaltyText);
+      }, 1500);
     }
   }
 }
@@ -483,14 +493,19 @@ function showUpDownPenalty(playerId, penaltyText) {
 }
 
 function handleUpDownPenalty(data) {
-  if(data.playerId !== state.myId) return;
-
-  const modal = document.getElementById('updownPenaltyModal');
-  document.getElementById('updownPenaltyText').textContent = data.penaltyText;
-  document.getElementById('updownPenaltyWho').textContent = '\ub2f9\uc2e0\uc758 \ubc8c\uce59\uc785\ub2c8\ub2e4!';
-  modal.classList.add('active');
-
-  modal.dataset.penaltyText = data.penaltyText;
+  if(data.playerId === state.myId) {
+    // 본인: 기존 벌칙 모달 표시
+    const modal = document.getElementById('updownPenaltyModal');
+    document.getElementById('updownPenaltyText').textContent = data.penaltyText;
+    document.getElementById('updownPenaltyWho').textContent = '당신의 벌칙입니다!';
+    modal.classList.add('active');
+    modal.dataset.penaltyText = data.penaltyText;
+  } else {
+    // 다른 유저: 누가 벌칙을 받는지 토스트로 표시
+    const players = udState?.players || _lastUdView?.players || [];
+    const playerName = players.find(function(p) { return p.id === data.playerId; })?.name || '???';
+    showToast('🍺 ' + playerName + ' 벌칙: ' + data.penaltyText);
+  }
 }
 
 function udAcceptPenalty() {
