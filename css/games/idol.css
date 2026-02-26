@@ -2317,3 +2317,650 @@
     linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)),
     rgba(8, 10, 20, 0.95);
 }
+
+/* ============================================================
+   PASTEL K-POP THEME OVERRIDES
+   ============================================================ */
+
+/* ── 전체 화면 배경 ─────────────────────────────────────────── */
+#idolGame {
+  background: linear-gradient(145deg, #f5cdde 0%, #ede0f5 45%, #ddd0f5 75%, #d5cdf0 100%) !important;
+}
+
+/* ── 헤더 바 ─────────────────────────────────────────────────── */
+#idolGame .idol-header {
+  background: rgba(255,240,252,0.88) !important;
+  border-bottom: 1.5px solid rgba(210,168,196,0.45) !important;
+  color: #3a2840 !important;
+  box-shadow: 0 2px 10px rgba(180,100,160,0.12) !important;
+}
+
+#idolGame .idol-header-title {
+  color: #6a2060 !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+}
+
+#idolGame .idol-turn-badge {
+  background: rgba(255,220,240,0.9) !important;
+  color: #802060 !important;
+  border: 1px solid rgba(210,130,180,0.5) !important;
+  font-weight: 600 !important;
+}
+
+#idolGame .pk-close-btn {
+  color: #6a2060 !important;
+}
+
+/* ── 보드 래퍼 ───────────────────────────────────────────────── */
+#idolBoardWrapper {
+  filter: drop-shadow(0 12px 32px rgba(180,100,160,0.18));
+}
+
+/* ── 보드 ────────────────────────────────────────────────────── */
+#idolGame .idol-board {
+  background: linear-gradient(135deg, #fdf8f6 0%, #fef5fb 50%, #f8f4fe 100%) !important;
+  border: 2.5px solid #c9a84c !important;
+  box-shadow:
+    0 0 0 5px rgba(201,168,76,0.18),
+    0 8px 32px rgba(180,100,160,0.18),
+    0 2px 8px rgba(180,100,160,0.10) !important;
+  border-radius: 14px !important;
+}
+
+/* ── 셀 기본 ─────────────────────────────────────────────────── */
+#idolGame .idol-cell {
+  background: rgba(255,248,252,0.85) !important;
+  border-color: rgba(201,168,76,0.35) !important;
+  color: #3a2840 !important;
+}
+
+#idolGame .idol-cell .idol-cell-name {
+  color: #3a2840 !important;
+  font-weight: 600 !important;
+}
+
+#idolGame .idol-cell .idol-cell-rent {
+  color: #7a5590 !important;
+}
+
+/* ── 카테고리별 셀 색상 ──────────────────────────────────────── */
+#idolGame .idol-cell.cell-shop-music {
+  background: linear-gradient(135deg, #ffe0ef 0%, #ffd0e8 100%) !important;
+  border-color: rgba(255,130,180,0.5) !important;
+}
+
+#idolGame .idol-cell.cell-shop-media {
+  background: linear-gradient(135deg, #e8d8f8 0%, #dcc8f5 100%) !important;
+  border-color: rgba(180,130,230,0.5) !important;
+}
+
+#idolGame .idol-cell.cell-shop-beauty {
+  background: linear-gradient(135deg, #fce0e8 0%, #f8d0de 100%) !important;
+  border-color: rgba(220,100,140,0.5) !important;
+}
+
+#idolGame .idol-cell.cell-shop-event {
+  background: linear-gradient(135deg, #d8f5ec 0%, #c8ede0 100%) !important;
+  border-color: rgba(80,180,140,0.5) !important;
+}
+
+/* ── 특수 셀 ─────────────────────────────────────────────────── */
+#idolGame .idol-cell.cell-start {
+  background: linear-gradient(135deg, #fff7d0 0%, #ffe89a 100%) !important;
+  border-color: rgba(200,160,40,0.6) !important;
+}
+
+#idolGame .idol-cell.cell-police {
+  background: linear-gradient(135deg, #d0e8ff 0%, #bcd8f8 100%) !important;
+  border-color: rgba(80,140,220,0.5) !important;
+}
+
+#idolGame .idol-cell.cell-tax {
+  background: linear-gradient(135deg, #ffddd0 0%, #ffc8b8 100%) !important;
+  border-color: rgba(220,100,70,0.5) !important;
+}
+
+#idolGame .idol-cell.cell-gacha {
+  background: linear-gradient(135deg, #e8d0f8 0%, #d8b8f5 100%) !important;
+  border-color: rgba(160,80,220,0.5) !important;
+}
+
+#idolGame .idol-cell.cell-jail {
+  background: linear-gradient(135deg, #e0e8f0 0%, #ccd8e8 100%) !important;
+  border-color: rgba(100,130,180,0.5) !important;
+}
+
+#idolGame .idol-cell.cell-free {
+  background: linear-gradient(135deg, #d8f0e0 0%, #c4e8d0 100%) !important;
+  border-color: rgba(60,160,100,0.5) !important;
+}
+
+#idolGame .idol-cell.cell-event {
+  background: linear-gradient(135deg, #ffd8f0 0%, #ffc8e8 100%) !important;
+  border-color: rgba(220,100,170,0.5) !important;
+}
+
+#idolGame .idol-cell.cell-chance {
+  background: linear-gradient(135deg, #fde8c8 0%, #f8d8a8 100%) !important;
+  border-color: rgba(220,160,60,0.5) !important;
+}
+
+/* 플레이어 위치 하이라이트 */
+#idolGame .idol-cell.player-here {
+  box-shadow: inset 0 0 0 2.5px #c9a84c, 0 0 14px rgba(201,168,76,0.65) !important;
+}
+
+/* ── 센터 패널 ───────────────────────────────────────────────── */
+#idolGame .idol-board-center {
+  background: rgba(255,240,250,0.5) !important;
+  border: 1.5px solid rgba(201,168,76,0.3) !important;
+  border-radius: 10px !important;
+}
+
+/* ── 리소스 바 ───────────────────────────────────────────────── */
+#idolGame .idol-resource-bar {
+  background: rgba(255,244,254,0.92) !important;
+  border-bottom: 1.5px solid rgba(210,168,196,0.35) !important;
+  color: #3a2840 !important;
+}
+
+#idolGame .idol-topdash {
+  background: transparent !important;
+  color: #3a2840 !important;
+}
+
+#idolGame .idol-res-label {
+  color: #7a5090 !important;
+}
+
+#idolGame .idol-res-value {
+  color: #3a2840 !important;
+  font-weight: 600 !important;
+}
+
+#idolGame .idol-res-hero-title {
+  color: #6a2060 !important;
+  font-weight: 700 !important;
+}
+
+#idolGame .idol-res-hero-sub {
+  color: #7a5590 !important;
+}
+
+#idolGame .idol-res-meta-pill {
+  background: rgba(255,220,240,0.85) !important;
+  color: #802060 !important;
+  border-color: rgba(210,130,180,0.4) !important;
+}
+
+/* ── 액션 패널 ───────────────────────────────────────────────── */
+#idolGame .idol-action-panel {
+  background: rgba(255,248,252,0.96) !important;
+  border-top: 1.5px solid rgba(210,168,196,0.45) !important;
+  box-shadow: 0 -4px 18px rgba(180,100,160,0.10) !important;
+  color: #3a2840 !important;
+}
+
+#idolGame .idol-action-shell {
+  background: transparent !important;
+  color: #3a2840 !important;
+}
+
+#idolGame .idol-action-context {
+  background: rgba(255,240,250,0.85) !important;
+  border: 1.5px solid rgba(210,168,196,0.45) !important;
+  border-radius: 12px !important;
+  color: #3a2840 !important;
+}
+
+#idolGame .idol-action-context-title {
+  color: #6a2060 !important;
+  font-weight: 700 !important;
+}
+
+#idolGame .idol-action-context-hint {
+  background: linear-gradient(90deg, rgba(255,230,245,0.9), rgba(245,220,255,0.9)) !important;
+  border: 1px solid rgba(200,150,190,0.4) !important;
+  color: #5a2860 !important;
+  border-radius: 8px !important;
+}
+
+#idolGame .idol-action-context-player {
+  background: rgba(255,230,248,0.7) !important;
+  border: 1px solid rgba(210,150,190,0.4) !important;
+  border-radius: 10px !important;
+}
+
+#idolGame .idol-action-context-player-name {
+  color: #3a2840 !important;
+  font-weight: 600 !important;
+}
+
+#idolGame .idol-action-context-player-meta {
+  color: #7a5590 !important;
+}
+
+#idolGame .idol-action-title {
+  color: #6a2060 !important;
+  font-weight: 700 !important;
+}
+
+/* ── 플레이어 미니 카드 ──────────────────────────────────────── */
+#idolGame .idol-players-mini {
+  background: rgba(255,244,254,0.6) !important;
+}
+
+#idolGame .idol-player-mini {
+  background: rgba(255,240,250,0.85) !important;
+  border-color: rgba(210,168,196,0.5) !important;
+  color: #3a2840 !important;
+}
+
+#idolGame .idol-player-mini.is-current {
+  background: rgba(255,215,240,0.95) !important;
+  border-color: rgba(210,100,160,0.65) !important;
+  box-shadow: 0 0 0 2px rgba(210,100,160,0.35) !important;
+}
+
+#idolGame .idol-player-mini.is-bankrupt {
+  background: rgba(230,225,230,0.7) !important;
+  opacity: 0.7 !important;
+}
+
+#idolGame .idol-player-mini-name {
+  color: #3a2840 !important;
+  font-weight: 600 !important;
+}
+
+#idolGame .idol-player-mini-rank {
+  color: #7a5590 !important;
+  font-size: 0.8em !important;
+}
+
+#idolGame .idol-player-mini-money {
+  color: #a0407a !important;
+}
+
+#idolGame .idol-player-mini-fame {
+  color: #7a5590 !important;
+}
+
+/* ── 버튼 공통 ───────────────────────────────────────────────── */
+#idolGame .idol-btn {
+  background: linear-gradient(135deg, #ff6aaa, #d84cb0, #b040c8) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 3px 12px rgba(200,70,180,0.38) !important;
+  text-shadow: 0 1px 2px rgba(80,0,80,0.3) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+#idolGame .idol-btn::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.3) 50%, transparent 60%);
+  transform: skewX(-15deg);
+  animation: btnShine 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes btnShine {
+  0%, 100% { left: -60%; }
+  50% { left: 120%; }
+}
+
+#idolGame .idol-btn:hover {
+  background: linear-gradient(135deg, #ff82bb, #e85cc0, #c050d8) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 5px 16px rgba(200,70,180,0.5) !important;
+}
+
+#idolGame .idol-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 8px rgba(200,70,180,0.3) !important;
+}
+
+/* 보조 버튼 (purple) */
+#idolGame .idol-btn-purple {
+  background: linear-gradient(135deg, #c8a0e8, #a870d0, #9060c0) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(140,80,200,0.28) !important;
+}
+
+#idolGame .idol-btn-purple:hover {
+  background: linear-gradient(135deg, #d4b0f0, #b880da, #a070cc) !important;
+}
+
+/* 위험 버튼 */
+#idolGame .idol-btn-danger {
+  background: linear-gradient(135deg, #ff8a8a, #e83060) !important;
+  color: #fff !important;
+  box-shadow: 0 3px 12px rgba(220,50,80,0.38) !important;
+}
+
+#idolGame .idol-btn-danger:hover {
+  background: linear-gradient(135deg, #ff9f9f, #f04070) !important;
+}
+
+/* 골드 버튼 */
+#idolGame .idol-btn-gold {
+  background: linear-gradient(135deg, #ffe066, #e8a820, #c98000) !important;
+  color: #fff !important;
+  box-shadow: 0 3px 12px rgba(200,150,20,0.38) !important;
+  text-shadow: 0 1px 2px rgba(80,40,0,0.3) !important;
+}
+
+#idolGame .idol-btn-gold:hover {
+  background: linear-gradient(135deg, #ffe880, #f0b830, #d89010) !important;
+}
+
+/* Primary 버튼 */
+#idolGame .idol-btn-primary {
+  background: linear-gradient(135deg, #ff6aaa, #d84cb0, #b040c8) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 3px 12px rgba(200,70,180,0.38) !important;
+}
+
+#idolGame .idol-btn-primary:hover {
+  background: linear-gradient(135deg, #ff82bb, #e85cc0, #c050d8) !important;
+}
+
+/* ── 텍스트 공통 ─────────────────────────────────────────────── */
+#idolGame .idol-action-context-grid {
+  color: #3a2840 !important;
+}
+
+#idolGame .idol-context-stat {
+  color: #4a3050 !important;
+}
+
+/* ── 상태 칩 ─────────────────────────────────────────────────── */
+#idolGame .idol-status-chip {
+  border-radius: 20px !important;
+}
+
+#idolGame .idol-status-chip.tone-muted {
+  background: rgba(220,210,230,0.8) !important;
+  color: #5a4060 !important;
+  border-color: rgba(180,150,200,0.4) !important;
+}
+
+/* ── 진행도 바 ───────────────────────────────────────────────── */
+#idolGame .idol-turn-progress-track {
+  background: rgba(210,180,210,0.3) !important;
+}
+
+#idolGame .idol-turn-progress-fill {
+  background: linear-gradient(90deg, #ff8ac4, #b040c8) !important;
+}
+
+#idolGame .idol-turn-progress-label {
+  color: #7a2070 !important;
+  font-weight: 600 !important;
+}
+
+/* ── 주사위 오버레이 ──────────────────────────────────────────── */
+#idolGame .idol-dice-overlay {
+  background: rgba(60,20,80,0.40) !important;
+  backdrop-filter: blur(3px) !important;
+}
+
+#idolGame .idol-dice-3d-wrap {
+  background: rgba(255,240,252,0.6) !important;
+  border: 1.5px solid rgba(210,168,196,0.5) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(180,80,160,0.25) !important;
+}
+
+#idolGame .idol-dice-result-badge {
+  background: linear-gradient(135deg, rgba(255,220,240,0.97), rgba(240,210,255,0.97)) !important;
+  border: 2px solid rgba(200,130,180,0.55) !important;
+  color: #3a2840 !important;
+  box-shadow: 0 4px 16px rgba(180,80,160,0.22) !important;
+}
+
+#idolGame .idol-dice-result-badge.double {
+  border-color: rgba(201,168,76,0.8) !important;
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.28), 0 4px 16px rgba(180,80,160,0.22) !important;
+}
+
+/* ── 결산 팝업 ───────────────────────────────────────────────── */
+#idolGame .idol-settlement-popup {
+  background: linear-gradient(160deg, #fff8e8 0%, #fff0d0 100%) !important;
+  border: 1.5px solid rgba(200,160,60,0.55) !important;
+  color: #3a2840 !important;
+  box-shadow: 0 8px 40px rgba(180,120,40,0.18) !important;
+}
+
+#idolGame .idol-rank-row {
+  background: rgba(255,240,210,0.6) !important;
+  border-color: rgba(200,160,60,0.3) !important;
+  color: #3a2840 !important;
+}
+
+/* ── 엔딩 화면 ───────────────────────────────────────────────── */
+#idolGame .idol-ending-screen {
+  background: linear-gradient(160deg, #fff0f8 0%, #f0e8ff 100%) !important;
+  border: 1.5px solid rgba(201,168,76,0.55) !important;
+  color: #3a2840 !important;
+  box-shadow: 0 8px 40px rgba(180,80,160,0.22) !important;
+}
+
+#idolGame .idol-ending-title {
+  color: #6a2060 !important;
+  text-shadow: none !important;
+}
+
+#idolGame .idol-ending-text {
+  color: #3a2840 !important;
+}
+
+/* ── 호감도 토스트 ───────────────────────────────────────────── */
+#idolGame .idol-favor-toast {
+  background: rgba(255,230,248,0.95) !important;
+  border: 1px solid rgba(210,140,185,0.5) !important;
+  color: #3a2840 !important;
+  box-shadow: 0 4px 16px rgba(180,80,160,0.2) !important;
+}
+
+/* ── 아이돌 선택 오버레이 ────────────────────────────────────── */
+#idolGame .idol-select-overlay {
+  background: linear-gradient(145deg, #f5cdde 0%, #ede0f5 50%, #ddd0f5 100%) !important;
+}
+
+#idolGame .idol-select-title {
+  color: #6a2060 !important;
+  text-shadow: none !important;
+}
+
+#idolGame .idol-select-help,
+#idolGame .idol-select-wait {
+  color: #7a5590 !important;
+}
+
+/* 아이돌 타입 카드 */
+#idolGame .idol-type-card {
+  background: rgba(255,248,252,0.92) !important;
+  border: 1.5px solid rgba(210,168,196,0.55) !important;
+  color: #3a2840 !important;
+}
+
+#idolGame .idol-type-card:hover {
+  background: rgba(255,235,248,0.97) !important;
+  border-color: rgba(200,100,160,0.7) !important;
+  box-shadow: 0 6px 20px rgba(200,80,160,0.25) !important;
+}
+
+#idolGame .idol-type-card.selected {
+  background: rgba(255,210,240,0.97) !important;
+  border-color: rgba(200,80,160,0.85) !important;
+  box-shadow: 0 0 0 3px rgba(200,80,160,0.3), 0 6px 20px rgba(200,80,160,0.3) !important;
+}
+
+#idolGame .idol-type-name {
+  color: #6a2060 !important;
+  font-weight: 700 !important;
+}
+
+#idolGame .idol-type-tag {
+  background: rgba(255,220,240,0.85) !important;
+  color: #802060 !important;
+}
+
+#idolGame .idol-type-bonus {
+  color: #5a3060 !important;
+}
+
+/* 선택된 아이돌 표시 */
+#idolGame .idol-select-picked {
+  background: rgba(255,240,252,0.9) !important;
+  border: 1.5px solid rgba(210,168,196,0.5) !important;
+  border-radius: 12px !important;
+}
+
+#idolGame .idol-select-picked-name {
+  color: #6a2060 !important;
+  font-weight: 700 !important;
+}
+
+#idolGame .idol-select-picked-sub {
+  color: #7a5590 !important;
+}
+
+#idolGame .idol-select-picked-desc {
+  color: #4a3050 !important;
+}
+
+/* 대기 카드 */
+#idolGame .idol-select-wait-card {
+  background: rgba(255,240,252,0.85) !important;
+  border: 1.5px dashed rgba(210,168,196,0.6) !important;
+  color: #7a5590 !important;
+}
+
+/* ── 선택 확인 버튼 ──────────────────────────────────────────── */
+#idolSelectConfirmBtn {
+  background: linear-gradient(135deg, #ff6aaa, #d84cb0, #b040c8) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 3px 12px rgba(200,70,180,0.38) !important;
+}
+
+/* ── 선택지 버튼 (이벤트 카드 등) ───────────────────────────── */
+#idolGame .idol-choice-btn {
+  background: linear-gradient(135deg, rgba(255,230,245,0.9), rgba(245,220,255,0.9)) !important;
+  border: 1.5px solid rgba(200,150,190,0.5) !important;
+  color: #5a2860 !important;
+  border-radius: 8px !important;
+}
+
+#idolGame .idol-choice-btn:hover {
+  background: linear-gradient(135deg, rgba(255,210,240,0.95), rgba(240,205,255,0.95)) !important;
+  border-color: rgba(200,100,170,0.7) !important;
+}
+
+/* ── 태스크 카드 ─────────────────────────────────────────────── */
+#idolGame .idol-task-card {
+  background: rgba(255,244,254,0.92) !important;
+  border: 1.5px solid rgba(210,168,196,0.5) !important;
+  border-radius: 12px !important;
+  color: #3a2840 !important;
+}
+
+/* ── 가챠 슬롯 ───────────────────────────────────────────────── */
+#idolGame .idol-gacha-slot {
+  background: rgba(240,220,255,0.9) !important;
+  border: 2px solid rgba(160,80,220,0.4) !important;
+}
+
+#idolGame .idol-gacha-reel {
+  color: #3a2840 !important;
+}
+
+#idolGame .grade-legend .idol-gacha-slot {
+  background: linear-gradient(135deg, #fff5b0, #ffe066) !important;
+  border-color: rgba(200,160,40,0.6) !important;
+  box-shadow: 0 0 20px rgba(201,168,76,0.4) !important;
+}
+
+/* ── 훈련 결과 ───────────────────────────────────────────────── */
+#idolGame .idol-train-result {
+  background: rgba(255,240,252,0.95) !important;
+  border: 1.5px solid rgba(210,168,196,0.5) !important;
+  border-radius: 12px !important;
+  color: #3a2840 !important;
+}
+
+#idolGame .idol-train-die {
+  background: rgba(255,220,240,0.9) !important;
+  border: 2px solid rgba(210,130,180,0.5) !important;
+  color: #3a2840 !important;
+  font-weight: 700 !important;
+}
+
+#idolGame .idol-train-gain {
+  color: #802060 !important;
+  font-weight: 700 !important;
+}
+
+/* ── 액션 버튼 그룹 ──────────────────────────────────────────── */
+#idolGame .idol-action-buttons {
+  gap: 8px !important;
+}
+
+/* ── 포트레이트 그룹 ─────────────────────────────────────────── */
+#idolGame .idol-res-portraits {
+  background: rgba(255,240,252,0.5) !important;
+  border-radius: 12px !important;
+}
+
+#idolGame .idol-res-idol-wrap,
+#idolGame .idol-res-producer-wrap {
+  background: rgba(255,230,248,0.6) !important;
+  border: 1px solid rgba(210,168,196,0.35) !important;
+  border-radius: 10px !important;
+}
+
+#idolGame .idol-center-portrait {
+  background: rgba(255,240,252,0.7) !important;
+  border: 1.5px solid rgba(210,168,196,0.4) !important;
+  border-radius: 12px !important;
+}
+
+/* ── 스크롤바 ────────────────────────────────────────────────── */
+#idolGame ::-webkit-scrollbar-track {
+  background: rgba(230,210,240,0.3) !important;
+}
+
+#idolGame ::-webkit-scrollbar-thumb {
+  background: rgba(180,120,180,0.45) !important;
+}
+
+#idolGame ::-webkit-scrollbar-thumb:hover {
+  background: rgba(180,100,180,0.65) !important;
+}
+
+/* ── 플레이어 토큰 ───────────────────────────────────────────── */
+#idolGame .idol-board-token {
+  border: 2px solid rgba(255,255,255,0.8) !important;
+  box-shadow: 0 2px 8px rgba(120,60,120,0.35) !important;
+}
+
+/* ── 보드 이동 중 하이라이트 셀 ─────────────────────────────── */
+#idolGame .idol-cell.cell-step-hl {
+  box-shadow: inset 0 0 0 2px #ff82bb, 0 0 10px rgba(255,130,180,0.5) !important;
+}
+
+/* ── 반응형: 작은 화면 ───────────────────────────────────────── */
+@media (max-width: 600px) {
+  #idolGame {
+    background: linear-gradient(180deg, #f5cdde 0%, #ddd0f5 100%) !important;
+  }
+}
