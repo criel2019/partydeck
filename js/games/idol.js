@@ -185,7 +185,7 @@ function idolInitGame(selections) {
     if (_w && typeof ISO_BOARD !== 'undefined') {
       const wW = _w.offsetWidth, wH = _w.offsetHeight;
       if (wW > 0 && wH > 0) {
-        const fz = Math.min(wW / ISO_BOARD.SVG_W, wH / ISO_BOARD.SVG_H) * 0.9;
+        const fz = Math.min(wW / ISO_BOARD.SVG_W, wH / ISO_BOARD.SVG_H) * 1.35;
         _idolCam.x = _idolCam.tx = 0;
         _idolCam.y = _idolCam.ty = 0;
         _idolCam.zoom = _idolCam.tzoom = fz;
@@ -1267,7 +1267,7 @@ function idolCamReset() {
   const wrapper = document.getElementById('idolBoardWrapper');
   if (wrapper && typeof ISO_BOARD !== 'undefined') {
     const wW = wrapper.offsetWidth, wH = wrapper.offsetHeight;
-    if (wW > 0 && wH > 0) fitZoom = Math.min(wW / ISO_BOARD.SVG_W, wH / ISO_BOARD.SVG_H) * 0.9;
+    if (wW > 0 && wH > 0) fitZoom = Math.min(wW / ISO_BOARD.SVG_W, wH / ISO_BOARD.SVG_H) * 1.35;
   }
   _idolCam.tx = 0; _idolCam.ty = 0; _idolCam.tzoom = fitZoom;
   _idolCamKick();

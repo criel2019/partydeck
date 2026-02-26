@@ -177,7 +177,7 @@ function _isoCreateCellGroup(idx, c, r, state) {
   const cx = (vtx.top.x + vtx.right.x + vtx.bottom.x + vtx.left.x) / 4;
   const cy = (vtx.top.y + vtx.right.y + vtx.bottom.y + vtx.left.y) / 4;
   const iconPath = _isoGetIconPath(idx, cell);
-  const iconSize = isCorner ? 32 : 26;
+  const iconSize = isCorner ? 58 : 48;
   const halfIcon = iconSize / 2;
   if (iconPath) {
     const imgEl = document.createElementNS(ns, 'image');
