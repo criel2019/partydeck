@@ -94,8 +94,13 @@ function idolHideDiceOverlay() {
 let idolState = null;
 
 // ─── 카메라 상태 ──────────────────────────────
-let _idolCam = { zoom: 1, panX: 0, panY: 0 };
+// current: 실제 렌더 값 / target: lerp 목표값
+let _idolCam = { x: 0, y: 0, zoom: 1, tx: 0, ty: 0, tzoom: 1 };
+let _idolCamRafId = null;
 let _idolCamGestureInit = false;
+const _CAM_LERP     = 0.13;   // lerp 계수 (0~1, 낮을수록 부드럽고 느림)
+const _CAM_ZOOM_MIN = 0.75;
+const _CAM_ZOOM_MAX = 2.8;
 
 const IDOL_TOTAL_TURNS = 25;
 const IDOL_START_MONEY = 2000;
@@ -169,8 +174,9 @@ function idolInitGame(selections) {
   };
 
   _idolSelectionLocked = false;
-  // 카메라 초기화
-  _idolCam = { zoom: 1, panX: 0, panY: 0 };
+  // 카메라 초기화 (rAF 루프도 정리)
+  if (_idolCamRafId) { cancelAnimationFrame(_idolCamRafId); _idolCamRafId = null; }
+  _idolCam = { x: 0, y: 0, zoom: 1, tx: 0, ty: 0, tzoom: 1 };
   broadcastIdolState();
   idolRenderAll();
 }
@@ -982,8 +988,8 @@ function idolRenderAll() {
   idolRenderActionPanel();
   // 카메라 제스처 초기화 (첫 렌더 때 한 번만)
   idolCamInitGestures();
-  // 현재 카메라 상태 적용 (전환 없이)
-  idolCamApply(false);
+  // 현재 카메라 상태 즉시 반영
+  _idolCamFlush();
 }
 
 // ─── 헤더 렌더 ────────────────────────────────
@@ -1139,8 +1145,8 @@ function idolAnimateMoveToken(playerId, fromPos, toPos, onDone) {
     if (c) {
       tokenEl.style.left = c.x + 'px';
       tokenEl.style.top  = c.y + 'px';
-      // 카메라가 이동 중인 토큰을 부드럽게 따라가도록
-      idolCamFollowPos(c.x, c.y, false);
+      // 카메라가 이동 중인 토큰을 lerp로 부드럽게 따라가도록
+      idolCamFollowPos(c.x, c.y);
     }
 
     // 바운스 애니메이션 클래스 교체
@@ -1172,75 +1178,102 @@ function idolGetCellGridCoords() {
   return coords;
 }
 
-// ─── 카메라 시스템 ────────────────────────────
+// ─── 카메라 시스템 (rAF lerp 기반) ────────────
 
-// 카메라 transform 적용
-function idolCamApply(animated) {
+// DOM에 현재(current) 값 즉시 반영
+function _idolCamFlush() {
   const vp = document.getElementById('idolBoardViewport');
   if (!vp) return;
-  vp.style.transition = animated
-    ? 'transform 0.38s cubic-bezier(0.4,0,0.2,1)'
-    : 'none';
-  vp.style.transform = `translate(${_idolCam.panX}px, ${_idolCam.panY}px) scale(${_idolCam.zoom})`;
+  vp.style.transform =
+    'translate(' + _idolCam.x.toFixed(2) + 'px,' + _idolCam.y.toFixed(2) + 'px)' +
+    ' scale(' + _idolCam.zoom.toFixed(4) + ')';
 }
 
-// 팬 범위 클램프 (보드 끝까지만 이동 가능)
-function idolCamClampPan() {
-  const board   = document.getElementById('idolBoard');
-  const wrapper = document.getElementById('idolBoardWrapper');
-  if (!board || !wrapper) return;
-  const bW = board.offsetWidth  || 390;
-  const bH = board.offsetHeight || 390;
-  const maxX = Math.max(0, bW * _idolCam.zoom * 0.5);
-  const maxY = Math.max(0, bH * _idolCam.zoom * 0.5);
-  _idolCam.panX = Math.max(-maxX, Math.min(maxX, _idolCam.panX));
-  _idolCam.panY = Math.max(-maxY, Math.min(maxY, _idolCam.panY));
+// rAF 루프: current → target 으로 lerp
+function _idolCamTick() {
+  const c = _idolCam;
+  const ex = c.tx - c.x;
+  const ey = c.ty - c.y;
+  const ez = c.tzoom - c.zoom;
+
+  const done = Math.abs(ex) < 0.04 && Math.abs(ey) < 0.04 && Math.abs(ez) < 0.0002;
+  if (done) {
+    c.x = c.tx; c.y = c.ty; c.zoom = c.tzoom;
+    _idolCamFlush();
+    _idolCamRafId = null;
+    return;
+  }
+
+  c.x    += ex * _CAM_LERP;
+  c.y    += ey * _CAM_LERP;
+  c.zoom += ez * _CAM_LERP;
+  _idolCamFlush();
+  _idolCamRafId = requestAnimationFrame(_idolCamTick);
 }
 
-// 스크린 좌표 기준으로 줌 (커서·핀치 위치 고정)
-function idolCamZoomTo(newZoom, screenOffsetX, screenOffsetY) {
-  const oldZoom = _idolCam.zoom;
-  newZoom = Math.max(0.7, Math.min(2.8, newZoom));
-  if (oldZoom === newZoom) return;
-  const sx = screenOffsetX || 0;
-  const sy = screenOffsetY || 0;
-  _idolCam.panX = sx - newZoom * (sx - _idolCam.panX) / oldZoom;
-  _idolCam.panY = sy - newZoom * (sy - _idolCam.panY) / oldZoom;
-  _idolCam.zoom = newZoom;
-  idolCamClampPan();
+// lerp 루프 시작 (중복 방지)
+function _idolCamKick() {
+  if (!_idolCamRafId) {
+    _idolCamRafId = requestAnimationFrame(_idolCamTick);
+  }
 }
 
-// 보드 로컬 좌표 (cx, cy) 를 화면 중심에 놓기
-function idolCamFollowPos(cx, cy, animated) {
+// 목표 pan 클램프 (보드 범위 밖으로 못 나가게)
+function _idolCamClamp() {
   const board = document.getElementById('idolBoard');
   if (!board) return;
   const bW = board.offsetWidth  || 390;
   const bH = board.offsetHeight || 390;
-  _idolCam.panX = -_idolCam.zoom * (cx - bW / 2);
-  _idolCam.panY = -_idolCam.zoom * (cy - bH / 2);
-  idolCamClampPan();
-  idolCamApply(animated !== false);
+  const maxX = bW * Math.max(0, _idolCam.tzoom - 1) * 0.55 + bW * 0.08;
+  const maxY = bH * Math.max(0, _idolCam.tzoom - 1) * 0.55 + bH * 0.08;
+  _idolCam.tx = Math.max(-maxX, Math.min(maxX, _idolCam.tx));
+  _idolCam.ty = Math.max(-maxY, Math.min(maxY, _idolCam.ty));
+}
+
+// 스크린 오프셋(sx, sy) 기준 줌 — target에만 적용
+function _idolCamZoomAt(newZoom, sx, sy) {
+  const oldZoom = _idolCam.tzoom;
+  newZoom = Math.max(_CAM_ZOOM_MIN, Math.min(_CAM_ZOOM_MAX, newZoom));
+  if (oldZoom === newZoom) return;
+  // 커서·핀치 위치가 공간상 고정되도록 pan 보정
+  _idolCam.tx = sx - newZoom * (sx - _idolCam.tx) / oldZoom;
+  _idolCam.ty = sy - newZoom * (sy - _idolCam.ty) / oldZoom;
+  _idolCam.tzoom = newZoom;
+  _idolCamClamp();
+}
+
+// ── 공개 API ──────────────────────────────────
+
+// 보드 로컬 좌표 → 화면 중심으로 lerp 이동
+function idolCamFollowPos(cx, cy) {
+  const board = document.getElementById('idolBoard');
+  if (!board) return;
+  const bW = board.offsetWidth  || 390;
+  const bH = board.offsetHeight || 390;
+  _idolCam.tx = -_idolCam.tzoom * (cx - bW / 2);
+  _idolCam.ty = -_idolCam.tzoom * (cy - bH / 2);
+  _idolCamClamp();
+  _idolCamKick();
 }
 
 // 셀 인덱스 기준 팔로우
-function idolCamFollow(cellIdx, animated) {
+function idolCamFollow(cellIdx) {
   const c = idolGetCellCenter(cellIdx);
-  if (!c) return;
-  idolCamFollowPos(c.x, c.y, animated);
+  if (c) idolCamFollowPos(c.x, c.y);
 }
 
-// 줌 버튼
+// 줌 버튼 (lerp)
 function idolCamZoomIn() {
-  idolCamZoomTo(_idolCam.zoom * 1.3, 0, 0);
-  idolCamApply(true);
+  _idolCamZoomAt(_idolCam.tzoom * 1.35, 0, 0);
+  _idolCamKick();
 }
 function idolCamZoomOut() {
-  idolCamZoomTo(_idolCam.zoom / 1.3, 0, 0);
-  idolCamApply(true);
+  _idolCamZoomAt(_idolCam.tzoom / 1.35, 0, 0);
+  _idolCamKick();
 }
 function idolCamReset() {
-  _idolCam = { zoom: 1, panX: 0, panY: 0 };
-  idolCamApply(true);
+  _idolCam.tx = 0; _idolCam.ty = 0; _idolCam.tzoom = 1;
+  _idolCamKick();
 }
 
 // 터치·마우스·휠 제스처 초기화 (한 번만 실행)
@@ -1259,109 +1292,95 @@ function idolCamInitGestures() {
   // ── 마우스 휠 줌 ──
   wrapper.addEventListener('wheel', e => {
     e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.12 : 0.89;
+    const factor = e.deltaY < 0 ? 1.1 : 0.91;
     const wc = wrapCenter();
-    const sx = e.clientX - wc.cx;
-    const sy = e.clientY - wc.cy;
-    idolCamZoomTo(_idolCam.zoom * factor, sx, sy);
-    idolCamApply(false);
+    _idolCamZoomAt(_idolCam.tzoom * factor, e.clientX - wc.cx, e.clientY - wc.cy);
+    _idolCamKick();
   }, { passive: false });
 
-  // ── 마우스 드래그 팬 ──
-  let _mDrag = null;
+  // ── 마우스 드래그 팬 (delta 방식, 1:1 반응) ──
+  let _mPrev = null;
   wrapper.addEventListener('mousedown', e => {
     if (e.button !== 0) return;
-    const wc = wrapCenter();
-    _mDrag = {
-      sx: e.clientX - wc.cx, sy: e.clientY - wc.cy,
-      panX: _idolCam.panX, panY: _idolCam.panY,
-    };
+    _mPrev = { x: e.clientX, y: e.clientY };
     const vp = document.getElementById('idolBoardViewport');
     if (vp) vp.classList.add('dragging');
+    e.preventDefault();
   });
   window.addEventListener('mousemove', e => {
-    if (!_mDrag) return;
-    const wc = wrapCenter();
-    _idolCam.panX = _mDrag.panX + (e.clientX - wc.cx - _mDrag.sx);
-    _idolCam.panY = _mDrag.panY + (e.clientY - wc.cy - _mDrag.sy);
-    idolCamClampPan();
-    idolCamApply(false);
+    if (!_mPrev) return;
+    const dx = e.clientX - _mPrev.x;
+    const dy = e.clientY - _mPrev.y;
+    _mPrev = { x: e.clientX, y: e.clientY };
+    // 드래그 중: current·target 동시 이동 (lerp 없이 1:1)
+    _idolCam.tx += dx; _idolCam.ty += dy;
+    _idolCamClamp();
+    _idolCam.x = _idolCam.tx; _idolCam.y = _idolCam.ty;
+    _idolCamFlush();
   });
   window.addEventListener('mouseup', () => {
-    _mDrag = null;
+    _mPrev = null;
     const vp = document.getElementById('idolBoardViewport');
     if (vp) vp.classList.remove('dragging');
   });
 
-  // ── 터치 팬·핀치줌 ──
-  let _tDrag  = null;  // 단일 터치 팬
-  let _tPinch = null;  // 두 손가락 핀치
+  // ── 터치 팬·핀치줌 (delta 방식) ──
+  let _prevTouches = [];
 
   wrapper.addEventListener('touchstart', e => {
-    if (e.touches.length === 1) {
-      const wc = wrapCenter();
-      _tDrag = {
-        sx: e.touches[0].clientX - wc.cx,
-        sy: e.touches[0].clientY - wc.cy,
-        panX: _idolCam.panX, panY: _idolCam.panY,
-      };
-      _tPinch = null;
-    } else if (e.touches.length === 2) {
-      const wc = wrapCenter();
-      const dx = e.touches[1].clientX - e.touches[0].clientX;
-      const dy = e.touches[1].clientY - e.touches[0].clientY;
-      _tPinch = {
-        dist: Math.sqrt(dx * dx + dy * dy),
-        startZoom: _idolCam.zoom,
-        midSX: (e.touches[0].clientX + e.touches[1].clientX) / 2 - wc.cx,
-        midSY: (e.touches[0].clientY + e.touches[1].clientY) / 2 - wc.cy,
-        startPanX: _idolCam.panX,
-        startPanY: _idolCam.panY,
-      };
-      _tDrag = null;
-    }
+    _prevTouches = Array.from(e.touches).map(t => ({ id: t.identifier, x: t.clientX, y: t.clientY }));
   }, { passive: true });
 
   wrapper.addEventListener('touchmove', e => {
     e.preventDefault();
-    const wc = wrapCenter();
+    const cur = Array.from(e.touches);
+    const wc  = wrapCenter();
 
-    if (e.touches.length === 2 && _tPinch) {
-      const dx   = e.touches[1].clientX - e.touches[0].clientX;
-      const dy   = e.touches[1].clientY - e.touches[0].clientY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const newZoom = Math.max(0.7, Math.min(2.8, _tPinch.startZoom * dist / _tPinch.dist));
+    if (cur.length === 1 && _prevTouches.length >= 1) {
+      // 단일 터치 팬 (1:1 직접 이동)
+      const prev = _prevTouches.find(p => p.id === cur[0].identifier) || _prevTouches[0];
+      const dx = cur[0].clientX - prev.x;
+      const dy = cur[0].clientY - prev.y;
+      _idolCam.tx += dx; _idolCam.ty += dy;
+      _idolCamClamp();
+      _idolCam.x = _idolCam.tx; _idolCam.y = _idolCam.ty;
+      _idolCamFlush();
 
-      // pinch 시작 상태로 복원 후 줌 계산
-      _idolCam.zoom = _tPinch.startZoom;
-      _idolCam.panX = _tPinch.startPanX;
-      _idolCam.panY = _tPinch.startPanY;
-      idolCamZoomTo(newZoom, _tPinch.midSX, _tPinch.midSY);
+    } else if (cur.length === 2 && _prevTouches.length >= 2) {
+      // 핀치줌 + 팬 (프레임 간 delta, 누적 오차 없음)
+      const t0 = cur[0], t1 = cur[1];
+      const p0 = _prevTouches.find(p => p.id === t0.identifier) || _prevTouches[0];
+      const p1 = _prevTouches.find(p => p.id === t1.identifier) || _prevTouches[1];
 
-      // 핀치 중심점 이동 (패닝)
-      const curMidSX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - wc.cx;
-      const curMidSY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - wc.cy;
-      _idolCam.panX += curMidSX - _tPinch.midSX;
-      _idolCam.panY += curMidSY - _tPinch.midSY;
-      idolCamClampPan();
-      idolCamApply(false);
+      const prevDist = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 1;
+      const curDist  = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
 
-    } else if (e.touches.length === 1 && _tDrag) {
-      const sx = e.touches[0].clientX - wc.cx;
-      const sy = e.touches[0].clientY - wc.cy;
-      _idolCam.panX = _tDrag.panX + (sx - _tDrag.sx);
-      _idolCam.panY = _tDrag.panY + (sy - _tDrag.sy);
-      idolCamClampPan();
-      idolCamApply(false);
+      // 핀치 중심 (스크린 오프셋)
+      const midX = (t0.clientX + t1.clientX) / 2 - wc.cx;
+      const midY = (t0.clientY + t1.clientY) / 2 - wc.cy;
+      const pmidX = (p0.x + p1.x) / 2 - wc.cx;
+      const pmidY = (p0.y + p1.y) / 2 - wc.cy;
+
+      // 줌 delta 적용
+      _idolCamZoomAt(_idolCam.tzoom * (curDist / prevDist), midX, midY);
+      // 중심점 이동 (팬)
+      _idolCam.tx += midX - pmidX;
+      _idolCam.ty += midY - pmidY;
+      _idolCamClamp();
+      // 핀치/팬은 즉시 반영 (1:1)
+      _idolCam.x = _idolCam.tx; _idolCam.y = _idolCam.ty;
+      _idolCam.zoom = _idolCam.tzoom;
+      _idolCamFlush();
     }
+
+    _prevTouches = cur.map(t => ({ id: t.identifier, x: t.clientX, y: t.clientY }));
   }, { passive: false });
 
   wrapper.addEventListener('touchend', e => {
-    if (e.touches.length < 2) _tPinch = null;
-    if (e.touches.length < 1) _tDrag  = null;
+    _prevTouches = Array.from(e.touches).map(t => ({ id: t.identifier, x: t.clientX, y: t.clientY }));
   }, { passive: true });
   wrapper.addEventListener('touchcancel', () => {
-    _tDrag = null; _tPinch = null;
+    _prevTouches = [];
   }, { passive: true });
 }
 
