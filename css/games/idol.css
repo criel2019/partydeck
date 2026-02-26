@@ -3226,11 +3226,10 @@
   display: none !important;
 }
 
-/* ISO 이모지 텍스트 기본 스타일 */
-#idolGame #idolIsoBoardSvg .iso-emoji {
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
-  user-select: none;
-  -webkit-user-select: none;
+/* ISO 아이콘 이미지 스타일 */
+#idolGame #idolIsoBoardSvg .iso-icon {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: auto;
 }
 
 /* 플레이어 위치 링 — 반짝임 애니메이션 */

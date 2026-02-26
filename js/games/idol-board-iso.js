@@ -30,6 +30,31 @@ const _ISO_COLORS = {
 // 코너 셀 인덱스 집합 (특수 시각 처리 — 더 두꺼운 depth, 금색 테두리)
 const _ISO_CORNERS = new Set([0, 9, 18, 27]);
 
+// ─── 아이콘 이미지 경로 매핑 ──────────────────────────
+const _ISO_ICONS = {
+  start:       'img/games/idol/icon-start.png',
+  event:       'img/games/idol/icon-event.png',
+  gacha:       'img/games/idol/icon-gacha.png',
+  chance:      'img/games/idol/icon-chance.png',
+  tax:         'img/games/idol/icon-tax.png',
+  police:      'img/games/idol/icon-police.png',
+  free:        'img/games/idol/icon-free.png',
+  stage:       'img/games/idol/icon-stage.png',
+  shop_music:  'img/games/idol/icon-shop-music.png',
+  shop_media:  'img/games/idol/icon-shop-film.png',
+  shop_beauty: 'img/games/idol/icon-shop-beauty.png',
+  shop_event:  'img/games/idol/icon-shop-fashion.png',
+};
+
+// 셀 인덱스 + 셀 데이터 → 아이콘 경로 반환
+function _isoGetIconPath(idx, cell) {
+  if (cell.type === 'shop') {
+    const shop = (typeof SHOPS !== 'undefined') ? SHOPS.find(s => s.id === cell.shopId) : null;
+    return shop ? (_ISO_ICONS[`shop_${shop.cat}`] || null) : null;
+  }
+  return _ISO_ICONS[cell.type] || null;
+}
+
 // ─── 꼭짓점 계산 ─────────────────────────────────────
 // 격자 [c, r]의 상단면 다이아몬드 4꼭짓점 반환
 function _isoVtx(c, r) {
@@ -71,6 +96,11 @@ function _isoDefsHTML() {
           `<feGaussianBlur stdDeviation="2.5" result="b"/>` +
           `<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>` +
           `</filter>`;
+
+  // 아이콘 원형 클립 (objectBoundingBox → 재사용 가능한 단일 정의)
+  html += `<clipPath id="isoIconClip" clipPathUnits="objectBoundingBox">` +
+          `<circle cx="0.5" cy="0.5" r="0.5"/>` +
+          `</clipPath>`;
 
   html += '</defs>';
   return html;
@@ -143,19 +173,25 @@ function _isoCreateCellGroup(idx, c, r, state) {
   tp.setAttribute('stroke-width', isCorner ? '1.5' : '0.5');
   g.appendChild(tp);
 
-  // ④ 이모지 (상단면 중심)
+  // ④ 아이콘 이미지 (상단면 중심, 원형 클립)
   const cx = (vtx.top.x + vtx.right.x + vtx.bottom.x + vtx.left.x) / 4;
   const cy = (vtx.top.y + vtx.right.y + vtx.bottom.y + vtx.left.y) / 4;
-  const emojiEl = document.createElementNS(ns, 'text');
-  emojiEl.setAttribute('class', 'iso-emoji');
-  emojiEl.setAttribute('x', cx.toFixed(1));
-  emojiEl.setAttribute('y', (cy + 4).toFixed(1));
-  emojiEl.setAttribute('text-anchor', 'middle');
-  emojiEl.setAttribute('dominant-baseline', 'middle');
-  emojiEl.setAttribute('font-size', isCorner ? '13' : '10');
-  emojiEl.setAttribute('pointer-events', 'none');
-  emojiEl.textContent = info?.emoji ?? '⬜';
-  g.appendChild(emojiEl);
+  const iconPath = _isoGetIconPath(idx, cell);
+  const iconSize = isCorner ? 22 : 18;
+  const halfIcon = iconSize / 2;
+  if (iconPath) {
+    const imgEl = document.createElementNS(ns, 'image');
+    imgEl.setAttribute('class', 'iso-icon');
+    imgEl.setAttribute('href', iconPath);
+    imgEl.setAttribute('x', (cx - halfIcon).toFixed(1));
+    imgEl.setAttribute('y', (cy - halfIcon).toFixed(1));
+    imgEl.setAttribute('width', iconSize);
+    imgEl.setAttribute('height', iconSize);
+    imgEl.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    imgEl.setAttribute('clip-path', 'url(#isoIconClip)');
+    imgEl.setAttribute('pointer-events', 'none');
+    g.appendChild(imgEl);
+  }
 
   // ⑤ 소유자 점 (shop 셀 전용)
   if (cell.type === 'shop') {
