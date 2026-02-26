@@ -187,8 +187,7 @@ function _isoCreateCellGroup(idx, c, r, state) {
     imgEl.setAttribute('y', (cy - halfIcon).toFixed(1));
     imgEl.setAttribute('width', iconSize);
     imgEl.setAttribute('height', iconSize);
-    imgEl.setAttribute('preserveAspectRatio', 'xMidYMid slice');
-    imgEl.setAttribute('clip-path', 'url(#isoIconClip)');
+    imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     imgEl.setAttribute('pointer-events', 'none');
     // 셀마다 다른 타이밍으로 둥실 애니메이션 (음수 딜레이 = 즉시 다른 위상에서 시작)
     const floatDur  = (2.4 + (idx % 4) * 0.3).toFixed(1);
