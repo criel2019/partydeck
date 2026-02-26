@@ -488,7 +488,6 @@ function bsSpin() {
 function bsResumeAfterRoulette() {
   if (!bsState) return;
   var bs = bsState;
-  var wasLastCard = bs.rouletteReason === 'last-card';
 
   bs.phase = 'playing';
   bs.revealedCards = null;
@@ -496,6 +495,17 @@ function bsResumeAfterRoulette() {
   bs.liarCallerId = null;
   bs.liarCallerName = null;
   bs.penaltyPlayer = null;
+  // 폭탄주 누적 카운트: 당첨 시 초기화, 세이프/벌칙 시 증가
+  if (bs.rouletteResult === 'bombshot') {
+    bs.bombshotMixes = 0;
+  } else {
+    if (!bs.bombshotMixes) bs.bombshotMixes = 0;
+    bs.bombshotMixes++;
+  }
+
+  // 룰렛 대상자의 인덱스를 기억 (턴 순서 보정용)
+  var targetIdx = bs.rouletteTarget ? bs.players.findIndex(function(p) { return p.id === bs.rouletteTarget.id; }) : 0;
+
   bs.rouletteTarget = null;
   bs.rouletteSlots = null;
   bs.rouletteSlotIndex = -1;
@@ -503,17 +513,13 @@ function bsResumeAfterRoulette() {
   bs.rouletteResultLabel = null;
   bs.rouletteReason = null;
 
-  // 폭탄주 누적 카운트 증가 (세이프/벌칙일 경우 누적)
-  if (!bs.bombshotMixes) bs.bombshotMixes = 0;
-  bs.bombshotMixes++;
-
-  // Always redeal and restart from beginning after roulette
-  bsRestartRound();
+  // 룰렛 대상자부터 다음 라운드 시작
+  bsRestartRound(targetIdx >= 0 ? targetIdx : 0);
   broadcastBSState();
 }
 
 // ===== HOST: RESTART ROUND (카드 재분배, 폭탄주 누적 유지) =====
-function bsRestartRound() {
+function bsRestartRound(startIdx) {
   if (!bsState) return;
   var bs = bsState;
 
@@ -537,7 +543,7 @@ function bsRestartRound() {
 
   // glassPile은 유지 (누적), 턴 초기화
   bs.lastSubmission = null;
-  bs.turnIdx = 0;
+  bs.turnIdx = typeof startIdx === 'number' ? startIdx : 0;
   bs._submittedThisTurn = false;
 
   showToast('🔄 새 라운드! 폭탄주 ' + (bs.bombshotMixes || 0) + '잔 누적 중...');
