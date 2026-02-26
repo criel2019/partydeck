@@ -93,6 +93,10 @@ function idolHideDiceOverlay() {
 // ─── 게임 상태 ────────────────────────────────
 let idolState = null;
 
+// ─── 카메라 상태 ──────────────────────────────
+let _idolCam = { zoom: 1, panX: 0, panY: 0 };
+let _idolCamGestureInit = false;
+
 const IDOL_TOTAL_TURNS = 25;
 const IDOL_START_MONEY = 2000;
 const IDOL_SALARY     = 400;  // 출발 통과 월급
@@ -165,6 +169,8 @@ function idolInitGame(selections) {
   };
 
   _idolSelectionLocked = false;
+  // 카메라 초기화
+  _idolCam = { zoom: 1, panX: 0, panY: 0 };
   broadcastIdolState();
   idolRenderAll();
 }
@@ -974,6 +980,10 @@ function idolRenderAll() {
   idolRenderResourceBar();
   idolRenderBoard();
   idolRenderActionPanel();
+  // 카메라 제스처 초기화 (첫 렌더 때 한 번만)
+  idolCamInitGestures();
+  // 현재 카메라 상태 적용 (전환 없이)
+  idolCamApply(false);
 }
 
 // ─── 헤더 렌더 ────────────────────────────────
@@ -1129,6 +1139,8 @@ function idolAnimateMoveToken(playerId, fromPos, toPos, onDone) {
     if (c) {
       tokenEl.style.left = c.x + 'px';
       tokenEl.style.top  = c.y + 'px';
+      // 카메라가 이동 중인 토큰을 부드럽게 따라가도록
+      idolCamFollowPos(c.x, c.y, false);
     }
 
     // 바운스 애니메이션 클래스 교체
@@ -1158,6 +1170,199 @@ function idolGetCellGridCoords() {
   for (let i = 8; i >= 0; i--) coords.push([i, 0]);        // 상단: 19~27
   for (let i = 1; i <= 8; i++) coords.push([0, i]);         // 좌측: 28~35
   return coords;
+}
+
+// ─── 카메라 시스템 ────────────────────────────
+
+// 카메라 transform 적용
+function idolCamApply(animated) {
+  const vp = document.getElementById('idolBoardViewport');
+  if (!vp) return;
+  vp.style.transition = animated
+    ? 'transform 0.38s cubic-bezier(0.4,0,0.2,1)'
+    : 'none';
+  vp.style.transform = `translate(${_idolCam.panX}px, ${_idolCam.panY}px) scale(${_idolCam.zoom})`;
+}
+
+// 팬 범위 클램프 (보드 끝까지만 이동 가능)
+function idolCamClampPan() {
+  const board   = document.getElementById('idolBoard');
+  const wrapper = document.getElementById('idolBoardWrapper');
+  if (!board || !wrapper) return;
+  const bW = board.offsetWidth  || 390;
+  const bH = board.offsetHeight || 390;
+  const maxX = Math.max(0, bW * _idolCam.zoom * 0.5);
+  const maxY = Math.max(0, bH * _idolCam.zoom * 0.5);
+  _idolCam.panX = Math.max(-maxX, Math.min(maxX, _idolCam.panX));
+  _idolCam.panY = Math.max(-maxY, Math.min(maxY, _idolCam.panY));
+}
+
+// 스크린 좌표 기준으로 줌 (커서·핀치 위치 고정)
+function idolCamZoomTo(newZoom, screenOffsetX, screenOffsetY) {
+  const oldZoom = _idolCam.zoom;
+  newZoom = Math.max(0.7, Math.min(2.8, newZoom));
+  if (oldZoom === newZoom) return;
+  const sx = screenOffsetX || 0;
+  const sy = screenOffsetY || 0;
+  _idolCam.panX = sx - newZoom * (sx - _idolCam.panX) / oldZoom;
+  _idolCam.panY = sy - newZoom * (sy - _idolCam.panY) / oldZoom;
+  _idolCam.zoom = newZoom;
+  idolCamClampPan();
+}
+
+// 보드 로컬 좌표 (cx, cy) 를 화면 중심에 놓기
+function idolCamFollowPos(cx, cy, animated) {
+  const board = document.getElementById('idolBoard');
+  if (!board) return;
+  const bW = board.offsetWidth  || 390;
+  const bH = board.offsetHeight || 390;
+  _idolCam.panX = -_idolCam.zoom * (cx - bW / 2);
+  _idolCam.panY = -_idolCam.zoom * (cy - bH / 2);
+  idolCamClampPan();
+  idolCamApply(animated !== false);
+}
+
+// 셀 인덱스 기준 팔로우
+function idolCamFollow(cellIdx, animated) {
+  const c = idolGetCellCenter(cellIdx);
+  if (!c) return;
+  idolCamFollowPos(c.x, c.y, animated);
+}
+
+// 줌 버튼
+function idolCamZoomIn() {
+  idolCamZoomTo(_idolCam.zoom * 1.3, 0, 0);
+  idolCamApply(true);
+}
+function idolCamZoomOut() {
+  idolCamZoomTo(_idolCam.zoom / 1.3, 0, 0);
+  idolCamApply(true);
+}
+function idolCamReset() {
+  _idolCam = { zoom: 1, panX: 0, panY: 0 };
+  idolCamApply(true);
+}
+
+// 터치·마우스·휠 제스처 초기화 (한 번만 실행)
+function idolCamInitGestures() {
+  if (_idolCamGestureInit) return;
+  _idolCamGestureInit = true;
+
+  const wrapper = document.getElementById('idolBoardWrapper');
+  if (!wrapper) return;
+
+  function wrapCenter() {
+    const r = wrapper.getBoundingClientRect();
+    return { cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+  }
+
+  // ── 마우스 휠 줌 ──
+  wrapper.addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.12 : 0.89;
+    const wc = wrapCenter();
+    const sx = e.clientX - wc.cx;
+    const sy = e.clientY - wc.cy;
+    idolCamZoomTo(_idolCam.zoom * factor, sx, sy);
+    idolCamApply(false);
+  }, { passive: false });
+
+  // ── 마우스 드래그 팬 ──
+  let _mDrag = null;
+  wrapper.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    const wc = wrapCenter();
+    _mDrag = {
+      sx: e.clientX - wc.cx, sy: e.clientY - wc.cy,
+      panX: _idolCam.panX, panY: _idolCam.panY,
+    };
+    const vp = document.getElementById('idolBoardViewport');
+    if (vp) vp.classList.add('dragging');
+  });
+  window.addEventListener('mousemove', e => {
+    if (!_mDrag) return;
+    const wc = wrapCenter();
+    _idolCam.panX = _mDrag.panX + (e.clientX - wc.cx - _mDrag.sx);
+    _idolCam.panY = _mDrag.panY + (e.clientY - wc.cy - _mDrag.sy);
+    idolCamClampPan();
+    idolCamApply(false);
+  });
+  window.addEventListener('mouseup', () => {
+    _mDrag = null;
+    const vp = document.getElementById('idolBoardViewport');
+    if (vp) vp.classList.remove('dragging');
+  });
+
+  // ── 터치 팬·핀치줌 ──
+  let _tDrag  = null;  // 단일 터치 팬
+  let _tPinch = null;  // 두 손가락 핀치
+
+  wrapper.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      const wc = wrapCenter();
+      _tDrag = {
+        sx: e.touches[0].clientX - wc.cx,
+        sy: e.touches[0].clientY - wc.cy,
+        panX: _idolCam.panX, panY: _idolCam.panY,
+      };
+      _tPinch = null;
+    } else if (e.touches.length === 2) {
+      const wc = wrapCenter();
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      _tPinch = {
+        dist: Math.sqrt(dx * dx + dy * dy),
+        startZoom: _idolCam.zoom,
+        midSX: (e.touches[0].clientX + e.touches[1].clientX) / 2 - wc.cx,
+        midSY: (e.touches[0].clientY + e.touches[1].clientY) / 2 - wc.cy,
+        startPanX: _idolCam.panX,
+        startPanY: _idolCam.panY,
+      };
+      _tDrag = null;
+    }
+  }, { passive: true });
+
+  wrapper.addEventListener('touchmove', e => {
+    e.preventDefault();
+    const wc = wrapCenter();
+
+    if (e.touches.length === 2 && _tPinch) {
+      const dx   = e.touches[1].clientX - e.touches[0].clientX;
+      const dy   = e.touches[1].clientY - e.touches[0].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const newZoom = Math.max(0.7, Math.min(2.8, _tPinch.startZoom * dist / _tPinch.dist));
+
+      // pinch 시작 상태로 복원 후 줌 계산
+      _idolCam.zoom = _tPinch.startZoom;
+      _idolCam.panX = _tPinch.startPanX;
+      _idolCam.panY = _tPinch.startPanY;
+      idolCamZoomTo(newZoom, _tPinch.midSX, _tPinch.midSY);
+
+      // 핀치 중심점 이동 (패닝)
+      const curMidSX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - wc.cx;
+      const curMidSY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - wc.cy;
+      _idolCam.panX += curMidSX - _tPinch.midSX;
+      _idolCam.panY += curMidSY - _tPinch.midSY;
+      idolCamClampPan();
+      idolCamApply(false);
+
+    } else if (e.touches.length === 1 && _tDrag) {
+      const sx = e.touches[0].clientX - wc.cx;
+      const sy = e.touches[0].clientY - wc.cy;
+      _idolCam.panX = _tDrag.panX + (sx - _tDrag.sx);
+      _idolCam.panY = _tDrag.panY + (sy - _tDrag.sy);
+      idolCamClampPan();
+      idolCamApply(false);
+    }
+  }, { passive: false });
+
+  wrapper.addEventListener('touchend', e => {
+    if (e.touches.length < 2) _tPinch = null;
+    if (e.touches.length < 1) _tDrag  = null;
+  }, { passive: true });
+  wrapper.addEventListener('touchcancel', () => {
+    _tDrag = null; _tPinch = null;
+  }, { passive: true });
 }
 
 // idolRenderResourceBar, idolCreateCellElement, idolRenderCenterHTML →
