@@ -1,0 +1,1267 @@
+/* =============================================
+   KINGSTAGRAM (킹스타그램)
+   Dark neon social-media dice game theme
+   All class names match js/games/kingstagram.js
+   ============================================= */
+
+/* --- CSS Variables (scoped) --- */
+#kingstagramGame {
+  --king-bg: #0a0a12;
+  --king-surface: #12122a;
+  --king-card: #181838;
+  --king-border: rgba(255, 255, 255, 0.08);
+  --king-text: #e8e8f0;
+  --king-text-dim: #6a6a8a;
+  --king-gold: #ffd700;
+  --king-pink: #ff6b9d;
+  --king-purple: #9c27b0;
+  --king-orange: #ff9800;
+  --king-blue: #42a5f5;
+  --king-yellow: #ffeb3b;
+  --king-red: #f44336;
+  --king-neutral: #888;
+  --king-follower: #ffe0a0;
+  --king-radius: 14px;
+  --king-radius-sm: 8px;
+}
+
+/* ===== GAME SCREEN ===== */
+#kingstagramGame {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(156, 39, 176, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(255, 107, 157, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(66, 165, 245, 0.04) 0%, transparent 60%),
+    var(--king-bg);
+  padding: 0;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle noise texture */
+#kingstagramGame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      rgba(255, 255, 255, 0.008) 1px,
+      transparent 2px,
+      transparent 48px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      rgba(255, 255, 255, 0.008) 1px,
+      transparent 2px,
+      transparent 48px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+#kingstagramGame > * { position: relative; z-index: 1; }
+
+
+/* ==============================================
+   TOP BAR
+   .king-topbar > .king-back-btn, .king-round-badge, .king-rank-btn
+   ============================================== */
+.king-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.55);
+  border-bottom: 1px solid var(--king-border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.king-back-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 17px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.king-back-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.king-round-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--king-gold);
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+  flex: 1;
+  text-align: center;
+}
+
+.king-rank-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--king-gold);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.king-rank-btn:active {
+  background: rgba(255, 215, 0, 0.15);
+}
+
+
+/* ==============================================
+   TURN INDICATOR
+   .king-turn-indicator > .king-turn-text, .king-turn-avatar
+   ============================================== */
+.king-turn-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid var(--king-border);
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.king-turn-text {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 15px;
+  color: var(--king-text);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+}
+
+.king-turn-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+
+/* ==============================================
+   PLAYERS BAR
+   .king-players-bar > .king-player-chip (.active, .me)
+   ============================================== */
+.king-players-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--king-border);
+}
+
+.king-player-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--king-card);
+  border-radius: 10px;
+  border: 1.5px solid var(--king-border);
+  min-width: 0;
+  flex-shrink: 0;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.king-player-chip.active {
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.15);
+}
+
+.king-player-chip.me {
+  border-color: rgba(255, 107, 157, 0.35);
+  background: rgba(255, 107, 157, 0.06);
+}
+
+.king-player-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.king-player-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.king-player-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--king-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.king-player-followers {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--king-gold);
+  line-height: 1.2;
+}
+
+.king-player-dice-count {
+  font-size: 10px;
+  color: var(--king-text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+
+/* ==============================================
+   LANDS GRID (3x2)
+   .king-lands-grid > .king-land-card
+   ============================================== */
+.king-lands-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, auto);
+  gap: 8px;
+  padding: 10px 10px 6px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.king-land-card {
+  background: var(--king-card);
+  border-radius: var(--king-radius);
+  border: 1.5px solid var(--king-border);
+  padding: 8px 6px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Land theme color accents (per position in grid) */
+.king-land-card:nth-child(1) { border-color: rgba(255, 107, 157, 0.25); }
+.king-land-card:nth-child(2) { border-color: rgba(156, 39, 176, 0.25); }
+.king-land-card:nth-child(3) { border-color: rgba(255, 152, 0, 0.25); }
+.king-land-card:nth-child(4) { border-color: rgba(66, 165, 245, 0.25); }
+.king-land-card:nth-child(5) { border-color: rgba(255, 235, 59, 0.25); }
+.king-land-card:nth-child(6) { border-color: rgba(244, 67, 54, 0.25); }
+
+/* Subtle top-glow per land */
+.king-land-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40px;
+  pointer-events: none;
+}
+.king-land-card:nth-child(1)::before { background: radial-gradient(ellipse at 50% 0%, rgba(255,107,157,0.1) 0%, transparent 70%); }
+.king-land-card:nth-child(2)::before { background: radial-gradient(ellipse at 50% 0%, rgba(156,39,176,0.1) 0%, transparent 70%); }
+.king-land-card:nth-child(3)::before { background: radial-gradient(ellipse at 50% 0%, rgba(255,152,0,0.1) 0%, transparent 70%); }
+.king-land-card:nth-child(4)::before { background: radial-gradient(ellipse at 50% 0%, rgba(66,165,245,0.1) 0%, transparent 70%); }
+.king-land-card:nth-child(5)::before { background: radial-gradient(ellipse at 50% 0%, rgba(255,235,59,0.08) 0%, transparent 70%); }
+.king-land-card:nth-child(6)::before { background: radial-gradient(ellipse at 50% 0%, rgba(244,67,54,0.1) 0%, transparent 70%); }
+
+
+/* ===== LAND HEADER ===== */
+.king-land-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 20px;
+}
+
+.king-land-emoji {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.king-land-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--king-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* Per-land name color tint */
+.king-land-card:nth-child(1) .king-land-name { color: var(--king-pink); }
+.king-land-card:nth-child(2) .king-land-name { color: var(--king-purple); }
+.king-land-card:nth-child(3) .king-land-name { color: var(--king-orange); }
+.king-land-card:nth-child(4) .king-land-name { color: var(--king-blue); }
+.king-land-card:nth-child(5) .king-land-name { color: var(--king-yellow); }
+.king-land-card:nth-child(6) .king-land-name { color: var(--king-red); }
+
+
+/* ===== LAND CARDS (follower cards) ===== */
+.king-land-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 18px;
+}
+
+.king-land-total {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  color: var(--king-gold);
+  line-height: 1.2;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.2);
+}
+
+.king-land-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.king-card-badge {
+  font-size: 9px;
+  font-weight: 800;
+  color: #5a4a20;
+  background: linear-gradient(135deg, #ffe8a0, #f0d070);
+  border-radius: 4px;
+  padding: 1px 5px;
+  line-height: 1.4;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+}
+
+.king-land-empty {
+  font-size: 12px;
+  color: var(--king-text-dim);
+  text-align: center;
+  padding: 2px 0;
+}
+
+
+/* ===== PLACED DICE IN LAND ===== */
+.king-land-dice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-height: 20px;
+  align-items: center;
+}
+
+.king-die-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+  /* background is set inline by JS per player color */
+}
+
+.king-die-neutral {
+  background: var(--king-neutral) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  font-size: 8px;
+}
+
+
+/* ==============================================
+   ACTION AREA
+   .king-action-area > various action UIs
+   ============================================== */
+.king-action-area {
+  padding: 10px 14px 12px;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid var(--king-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Dice remaining info */
+.king-dice-info {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--king-text);
+  text-align: center;
+}
+
+/* Roll button */
+.king-roll-btn {
+  width: 100%;
+  max-width: 300px;
+  padding: 12px 8px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 900;
+  font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: linear-gradient(135deg, var(--king-purple), var(--king-pink));
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(156, 39, 176, 0.35);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.king-roll-btn:active {
+  transform: scale(0.95);
+}
+.king-roll-btn:hover {
+  box-shadow: 0 6px 20px rgba(156, 39, 176, 0.5);
+}
+
+
+/* ==============================================
+   ROLL RESULTS
+   .king-roll-results > .king-roll-title, .king-dice-groups, ...
+   ============================================== */
+.king-roll-results {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.king-roll-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--king-text-dim);
+  text-align: center;
+}
+
+.king-dice-groups {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Dice group (per number) */
+.king-dice-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--king-surface);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--king-radius-sm);
+  padding: 8px 12px;
+  min-width: 52px;
+  transition: all 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.king-dice-group.clickable {
+  cursor: pointer;
+}
+
+.king-dice-group.clickable:active {
+  transform: scale(0.95);
+}
+
+.king-dice-group.selected {
+  border-color: var(--king-gold);
+  background: rgba(255, 215, 0, 0.08);
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.2), 0 0 4px rgba(255, 215, 0, 0.4);
+  animation: kingSelectedGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes kingSelectedGlow {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.15), 0 0 4px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), 0 0 6px rgba(255, 215, 0, 0.5);
+  }
+}
+
+.king-dice-group-land {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--king-text);
+  line-height: 1;
+}
+
+.king-dice-group.selected .king-dice-group-land {
+  color: var(--king-gold);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.king-dice-group-count {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.king-die-mini {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  /* background set inline by JS for player color */
+}
+
+.king-die-mini-neutral {
+  background: var(--king-neutral) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.king-dice-group-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--king-text-dim);
+  text-align: center;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.king-dice-group.selected .king-dice-group-label {
+  color: var(--king-gold);
+}
+
+
+/* ===== CHOOSE / CONFIRM BUTTON ===== */
+.king-choose-btn {
+  width: 100%;
+  max-width: 300px;
+  padding: 12px 8px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 900;
+  font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: linear-gradient(135deg, #00c853, #00e676);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 200, 83, 0.3);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.king-choose-btn:active {
+  transform: scale(0.95);
+}
+
+.king-choose-btn.disabled,
+.king-choose-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+
+/* ===== WAITING & SCORING TEXT ===== */
+.king-waiting-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--king-text-dim);
+  text-align: center;
+  padding: 8px 0;
+  animation: kingPulseText 1.5s ease-in-out infinite;
+}
+
+.king-scoring-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--king-gold);
+  text-align: center;
+  padding: 8px 0;
+  animation: kingPulseText 1.5s ease-in-out infinite;
+}
+
+@keyframes kingPulseText {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+
+/* ==============================================
+   GAME OVER OVERLAY
+   .king-gameover-overlay > .king-gameover-panel
+   ============================================== */
+.king-gameover-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(156, 39, 176, 0.15) 0%, transparent 60%),
+    rgba(8, 8, 16, 0.96);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 0;
+  animation: kingFadeIn 0.5s ease;
+}
+
+@keyframes kingFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.king-gameover-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.king-gameover-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 26px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--king-gold), var(--king-pink), var(--king-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3));
+  animation: kingCrownFloat 3s ease-in-out infinite;
+  margin-bottom: 4px;
+}
+
+@keyframes kingCrownFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Rank items in game over */
+.king-rank-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--king-card);
+  border-radius: 12px;
+  border: 1.5px solid var(--king-border);
+  width: 100%;
+  animation: kingRankAppear 0.5s ease-out both;
+}
+
+.king-rank-item:nth-child(2) { animation-delay: 0.2s; }
+.king-rank-item:nth-child(3) { animation-delay: 0.4s; }
+.king-rank-item:nth-child(4) { animation-delay: 0.6s; }
+.king-rank-item:nth-child(5) { animation-delay: 0.8s; }
+
+@keyframes kingRankAppear {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* JS uses .first / .second / .third classes (from kingBuildGameOverHTML) */
+.king-rank-item.first,
+.king-rank-item.rank-1 {
+  border-color: rgba(255, 215, 0, 0.4);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 107, 157, 0.05));
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.15);
+}
+
+.king-rank-item.second,
+.king-rank-item.rank-2 {
+  border-color: rgba(192, 192, 192, 0.3);
+  background: rgba(192, 192, 192, 0.04);
+}
+
+.king-rank-item.third,
+.king-rank-item.rank-3 {
+  border-color: rgba(205, 127, 50, 0.3);
+  background: rgba(205, 127, 50, 0.04);
+}
+
+.king-rank-number {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  min-width: 36px;
+  text-align: center;
+  color: var(--king-text-dim);
+}
+
+.king-rank-item.first .king-rank-number,
+.king-rank-item.rank-1 .king-rank-number {
+  color: var(--king-gold);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.king-rank-item.second .king-rank-number,
+.king-rank-item.rank-2 .king-rank-number {
+  color: #c0c0c0;
+}
+
+.king-rank-item.third .king-rank-number,
+.king-rank-item.rank-3 .king-rank-number {
+  color: #cd7f32;
+}
+
+.king-rank-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.king-rank-item.first .king-rank-avatar,
+.king-rank-item.rank-1 .king-rank-avatar {
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+}
+
+.king-rank-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.king-rank-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--king-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.king-rank-item.first .king-rank-name,
+.king-rank-item.rank-1 .king-rank-name {
+  color: var(--king-gold);
+}
+
+.king-rank-detail {
+  font-size: 11px;
+  color: var(--king-text-dim);
+  margin-top: 1px;
+}
+
+.king-rank-score {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: var(--king-gold);
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.25);
+  flex-shrink: 0;
+}
+
+.king-rank-item.first .king-rank-score,
+.king-rank-item.rank-1 .king-rank-score {
+  font-size: 24px;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+}
+
+/* Close button (game over) */
+.king-close-btn {
+  margin-top: 12px;
+  padding: 14px 40px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--king-purple), var(--king-pink));
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+  font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(156, 39, 176, 0.4);
+  transition: all 0.15s;
+  letter-spacing: 0.5px;
+}
+.king-close-btn:active {
+  transform: scale(0.95);
+}
+
+
+/* ==============================================
+   RANKINGS OVERLAY (mid-game)
+   .king-rankings-overlay > .king-rankings-panel
+   ============================================== */
+.king-rankings-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 8, 16, 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 14px;
+  animation: kingFadeIn 0.2s ease;
+}
+
+.king-rankings-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+}
+
+.king-rankings-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: var(--king-gold);
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.king-ranking-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--king-card);
+  border-radius: 8px;
+  border: 1px solid var(--king-border);
+  width: 100%;
+}
+
+.king-ranking-pos {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  color: var(--king-text-dim);
+  min-width: 30px;
+  text-align: center;
+}
+
+.king-ranking-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.king-ranking-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--king-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.king-ranking-score {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 15px;
+  color: var(--king-gold);
+  flex-shrink: 0;
+}
+
+.king-close-overlay-btn {
+  padding: 10px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--king-text);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.king-close-overlay-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+
+/* ==============================================
+   SCORING OVERLAY (DOM-created by kingShowScoring)
+   .king-scoring-overlay > .king-scoring-panel
+   ============================================== */
+.king-scoring-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 8, 16, 0.92);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  gap: 12px;
+  animation: kingFadeIn 0.3s ease;
+}
+
+.king-scoring-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.king-scoring-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px;
+  color: var(--king-gold);
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+  margin-bottom: 4px;
+}
+
+.king-scoring-lands {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.king-scoring-land {
+  padding: 10px 14px;
+  background: var(--king-card);
+  border-radius: var(--king-radius-sm);
+  border: 1px solid var(--king-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.king-scoring-land-header {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--king-text);
+}
+
+.king-scoring-empty {
+  font-size: 12px;
+  color: var(--king-text-dim);
+  font-style: italic;
+}
+
+.king-scoring-award {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.king-scoring-award.cancelled {
+  opacity: 0.5;
+}
+
+.king-scoring-award.neutral {
+  color: var(--king-neutral);
+}
+
+.king-scoring-player {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--king-text);
+}
+
+.king-scoring-award.cancelled .king-scoring-player {
+  text-decoration: line-through;
+  color: var(--king-text-dim);
+}
+
+.king-scoring-result {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--king-gold);
+  text-align: right;
+}
+
+.king-scoring-award.cancelled .king-scoring-result {
+  color: var(--king-red);
+}
+
+.king-scoring-award.neutral .king-scoring-result {
+  color: var(--king-neutral);
+}
+
+/* Scoring fade-in animation (used inline by JS) */
+@keyframes kingScoreFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* ==============================================
+   MOBILE RESPONSIVE
+   ============================================== */
+@media (max-width: 480px) {
+  .king-lands-grid {
+    gap: 6px;
+    padding: 8px 6px 4px;
+  }
+
+  .king-land-card {
+    padding: 6px 5px 5px;
+    border-radius: 10px;
+  }
+
+  .king-land-emoji {
+    font-size: 14px;
+  }
+
+  .king-land-name {
+    font-size: 10px;
+  }
+
+  .king-card-badge {
+    font-size: 8px;
+    padding: 1px 4px;
+  }
+
+  .king-die-dot {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+  }
+
+  .king-dice-group {
+    padding: 6px 10px;
+    min-width: 46px;
+  }
+
+  .king-die-mini {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    border-radius: 4px;
+  }
+
+  .king-round-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .king-player-chip {
+    padding: 5px 8px;
+    gap: 4px;
+  }
+
+  .king-player-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .king-player-name {
+    font-size: 10px;
+  }
+}
+
+@media (max-height: 700px) {
+  .king-lands-grid {
+    gap: 5px;
+    padding: 6px 6px 3px;
+  }
+
+  .king-land-card {
+    padding: 5px 4px 4px;
+    gap: 3px;
+  }
+
+  .king-land-cards {
+    min-height: 14px;
+  }
+
+  .king-land-dice {
+    min-height: 16px;
+  }
+
+  .king-action-area {
+    padding: 6px 12px 8px;
+  }
+
+  .king-roll-btn {
+    padding: 10px 6px;
+    font-size: 14px;
+  }
+
+  .king-choose-btn {
+    padding: 10px 6px;
+    font-size: 14px;
+  }
+
+  .king-turn-indicator {
+    padding: 5px 12px;
+  }
+
+  .king-topbar {
+    padding: 6px 10px;
+  }
+
+  .king-players-bar {
+    padding: 5px 8px;
+  }
+}
+
+@media (max-height: 600px) {
+  .king-land-emoji {
+    font-size: 12px;
+  }
+
+  .king-land-name {
+    font-size: 9px;
+  }
+
+  .king-card-badge {
+    font-size: 7px;
+    padding: 0px 3px;
+  }
+
+  .king-die-dot {
+    width: 12px;
+    height: 12px;
+    font-size: 7px;
+    border-radius: 3px;
+  }
+
+  .king-dice-group {
+    padding: 5px 8px;
+    min-width: 40px;
+  }
+
+  .king-die-mini {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+    border-radius: 3px;
+  }
+
+  .king-land-total {
+    font-size: 12px;
+  }
+}
+
+
+/* ==============================================
+   UTILITY ANIMATIONS
+   ============================================== */
+@keyframes kingBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.king-bounce {
+  animation: kingBounce 0.4s ease;
+}
+
+@keyframes kingShake {
+  0% { transform: translateX(0); }
+  15% { transform: translateX(-6px); }
+  30% { transform: translateX(5px); }
+  45% { transform: translateX(-4px); }
+  60% { transform: translateX(3px); }
+  75% { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+}
+
+.king-shake {
+  animation: kingShake 0.4s ease;
+}
+
+@keyframes kingPopIn {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.king-pop-in {
+  animation: kingPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Confetti-like sparkle for winner */
+@keyframes kingSpark {
+  0% { opacity: 0; transform: translateY(0) scale(0); }
+  50% { opacity: 1; transform: translateY(-8px) scale(1); }
+  100% { opacity: 0; transform: translateY(-16px) scale(0.5); }
+}
+
+.king-spark {
+  animation: kingSpark 0.8s ease-out;
+}
