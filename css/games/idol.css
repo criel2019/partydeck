@@ -48,6 +48,7 @@
   flex-direction: column;
   height: 100%;
   position: relative; /* 다이스 오버레이 기준점 */
+  isolation: isolate;  /* 독립 stacking context → 배경 z-index가 외부와 섞이지 않음 */
 }
 
 /* ─── 씬 배경 오버레이 ───────────────────────── */
