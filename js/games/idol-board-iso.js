@@ -297,47 +297,6 @@ function _isoCreateCellGroup(idx, c, r, state) {
     g.appendChild(imgEl);
   }
 
-  // ④-c 타일 이름 레이블 (타일 면 내부 하단 — 넘침 없음)
-  {
-    // 2글자 약칭 테이블 (타일 면 너비에 맞게 짧게)
-    const _ABBR = {
-      start: '출발', event: '이벤', gacha: '가챠', chance: '찬스',
-      tax: '세금', police: '경찰', free: '주차', stage: '무대',
-    };
-    const _CAT_ABBR = { music: '음악', media: '미디', beauty: '뷰티', event: '행사' };
-
-    let label = '';
-    if (cell.type === 'shop') {
-      const shop = (typeof SHOPS !== 'undefined') ? SHOPS.find(s => s.id === cell.shopId) : null;
-      label = shop ? (_CAT_ABBR[shop.cat] || '') : '';
-    } else {
-      label = _ABBR[cell.type] || '';
-    }
-
-    if (label) {
-      // 타일 면 하단 1/4 지점 — 타일 면 내부에 머물도록
-      const lFz = isCorner ? Math.round(HW * 0.38) : Math.round(HW * 0.30);
-      const lx  = cx;
-      const ly  = cy + HH * 0.72;   // vtx.bottom보다 위, 타일 면 안쪽
-
-      const lbl = document.createElementNS(ns, 'text');
-      lbl.setAttribute('class', 'iso-tile-label');
-      lbl.setAttribute('x', lx.toFixed(1));
-      lbl.setAttribute('y', ly.toFixed(1));
-      lbl.setAttribute('text-anchor', 'middle');
-      lbl.setAttribute('dominant-baseline', 'middle');
-      lbl.setAttribute('font-size', lFz + 'px');
-      lbl.setAttribute('font-weight', 'bold');
-      lbl.setAttribute('font-family', "'Black Han Sans','Noto Sans KR',sans-serif");
-      lbl.setAttribute('fill', '#ffffff');
-      lbl.setAttribute('stroke', 'rgba(0,0,0,0.75)');
-      lbl.setAttribute('stroke-width', '1.2');
-      lbl.setAttribute('paint-order', 'stroke fill');
-      lbl.setAttribute('pointer-events', 'none');
-      lbl.textContent = label;
-      g.appendChild(lbl);
-    }
-  }
 
   // ⑤ 소유자 점 (shop 셀 전용)
   if (cell.type === 'shop') {
@@ -427,6 +386,73 @@ function idolRenderIsoBoard(container, state) {
     gCells.appendChild(_isoCreateCellGroup(idx, c, r, state));
   });
   svg.appendChild(gCells);
+
+  // ─── 타일 이름 레이블 별도 레이어 (모든 타일 위에 렌더) ──────
+  const gLabels = document.createElementNS(ns, 'g');
+  gLabels.id = 'iso-tile-labels';
+  {
+    const _ABBR = {
+      start: '출발', event: '이벤', gacha: '가챠', chance: '찬스',
+      tax: '세금', police: '경찰', free: '주차', stage: '무대',
+    };
+    const _CAT_ABBR = { music: '음악', media: '미디', beauty: '뷰티', event: '행사' };
+    const { HW, HH, DEPTH, DEPTH_C } = ISO_BOARD;
+
+    sorted.forEach(({ idx, c, r }) => {
+      const cell = BOARD_CELLS[idx];
+      const isCorner = _ISO_CORNERS.has(idx);
+      const depth = isCorner ? DEPTH_C : DEPTH;
+
+      let label = '';
+      if (cell.type === 'shop') {
+        const shop = (typeof SHOPS !== 'undefined') ? SHOPS.find(s => s.id === cell.shopId) : null;
+        label = shop ? (_CAT_ABBR[shop.cat] || '') : '';
+      } else {
+        label = _ABBR[cell.type] || '';
+      }
+      if (!label) return;
+
+      const vtx = _isoVtx(c, r);
+      // 레이블 위치: 타일 남쪽 벽 아래 (depth 포함) — 다른 타일에 가려지지 않음
+      const lx = vtx.bottom.x;
+      const ly = vtx.bottom.y + depth + HH * 0.15;
+      const lFz = isCorner ? Math.round(HW * 0.32) : Math.round(HW * 0.26);
+
+      // pill 배경
+      const pillW = lFz * 2.6;
+      const pillH = lFz * 1.45;
+      const pillR = pillH / 2;
+      const bgRect = document.createElementNS(ns, 'rect');
+      bgRect.setAttribute('x', (lx - pillW / 2).toFixed(1));
+      bgRect.setAttribute('y', (ly - pillH / 2).toFixed(1));
+      bgRect.setAttribute('width',  pillW.toFixed(1));
+      bgRect.setAttribute('height', pillH.toFixed(1));
+      bgRect.setAttribute('rx', pillR.toFixed(1));
+      bgRect.setAttribute('ry', pillR.toFixed(1));
+      bgRect.setAttribute('fill', 'rgba(0,0,0,0.55)');
+      bgRect.setAttribute('pointer-events', 'none');
+      gLabels.appendChild(bgRect);
+
+      // 텍스트
+      const lbl = document.createElementNS(ns, 'text');
+      lbl.setAttribute('class', 'iso-tile-label');
+      lbl.setAttribute('x', lx.toFixed(1));
+      lbl.setAttribute('y', ly.toFixed(1));
+      lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('dominant-baseline', 'central');
+      lbl.setAttribute('font-size', lFz + 'px');
+      lbl.setAttribute('font-weight', 'bold');
+      lbl.setAttribute('font-family', "'Black Han Sans','Noto Sans KR',sans-serif");
+      lbl.setAttribute('fill', '#ffffff');
+      lbl.setAttribute('stroke', 'rgba(0,0,0,0.6)');
+      lbl.setAttribute('stroke-width', '0.8');
+      lbl.setAttribute('paint-order', 'stroke fill');
+      lbl.setAttribute('pointer-events', 'none');
+      lbl.textContent = label;
+      gLabels.appendChild(lbl);
+    });
+  }
+  svg.appendChild(gLabels);
 
   // ─── 보드 외곽 림 라이트 (보드 경계를 빛나는 선으로 강조) ───
   const { OX, OY, HW, HH, DEPTH_C } = ISO_BOARD;
