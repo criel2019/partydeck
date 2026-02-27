@@ -2514,7 +2514,7 @@ function idolRenderActionPanel() {
 }
 
 // ─── ISO 보드 중앙 패널 ────────────────────────
-// 평상시: 플레이어 랭킹 + 스탯 미니 카드
+// 평상시: 타이틀 + 턴 진행 + 플레이어 랭킹 스코어보드
 function idolRenderCenterPanel() {
   const panel = document.getElementById('idolCenterPanel');
   if (!panel || !idolState) return;
@@ -2523,34 +2523,54 @@ function idolRenderCenterPanel() {
   const overlay = document.getElementById('idolCenterOverlay');
   if (overlay && overlay.style.display !== 'none') return;
 
-  const currentP = idolCurrentPlayer();
+  const currentP  = idolCurrentPlayer();
+  const turn      = idolState.turnNum || 1;
+  const turnPct   = Math.min(Math.round(turn / IDOL_TOTAL_TURNS * 100), 100);
 
-  // 명성 기준 내림차순 정렬 (랭킹 순)
+  // 명성 기준 내림차순 정렬
   const sorted = [...idolState.order]
     .map(id => idolState.players.find(p => p.id === id))
     .filter(Boolean)
     .sort((a, b) => b.fame - a.fame);
 
-  const rows = sorted.map((p, i) => {
-    const rank    = p.bankrupt ? '탈' : `${i + 1}위`;
-    const isCur   = currentP && p.id === currentP.id;
-    const accent  = idolUxGetPlayerAccent(p.id);
-    const moneyFmt = p.money >= 1000
-      ? (p.money / 1000).toFixed(1) + 'k'
-      : String(p.money);
-    const name = escapeHTML(p.name.length > 5 ? p.name.slice(0, 5) + '…' : p.name);
+  const maxFame   = Math.max(...sorted.map(p => p.fame), 1);
+  const medals    = ['🥇', '🥈', '🥉', '4️⃣'];
 
+  const rows = sorted.map((p, i) => {
+    const isCur    = currentP && p.id === currentP.id;
+    const accent   = idolUxGetPlayerAccent(p.id);
+    const medal    = p.bankrupt ? '💀' : (medals[i] || `${i + 1}`);
+    const name     = escapeHTML(p.name.length > 5 ? p.name.slice(0, 5) + '…' : p.name);
+    const famePct  = Math.round(p.fame / maxFame * 100);
+    const moneyFmt = p.money >= 10000 ? Math.round(p.money / 1000) + 'k'
+                   : p.money >= 1000  ? (p.money / 1000).toFixed(1) + 'k'
+                   : String(p.money);
     return `<div class="iso-cp-row${isCur ? ' is-current' : ''}${p.bankrupt ? ' is-bankrupt' : ''}"
                  style="--cp-accent:${accent}">
-      <span class="iso-cp-rank">${rank}</span>
+      <span class="iso-cp-medal">${medal}</span>
       <span class="iso-cp-av">${p.avatar || '🙂'}</span>
-      <span class="iso-cp-name">${name}</span>
+      <div class="iso-cp-mid">
+        <div class="iso-cp-toprow">
+          <span class="iso-cp-name">${name}</span>
+          <span class="iso-cp-money">💰${moneyFmt}</span>
+        </div>
+        <div class="iso-cp-famewrap">
+          <div class="iso-cp-famebar" style="width:${famePct}%;--bar-clr:${accent}"></div>
+        </div>
+      </div>
       <span class="iso-cp-fame">⭐${p.fame}</span>
-      <span class="iso-cp-money">💰${moneyFmt}</span>
     </div>`;
   }).join('');
 
-  panel.innerHTML = rows;
+  panel.innerHTML = `
+    <div class="iso-cp-header">
+      <span class="iso-cp-title">🎤 아이돌 매니지먼트</span>
+      <span class="iso-cp-turn-badge">${turn} / ${IDOL_TOTAL_TURNS} 턴</span>
+    </div>
+    <div class="iso-cp-progress">
+      <div class="iso-cp-prog-bar" style="width:${turnPct}%"></div>
+    </div>
+    ${rows}`;
 }
 
 // 오버라이드 표시 (이벤트 연출용 — 지금은 흰색 빈 박스)

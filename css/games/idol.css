@@ -3247,77 +3247,149 @@
 /* isoStepFlash / iso-step-hl — 하단 업그레이드 섹션에 정의됨 */
 
 /* ===== ISO 보드 중앙 패널 =====
-   SVG 센터 다이아몬드(left=130,top=60,w=640,h=320) 위에
-   clip-path 다이아몬드로 정확히 겹침
+   위치·크기: JS _idolUpdateCenterPanelPos() 가 inline style로 지정
+   (left = HW*3, top = HH*3, w = HW*16, h = HH*16)
    =============================== */
 #idolGame .idol-iso-center-panel,
 #idolGame .idol-iso-center-overlay {
   position: absolute;
-  left:   130px;
-  top:    60px;
-  width:  640px;
-  height: 320px;
-  /* 정확히 SVG 센터 다이아몬드와 같은 모양으로 클리핑 */
+  /* 위치는 JS가 지정 */
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   pointer-events: none;
   overflow: hidden;
 }
 
-/* ── 스탯 패널 ─────────────────────────────── */
+/* ── 스코어보드 패널 ─────────────────────────── */
 #idolGame .idol-iso-center-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 28px 60px; /* 다이아몬드 꼭짓점 근처 여백 */
+  gap: calc(var(--iso-hw, 40px) * 0.08);
+  /* 다이아몬드 꼭짓점 잘리지 않도록 상하 패딩 */
+  padding: 22% 18%;
 }
 
-/* 플레이어 한 줄 */
+/* ── 헤더: 타이틀 + 턴 배지 ─────────────────── */
+.iso-cp-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: calc(var(--iso-hw, 40px) * 0.05);
+}
+.iso-cp-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: calc(var(--iso-hw, 40px) * 0.30);
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.90), 0 0 3px #000;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.iso-cp-turn-badge {
+  font-size: calc(var(--iso-hw, 40px) * 0.22);
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(0, 0, 0, 0.38);
+  padding: 1px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+/* ── 턴 진행 바 ────────────────────────────── */
+.iso-cp-progress {
+  width: calc(var(--iso-hw, 40px) * 4.5);
+  height: 3px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: calc(var(--iso-hw, 40px) * 0.06);
+}
+.iso-cp-prog-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ff80c0, #ffcc00);
+  border-radius: 2px;
+  transition: width 0.6s ease;
+  box-shadow: 0 0 6px rgba(255, 200, 100, 0.80);
+}
+
+/* ── 플레이어 행 ─────────────────────────────── */
 .iso-cp-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  width: 260px;
-  background: rgba(20, 10, 30, 0.62);
+  gap: calc(var(--iso-hw, 40px) * 0.12);
+  width: calc(var(--iso-hw, 40px) * 5.6);
+  max-width: 250px;
+  background: rgba(8, 4, 18, 0.68);
   border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 24px;
-  padding: 4px 12px 4px 7px;
-  font-size: 11px;
-  color: #f0e8f8;
-  transition: background 0.2s;
+  border-radius: 20px;
+  padding: 3px 8px 3px 5px;
+  font-size: calc(var(--iso-hw, 40px) * 0.22);
+  color: #e8e0f8;
+  transition: transform 0.25s, box-shadow 0.25s;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
-
-/* 현재 턴 플레이어 강조 */
 .iso-cp-row.is-current {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: var(--cp-accent, #ff6b35);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--cp-accent, #ff80c0);
   border-width: 1.5px;
+  transform: scaleX(1.05);
+  box-shadow:
+    0 0 10px rgba(255, 255, 255, 0.14),
+    0 0  6px var(--cp-accent, #ff80c0);
   color: #fff;
-  font-weight: 600;
-  box-shadow: 0 0 8px rgba(255,255,255,0.12);
 }
-
-/* 파산 플레이어 */
 .iso-cp-row.is-bankrupt {
-  opacity: 0.40;
+  opacity: 0.38;
   text-decoration: line-through;
 }
 
-.iso-cp-rank  { min-width: 22px; font-size: 9px; color: rgba(255,255,255,0.55); text-align: right; }
-.iso-cp-av    { font-size: 12px; line-height: 1; }
-.iso-cp-name  { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
-.iso-cp-fame  { font-size: 9px; color: #ffe082; white-space: nowrap; }
-.iso-cp-money { font-size: 9px; color: #a5f3a0; white-space: nowrap; }
+.iso-cp-medal { min-width: calc(var(--iso-hw, 40px) * 0.38); font-size: calc(var(--iso-hw, 40px) * 0.34); text-align: center; }
+.iso-cp-av    { font-size: calc(var(--iso-hw, 40px) * 0.34); line-height: 1; }
 
-/* ── 오버라이드 패널 (이벤트 연출 자리) ─────── */
+/* 이름 + 자금 + 명성 바 묶음 */
+.iso-cp-mid   { flex: 1; display: flex; flex-direction: column; gap: 2px; overflow: hidden; min-width: 0; }
+.iso-cp-toprow { display: flex; justify-content: space-between; align-items: baseline; gap: 3px; }
+.iso-cp-name  { font-size: calc(var(--iso-hw, 40px) * 0.22); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.iso-cp-money { font-size: calc(var(--iso-hw, 40px) * 0.19); color: #a5f3a0; white-space: nowrap; flex-shrink: 0; }
+
+/* 명성 바 */
+.iso-cp-famewrap {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.iso-cp-famebar {
+  height: 100%;
+  background: var(--bar-clr, #ffd700);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+  box-shadow: 0 0 5px var(--bar-clr, #ffd700);
+}
+
+/* 명성 숫자 */
+.iso-cp-fame  { font-size: calc(var(--iso-hw, 40px) * 0.22); color: #ffe082; white-space: nowrap; flex-shrink: 0; }
+
+/* ── 오버라이드 패널 (이벤트 연출용) ─────────── */
 #idolGame .idol-iso-center-overlay {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(4, 2, 14, 0.88);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  color: #444;
+  gap: 8px;
+  font-size: calc(var(--iso-hw, 40px) * 0.32);
+  color: #fff;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: isoCenterOverlayFadeIn 0.3s ease;
+}
+@keyframes isoCenterOverlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* ════════════════════════════════════════════

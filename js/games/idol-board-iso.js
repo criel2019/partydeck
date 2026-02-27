@@ -456,8 +456,28 @@ function idolRenderIsoBoard(container, state) {
     container.insertBefore(svg, container.firstChild);
   }
 
+  // 센터 패널 위치 동적 업데이트 (SVG 크기에 맞춰 정렬)
+  _idolUpdateCenterPanelPos();
+
   // 초기 하이라이트 적용
   if (state) idolIsoUpdateCellHighlights(state);
+}
+
+// ─── 센터 패널 DOM 위치·크기를 ISO_BOARD 기준으로 동적 설정 ──
+// 센터 다이아몬드 경계: left=HW*3, top=HH*3, w=HW*16, h=HH*16
+function _idolUpdateCenterPanelPos() {
+  const { HW, HH } = ISO_BOARD;
+  const L = HW * 3, T = HH * 3, W = HW * 16, H = HH * 16;
+  ['idolCenterPanel', 'idolCenterOverlay'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.left   = L + 'px';
+    el.style.top    = T + 'px';
+    el.style.width  = W + 'px';
+    el.style.height = H + 'px';
+    el.style.setProperty('--iso-hw', HW + 'px');
+    el.style.setProperty('--iso-hh', HH + 'px');
+  });
 }
 
 // ─── 하이라이트 부분 갱신 (매 턴 상태 변화 시 호출) ──
