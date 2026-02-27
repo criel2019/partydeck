@@ -26,7 +26,7 @@ function _idolBgGetEl() {
       'opacity:0', 'transition:opacity 0.8s ease',
       'pointer-events:none',
     ].join(';');
-    game.appendChild(el);
+    game.prepend(el); // 첫 번째 자식 → 보드·헤더가 DOM 순서상 위에 와
   }
   _idolBgEl = el;
   return el;
