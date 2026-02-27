@@ -403,9 +403,12 @@ function idolRenderIsoBoard(container, state) {
       if (!label) return;
 
       const vtx = _isoVtx(c, r);
-      // 레이블 위치: 타일 남쪽 벽 아래 (depth 포함) — 다른 타일에 가려지지 않음
-      const lx = vtx.bottom.x;
-      const ly = vtx.bottom.y + depth + HH * 0.15;
+      // 마름모 위쪽(c+r <= 9)은 타일 위, 아래쪽은 남쪽 벽 아래에 배치
+      const upperHalf = (c + r) <= 9;
+      const lx = upperHalf ? vtx.top.x : vtx.bottom.x;
+      const ly = upperHalf
+        ? vtx.top.y - HH * 0.25
+        : vtx.bottom.y + depth + HH * 0.15;
       // 글자 수에 따라 폰트 크기 조정
       const charLen = label.length;
       const baseFz = isCorner ? HW * 0.32 : HW * 0.26;
