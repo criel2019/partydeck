@@ -391,35 +391,28 @@ function idolRenderIsoBoard(container, state) {
   const gLabels = document.createElementNS(ns, 'g');
   gLabels.id = 'iso-tile-labels';
   {
-    const _ABBR = {
-      start: '출발', event: '이벤', gacha: '가챠', chance: '찬스',
-      tax: '세금', police: '경찰', free: '주차', stage: '무대',
-    };
-    const _CAT_ABBR = { music: '음악', media: '미디', beauty: '뷰티', event: '행사' };
     const { HW, HH, DEPTH, DEPTH_C } = ISO_BOARD;
 
     sorted.forEach(({ idx, c, r }) => {
-      const cell = BOARD_CELLS[idx];
       const isCorner = _ISO_CORNERS.has(idx);
       const depth = isCorner ? DEPTH_C : DEPTH;
 
-      let label = '';
-      if (cell.type === 'shop') {
-        const shop = (typeof SHOPS !== 'undefined') ? SHOPS.find(s => s.id === cell.shopId) : null;
-        label = shop ? (_CAT_ABBR[shop.cat] || '') : '';
-      } else {
-        label = _ABBR[cell.type] || '';
-      }
+      // getCellInfo → shop은 실제 매장명, 나머지는 타입명
+      const info = (typeof getCellInfo === 'function') ? getCellInfo(idx) : BOARD_CELLS[idx];
+      const label = info?.name || '';
       if (!label) return;
 
       const vtx = _isoVtx(c, r);
       // 레이블 위치: 타일 남쪽 벽 아래 (depth 포함) — 다른 타일에 가려지지 않음
       const lx = vtx.bottom.x;
       const ly = vtx.bottom.y + depth + HH * 0.15;
-      const lFz = isCorner ? Math.round(HW * 0.32) : Math.round(HW * 0.26);
+      // 글자 수에 따라 폰트 크기 조정
+      const charLen = label.length;
+      const baseFz = isCorner ? HW * 0.32 : HW * 0.26;
+      const lFz = Math.round(charLen > 5 ? baseFz * 0.78 : charLen > 3 ? baseFz * 0.88 : baseFz);
 
-      // pill 배경
-      const pillW = lFz * 2.6;
+      // pill 배경 — 글자 수에 비례한 너비
+      const pillW = lFz * (charLen * 0.72 + 1.2);
       const pillH = lFz * 1.45;
       const pillR = pillH / 2;
       const bgRect = document.createElementNS(ns, 'rect');
