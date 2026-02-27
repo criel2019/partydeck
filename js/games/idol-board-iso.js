@@ -29,16 +29,17 @@ function _isoCalcConstants(wW, wH) {
 }
 
 // ─── 셀 타입 색상 팔레트 ─────────────────────────────
+// grad[0]=상단 밝은 색, grad[1]=상단 어두운 색, south=남쪽 벽, west=서쪽 벽, glowClr=아이콘 후광색
 const _ISO_COLORS = {
-  shop:   { grad: ['#fff0f5', '#fce4ec'], south: '#e0a0b4', west: '#c890a0' },
-  event:  { grad: ['#fff0e6', '#ffccbc'], south: '#d4956a', west: '#c07850' },
-  gacha:  { grad: ['#f3e5ff', '#e1bee7'], south: '#b088cc', west: '#9070b0' },
-  chance: { grad: ['#e8f5e9', '#c8e6c9'], south: '#80b888', west: '#689a70' },
-  tax:    { grad: ['#fff8e1', '#ffecb3'], south: '#cca840', west: '#b09030' },
-  start:  { grad: ['#fff9c4', '#ffe082'], south: '#c8a020', west: '#a08010' },
-  police: { grad: ['#bbdefb', '#90caf9'], south: '#5080c8', west: '#4060a8' },
-  free:   { grad: ['#dcedc8', '#aed581'], south: '#70a040', west: '#508030' },
-  stage:  { grad: ['#ffe0b2', '#ffcc80'], south: '#d4880a', west: '#b06800' },
+  shop:   { grad: ['#ffd4ea', '#f490bc'], south: '#c8508c', west: '#a83070', glowClr: '#f080b8' },
+  event:  { grad: ['#ffe8cc', '#ffb46a'], south: '#d47028', west: '#b05008', glowClr: '#ff9a40' },
+  gacha:  { grad: ['#eedcff', '#cc8af8'], south: '#8c3cc8', west: '#6c1ca8', glowClr: '#b060ee' },
+  chance: { grad: ['#d4f8ee', '#7cdcc0'], south: '#28a880', west: '#109068', glowClr: '#50d4a8' },
+  tax:    { grad: ['#fffcd4', '#ffd840'], south: '#c09010', west: '#9c7000', glowClr: '#d8b020' },
+  start:  { grad: ['#fffff0', '#f8f040'], south: '#b0b000', west: '#909000', glowClr: '#f0e820' },
+  police: { grad: ['#d4eaff', '#88b4f8'], south: '#2858c8', west: '#1040a8', glowClr: '#5090f0' },
+  free:   { grad: ['#d4ffd8', '#78eaa8'], south: '#24a848', west: '#008028', glowClr: '#50d870' },
+  stage:  { grad: ['#fff8d4', '#ffd040'], south: '#c88018', west: '#a06000', glowClr: '#e8a020' },
 };
 
 // 코너 셀 인덱스 집합 (특수 시각 처리 — 더 두꺼운 depth, 금색 테두리)
@@ -98,17 +99,42 @@ function _isoDefsHTML() {
             `</linearGradient>`;
   }
 
-  // 센터 대리석 방사형 그라디언트
-  html += `<radialGradient id="isoG_center" cx="50%" cy="40%" r="60%">` +
-          `<stop offset="0%" stop-color="#fffbfd"/>` +
-          `<stop offset="55%" stop-color="#f9eaf4"/>` +
-          `<stop offset="100%" stop-color="#f0d8ec"/>` +
+  // 타입별 아이콘 후광 방사형 그라디언트
+  for (const [type, col] of Object.entries(_ISO_COLORS)) {
+    html += `<radialGradient id="isoIconGlow_${type}" cx="50%" cy="50%" r="50%">` +
+            `<stop offset="0%"   stop-color="${col.glowClr}" stop-opacity="0.95"/>` +
+            `<stop offset="50%"  stop-color="${col.glowClr}" stop-opacity="0.50"/>` +
+            `<stop offset="100%" stop-color="${col.glowClr}" stop-opacity="0"/>` +
+            `</radialGradient>`;
+  }
+
+  // 센터 스테이지 바닥 방사형 그라디언트 (무대 조명 느낌)
+  html += `<radialGradient id="isoG_center" cx="50%" cy="38%" r="62%">` +
+          `<stop offset="0%"   stop-color="#ffffff" stop-opacity="1"/>` +
+          `<stop offset="35%"  stop-color="#fef8ff" stop-opacity="1"/>` +
+          `<stop offset="70%"  stop-color="#f8e8f8" stop-opacity="1"/>` +
+          `<stop offset="100%" stop-color="#ecd4e8" stop-opacity="1"/>` +
+          `</radialGradient>`;
+
+  // 센터 스포트라이트 오버레이 그라디언트
+  html += `<radialGradient id="isoSpotlight" cx="50%" cy="30%" r="55%">` +
+          `<stop offset="0%"   stop-color="#fff8d8" stop-opacity="0.75"/>` +
+          `<stop offset="45%"  stop-color="#ffe8c0" stop-opacity="0.30"/>` +
+          `<stop offset="100%" stop-color="#ffd0d8" stop-opacity="0"/>` +
           `</radialGradient>`;
 
   // 플레이어 위치 글로우 필터
   html += `<filter id="isoGlow" x="-60%" y="-60%" width="220%" height="220%">` +
           `<feGaussianBlur stdDeviation="2.5" result="b"/>` +
           `<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>` +
+          `</filter>`;
+
+  // 이동 스텝 하이라이트 글로우 필터 (강한 흰색 블룸)
+  html += `<filter id="isoStepGlow" x="-120%" y="-120%" width="340%" height="340%">` +
+          `<feGaussianBlur stdDeviation="5" result="blur"/>` +
+          `<feColorMatrix in="blur" type="matrix"` +
+          ` values="1 0 0 0 0.4  0 1 0 0 0.4  0 0 1 0 0.1  0 0 0 1.2 0" result="colorized"/>` +
+          `<feMerge><feMergeNode in="colorized"/><feMergeNode in="SourceGraphic"/></feMerge>` +
           `</filter>`;
 
   // 아이콘 원형 클립 (objectBoundingBox → 재사용 가능한 단일 정의)
@@ -132,8 +158,22 @@ function _isoCenterHTML() {
   const right  = { x: OX + 8 * HW,  y: OY + 10 * HH };
   const bottom = { x: OX,           y: OY + 18 * HH };
   const left   = { x: OX - 8 * HW,  y: OY + 10 * HH };
-  return `<polygon points="${_pts([top, right, bottom, left])}" ` +
-         `fill="url(#isoG_center)" stroke="#e8d0de" stroke-width="1"/>`;
+  const cx = OX;
+  const cy = OY + 10 * HH;
+  let html = '';
+  // 바닥 면 (대리석 그라디언트)
+  html += `<polygon points="${_pts([top, right, bottom, left])}" ` +
+          `fill="url(#isoG_center)" stroke="#dcc8d8" stroke-width="1.5"/>`;
+  // 스포트라이트 오버레이 (상단 중앙에서 내리비치는 따뜻한 빛)
+  html += `<polygon points="${_pts([top, right, bottom, left])}" ` +
+          `fill="url(#isoSpotlight)" pointer-events="none"/>`;
+  // 중앙 빛 반사 포인트 (무대 조명 반사)
+  html += `<ellipse cx="${cx}" cy="${cy - HH * 2}" rx="${HW * 2}" ry="${HH * 1.2}" ` +
+          `fill="rgba(255,255,220,0.18)" pointer-events="none" class="iso-center-shimmer"/>`;
+  // 보드 안쪽 테두리 글로우 (타일과 센터 경계)
+  html += `<polygon points="${_pts([top, right, bottom, left])}" ` +
+          `fill="none" stroke="rgba(255,200,230,0.40)" stroke-width="3" pointer-events="none"/>`;
+  return html;
 }
 
 // ─── 셀 <g> 요소 생성 ────────────────────────────────
@@ -151,7 +191,7 @@ function _isoCreateCellGroup(idx, c, r, state) {
 
   const ns = 'http://www.w3.org/2000/svg';
   const g  = document.createElementNS(ns, 'g');
-  g.setAttribute('class', 'iso-cell');
+  g.setAttribute('class', isCorner ? 'iso-cell iso-corner-cell' : 'iso-cell');
   g.setAttribute('data-idx', idx);
 
   // ① 서쪽 벽 (Left→Bottom 엣지, depth만큼 아래로 연장)
@@ -194,6 +234,20 @@ function _isoCreateCellGroup(idx, c, r, state) {
   const iconSize = isCorner ? Math.round(HW * 2.2) : Math.round(HW * 1.8);
   const halfIcon = iconSize / 2;
   if (iconPath) {
+    // ④-a 아이콘 후광 원 (아이콘 뒤에서 빛나는 오브)
+    const orbDur = (2.6 + (idx % 6) * 0.32).toFixed(1);
+    const orbDel = `-${((idx * 0.19) % parseFloat(orbDur)).toFixed(2)}s`;
+    const glowCirc = document.createElementNS(ns, 'circle');
+    glowCirc.setAttribute('class', 'iso-icon-glow');
+    glowCirc.setAttribute('cx', cx.toFixed(1));
+    glowCirc.setAttribute('cy', (cy + 1).toFixed(1));
+    glowCirc.setAttribute('r', (iconSize * 0.54).toFixed(1));
+    glowCirc.setAttribute('fill', `url(#isoIconGlow_${colorType})`);
+    glowCirc.setAttribute('pointer-events', 'none');
+    glowCirc.style.animation = `isoGlowOrb ${orbDur}s ease-in-out infinite ${orbDel}`;
+    g.appendChild(glowCirc);
+
+    // ④-b 아이콘 이미지
     const imgEl = document.createElementNS(ns, 'image');
     imgEl.setAttribute('class', 'iso-icon');
     imgEl.setAttribute('href', iconPath);
@@ -203,10 +257,10 @@ function _isoCreateCellGroup(idx, c, r, state) {
     imgEl.setAttribute('height', iconSize);
     imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     imgEl.setAttribute('pointer-events', 'none');
-    // 셀마다 다른 타이밍으로 둥실 애니메이션 (음수 딜레이 = 즉시 다른 위상에서 시작)
-    const floatDur  = (2.4 + (idx % 4) * 0.3).toFixed(1);
-    const floatDel  = `-${((idx * 0.17) % floatDur).toFixed(2)}s`;
-    const glowDel   = `-${((idx * 0.31) % 4.5).toFixed(2)}s`;
+    // 셀마다 다른 타이밍으로 둥실 + 글로우 애니메이션
+    const floatDur = (2.4 + (idx % 4) * 0.3).toFixed(1);
+    const floatDel = `-${((idx * 0.17) % floatDur).toFixed(2)}s`;
+    const glowDel  = `-${((idx * 0.31) % 4.5).toFixed(2)}s`;
     imgEl.style.animation =
       `isoIconFloat ${floatDur}s ease-in-out infinite ${floatDel},` +
       `isoIconGlow 4.5s ease-in-out infinite ${glowDel}`;
@@ -232,6 +286,14 @@ function _isoCreateCellGroup(idx, c, r, state) {
     }
     g.appendChild(dot);
   }
+
+  // ⑥ 호버 오버레이 (마우스 인터랙션 영역 + hover 브라이트닝용)
+  const hoverEl = document.createElementNS(ns, 'polygon');
+  hoverEl.setAttribute('class', 'iso-hover-overlay');
+  hoverEl.setAttribute('points', _pts([vtx.top, vtx.right, vtx.bottom, vtx.left]));
+  hoverEl.setAttribute('fill', 'transparent');
+  hoverEl.setAttribute('pointer-events', 'all');
+  g.appendChild(hoverEl);
 
   return g;
 }
@@ -376,7 +438,12 @@ function _idolIsoSetStepHL(cellIdx) {
   if (!gHL) return;
 
   // 기존 스텝 하이라이트 제거
-  gHL.querySelector('.iso-step-hl')?.remove();
+  gHL.querySelectorAll('.iso-step-hl').forEach(e => e.remove());
+
+  // 기존 셀 활성화 제거
+  document.querySelectorAll('#iso-cells .iso-cell-active')
+    .forEach(e => e.classList.remove('iso-cell-active'));
+
   if (cellIdx === null || cellIdx === undefined) return;
 
   const coordsList = idolGetCellGridCoords();
@@ -384,14 +451,36 @@ function _idolIsoSetStepHL(cellIdx) {
   const vtx        = _isoVtx(c, r);
   const ns         = 'http://www.w3.org/2000/svg';
 
+  // 상단면 밝은 오버레이 (황금빛 채움)
   const poly = document.createElementNS(ns, 'polygon');
-  poly.setAttribute('class',        'iso-step-hl');
-  poly.setAttribute('points',       _pts([vtx.top, vtx.right, vtx.bottom, vtx.left]));
-  poly.setAttribute('fill',         'rgba(255, 220, 240, 0.38)');
-  poly.setAttribute('stroke',       '#ff80c0');
-  poly.setAttribute('stroke-width', '1.5');
+  poly.setAttribute('class',          'iso-step-hl');
+  poly.setAttribute('points',         _pts([vtx.top, vtx.right, vtx.bottom, vtx.left]));
+  poly.setAttribute('fill',           'rgba(255, 245, 140, 0.65)');
+  poly.setAttribute('stroke',         '#fff0a0');
+  poly.setAttribute('stroke-width',   '2.5');
   poly.setAttribute('pointer-events', 'none');
+  poly.setAttribute('filter',         'url(#isoStepGlow)');
   gHL.appendChild(poly);
+
+  // 중심 스파크 원 (집중 광원)
+  const icx = (vtx.top.x + vtx.right.x + vtx.bottom.x + vtx.left.x) / 4;
+  const icy = (vtx.top.y + vtx.right.y + vtx.bottom.y + vtx.left.y) / 4;
+  const spark = document.createElementNS(ns, 'circle');
+  spark.setAttribute('class',          'iso-step-hl');
+  spark.setAttribute('cx',             icx.toFixed(1));
+  spark.setAttribute('cy',             icy.toFixed(1));
+  spark.setAttribute('r',              (ISO_BOARD.HW * 0.55).toFixed(1));
+  spark.setAttribute('fill',           'rgba(255, 255, 220, 0.80)');
+  spark.setAttribute('pointer-events', 'none');
+  spark.setAttribute('filter',         'url(#isoStepGlow)');
+  gHL.appendChild(spark);
+
+  // 해당 셀 그룹에 'iso-cell-active' 클래스 (CSS 리프트 애니메이션)
+  const cellGroup = document.querySelector(`#iso-cells .iso-cell[data-idx="${cellIdx}"]`);
+  if (cellGroup) {
+    void cellGroup.offsetWidth; // reflow → 애니메이션 재시작
+    cellGroup.classList.add('iso-cell-active');
+  }
 }
 
 // ─── 셀 인덱스 → 보드 좌표 (idol.js 에서 사용) ──────

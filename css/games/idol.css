@@ -3223,15 +3223,12 @@
   display: none !important;
 }
 
-/* ── ISO 아이콘 — 둥실 + 글로우 이펙트 ─── */
+/* ── ISO 아이콘 — 둥실 이펙트 ─── */
 @keyframes isoIconFloat {
-  0%, 100% { transform: translateY(0px);   }
-  50%       { transform: translateY(-4px);  }
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-4px); }
 }
-@keyframes isoIconGlow {
-  0%, 60%, 100% { filter: brightness(1)   drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }
-  80%           { filter: brightness(1.35) drop-shadow(0 0 8px rgba(255,210,120,0.85)); }
-}
+/* isoIconGlow — 하단 업그레이드 섹션에 정의됨 */
 
 #idolGame #idolIsoBoardSvg .iso-icon {
   transform-box:    fill-box;
@@ -3244,19 +3241,10 @@
   animation: isoRingPulse 1.6s ease-in-out infinite;
 }
 @keyframes isoRingPulse {
-  0%, 100% { opacity: 0.60; }
+  0%, 100% { opacity: 0.50; }
   50%       { opacity: 1.00; }
 }
-
-/* 이동 스텝 하이라이트 — 빠른 점멸 */
-#idolGame #idolIsoBoardSvg .iso-step-hl {
-  animation: isoStepFlash 0.25s ease-in-out;
-}
-@keyframes isoStepFlash {
-  0%   { opacity: 0; }
-  40%  { opacity: 1; }
-  100% { opacity: 0.8; }
-}
+/* isoStepFlash / iso-step-hl — 하단 업그레이드 섹션에 정의됨 */
 
 /* ===== ISO 보드 중앙 패널 =====
    SVG 센터 다이아몬드(left=130,top=60,w=640,h=320) 위에
@@ -3330,4 +3318,119 @@
   justify-content: center;
   font-size: 13px;
   color: #444;
+}
+
+/* ════════════════════════════════════════════
+   ISO 보드 비주얼 업그레이드 — 스테이지 라이팅
+   ════════════════════════════════════════════ */
+
+/* ── 보드 래퍼 스테이지 조명 배경 ────────────
+   아이돌 무대의 핀스팟·사이드 라이트 연출     */
+#idolGame .idol-board-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    /* 상단 중앙 핀스팟 (따뜻한 금빛) */
+    radial-gradient(ellipse 40% 28% at 50% -8%, rgba(255, 225, 130, 0.40) 0%, transparent 70%),
+    /* 좌측 사이드 라이트 (보라/퍼플) */
+    radial-gradient(ellipse 28% 55% at -8% 35%, rgba(200, 80, 255, 0.20) 0%, transparent 65%),
+    /* 우측 사이드 라이트 (시안/블루) */
+    radial-gradient(ellipse 28% 55% at 108% 35%, rgba(60, 200, 255, 0.20) 0%, transparent 65%),
+    /* 하단 필 라이트 (핑크) */
+    radial-gradient(ellipse 65% 22% at 50% 115%, rgba(255, 140, 200, 0.15) 0%, transparent 65%);
+}
+
+/* ── SVG 보드 외곽 글로우 ──────────────────── */
+#idolGame #idolIsoBoardSvg {
+  filter:
+    drop-shadow(0 6px 24px rgba(255, 160, 210, 0.45))
+    drop-shadow(0 0 12px rgba(180, 100, 255, 0.25));
+}
+
+/* ── 코너 셀 펄스 글로우 ───────────────────── */
+#idolGame #idolIsoBoardSvg .iso-corner-cell {
+  animation: isoCornerPulse 2.8s ease-in-out infinite;
+}
+/* 코너마다 약간 다른 타이밍 */
+#idolGame #idolIsoBoardSvg .iso-corner-cell:nth-child(1)  { animation-delay: 0s;    }
+#idolGame #idolIsoBoardSvg .iso-corner-cell:nth-child(2)  { animation-delay: -0.7s; }
+#idolGame #idolIsoBoardSvg .iso-corner-cell:nth-child(3)  { animation-delay: -1.4s; }
+#idolGame #idolIsoBoardSvg .iso-corner-cell:nth-child(4)  { animation-delay: -2.1s; }
+
+@keyframes isoCornerPulse {
+  0%, 100% {
+    filter: brightness(1.0) drop-shadow(0 0 3px rgba(255, 215, 60, 0.50));
+  }
+  50% {
+    filter: brightness(1.25) drop-shadow(0 0 10px rgba(255, 215, 60, 1.00))
+                              drop-shadow(0 0 18px rgba(255, 160, 40, 0.70));
+  }
+}
+
+/* ── 셀 호버 효과 — 밝아지는 브라이트닝 ───── */
+#idolGame #idolIsoBoardSvg .iso-cell:hover {
+  filter: brightness(1.28) drop-shadow(0 -4px 8px rgba(255, 255, 255, 0.50));
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+/* 코너는 hover 시 더 강조 */
+#idolGame #idolIsoBoardSvg .iso-corner-cell:hover {
+  filter: brightness(1.4) drop-shadow(0 -4px 12px rgba(255, 230, 100, 0.80));
+  animation-play-state: paused;
+}
+
+/* ── 아이콘 후광 오브 애니메이션 ───────────── */
+.iso-icon-glow {
+  transform-box:    fill-box;
+  transform-origin: center;
+}
+@keyframes isoGlowOrb {
+  0%, 100% { opacity: 0.50; transform: scale(0.92); }
+  50%       { opacity: 0.95; transform: scale(1.12); }
+}
+
+/* ── 아이콘 글로우 애니메이션 강화 ────────── */
+@keyframes isoIconGlow {
+  0%, 45%, 100% { filter: brightness(1.0) drop-shadow(0 2px 5px rgba(0,0,0,0.35)); }
+  72%            { filter: brightness(1.55) drop-shadow(0 0 12px rgba(255, 220, 140, 1.00))
+                                             drop-shadow(0 0 6px rgba(255, 255, 200, 0.80)); }
+}
+
+/* ── 센터 시머 (무대 바닥 빛 반사) ──────────  */
+#idolGame #idolIsoBoardSvg .iso-center-shimmer {
+  animation: isoCenterShimmer 4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes isoCenterShimmer {
+  0%, 100% { opacity: 0.18; transform: scaleX(1.00) scaleY(1.00); }
+  50%       { opacity: 0.38; transform: scaleX(1.15) scaleY(1.20); }
+}
+
+/* ── 이동 스텝 하이라이트 — 상승 + 폭발 효과  */
+#idolGame #idolIsoBoardSvg .iso-step-hl {
+  transform-box:    fill-box;
+  transform-origin: center;
+  animation: isoStepActivate 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes isoStepActivate {
+  0%   { opacity: 0;    transform: scale(0.65); }
+  55%  { opacity: 1.00; transform: scale(1.08); }
+  100% { opacity: 0.90; transform: scale(1.00); }
+}
+
+/* ── 셀 활성화 (플레이어 통과 시 타일 리프트) */
+#idolGame #idolIsoBoardSvg .iso-cell.iso-cell-active {
+  transform-box:    fill-box;
+  transform-origin: center bottom;
+  animation: isoCellActivate 0.52s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes isoCellActivate {
+  0%   { filter: brightness(1.0);  transform: translateY(0px);  }
+  38%  { filter: brightness(2.0) drop-shadow(0 -6px 14px rgba(255, 250, 180, 0.95));
+         transform: translateY(-6px); }
+  100% { filter: brightness(1.0);  transform: translateY(0px);  }
 }
