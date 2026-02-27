@@ -208,7 +208,7 @@ function _isoCenterHTML() {
 
 // ─── 셀 <g> 요소 생성 ────────────────────────────────
 function _isoCreateCellGroup(idx, c, r, state) {
-  const { DEPTH, DEPTH_C, HW } = ISO_BOARD;
+  const { DEPTH, DEPTH_C, HW, HH } = ISO_BOARD;
   const isCorner  = _ISO_CORNERS.has(idx);
   const depth     = isCorner ? DEPTH_C : DEPTH;
 
