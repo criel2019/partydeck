@@ -70,6 +70,18 @@ function _isoGetIconPath(idx, cell) {
   return _ISO_ICONS[cell.type] || null;
 }
 
+// 셀 이모지 반환 (타일 타입별 코인 아이콘용)
+function _isoGetCellEmoji(cell) {
+  if (cell.type === 'shop') {
+    const shop = (typeof SHOPS !== 'undefined') ? SHOPS.find(s => s.id === cell.shopId) : null;
+    if (!shop) return '🏪';
+    return { music: '🎵', media: '📷', beauty: '💄', event: '🏟️' }[shop.cat] || '🏪';
+  }
+  return { start: '🏁', event: '🎴', gacha: '🎰', chance: '⚡',
+           tax: '💸', police: '🚓', free: '🅿️', stage: '🎭' }[cell.type]
+      || cell.emoji || '⭐';
+}
+
 // ─── 꼭짓점 계산 ─────────────────────────────────────
 // 격자 [c, r]의 상단면 다이아몬드 4꼭짓점 반환
 function _isoVtx(c, r) {
@@ -257,45 +269,56 @@ function _isoCreateCellGroup(idx, c, r, state) {
   tp.setAttribute('stroke-width', isCorner ? '1.5' : '0.5');
   g.appendChild(tp);
 
-  // ④ 아이콘 이미지 (상단면 중심, 원형 클립)
+  // ④ 아이콘 (상단면 중심 — 코인 배경 + 이모지)
   const cx = (vtx.top.x + vtx.right.x + vtx.bottom.x + vtx.left.x) / 4;
   const cy = (vtx.top.y + vtx.right.y + vtx.bottom.y + vtx.left.y) / 4;
-  const iconPath = _isoGetIconPath(idx, cell);
-  const iconSize = isCorner ? Math.round(HW * 2.2) : Math.round(HW * 1.8);
-  const halfIcon = iconSize / 2;
-  if (iconPath) {
-    // ④-a 아이콘 후광 원 (아이콘 뒤에서 빛나는 컬러드 오브)
-    const orbDur = (2.6 + (idx % 6) * 0.32).toFixed(1);
-    const orbDel = `-${((idx * 0.19) % parseFloat(orbDur)).toFixed(2)}s`;
-    const glowCirc = document.createElementNS(ns, 'circle');
-    glowCirc.setAttribute('class', 'iso-icon-glow');
-    glowCirc.setAttribute('cx', cx.toFixed(1));
-    glowCirc.setAttribute('cy', (cy + 1).toFixed(1));
-    glowCirc.setAttribute('r', (iconSize * 0.40).toFixed(1));
-    glowCirc.setAttribute('fill', `url(#isoIconGlow_${colorType})`);
-    glowCirc.setAttribute('pointer-events', 'none');
-    glowCirc.style.animation = `isoGlowOrb ${orbDur}s ease-in-out infinite ${orbDel}`;
-    g.appendChild(glowCirc);
+  const coinR   = isCorner ? Math.round(HW * 1.05) : Math.round(HW * 0.76);
+  const emojiFz = isCorner ? Math.round(HW * 1.02) : Math.round(HW * 0.72);
+  const orbDur  = (2.6 + (idx % 6) * 0.32).toFixed(1);
+  const orbDel  = `-${((idx * 0.19) % parseFloat(orbDur)).toFixed(2)}s`;
 
-    // ④-b 아이콘 이미지
-    const imgEl = document.createElementNS(ns, 'image');
-    imgEl.setAttribute('class', 'iso-icon');
-    imgEl.setAttribute('href', iconPath);
-    imgEl.setAttribute('x', (cx - halfIcon).toFixed(1));
-    imgEl.setAttribute('y', (cy - halfIcon).toFixed(1));
-    imgEl.setAttribute('width', iconSize);
-    imgEl.setAttribute('height', iconSize);
-    imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    imgEl.setAttribute('pointer-events', 'none');
-    // 셀마다 다른 타이밍으로 둥실 + 글로우 애니메이션
-    const floatDur = (2.4 + (idx % 4) * 0.3).toFixed(1);
-    const floatDel = `-${((idx * 0.17) % floatDur).toFixed(2)}s`;
-    const glowDel  = `-${((idx * 0.31) % 4.5).toFixed(2)}s`;
-    imgEl.style.animation =
-      `isoIconFloat ${floatDur}s ease-in-out infinite ${floatDel},` +
-      `isoIconGlow 4.5s ease-in-out infinite ${glowDel}`;
-    g.appendChild(imgEl);
-  }
+  // ④-a 후광 오브 (컬러드 방사형 글로우)
+  const glowCirc = document.createElementNS(ns, 'circle');
+  glowCirc.setAttribute('class', 'iso-icon-glow');
+  glowCirc.setAttribute('cx', cx.toFixed(1));
+  glowCirc.setAttribute('cy', (cy + 1).toFixed(1));
+  glowCirc.setAttribute('r', (coinR * 1.40).toFixed(1));
+  glowCirc.setAttribute('fill', `url(#isoIconGlow_${colorType})`);
+  glowCirc.setAttribute('pointer-events', 'none');
+  glowCirc.style.animation = `isoGlowOrb ${orbDur}s ease-in-out infinite ${orbDel}`;
+  g.appendChild(glowCirc);
+
+  // ④-b 코인 배경 원 (흰 원판 + 타입 컬러 테두리)
+  const coinCirc = document.createElementNS(ns, 'circle');
+  coinCirc.setAttribute('cx', cx.toFixed(1));
+  coinCirc.setAttribute('cy', cy.toFixed(1));
+  coinCirc.setAttribute('r', coinR.toFixed(1));
+  coinCirc.setAttribute('fill', 'rgba(255,255,255,0.88)');
+  coinCirc.setAttribute('stroke', col.south);
+  coinCirc.setAttribute('stroke-width', Math.max(1.2, Math.round(HW * 0.08)).toFixed(1));
+  coinCirc.setAttribute('pointer-events', 'none');
+  g.appendChild(coinCirc);
+
+  // ④-c 이모지 텍스트 (코인 위)
+  const floatDur = (2.4 + (idx % 4) * 0.3).toFixed(1);
+  const floatDel = `-${((idx * 0.17) % floatDur).toFixed(2)}s`;
+  const glowDel  = `-${((idx * 0.31) % 4.5).toFixed(2)}s`;
+  const emoji    = _isoGetCellEmoji(cell);
+  const textEl   = document.createElementNS(ns, 'text');
+  textEl.setAttribute('class', 'iso-icon');
+  textEl.setAttribute('x', cx.toFixed(1));
+  textEl.setAttribute('y', cy.toFixed(1));
+  textEl.setAttribute('text-anchor', 'middle');
+  textEl.setAttribute('dominant-baseline', 'central');
+  textEl.setAttribute('font-size', emojiFz + 'px');
+  textEl.setAttribute('font-family',
+    "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif");
+  textEl.setAttribute('pointer-events', 'none');
+  textEl.textContent = emoji;
+  textEl.style.animation =
+    `isoIconFloat ${floatDur}s ease-in-out infinite ${floatDel},` +
+    `isoIconGlow 4.5s ease-in-out infinite ${glowDel}`;
+  g.appendChild(textEl);
 
   // ⑤ 소유자 점 (shop 셀 전용)
   if (cell.type === 'shop') {
