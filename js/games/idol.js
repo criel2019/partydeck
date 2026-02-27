@@ -22,8 +22,10 @@ function _idolBgGetEl() {
     el.id = 'idolBgOverlay';
     el.style.cssText = [
       'position:absolute', 'inset:0', 'z-index:0',
+      'background-color:#080810',   /* 이미지 없을 때 어두운 fallback */
       'background-size:cover', 'background-position:center',
-      'opacity:0', 'transition:opacity 0.8s ease',
+      'opacity:1',                  /* 항상 보임 — 이미지만 전환 */
+      'transition:background-image 0s, opacity 0.8s ease',
       'pointer-events:none',
     ].join(';');
     game.prepend(el); // 첫 번째 자식 → 보드·헤더가 DOM 순서상 위에 와
@@ -38,17 +40,48 @@ function idolBgNext() {
 
 function idolBgSet(index) {
   _idolBgIndex = index;
-  const overlay = _idolBgGetEl();
-  if (!overlay) return;
-  overlay.style.backgroundImage = `url('${IDOL_BG_IMAGES[index]}')`;
-  overlay.style.opacity = '1';
+  const base = _idolBgGetEl();
+  if (!base) return;
+  const game = document.getElementById('idolGame');
+  if (!game) return;
+
+  // 두 번째 레이어(top)로 새 이미지 페이드인 후 base에 반영
+  let top = document.getElementById('idolBgTop');
+  if (!top) {
+    top = document.createElement('div');
+    top.id = 'idolBgTop';
+    top.style.cssText = [
+      'position:absolute', 'inset:0', 'z-index:1',
+      'background-size:cover', 'background-position:center',
+      'opacity:0', 'transition:opacity 0.8s ease',
+      'pointer-events:none',
+    ].join(';');
+    game.prepend(top);
+  }
+
+  top.style.backgroundImage = `url('${IDOL_BG_IMAGES[index]}')`;
+  top.style.opacity = '0';
+  // 강제 reflow 후 페이드인
+  void top.offsetWidth;
+  top.style.opacity = '1';
+
+  // 전환 완료 후 base에 반영하고 top 숨기기
+  setTimeout(() => {
+    base.style.backgroundImage = `url('${IDOL_BG_IMAGES[index]}')`;
+    top.style.opacity = '0';
+  }, 850);
 }
 
 function idolBgInit() {
   _idolBgIndex = -1;
-  const overlay = _idolBgGetEl();
-  if (overlay) overlay.style.opacity = '0';
-  setTimeout(idolBgNext, 100); // DOM 완전히 준비된 후 첫 배경 표시
+  const base = _idolBgGetEl();
+  if (base) {
+    base.style.backgroundImage = 'none';
+    base.style.opacity = '1'; // 어두운 fallback 색상으로 항상 표시
+  }
+  const top = document.getElementById('idolBgTop');
+  if (top) { top.style.opacity = '0'; top.style.backgroundImage = 'none'; }
+  setTimeout(idolBgNext, 150);
 }
 
 // ─── 3D 다이스 로더 ──────────────────────────

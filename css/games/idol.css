@@ -43,7 +43,7 @@
 
 /* ─── 기본 레이아웃 ─────────────────────────── */
 #idolGame {
-  background: #080810;
+  background: transparent; /* 씬 배경 오버레이가 담당 */
   overflow: hidden;
   flex-direction: column;
   height: 100%;
@@ -3443,9 +3443,9 @@
    ISO 보드 비주얼 업그레이드 v2 — 무대 라이팅
    ════════════════════════════════════════════ */
 
-/* ── 보드 래퍼 — 어두운 무대 배경 (필수!) ─── */
+/* ── 보드 래퍼 — 씬 배경이 비치도록 transparent */
 #idolGame .idol-board-wrapper {
-  background: #07050f;
+  background: transparent;
 }
 
 /* ── 무대 조명 — 핀스팟·사이드 라이트 레이어 */
