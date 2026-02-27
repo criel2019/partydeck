@@ -3321,11 +3321,15 @@
 }
 
 /* ════════════════════════════════════════════
-   ISO 보드 비주얼 업그레이드 — 스테이지 라이팅
+   ISO 보드 비주얼 업그레이드 v2 — 무대 라이팅
    ════════════════════════════════════════════ */
 
-/* ── 보드 래퍼 스테이지 조명 배경 ────────────
-   아이돌 무대의 핀스팟·사이드 라이트 연출     */
+/* ── 보드 래퍼 — 어두운 무대 배경 (필수!) ─── */
+#idolGame .idol-board-wrapper {
+  background: #07050f;
+}
+
+/* ── 무대 조명 — 핀스팟·사이드 라이트 레이어 */
 #idolGame .idol-board-wrapper::before {
   content: '';
   position: absolute;
@@ -3333,21 +3337,44 @@
   pointer-events: none;
   z-index: 0;
   background:
-    /* 상단 중앙 핀스팟 (따뜻한 금빛) */
-    radial-gradient(ellipse 40% 28% at 50% -8%, rgba(255, 225, 130, 0.40) 0%, transparent 70%),
-    /* 좌측 사이드 라이트 (보라/퍼플) */
-    radial-gradient(ellipse 28% 55% at -8% 35%, rgba(200, 80, 255, 0.20) 0%, transparent 65%),
-    /* 우측 사이드 라이트 (시안/블루) */
-    radial-gradient(ellipse 28% 55% at 108% 35%, rgba(60, 200, 255, 0.20) 0%, transparent 65%),
-    /* 하단 필 라이트 (핑크) */
-    radial-gradient(ellipse 65% 22% at 50% 115%, rgba(255, 140, 200, 0.15) 0%, transparent 65%);
+    /* 상단 핀스팟 — 좁고 강한 금빛 핀 */
+    radial-gradient(ellipse 22% 18% at 50% -2%, rgba(255, 230, 120, 0.75) 0%, rgba(255,200,60,0.10) 60%, transparent 80%),
+    /* 좌측 사이드 라이트 — 보라/핑크 핀 */
+    radial-gradient(ellipse 18% 65% at -4% 40%, rgba(220, 60, 255, 0.50) 0%, rgba(180,40,220,0.15) 50%, transparent 75%),
+    /* 우측 사이드 라이트 — 시안 핀 */
+    radial-gradient(ellipse 18% 65% at 104% 40%, rgba(40, 200, 255, 0.50) 0%, rgba(20,160,240,0.15) 50%, transparent 75%),
+    /* 하단 필 라이트 — 핑크 글로우 */
+    radial-gradient(ellipse 55% 18% at 50% 106%, rgba(255, 100, 180, 0.35) 0%, transparent 70%),
+    /* 배경 앰비언트 (미묘한 보라빛) */
+    radial-gradient(ellipse 80% 70% at 50% 50%, rgba(40, 20, 70, 0.80) 0%, transparent 100%);
 }
 
-/* ── SVG 보드 외곽 글로우 ──────────────────── */
+/* ── SVG 보드 외곽 글로우 (어두운 배경 위에서 더 드라마틱) */
 #idolGame #idolIsoBoardSvg {
   filter:
-    drop-shadow(0 6px 24px rgba(255, 160, 210, 0.45))
-    drop-shadow(0 0 12px rgba(180, 100, 255, 0.25));
+    drop-shadow(0  8px 28px rgba(255, 140, 200, 0.65))
+    drop-shadow(0  0px 16px rgba(160,  80, 255, 0.45))
+    drop-shadow(0 -4px 12px rgba(60,  200, 255, 0.30));
+}
+
+/* ── 보드 림 라이트 애니메이션 ─────────────── */
+#idolGame #idolIsoBoardSvg .iso-rim-line {
+  animation: isoRimPulse 3s ease-in-out infinite;
+}
+@keyframes isoRimPulse {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 1.00; }
+}
+
+/* ── 스파클 파티클 ─────────────────────────── */
+#idolGame #idolIsoBoardSvg #iso-sparkles circle {
+  transform-box:    fill-box;
+  transform-origin: center;
+}
+@keyframes isoSparkle {
+  0%,  85%, 100% { opacity: 0;    transform: scale(0);    }
+  15%, 55%       { opacity: 1;    transform: scale(1);    }
+  70%            { opacity: 0.60; transform: scale(0.70); }
 }
 
 /* ── 코너 셀 펄스 글로우 ───────────────────── */
@@ -3388,8 +3415,8 @@
   transform-origin: center;
 }
 @keyframes isoGlowOrb {
-  0%, 100% { opacity: 0.50; transform: scale(0.92); }
-  50%       { opacity: 0.95; transform: scale(1.12); }
+  0%, 100% { opacity: 0.40; transform: scale(0.88); }
+  50%       { opacity: 0.72; transform: scale(1.10); }
 }
 
 /* ── 아이콘 글로우 애니메이션 강화 ────────── */

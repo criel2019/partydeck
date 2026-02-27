@@ -1068,8 +1068,8 @@ const _TOK_SCATTER = [
   [[-20, -8], [20, -8], [-20, 12], [20, 12]],
 ];
 function _idolTokOffset(totalOnCell, myIdx) {
-  const pat = _TOK_SCATTER[Math.min(totalOnCell, 4) - 1];
-  const o   = pat[myIdx % pat.length];
+  const pat = _TOK_SCATTER[Math.min(Math.max(totalOnCell, 1), 4) - 1] || [[0, 0]];
+  const o   = pat[Math.max(myIdx, 0) % pat.length];
   return { dx: o[0], dy: o[1] };
 }
 

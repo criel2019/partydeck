@@ -99,11 +99,12 @@ function _isoDefsHTML() {
             `</linearGradient>`;
   }
 
-  // 타입별 아이콘 후광 방사형 그라디언트
+  // 타입별 아이콘 후광 방사형 그라디언트 (컬러드 글로우)
   for (const [type, col] of Object.entries(_ISO_COLORS)) {
-    html += `<radialGradient id="isoIconGlow_${type}" cx="50%" cy="50%" r="50%">` +
-            `<stop offset="0%"   stop-color="${col.glowClr}" stop-opacity="0.95"/>` +
-            `<stop offset="50%"  stop-color="${col.glowClr}" stop-opacity="0.50"/>` +
+    html += `<radialGradient id="isoIconGlow_${type}" cx="50%" cy="45%" r="55%">` +
+            `<stop offset="0%"   stop-color="${col.glowClr}" stop-opacity="0.85"/>` +
+            `<stop offset="35%"  stop-color="${col.glowClr}" stop-opacity="0.55"/>` +
+            `<stop offset="70%"  stop-color="${col.glowClr}" stop-opacity="0.20"/>` +
             `<stop offset="100%" stop-color="${col.glowClr}" stop-opacity="0"/>` +
             `</radialGradient>`;
   }
@@ -161,18 +162,47 @@ function _isoCenterHTML() {
   const cx = OX;
   const cy = OY + 10 * HH;
   let html = '';
-  // 바닥 면 (대리석 그라디언트)
+
+  // ① 바닥 면 (대리석 그라디언트)
   html += `<polygon points="${_pts([top, right, bottom, left])}" ` +
-          `fill="url(#isoG_center)" stroke="#dcc8d8" stroke-width="1.5"/>`;
-  // 스포트라이트 오버레이 (상단 중앙에서 내리비치는 따뜻한 빛)
+          `fill="url(#isoG_center)" stroke="#e0c8d8" stroke-width="1.5"/>`;
+
+  // ② ISO 원근 바닥 격자선 (무대 타일 느낌, 4×4 분할)
+  const nGrid = 5;
+  const gridClr = 'rgba(180, 130, 160, 0.22)';
+  for (let i = 1; i < nGrid; i++) {
+    const t = i / nGrid;
+    // top→right 에서 left→bottom 방향
+    const p1x = top.x  + (right.x - top.x)  * t;
+    const p1y = top.y  + (right.y - top.y)  * t;
+    const p2x = left.x + (bottom.x - left.x) * t;
+    const p2y = left.y + (bottom.y - left.y) * t;
+    html += `<line x1="${p1x.toFixed(1)}" y1="${p1y.toFixed(1)}" ` +
+            `x2="${p2x.toFixed(1)}" y2="${p2y.toFixed(1)}" ` +
+            `stroke="${gridClr}" stroke-width="0.8" pointer-events="none"/>`;
+    // top→left 에서 right→bottom 방향
+    const p3x = top.x   + (left.x  - top.x)  * t;
+    const p3y = top.y   + (left.y  - top.y)  * t;
+    const p4x = right.x + (bottom.x - right.x) * t;
+    const p4y = right.y + (bottom.y - right.y) * t;
+    html += `<line x1="${p3x.toFixed(1)}" y1="${p3y.toFixed(1)}" ` +
+            `x2="${p4x.toFixed(1)}" y2="${p4y.toFixed(1)}" ` +
+            `stroke="${gridClr}" stroke-width="0.8" pointer-events="none"/>`;
+  }
+
+  // ③ 스포트라이트 오버레이 (상단에서 내리비치는 따뜻한 빛)
   html += `<polygon points="${_pts([top, right, bottom, left])}" ` +
           `fill="url(#isoSpotlight)" pointer-events="none"/>`;
-  // 중앙 빛 반사 포인트 (무대 조명 반사)
-  html += `<ellipse cx="${cx}" cy="${cy - HH * 2}" rx="${HW * 2}" ry="${HH * 1.2}" ` +
-          `fill="rgba(255,255,220,0.18)" pointer-events="none" class="iso-center-shimmer"/>`;
-  // 보드 안쪽 테두리 글로우 (타일과 센터 경계)
+
+  // ④ 중앙 시머 타원 (바닥 반사 하이라이트)
+  html += `<ellipse cx="${cx.toFixed(1)}" cy="${(cy - HH).toFixed(1)}" ` +
+          `rx="${(HW * 2.5).toFixed(1)}" ry="${(HH * 1.4).toFixed(1)}" ` +
+          `fill="rgba(255,250,240,0.22)" pointer-events="none" class="iso-center-shimmer"/>`;
+
+  // ⑤ 안쪽 테두리 글로우 (타일↔센터 경계 림 라이트)
   html += `<polygon points="${_pts([top, right, bottom, left])}" ` +
-          `fill="none" stroke="rgba(255,200,230,0.40)" stroke-width="3" pointer-events="none"/>`;
+          `fill="none" stroke="rgba(255,180,210,0.55)" stroke-width="2.5" pointer-events="none"/>`;
+
   return html;
 }
 
@@ -234,14 +264,14 @@ function _isoCreateCellGroup(idx, c, r, state) {
   const iconSize = isCorner ? Math.round(HW * 2.2) : Math.round(HW * 1.8);
   const halfIcon = iconSize / 2;
   if (iconPath) {
-    // ④-a 아이콘 후광 원 (아이콘 뒤에서 빛나는 오브)
+    // ④-a 아이콘 후광 원 (아이콘 뒤에서 빛나는 컬러드 오브)
     const orbDur = (2.6 + (idx % 6) * 0.32).toFixed(1);
     const orbDel = `-${((idx * 0.19) % parseFloat(orbDur)).toFixed(2)}s`;
     const glowCirc = document.createElementNS(ns, 'circle');
     glowCirc.setAttribute('class', 'iso-icon-glow');
     glowCirc.setAttribute('cx', cx.toFixed(1));
     glowCirc.setAttribute('cy', (cy + 1).toFixed(1));
-    glowCirc.setAttribute('r', (iconSize * 0.54).toFixed(1));
+    glowCirc.setAttribute('r', (iconSize * 0.40).toFixed(1));
     glowCirc.setAttribute('fill', `url(#isoIconGlow_${colorType})`);
     glowCirc.setAttribute('pointer-events', 'none');
     glowCirc.style.animation = `isoGlowOrb ${orbDur}s ease-in-out infinite ${orbDel}`;
@@ -355,6 +385,63 @@ function idolRenderIsoBoard(container, state) {
     gCells.appendChild(_isoCreateCellGroup(idx, c, r, state));
   });
   svg.appendChild(gCells);
+
+  // ─── 보드 외곽 림 라이트 (보드 경계를 빛나는 선으로 강조) ───
+  const { OX, OY, HW, HH, DEPTH_C } = ISO_BOARD;
+  const outerTop    = { x: OX,              y: OY };
+  const outerRight  = { x: OX + 10 * HW,    y: OY + 10 * HH };
+  const outerBottom = { x: OX,              y: OY + 20 * HH + DEPTH_C };
+  const outerLeft   = { x: OX - 10 * HW,    y: OY + 10 * HH };
+  const gRim = document.createElementNS(ns, 'g');
+  gRim.id = 'iso-rim';
+  const rimPoly = document.createElementNS(ns, 'polygon');
+  rimPoly.setAttribute('points', _pts([outerTop, outerRight, outerBottom, outerLeft]));
+  rimPoly.setAttribute('fill',         'none');
+  rimPoly.setAttribute('stroke',       'rgba(255,180,230,0.70)');
+  rimPoly.setAttribute('stroke-width', '2');
+  rimPoly.setAttribute('pointer-events', 'none');
+  rimPoly.setAttribute('filter', 'url(#isoGlow)');
+  rimPoly.setAttribute('class', 'iso-rim-line');
+  gRim.appendChild(rimPoly);
+  // 외곽 림 두번째 레이어 (퍼짐)
+  const rimPoly2 = document.createElementNS(ns, 'polygon');
+  rimPoly2.setAttribute('points', _pts([outerTop, outerRight, outerBottom, outerLeft]));
+  rimPoly2.setAttribute('fill',         'none');
+  rimPoly2.setAttribute('stroke',       'rgba(200,140,255,0.45)');
+  rimPoly2.setAttribute('stroke-width', '5');
+  rimPoly2.setAttribute('pointer-events', 'none');
+  rimPoly2.setAttribute('filter', 'url(#isoGlow)');
+  gRim.appendChild(rimPoly2);
+  svg.insertBefore(gRim, gCells);
+
+  // ─── 스파클 파티클 (타일 위 반짝이는 별 점들) ───────
+  const gSparkle = document.createElementNS(ns, 'g');
+  gSparkle.id = 'iso-sparkles';
+  const sparkCoords = idolGetCellGridCoords();
+  const sparkColors = ['#ffffff', '#ffe8c0', '#ffc8e8', '#c8e8ff', '#e8c8ff'];
+  sparkCoords.forEach(([sc, sr], tileIdx) => {
+    const vtx = _isoVtx(sc, sr);
+    // 타일당 1~2개 스파클
+    const positions = [
+      { x: vtx.top.x   + ((tileIdx % 5) - 2) * 2.5, y: vtx.top.y   - 4 },
+      ...(tileIdx % 2 === 0 ? [
+        { x: vtx.right.x + 2, y: vtx.right.y - 2 },
+      ] : []),
+    ];
+    positions.forEach((pos, pi) => {
+      const dot = document.createElementNS(ns, 'circle');
+      dot.setAttribute('cx', pos.x.toFixed(1));
+      dot.setAttribute('cy', pos.y.toFixed(1));
+      dot.setAttribute('r',  (0.8 + (tileIdx % 3) * 0.45).toFixed(1));
+      dot.setAttribute('fill', sparkColors[(tileIdx + pi) % sparkColors.length]);
+      dot.setAttribute('pointer-events', 'none');
+      const dur = (1.3 + (tileIdx * 0.17 + pi * 0.6) % 2.4).toFixed(1);
+      const del = `-${((tileIdx * 0.31 + pi * 0.9) % parseFloat(dur)).toFixed(2)}s`;
+      dot.style.animation = `isoSparkle ${dur}s ease-in-out infinite ${del}`;
+      gSparkle.appendChild(dot);
+    });
+  });
+  svg.appendChild(gSparkle);
 
   // 하이라이트 그룹 (플레이어 위치, 이동 스텝 오버레이 — 가장 앞)
   const gHL = document.createElementNS(ns, 'g');
