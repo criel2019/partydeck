@@ -138,6 +138,7 @@
 
 /* ─── 보드 뷰포트 (줌/팬 컨테이너) ─────────── */
 .idol-board-viewport {
+  position: relative;          /* ← absolute 자식(SVG, 센터패널)의 기준점 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3253,7 +3254,8 @@
 #idolGame .idol-iso-center-panel,
 #idolGame .idol-iso-center-overlay {
   position: absolute;
-  /* 위치는 JS가 지정 */
+  /* 위치·크기: JS _idolUpdateCenterPanelPos() 가 inline style로 지정 */
+  z-index: 5;   /* SVG(0) 위, 토큰레이어(20) 아래 */
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   pointer-events: none;
   overflow: hidden;
