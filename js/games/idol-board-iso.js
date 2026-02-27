@@ -369,6 +369,31 @@ function idolRenderIsoBoard(container, state) {
   gCenter.innerHTML = _isoCenterHTML();
   svg.appendChild(gCenter);
 
+  // ─── 센터 영상 (foreignObject + video, 다이아몬드 클립) ───
+  {
+    const { OX, OY, HW, HH } = ISO_BOARD;
+    const foX = OX - 8 * HW;
+    const foY = OY + 2 * HH;
+    const foW = 16 * HW;
+    const foH = 16 * HH;
+    const fo = document.createElementNS(ns, 'foreignObject');
+    fo.setAttribute('x',      foX);
+    fo.setAttribute('y',      foY);
+    fo.setAttribute('width',  foW);
+    fo.setAttribute('height', foH);
+    fo.setAttribute('pointer-events', 'none');
+    const vid = document.createElement('video');
+    vid.src = 'img/games/idol/center-video.mp4';
+    vid.autoplay = true;
+    vid.muted    = true;
+    vid.loop     = true;
+    vid.playsInline = true;
+    vid.style.cssText = 'width:100%;height:100%;object-fit:cover;' +
+      'clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);display:block;';
+    fo.appendChild(vid);
+    svg.appendChild(fo);
+  }
+
   // 셀 그룹 — 깊이 정렬: (c+r) 오름차순, 동일 시 c 내림차순
   const gCells = document.createElementNS(ns, 'g');
   gCells.id = 'iso-cells';
