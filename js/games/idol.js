@@ -8,8 +8,29 @@ const IDOL_BG_IMAGES = [
   'img/games/idol/bg-4.png',
   'img/games/idol/bg-5.png',
 ];
-let _idolBgLayer = 'a'; // 현재 표시 레이어 ('a' or 'b')
 let _idolBgIndex = -1;
+let _idolBgEl    = null; // 페이드 오버레이 div
+
+function _idolBgGetEl() {
+  if (_idolBgEl && document.contains(_idolBgEl)) return _idolBgEl;
+  const game = document.getElementById('idolGame');
+  if (!game) return null;
+  // 기존 오버레이 재사용 or 생성
+  let el = document.getElementById('idolBgOverlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'idolBgOverlay';
+    el.style.cssText = [
+      'position:absolute', 'inset:0', 'z-index:0',
+      'background-size:cover', 'background-position:center',
+      'opacity:0', 'transition:opacity 0.8s ease',
+      'pointer-events:none',
+    ].join(';');
+    game.appendChild(el);
+  }
+  _idolBgEl = el;
+  return el;
+}
 
 function idolBgNext() {
   idolBgSet((_idolBgIndex + 1) % IDOL_BG_IMAGES.length);
@@ -17,28 +38,17 @@ function idolBgNext() {
 
 function idolBgSet(index) {
   _idolBgIndex = index;
-  const el  = document.getElementById('idolGame');
-  if (!el) return;
-  const src  = `url('${IDOL_BG_IMAGES[index]}')`;
-  const next = _idolBgLayer === 'a' ? 'b' : 'a';
-
-  // 비활성 레이어 CSS 변수에 이미지 주입 후 클래스 교체
-  el.style.setProperty(`--ib-${next}`, src);
-  el.classList.remove(`ib-show-${_idolBgLayer}`);
-  el.classList.add(`ib-show-${next}`);
-  _idolBgLayer = next;
+  const overlay = _idolBgGetEl();
+  if (!overlay) return;
+  overlay.style.backgroundImage = `url('${IDOL_BG_IMAGES[index]}')`;
+  overlay.style.opacity = '1';
 }
 
 function idolBgInit() {
   _idolBgIndex = -1;
-  _idolBgLayer = 'a';
-  const el = document.getElementById('idolGame');
-  if (el) {
-    el.classList.remove('ib-show-a', 'ib-show-b');
-    el.style.setProperty('--ib-a', 'none');
-    el.style.setProperty('--ib-b', 'none');
-  }
-  idolBgNext();
+  const overlay = _idolBgGetEl();
+  if (overlay) overlay.style.opacity = '0';
+  setTimeout(idolBgNext, 100); // DOM 완전히 준비된 후 첫 배경 표시
 }
 
 // ─── 3D 다이스 로더 ──────────────────────────

@@ -50,26 +50,9 @@
   position: relative; /* 다이스 오버레이 기준점 */
 }
 
-/* ─── 씬 배경 크로스페이드 ──────────────────── */
-/* #idolGame의 ::before / ::after 를 두 레이어로 사용 */
-#idolGame::before,
-#idolGame::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center center;
-  opacity: 0;
-  transition: opacity 0.8s ease;
-  pointer-events: none;
-  z-index: 0;
-}
-#idolGame.ib-show-a::before { opacity: 1; }
-#idolGame.ib-show-b::after  { opacity: 1; }
-/* CSS 변수로 이미지 URL 주입 */
-#idolGame { --ib-a: none; --ib-b: none; }
-#idolGame::before { background-image: var(--ib-a); }
-#idolGame::after  { background-image: var(--ib-b); }
+/* ─── 씬 배경 오버레이 ───────────────────────── */
+/* JS가 동적으로 생성하는 #idolBgOverlay div 스타일 */
+/* (inline style로 제어하므로 이 섹션은 최소화) */
 
 /* ─── 3D 다이스 오버레이 ────────────────────── */
 .idol-dice-overlay {
