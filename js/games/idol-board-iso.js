@@ -297,36 +297,28 @@ function _isoCreateCellGroup(idx, c, r, state) {
     g.appendChild(imgEl);
   }
 
-  // ④-c 타일 이름 레이블 (아이콘 아래 — 남쪽 벽 위에 위치)
+  // ④-c 타일 이름 레이블 (타일 면 내부 하단 — 넘침 없음)
   {
-    const info    = (typeof getCellInfo === 'function') ? getCellInfo(idx) : cell;
-    let   label   = '';
+    // 2글자 약칭 테이블 (타일 면 너비에 맞게 짧게)
+    const _ABBR = {
+      start: '출발', event: '이벤', gacha: '가챠', chance: '찬스',
+      tax: '세금', police: '경찰', free: '주차', stage: '무대',
+    };
+    const _CAT_ABBR = { music: '음악', media: '미디', beauty: '뷰티', event: '행사' };
+
+    let label = '';
     if (cell.type === 'shop') {
       const shop = (typeof SHOPS !== 'undefined') ? SHOPS.find(s => s.id === cell.shopId) : null;
-      const cat  = (typeof SHOP_CATEGORIES !== 'undefined' && shop) ? SHOP_CATEGORIES[shop.cat] : null;
-      label = cat ? cat.name : (shop ? shop.name : '');
+      label = shop ? (_CAT_ABBR[shop.cat] || '') : '';
     } else {
-      label = cell.name || info?.name || '';
+      label = _ABBR[cell.type] || '';
     }
 
     if (label) {
-      const lFz  = isCorner ? Math.round(HW * 0.42) : Math.round(HW * 0.36);
-      const lx   = cx;
-      // 아이콘 하단(vtx.bottom) 기준, depth 구간 중앙에 배치
-      const ly   = vtx.bottom.y + depth * 0.55;
-
-      // 가독성용 반투명 배경 패치
-      const bg = document.createElementNS(ns, 'rect');
-      const bw = label.length * lFz * 0.62;
-      const bh = lFz * 1.35;
-      bg.setAttribute('x',  (lx - bw / 2).toFixed(1));
-      bg.setAttribute('y',  (ly - bh * 0.72).toFixed(1));
-      bg.setAttribute('width',  bw.toFixed(1));
-      bg.setAttribute('height', bh.toFixed(1));
-      bg.setAttribute('rx', (bh * 0.3).toFixed(1));
-      bg.setAttribute('fill', 'rgba(0,0,0,0.48)');
-      bg.setAttribute('pointer-events', 'none');
-      g.appendChild(bg);
+      // 타일 면 하단 1/4 지점 — 타일 면 내부에 머물도록
+      const lFz = isCorner ? Math.round(HW * 0.38) : Math.round(HW * 0.30);
+      const lx  = cx;
+      const ly  = cy + HH * 0.72;   // vtx.bottom보다 위, 타일 면 안쪽
 
       const lbl = document.createElementNS(ns, 'text');
       lbl.setAttribute('class', 'iso-tile-label');
@@ -335,10 +327,11 @@ function _isoCreateCellGroup(idx, c, r, state) {
       lbl.setAttribute('text-anchor', 'middle');
       lbl.setAttribute('dominant-baseline', 'middle');
       lbl.setAttribute('font-size', lFz + 'px');
+      lbl.setAttribute('font-weight', 'bold');
       lbl.setAttribute('font-family', "'Black Han Sans','Noto Sans KR',sans-serif");
       lbl.setAttribute('fill', '#ffffff');
-      lbl.setAttribute('stroke', 'rgba(0,0,0,0.6)');
-      lbl.setAttribute('stroke-width', '0.5');
+      lbl.setAttribute('stroke', 'rgba(0,0,0,0.75)');
+      lbl.setAttribute('stroke-width', '1.2');
       lbl.setAttribute('paint-order', 'stroke fill');
       lbl.setAttribute('pointer-events', 'none');
       lbl.textContent = label;
