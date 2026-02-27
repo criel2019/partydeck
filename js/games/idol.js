@@ -51,12 +51,13 @@ function idolBgSet(index) {
     top = document.createElement('div');
     top.id = 'idolBgTop';
     top.style.cssText = [
-      'position:absolute', 'inset:0', 'z-index:1',
+      'position:absolute', 'inset:0', 'z-index:0',
       'background-size:cover', 'background-position:center',
       'opacity:0', 'transition:opacity 0.8s ease',
       'pointer-events:none',
     ].join(';');
-    game.prepend(top);
+    // base 바로 뒤에 삽입 → DOM 순서로 base 위에 렌더, 게임 요소들보다는 앞에 옴
+    base.after(top);
   }
 
   top.style.backgroundImage = `url('${IDOL_BG_IMAGES[index]}')`;

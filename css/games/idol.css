@@ -1879,6 +1879,7 @@
   position: relative;
   align-items: center;
   justify-content: center;
+  z-index: 1; /* 배경 레이어(z-index:0) 위에 항상 존재 */
 }
 
 #idolGame .idol-board-wrapper::before {
@@ -1965,6 +1966,7 @@
   padding: 8px 10px calc(12px + env(safe-area-inset-bottom, 0));
   border-top: 1px solid rgba(255,255,255,0.07);
   background: rgba(5, 7, 13, 0.78);
+  z-index: 1; /* 배경 레이어(z-index:0) 위에 항상 존재 */
 }
 
 #idolGame .idol-action-shell {
