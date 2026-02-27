@@ -1,18 +1,32 @@
 // ===== 팟플 아이돌 — ISO 보드 렌더러 =====
 // Monopoly GO 스타일 등각 3D 보드 (SVG 기반, 게임 로직 무관)
 
-// ─── 상수 ────────────────────────────────────────────
+// ─── 상수 (기본값 — 실제 값은 렌더 시 래퍼 크기 기반으로 재계산) ───
 const ISO_BOARD = {
-  TILE_W: 80,   // 다이아몬드 타일 너비
-  TILE_H: 40,   // = TILE_W/2 (2:1 비율)
-  HW:     40,   // 반너비
-  HH:     20,   // 반높이
-  DEPTH:  14,   // 3D 벽 두께 (px)
-  OX:     450,  // SVG 수평 중심 오프셋
-  OY:     20,   // 상단 여백
-  SVG_W:  900,  // SVG 전체 너비
-  SVG_H:  460,  // SVG 전체 높이 (벽 depth 포함)
+  HW: 40, HH: 20, DEPTH: 14, DEPTH_C: 20,
+  OX: 450, OY: 20, SVG_W: 900, SVG_H: 460,
 };
+
+// 래퍼 크기(px)를 받아 ISO_BOARD 상수를 in-place 재계산
+// 보드 다이아몬드가 가용 공간을 꽉 채우도록 타일 크기 결정
+function _isoCalcConstants(wW, wH) {
+  // 다이아몬드: 너비=20*HW, 높이=10*HW + DEPTH_C (HH=HW/2)
+  // SVG: 너비=22*HW (양쪽 1타일 여백), 높이=11.5*HW
+  const maxHW = Math.min(
+    Math.floor(wW / 22),
+    Math.floor(wH / 11.5),
+  );
+  const HW = Math.max(28, maxHW); // 최소 28px
+  const HH = Math.round(HW / 2);
+  const DEPTH   = Math.round(HW * 0.35);
+  const DEPTH_C = Math.round(HW * 0.50);
+  const SVG_W   = HW * 22;
+  const SVG_H   = Math.ceil(HH * 22 + DEPTH_C);
+  const OX      = Math.round(SVG_W / 2);
+  const OY      = HH;
+
+  Object.assign(ISO_BOARD, { HW, HH, DEPTH, DEPTH_C, OX, OY, SVG_W, SVG_H });
+}
 
 // ─── 셀 타입 색상 팔레트 ─────────────────────────────
 const _ISO_COLORS = {
@@ -124,9 +138,9 @@ function _isoCenterHTML() {
 
 // ─── 셀 <g> 요소 생성 ────────────────────────────────
 function _isoCreateCellGroup(idx, c, r, state) {
-  const { DEPTH } = ISO_BOARD;
+  const { DEPTH, DEPTH_C, HW } = ISO_BOARD;
   const isCorner  = _ISO_CORNERS.has(idx);
-  const depth     = isCorner ? 20 : DEPTH;
+  const depth     = isCorner ? DEPTH_C : DEPTH;
 
   const vtx  = _isoVtx(c, r);
   const cell = BOARD_CELLS[idx];
@@ -177,7 +191,7 @@ function _isoCreateCellGroup(idx, c, r, state) {
   const cx = (vtx.top.x + vtx.right.x + vtx.bottom.x + vtx.left.x) / 4;
   const cy = (vtx.top.y + vtx.right.y + vtx.bottom.y + vtx.left.y) / 4;
   const iconPath = _isoGetIconPath(idx, cell);
-  const iconSize = isCorner ? 88 : 72;
+  const iconSize = isCorner ? Math.round(HW * 2.2) : Math.round(HW * 1.8);
   const halfIcon = iconSize / 2;
   if (iconPath) {
     const imgEl = document.createElementNS(ns, 'image');
@@ -226,7 +240,20 @@ function _isoCreateCellGroup(idx, c, r, state) {
 // container = #idolBoardViewport DOM 요소
 // 게임 시작 시 1회, 이후 turn 전환 시 호출
 function idolRenderIsoBoard(container, state) {
+  // 래퍼 크기 기반 상수 재계산 (레이아웃이 완료된 경우에만)
+  const wrapper = document.getElementById('idolBoardWrapper');
+  if (wrapper && wrapper.offsetWidth > 0) {
+    _isoCalcConstants(wrapper.offsetWidth, wrapper.offsetHeight);
+  }
+
   const { SVG_W, SVG_H } = ISO_BOARD;
+
+  // 뷰포트·토큰 레이어 크기 JS로 지정 (CSS !important 오버라이드)
+  container.style.width  = SVG_W + 'px';
+  container.style.height = SVG_H + 'px';
+  const _tl = document.getElementById('idolTokenLayer');
+  if (_tl) { _tl.style.width = SVG_W + 'px'; _tl.style.height = SVG_H + 'px'; }
+
   const ns = 'http://www.w3.org/2000/svg';
 
   // 기존 SVG 제거

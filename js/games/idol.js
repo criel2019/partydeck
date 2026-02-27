@@ -179,16 +179,29 @@ function idolInitGame(selections) {
   _idolCam = { x: 0, y: 0, zoom: 1, tx: 0, ty: 0, tzoom: 1 };
   broadcastIdolState();
   idolRenderAll();
-  // ISO 보드 fit-zoom: 레이아웃 완료 후 래퍼에 맞는 줌 계산
+  // ISO 보드: 레이아웃 완료 후 래퍼 크기 기반으로 보드 재빌드
   requestAnimationFrame(() => {
     const _w = document.getElementById('idolBoardWrapper');
     if (_w && typeof ISO_BOARD !== 'undefined') {
       const wW = _w.offsetWidth, wH = _w.offsetHeight;
       if (wW > 0 && wH > 0) {
-        const fz = Math.min(wW / ISO_BOARD.SVG_W, wH / ISO_BOARD.SVG_H) * 1.9;
+        // 상수 재계산 → 보드 재빌드 (올바른 타일 크기로)
+        if (typeof _isoCalcConstants === 'function') _isoCalcConstants(wW, wH);
+        const vp = document.getElementById('idolBoardViewport');
+        if (vp) {
+          vp.style.width  = ISO_BOARD.SVG_W + 'px';
+          vp.style.height = ISO_BOARD.SVG_H + 'px';
+        }
+        const tl = document.getElementById('idolTokenLayer');
+        if (tl) {
+          tl.style.width  = ISO_BOARD.SVG_W + 'px';
+          tl.style.height = ISO_BOARD.SVG_H + 'px';
+        }
+        if (vp && typeof idolRenderIsoBoard === 'function') idolRenderIsoBoard(vp, idolState);
+        // zoom = 1.0 — 뷰포트가 래퍼 크기에 맞게 이미 계산됨
         _idolCam.x = _idolCam.tx = 0;
         _idolCam.y = _idolCam.ty = 0;
-        _idolCam.zoom = _idolCam.tzoom = fz;
+        _idolCam.zoom = _idolCam.tzoom = 1.0;
         _idolCamFlush();
       }
     }
@@ -1283,13 +1296,7 @@ function idolCamZoomOut() {
   _idolCamKick();
 }
 function idolCamReset() {
-  let fitZoom = 1;
-  const wrapper = document.getElementById('idolBoardWrapper');
-  if (wrapper && typeof ISO_BOARD !== 'undefined') {
-    const wW = wrapper.offsetWidth, wH = wrapper.offsetHeight;
-    if (wW > 0 && wH > 0) fitZoom = Math.min(wW / ISO_BOARD.SVG_W, wH / ISO_BOARD.SVG_H) * 1.9;
-  }
-  _idolCam.tx = 0; _idolCam.ty = 0; _idolCam.tzoom = fitZoom;
+  _idolCam.tx = 0; _idolCam.ty = 0; _idolCam.tzoom = 1.0;
   _idolCamKick();
 }
 

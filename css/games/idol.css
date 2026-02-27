@@ -3192,13 +3192,11 @@
    카메라(translate + scale)는 여전히 #idolBoardViewport에 적용됨.
    ================================================================ */
 
-/* 뷰포트 — 고정 900×460, 블록 박스 (flex 제거) */
+/* 뷰포트 — 크기는 JS에서 동적으로 지정, 블록 박스 (flex 제거) */
 #idolGame #idolBoardViewport {
   display: block !important;
   position: relative !important;
-  width:  900px !important;
-  height: 460px !important;
-  /* transform-origin 중심 유지 */
+  /* width/height: JS idolRenderIsoBoard()가 inline style로 지정 */
   transform-origin: 50% 50%;
 }
 
@@ -3210,13 +3208,12 @@
   display: block;
 }
 
-/* 토큰 레이어 — ISO 보드 위에 정확히 겹침 */
+/* 토큰 레이어 — ISO 보드 위에 정확히 겹침, 크기는 JS 동적 지정 */
 #idolGame #idolTokenLayer {
   position: absolute !important;
   top:  0 !important;
   left: 0 !important;
-  width:  900px !important;
-  height: 460px !important;
+  /* width/height: JS idolRenderIsoBoard()가 inline style로 지정 */
   inset: unset !important; /* 기존 inset:0 재정의 */
   pointer-events: none;
 }
