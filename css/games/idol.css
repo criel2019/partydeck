@@ -1,43 +1,25 @@
 /* ===== 팟플 아이돌 매니지먼트 ===== */
 
-/* ─── 이벤트 스크린 오버레이 (전광판) ──────────── */
-#idolEventOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9990;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* ─── 이벤트 스크린 (보드 센터 전광판) ─────────── */
+/* 보드 뷰포트(position:absolute 부모) 안에 박히는 요소 */
+#idolEventScreen {
+  position: absolute;
+  z-index: 120;          /* 셀·토큰 위, 다이스 아래 */
+  transform: rotate(45deg);
+  transform-origin: center center;
+  overflow: hidden;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s ease;
-}
-#idolEventOverlay.ies-visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* 어둠 배경막 */
-.ies-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(4, 2, 12, 0.82);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-}
-
-/* 다이아몬드 컨테이너 — 45° 회전으로 마름모 형태 */
-.ies-diamond {
-  position: relative;
-  transform: rotate(45deg);
-  overflow: hidden;
-  flex-shrink: 0;
-  /* 테두리 발광 */
+  transition: opacity 0.3s ease;
+  /* 전광판 테두리 발광 */
   box-shadow:
-    0 0  20px 4px  rgba(255, 200,  80, 0.90),
-    0 0  50px 12px rgba(255, 140,  30, 0.60),
-    0 0 100px 30px rgba(200,  80, 255, 0.30);
-  border: 1.5px solid rgba(255, 230, 120, 0.70);
+    0 0  16px 3px  rgba(255, 210,  70, 0.95),
+    0 0  40px 10px rgba(255, 140,  20, 0.65),
+    0 0  80px 24px rgba(180,  60, 255, 0.30);
+  border: 1.5px solid rgba(255, 230, 100, 0.80);
+}
+#idolEventScreen.ies-on {
+  opacity: 1;
 }
 
 /* 스프라이트 캔버스 */
@@ -52,24 +34,9 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  /* 원형 도트 그리드 — 전광판 픽셀 느낌 */
   background-image:
-    radial-gradient(circle, rgba(0,0,0,0) 38%, rgba(0,0,0,0.62) 38%);
+    radial-gradient(circle, rgba(0,0,0,0) 38%, rgba(0,0,0,0.60) 38%);
   background-size: 5px 5px;
-  /* 약한 밝기 부스트 */
-  mix-blend-mode: multiply;
-}
-
-/* 가장자리 비네트 (화면 가장자리 어둡게) */
-.ies-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(0,0,0,0)   45%,
-    rgba(0,0,0,0.45) 100%
-  );
 }
 /* ─── 이벤트 스크린 끝 ─────────────────────────── */
 
