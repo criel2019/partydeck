@@ -5,7 +5,8 @@
 #idolEventScreen {
   position: absolute;
   z-index: 120;          /* 셀·토큰 위, 다이스 아래 */
-  transform: rotate(45deg);
+  /* 정사각형 → rotate(-45deg) → scale(1,0.5) = 보드 중앙 2:1 다이아몬드 */
+  transform: scale(1, 0.5) rotate(-45deg);
   transform-origin: center center;
   overflow: hidden;
   opacity: 0;

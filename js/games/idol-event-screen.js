@@ -1,5 +1,5 @@
 // ===== 아이돌 이벤트 스크린 — 전광판 오버레이 =====
-// 보드 센터 다이아몬드 위에 45° 회전 스프라이트 플레이어
+// 보드 센터 다이아몬드와 정확히 맞도록 정사각형 컨테이너 + ISO 변형
 (function () {
   const FRAME_W  = 208;
   const FRAME_H  = 376;
@@ -12,11 +12,9 @@
   let _img = null, _frame = 0, _lastT = 0, _raf = null;
   let _imgCache = {};
 
-  // ─── DOM 생성 (보드 뷰포트 안에 absolute) ────────
   function _build() {
     if (document.getElementById('idolEventScreen')) return;
 
-    // 컨테이너 — 45° 회전하면 다이아몬드 모양이 됨
     _el = document.createElement('div');
     _el.id = 'idolEventScreen';
 
@@ -24,7 +22,6 @@
     _canvas.id = 'idolEventCanvas';
     _el.appendChild(_canvas);
 
-    // LED 도트 텍스처 오버레이
     const led = document.createElement('div');
     led.className = 'ies-led';
     _el.appendChild(led);
@@ -32,18 +29,13 @@
     _ctx = _canvas.getContext('2d');
   }
 
-  // ─── 보드 중앙 좌표로 위치 갱신 ─────────────────
   function _positionOnBoard() {
     const vp = document.getElementById('idolBoardViewport');
     if (!vp) return false;
 
-    // 아직 _el이 없으면 빌드
     _build();
-
-    // 뷰포트 안에 삽입 (없으면)
     if (!vp.contains(_el)) vp.appendChild(_el);
 
-    // ISO_BOARD 상수 참조 (idol-board-iso.js 전역)
     const { OX, OY, HW, HH } = (typeof ISO_BOARD !== 'undefined')
       ? ISO_BOARD
       : { OX: 440, OY: 20, HW: 40, HH: 20 };
@@ -52,24 +44,21 @@
     const cx = OX;
     const cy = OY + 10 * HH;
 
-    // 컨테이너 크기: 세로 = 다이아몬드 수직 대각선, 가로 = 영상 비율 유지
-    const cH = Math.round(8 * HW);          // 다이아몬드 수직 대각선 크기
-    const cW = Math.round(cH * (FRAME_W / FRAME_H)); // 영상 비율 유지
+    // 정사각형 크기: scale(1,0.5)rotate(-45deg) 변형 후
+    // 수평 대각선 = S√2 = 16*HW → S = 16*HW/√2
+    const S = Math.round(16 * HW / Math.SQRT2);
 
-    // 캔버스
-    _canvas.width  = cW;
-    _canvas.height = cH;
+    _canvas.width  = S;
+    _canvas.height = S;
 
-    // 컨테이너 위치: 중심점에서 반반 빼기 (회전 기준점 = 50% 50%)
-    _el.style.width  = cW + 'px';
-    _el.style.height = cH + 'px';
-    _el.style.left   = (cx - cW / 2) + 'px';
-    _el.style.top    = (cy - cH / 2) + 'px';
+    _el.style.width  = S + 'px';
+    _el.style.height = S + 'px';
+    _el.style.left   = (cx - S / 2) + 'px';
+    _el.style.top    = (cy - S / 2) + 'px';
 
     return true;
   }
 
-  // ─── 스프라이트 로드 ────────────────────────────
   function _loadImg(src) {
     if (_imgCache[src]) return Promise.resolve(_imgCache[src]);
     return new Promise(resolve => {
@@ -79,22 +68,29 @@
     });
   }
 
-  // ─── 프레임 루프 ────────────────────────────────
   function _tick(ts) {
     if (ts - _lastT < MS_FRAME) { _raf = requestAnimationFrame(_tick); return; }
     _lastT = ts;
-    const col = _frame % COLS;
-    const row = Math.floor(_frame / COLS);
-    _ctx.clearRect(0, 0, _canvas.width, _canvas.height);
-    _ctx.drawImage(_img,
-      col * FRAME_W, row * FRAME_H, FRAME_W, FRAME_H,
-      0, 0, _canvas.width, _canvas.height
+
+    const col   = _frame % COLS;
+    const row   = Math.floor(_frame / COLS);
+    const S     = _canvas.width;
+
+    // 세로 영상 → 정사각 캔버스: 중앙 정사각형 크롭 (object-fit:cover 효과)
+    const cropY = Math.floor((FRAME_H - FRAME_W) / 2); // 위아래 잘라 정사각형으로
+    _ctx.clearRect(0, 0, S, S);
+    _ctx.drawImage(
+      _img,
+      col * FRAME_W,               // sx
+      row * FRAME_H + cropY,       // sy (중앙 크롭)
+      FRAME_W, FRAME_W,            // sw, sh (정사각형)
+      0, 0, S, S                   // dx, dy, dw, dh
     );
+
     _frame = (_frame + 1) % TOTAL;
     _raf = requestAnimationFrame(_tick);
   }
 
-  // ─── 공개 API ───────────────────────────────────
   window.idolEventScreenShow = async function (spriteSrc) {
     if (!_positionOnBoard()) return;
     _img = await _loadImg(spriteSrc || 'img/games/idol/sol-sprite.jpg');
