@@ -8,37 +8,36 @@ const IDOL_BG_IMAGES = [
   'img/games/idol/bg-4.png',
   'img/games/idol/bg-5.png',
 ];
-let _idolBgActive = 'A'; // 현재 보이는 레이어 ('A' or 'B')
-let _idolBgIndex  = -1;  // 현재 배경 인덱스
+let _idolBgLayer = 'a'; // 현재 표시 레이어 ('a' or 'b')
+let _idolBgIndex = -1;
 
 function idolBgNext() {
-  const next = (_idolBgIndex + 1) % IDOL_BG_IMAGES.length;
-  idolBgSet(next);
+  idolBgSet((_idolBgIndex + 1) % IDOL_BG_IMAGES.length);
 }
 
 function idolBgSet(index) {
   _idolBgIndex = index;
-  const src = IDOL_BG_IMAGES[index];
-  const activeEl   = document.getElementById('idolBg' + _idolBgActive);
-  const inactiveId = _idolBgActive === 'A' ? 'B' : 'A';
-  const inactiveEl = document.getElementById('idolBg' + inactiveId);
-  if (!activeEl || !inactiveEl) return;
+  const el  = document.getElementById('idolGame');
+  if (!el) return;
+  const src  = `url('${IDOL_BG_IMAGES[index]}')`;
+  const next = _idolBgLayer === 'a' ? 'b' : 'a';
 
-  // 비활성 레이어에 새 이미지 세팅 후 페이드인, 기존 레이어 페이드아웃
-  inactiveEl.style.backgroundImage = `url('${src}')`;
-  inactiveEl.classList.add('ib-active');
-  activeEl.classList.remove('ib-active');
-  _idolBgActive = inactiveId;
+  // 비활성 레이어 CSS 변수에 이미지 주입 후 클래스 교체
+  el.style.setProperty(`--ib-${next}`, src);
+  el.classList.remove(`ib-show-${_idolBgLayer}`);
+  el.classList.add(`ib-show-${next}`);
+  _idolBgLayer = next;
 }
 
 function idolBgInit() {
-  // 게임 시작 시 첫 번째 배경으로 초기화
-  _idolBgIndex  = -1;
-  _idolBgActive = 'A';
-  ['idolBgA', 'idolBgB'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.classList.remove('ib-active'); el.style.backgroundImage = ''; }
-  });
+  _idolBgIndex = -1;
+  _idolBgLayer = 'a';
+  const el = document.getElementById('idolGame');
+  if (el) {
+    el.classList.remove('ib-show-a', 'ib-show-b');
+    el.style.setProperty('--ib-a', 'none');
+    el.style.setProperty('--ib-b', 'none');
+  }
   idolBgNext();
 }
 
