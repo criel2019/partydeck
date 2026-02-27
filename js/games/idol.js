@@ -1,5 +1,47 @@
 // ===== 팟플 아이돌 매니지먼트 — 메인 게임 엔진 =====
 
+// ─── 씬 배경 매니저 ──────────────────────────
+const IDOL_BG_IMAGES = [
+  'img/games/idol/bg-1.jpg',
+  'img/games/idol/bg-2.jpg',
+  'img/games/idol/bg-3.jpg',
+  'img/games/idol/bg-4.png',
+  'img/games/idol/bg-5.png',
+];
+let _idolBgActive = 'A'; // 현재 보이는 레이어 ('A' or 'B')
+let _idolBgIndex  = -1;  // 현재 배경 인덱스
+
+function idolBgNext() {
+  const next = (_idolBgIndex + 1) % IDOL_BG_IMAGES.length;
+  idolBgSet(next);
+}
+
+function idolBgSet(index) {
+  _idolBgIndex = index;
+  const src = IDOL_BG_IMAGES[index];
+  const activeEl   = document.getElementById('idolBg' + _idolBgActive);
+  const inactiveId = _idolBgActive === 'A' ? 'B' : 'A';
+  const inactiveEl = document.getElementById('idolBg' + inactiveId);
+  if (!activeEl || !inactiveEl) return;
+
+  // 비활성 레이어에 새 이미지 세팅 후 페이드인, 기존 레이어 페이드아웃
+  inactiveEl.style.backgroundImage = `url('${src}')`;
+  inactiveEl.classList.add('ib-active');
+  activeEl.classList.remove('ib-active');
+  _idolBgActive = inactiveId;
+}
+
+function idolBgInit() {
+  // 게임 시작 시 첫 번째 배경으로 초기화
+  _idolBgIndex  = -1;
+  _idolBgActive = 'A';
+  ['idolBgA', 'idolBgB'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove('ib-active'); el.style.backgroundImage = ''; }
+  });
+  idolBgNext();
+}
+
 // ─── 3D 다이스 로더 ──────────────────────────
 let _idolThreeState = 'none'; // 'none' | 'loading' | 'ready'
 let _idolThreeQueue = [];
@@ -178,6 +220,7 @@ function idolInitGame(selections) {
   if (_idolCamRafId) { cancelAnimationFrame(_idolCamRafId); _idolCamRafId = null; }
   _idolCam = { x: 0, y: 0, zoom: 1, tx: 0, ty: 0, tzoom: 1 };
   broadcastIdolState();
+  idolBgInit(); // 씬 배경 초기화
   idolRenderAll();
   // ISO 보드: 레이아웃 완료 후 래퍼 크기 기반으로 보드 재빌드
   requestAnimationFrame(() => {
@@ -301,6 +344,7 @@ function idolMovePlayer(p, steps, isDouble) {
       idolShowFavorToast(p.id, null, `출발 통과! 월급 +${IDOL_SALARY}만`);
     }
     p.pos = newPos;
+    idolBgNext(); // 이동 완료 → 배경 전환
     idolState.pendingAction = { type: 'landed', dice: idolState.pendingAction?.dice, pos: newPos, isDouble };
     broadcastIdolState();
     idolRenderAll();

@@ -50,6 +50,31 @@
   position: relative; /* 다이스 오버레이 기준점 */
 }
 
+/* ─── 씬 배경 크로스페이드 ──────────────────── */
+.idol-scene-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+}
+.idol-scene-bg.ib-active {
+  opacity: 1;
+}
+/* 보드·헤더 등 게임 요소들이 배경 위에 오도록 */
+.idol-header,
+.idol-resource-bar,
+.idol-board-wrapper,
+.idol-action-panel,
+.idol-dice-overlay,
+#idolEventScreen {
+  position: relative;
+  z-index: 1;
+}
+
 /* ─── 3D 다이스 오버레이 ────────────────────── */
 .idol-dice-overlay {
   position: absolute;
