@@ -3857,19 +3857,12 @@
   }
 }
 
-/* ── 가로 모드 (높이 ≤600px, landscape가 아닌 작은 폰 포함) ──── */
-@media (max-height: 500px) {
+/* ── 세로모드에서 화면 높이가 작을 때 (≤500px, 세로만) ──── */
+@media (max-height: 500px) and (orientation: portrait) {
   #idolGame .idol-header {
     padding: 3px 10px !important;
   }
   #idolGame .idol-resource-bar {
-    padding: 2px 6px 1px !important;
-  }
-  #idolGame .idol-res-hero {
-    padding: 4px !important;
-    gap: 3px !important;
-  }
-  #idolGame .idol-res-hero-meta {
     display: none !important;
   }
   #idolGame .idol-action-panel {
