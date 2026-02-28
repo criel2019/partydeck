@@ -2677,9 +2677,9 @@ function idolRenderCornerCards() {
 
   const currentP = idolCurrentPlayer();
 
-  // dirty-flag
+  // dirty-flag (모든 플레이어의 스탯 + 현재 턴 포함)
   const ccFp = idolState.players.map(p =>
-    `${p.id}:${p.fame}:${p.money}:${p.bankrupt}:${currentP && p.id === currentP.id ? 1 : 0}`
+    `${p.id}:${p.fame}:${p.money}:${p.talent}:${p.looks}:${p.bankrupt}:${currentP && p.id === currentP.id ? 1 : 0}`
   ).join(',');
   if (_idolRenderCache.cornerCards === ccFp) return;
   _idolRenderCache.cornerCards = ccFp;
@@ -2693,29 +2693,47 @@ function idolRenderCornerCards() {
     wrapper.appendChild(container);
   }
 
-  // 명성 기준 정렬 (순위)
-  const sorted = [...idolState.order]
+  // order 순서로 코너 배치 (모든 플레이어 — 본인 포함)
+  const allPlayers = idolState.order
     .map(id => idolState.players.find(p => p.id === id))
-    .filter(Boolean)
-    .sort((a, b) => b.fame - a.fame);
+    .filter(Boolean);
 
-  const medals = ['🥇', '🥈', '🥉', '4️⃣'];
-
-  const cards = sorted.map((p, i) => {
+  const cards = allPlayers.map((p, i) => {
     const isCur    = currentP && p.id === currentP.id;
+    const isMe     = p.id === state.myId;
     const corner   = _CORNER_POS[i] || 'bottom-right';
     const accent   = idolUxGetPlayerAccent(p.id);
-    const medal    = p.bankrupt ? '💀' : (medals[i] || `${i + 1}`);
-    const name     = escapeHTML(p.name.length > 5 ? p.name.slice(0, 5) + '…' : p.name);
+    const rank     = idolGetRank(p.id);
+    const stage    = getIdolStage(p.looks);
+    const meType   = IDOL_TYPES.find(t => t.id === p.idolType);
+    const portrait = meType?.img || '';
+    const idolName = escapeHTML((p.idolName || meType?.name || '').slice(0, 6));
+    const pName    = escapeHTML(p.name.length > 5 ? p.name.slice(0, 5) + '…' : p.name);
     const moneyFmt = p.money >= 10000 ? Math.round(p.money / 1000) + 'k'
                    : p.money >= 1000  ? (p.money / 1000).toFixed(1) + 'k'
                    : String(p.money);
-    return `<div class="idol-corner-card idol-corner-${corner}${isCur ? ' is-current' : ''}${p.bankrupt ? ' is-bankrupt' : ''}"
+
+    const portraitHTML = portrait
+      ? `<img src="${portrait}" alt="${idolName}" class="idol-cc-portrait">`
+      : `<span class="idol-cc-portrait-fallback">${meType?.emoji || '🌟'}</span>`;
+
+    return `<div class="idol-corner-card idol-corner-${corner}${isCur ? ' is-current' : ''}${isMe ? ' is-me' : ''}${p.bankrupt ? ' is-bankrupt' : ''}"
                  style="--cc-accent:${accent}">
-      <span class="idol-cc-medal">${medal}</span>
-      <span class="idol-cc-av">${p.avatar || '🙂'}</span>
-      <span class="idol-cc-name">${name}</span>
-      <span class="idol-cc-stats">⭐${p.fame} 💰${moneyFmt}</span>
+      <div class="idol-cc-img-wrap">
+        ${portraitHTML}
+        <span class="idol-cc-rank">${rank}</span>
+      </div>
+      <div class="idol-cc-info">
+        <div class="idol-cc-names">
+          <span class="idol-cc-idol-name">${idolName}</span>
+          <span class="idol-cc-player-name">${p.avatar || '🙂'} ${pName}</span>
+        </div>
+        <div class="idol-cc-stat-row">
+          <span class="idol-cc-fame">⭐${p.fame}</span>
+          <span class="idol-cc-money">💰${moneyFmt}</span>
+        </div>
+        <div class="idol-cc-stage" style="color:${stage.color}">${stage.emoji} ${stage.name}</div>
+      </div>
     </div>`;
   }).join('');
 
