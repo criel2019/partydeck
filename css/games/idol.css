@@ -3819,47 +3819,70 @@
   }
 }
 
-/* ── 가로 모드 (높이 ≤500px) — 좌우 분할 레이아웃 ──── */
+/* ── 가로 모드 (높이 ≤500px) — 보드 풀스크린 + 사이드바 ──── */
 @media (max-height: 500px) and (orientation: landscape) {
   #idolGame.active {
-    grid-template-columns: minmax(0, 1fr) minmax(200px, 280px) !important;
-    grid-template-rows: auto minmax(0, 1fr) !important;
+    grid-template-columns: minmax(0, 1fr) clamp(160px, 22vw, 240px) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
   }
 
+  /* 헤더 숨기기 — 가로모드에서는 보드가 전부 */
   #idolGame .idol-header {
-    grid-column: 1 / -1 !important;
-    grid-row: 1 !important;
-    padding: 3px 10px !important;
-  }
-  #idolGame .idol-header-title {
-    font-size: 12px !important;
-  }
-  #idolGame .idol-turn-badge {
-    font-size: 10px !important;
-    padding: 2px 8px !important;
+    display: none !important;
   }
 
-  /* 리소스바 숨기기 — 가로모드에서는 보드 안 센터패널이 스탯 표시 */
+  /* 리소스바 숨기기 */
   #idolGame .idol-resource-bar {
     display: none !important;
   }
 
-  /* 보드: 왼쪽 전체 */
+  /* 전광판 테스트 버튼 숨기기 */
+  #idolGame > button[onclick*="idolEventScreenShow"] {
+    display: none !important;
+  }
+
+  /* 보드: 왼쪽 전체 (높이 100%) */
   #idolGame .idol-board-wrapper {
     grid-column: 1 !important;
-    grid-row: 2 !important;
+    grid-row: 1 !important;
     padding: 2px !important;
   }
 
-  /* 액션패널: 오른쪽 사이드바 */
+  /* 줌 컨트롤 — 좌측 상단으로 이동 (보드와 겹침 최소화) */
+  #idolGame .idol-cam-controls {
+    top: 4px !important;
+    right: 4px !important;
+  }
+  #idolGame .idol-cam-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 14px !important;
+  }
+
+  /* 액션패널: 오른쪽 사이드바 (좁게) */
   #idolGame .idol-action-panel {
     grid-column: 2 !important;
-    grid-row: 2 !important;
+    grid-row: 1 !important;
     max-height: none !important;
     border-top: none !important;
     border-left: 1px solid rgba(255,255,255,0.07) !important;
-    padding: 6px 8px !important;
+    padding: 6px 6px !important;
     overflow-y: auto !important;
+    font-size: 11px !important;
+  }
+
+  /* 사이드바 내 버튼/텍스트 축소 */
+  #idolGame .idol-action-panel .idol-btn {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    min-height: 32px !important;
+  }
+  #idolGame .idol-action-panel .idol-action-title {
+    font-size: 11px !important;
+    margin-bottom: 4px !important;
+  }
+  #idolGame .idol-task-card {
+    padding: 8px !important;
   }
 }
 
