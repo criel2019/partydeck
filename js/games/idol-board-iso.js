@@ -638,36 +638,7 @@ function _idolIsoSetStepHL(cellIdx) {
 
   if (cellIdx === null || cellIdx === undefined) return;
 
-  const coordsList = idolGetCellGridCoords();
-  const [c, r]     = coordsList[cellIdx];
-  const vtx        = _isoVtx(c, r);
-  const ns         = 'http://www.w3.org/2000/svg';
-
-  // 상단면 밝은 오버레이 (황금빛 채움)
-  const poly = document.createElementNS(ns, 'polygon');
-  poly.setAttribute('class',          'iso-step-hl');
-  poly.setAttribute('points',         _pts([vtx.top, vtx.right, vtx.bottom, vtx.left]));
-  poly.setAttribute('fill',           'rgba(255, 245, 140, 0.65)');
-  poly.setAttribute('stroke',         '#fff0a0');
-  poly.setAttribute('stroke-width',   '2.5');
-  poly.setAttribute('pointer-events', 'none');
-  poly.setAttribute('filter',         'url(#isoStepGlow)');
-  gHL.appendChild(poly);
-
-  // 중심 스파크 원 (집중 광원)
-  const icx = (vtx.top.x + vtx.right.x + vtx.bottom.x + vtx.left.x) / 4;
-  const icy = (vtx.top.y + vtx.right.y + vtx.bottom.y + vtx.left.y) / 4;
-  const spark = document.createElementNS(ns, 'circle');
-  spark.setAttribute('class',          'iso-step-hl');
-  spark.setAttribute('cx',             icx.toFixed(1));
-  spark.setAttribute('cy',             icy.toFixed(1));
-  spark.setAttribute('r',              (ISO_BOARD.HW * 0.55).toFixed(1));
-  spark.setAttribute('fill',           'rgba(255, 255, 220, 0.80)');
-  spark.setAttribute('pointer-events', 'none');
-  spark.setAttribute('filter',         'url(#isoStepGlow)');
-  gHL.appendChild(spark);
-
-  // 해당 셀 그룹에 'iso-cell-active' 클래스 (CSS 리프트 애니메이션)
+  // 해당 셀 그룹에 'iso-cell-active' 클래스 (호버와 유사한 밝기 강조)
   const cellGroup = document.querySelector(`#iso-cells .iso-cell[data-idx="${cellIdx}"]`);
   if (cellGroup) {
     void cellGroup.offsetWidth; // reflow → 애니메이션 재시작

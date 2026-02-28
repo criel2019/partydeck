@@ -3059,10 +3059,7 @@
   box-shadow: 0 2px 8px rgba(120,60,120,0.35) !important;
 }
 
-/* ── 보드 이동 중 하이라이트 셀 ─────────────────────────────── */
-#idolGame .idol-cell.cell-step-hl {
-  box-shadow: inset 0 0 0 2px #ff82bb, 0 0 10px rgba(255,130,180,0.5) !important;
-}
+/* ── 보드 이동 중 하이라이트 셀 (grid 보드 — 미사용) ──────────── */
 
 /* ── 반응형: 작은 화면 ───────────────────────────────────────── */
 @media (max-width: 600px) {
@@ -3217,11 +3214,7 @@
   animation: eventBorderPulse 2.8s ease-in-out infinite !important;
 }
 
-/* ─── 8. 이동 하이라이트 칸 강화 ─────────────────────────────── */
-#idolGame .idol-cell.cell-step-hl {
-  background: rgba(255,200,235,0.40) !important;
-  box-shadow: inset 0 0 0 2px #ff5a9e, 0 0 16px rgba(255,90,158,0.70) !important;
-}
+/* ─── 8. 이동 하이라이트 칸 (grid 보드 — 미사용) ──────────────── */
 
 /* ─── 9. 아이돌 선택 카드 — 선택 시 확실한 글로우 ───────────── */
 #idolGame .idol-type-card[data-type="luna"].selected {
@@ -3571,29 +3564,10 @@
   50%       { opacity: 0.38; transform: scaleX(1.15) scaleY(1.20); }
 }
 
-/* ── 이동 스텝 하이라이트 — 상승 + 폭발 효과  */
-#idolGame #idolIsoBoardSvg .iso-step-hl {
-  transform-box:    fill-box;
-  transform-origin: center;
-  animation: isoStepActivate 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-@keyframes isoStepActivate {
-  0%   { opacity: 0;    transform: scale(0.65); }
-  55%  { opacity: 1.00; transform: scale(1.08); }
-  100% { opacity: 0.90; transform: scale(1.00); }
-}
-
-/* ── 셀 활성화 (플레이어 통과 시 타일 리프트) */
+/* ── 셀 활성화 (플레이어 통과 시 — 호버와 유사한 밝기 강조) */
 #idolGame #idolIsoBoardSvg .iso-cell.iso-cell-active {
-  transform-box:    fill-box;
-  transform-origin: center bottom;
-  animation: isoCellActivate 0.52s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-@keyframes isoCellActivate {
-  0%   { filter: brightness(1.0);  transform: translateY(0px);  }
-  38%  { filter: brightness(2.0) drop-shadow(0 -6px 14px rgba(255, 250, 180, 0.95));
-         transform: translateY(-6px); }
-  100% { filter: brightness(1.0);  transform: translateY(0px);  }
+  filter: brightness(1.35) drop-shadow(0 -4px 10px rgba(255, 255, 255, 0.55));
+  transition: filter 0.12s ease;
 }
 
 /* ═══════════════════════════════════════════════════════
