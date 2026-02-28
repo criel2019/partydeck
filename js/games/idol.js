@@ -1158,7 +1158,8 @@ function idolRenderBoard() {
     // 이미 SVG가 있으면 하이라이트/소유자 점만 갱신 (가벼운 업데이트)
     idolIsoUpdateCellHighlights(idolState);
   } else if (typeof idolRenderIsoBoard === 'function') {
-    // 래퍼 크기가 0이면 SVG 빌드 스킵 (rAF 콜백에서 재빌드됨)
+    // 래퍼 크기가 0이면 SVG 빌드 + 토큰 동기화 모두 스킵
+    // (idolInitGame의 rAF 콜백에서 래퍼 크기 확정 후 재빌드됨)
     const wrapper = document.getElementById('idolBoardWrapper');
     if (wrapper && wrapper.offsetWidth === 0) return;
     // 최초 렌더 또는 SVG 소실 시 전체 재빌드

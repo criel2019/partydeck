@@ -3901,57 +3901,43 @@
 
 /* ===== FX 티어 최적화 (모바일 퍼포먼스) ===== */
 
-/* ── reduced: 필터 애니메이션 제거, float만 유지 ── */
-#idolGame.idol-fx-reduced #idolIsoBoardSvg { filter: none !important; }
-#idolGame.idol-fx-reduced .iso-corner-cell { animation: none !important; }
-#idolGame.idol-fx-reduced .iso-center-shimmer { animation: none !important; }
-#idolGame.idol-fx-reduced .iso-rim-line { animation: none !important; opacity: 0.7; }
-#idolGame.idol-fx-reduced .idol-btn::after { display: none !important; }
-#idolGame.idol-fx-reduced .idol-btn-primary { animation: none !important; }
-
-/* reduced: 상시 표시 요소의 backdrop-filter 제거 */
-#idolGame.idol-fx-reduced .idol-header {
-  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  background: rgba(8, 10, 20, 0.92) !important;
-}
-#idolGame.idol-fx-reduced .idol-action-panel {
-  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  background: rgba(6, 8, 14, 0.92) !important;
-}
-#idolGame.idol-fx-reduced .idol-cam-btn {
-  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  background: rgba(8, 8, 20, 0.92) !important;
-}
-#idolGame.idol-fx-reduced .iso-cp-row {
-  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  background: rgba(8, 4, 18, 0.85) !important;
-}
-
-/* ── minimal: 모든 애니메이션 제거 + 필터 전부 제거 ── */
+/* ── reduced + minimal 공통: SVG 필터 제거 + 상시 요소 backdrop-filter 제거 ── */
+#idolGame.idol-fx-reduced #idolIsoBoardSvg,
 #idolGame.idol-fx-minimal #idolIsoBoardSvg { filter: none !important; }
-#idolGame.idol-fx-minimal * { animation-duration: 0s !important; transition-duration: 0s !important; }
+
+#idolGame.idol-fx-reduced .idol-btn::after,
 #idolGame.idol-fx-minimal .idol-btn::after { display: none !important; }
 
-/* minimal: 모든 backdrop-filter 제거 */
+#idolGame.idol-fx-reduced .idol-header,
 #idolGame.idol-fx-minimal .idol-header {
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
   background: rgba(8, 10, 20, 0.92) !important;
 }
+#idolGame.idol-fx-reduced .idol-action-panel,
 #idolGame.idol-fx-minimal .idol-action-panel {
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
   background: rgba(6, 8, 14, 0.92) !important;
 }
+#idolGame.idol-fx-reduced .idol-cam-btn,
 #idolGame.idol-fx-minimal .idol-cam-btn {
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
   background: rgba(8, 8, 20, 0.92) !important;
 }
+#idolGame.idol-fx-reduced .iso-cp-row,
 #idolGame.idol-fx-minimal .iso-cp-row {
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
   background: rgba(8, 4, 18, 0.85) !important;
 }
-#idolGame.idol-fx-minimal .idol-dice-overlay {
-  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-}
+
+/* ── reduced: 필터 애니메이션 제거, float만 유지 ── */
+#idolGame.idol-fx-reduced .iso-corner-cell { animation: none !important; }
+#idolGame.idol-fx-reduced .iso-center-shimmer { animation: none !important; }
+#idolGame.idol-fx-reduced .iso-rim-line { animation: none !important; opacity: 0.7; }
+#idolGame.idol-fx-reduced .idol-btn-primary { animation: none !important; }
+
+/* ── minimal: 모든 애니메이션·트랜지션 제거 ── */
+#idolGame.idol-fx-minimal * { animation-duration: 0s !important; transition-duration: 0s !important; }
+#idolGame.idol-fx-minimal .idol-dice-overlay,
 #idolGame.idol-fx-minimal .idol-overlay {
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
 }

@@ -216,7 +216,7 @@ function _isoCenterHTML() {
 }
 
 // ─── 셀 <g> 요소 생성 ────────────────────────────────
-function _isoCreateCellGroup(idx, c, r, state) {
+function _isoCreateCellGroup(idx, c, r, state, fxTier) {
   const { DEPTH, DEPTH_C, HW, HH } = ISO_BOARD;
   const isCorner  = _ISO_CORNERS.has(idx);
   const depth     = isCorner ? DEPTH_C : DEPTH;
@@ -273,7 +273,7 @@ function _isoCreateCellGroup(idx, c, r, state) {
   const iconSize = isCorner ? Math.round(HW * 2.2) : Math.round(HW * 1.8);
   const halfIcon = iconSize / 2;
   if (iconPath) {
-    const tier = (typeof _idolFxTier !== 'undefined') ? _idolFxTier : 'full';
+    const tier = fxTier || 'full';
 
     // ④-a 아이콘 후광 원 — full 티어에서만 생성
     if (tier === 'full') {
@@ -359,6 +359,9 @@ function idolRenderIsoBoard(container, state) {
     _isoCalcConstants(wrapper.offsetWidth, wrapper.offsetHeight);
   }
 
+  // FX 티어 (idol.js에서 설정, 미정의 시 full)
+  const fxTier = (typeof _idolFxTier !== 'undefined') ? _idolFxTier : 'full';
+
   const { SVG_W, SVG_H } = ISO_BOARD;
 
   // 뷰포트·토큰 레이어 크기 JS로 지정 (CSS !important 오버라이드)
@@ -403,7 +406,7 @@ function idolRenderIsoBoard(container, state) {
     });
 
   sorted.forEach(({ idx, c, r }) => {
-    gCells.appendChild(_isoCreateCellGroup(idx, c, r, state));
+    gCells.appendChild(_isoCreateCellGroup(idx, c, r, state, fxTier));
   });
   svg.appendChild(gCells);
 
@@ -521,8 +524,7 @@ function idolRenderIsoBoard(container, state) {
 
   // ─── 하단부 스테이지 라이트 (full 티어에서만) ───
   {
-    const tier = (typeof _idolFxTier !== 'undefined') ? _idolFxTier : 'full';
-    if (tier === 'full') {
+    if (fxTier === 'full') {
       const gLights = document.createElementNS(ns, 'g');
       gLights.id = 'iso-stage-lights';
       gLights.setAttribute('pointer-events', 'none');
@@ -564,8 +566,7 @@ function idolRenderIsoBoard(container, state) {
 
   // ─── 스파클 파티클 (full 티어에서만) ───────
   {
-    const tier = (typeof _idolFxTier !== 'undefined') ? _idolFxTier : 'full';
-    if (tier === 'full') {
+    if (fxTier === 'full') {
       const gSparkle = document.createElementNS(ns, 'g');
       gSparkle.id = 'iso-sparkles';
       const sparkCoords = idolGetCellGridCoords();
