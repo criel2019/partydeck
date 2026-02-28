@@ -109,12 +109,13 @@ function _idolApplyFxClass() {
 }
 
 // ─── 렌더 캐시 (dirty-flag) ─────────────────
-const _idolRenderCache = { resourceBar: null, centerPanel: null, actionPanel: null };
+const _idolRenderCache = { resourceBar: null, centerPanel: null, actionPanel: null, cornerCards: null };
 
 function _idolInvalidateRenderCache() {
   _idolRenderCache.resourceBar = null;
   _idolRenderCache.centerPanel = null;
   _idolRenderCache.actionPanel = null;
+  _idolRenderCache.cornerCards = null;
 }
 
 // ─── 3D 다이스 로더 ──────────────────────────
@@ -1145,6 +1146,7 @@ function idolRenderAll() {
   idolRenderResourceBar();
   idolRenderBoard();
   idolRenderCenterPanel();
+  idolRenderCornerCards();
   idolRenderActionPanel();
   // 카메라 제스처 초기화 (첫 렌더 때 한 번만)
   idolCamInitGestures();
@@ -1586,6 +1588,7 @@ function idolCamInitGestures() {
       if (oldSvg) oldSvg.remove();
       idolRenderBoard();
       idolRenderCenterPanel();
+      idolRenderCornerCards();
       idolRenderActionPanel();
     }, 300);
   };
@@ -2648,91 +2651,75 @@ function idolRenderCenterPanel() {
   const overlay = document.getElementById('idolCenterOverlay');
   if (overlay && overlay.style.display !== 'none') return;
 
-  const isLandscape = _idolLandscapeMQ && _idolLandscapeMQ.matches;
+  const turn    = idolState.turnNum || 1;
+  const turnPct = Math.min(Math.round(turn / IDOL_TOTAL_TURNS * 100), 100);
 
-  // dirty-flag: 핑거프린트 비교 → 동일하면 skip (오리엔테이션 포함)
-  const cpFp = `${isLandscape ? 'L' : 'P'},${idolState.turnNum},${idolState.order[idolState.currentIdx]},` +
-    idolState.players.map(p => `${p.id}:${p.fame}:${p.money}:${p.bankrupt}`).join(',');
+  // dirty-flag
+  const cpFp = `T${turn}`;
   if (_idolRenderCache.centerPanel === cpFp) return;
   _idolRenderCache.centerPanel = cpFp;
 
-  const currentP  = idolCurrentPlayer();
-  const turn      = idolState.turnNum || 1;
-  const turnPct   = Math.min(Math.round(turn / IDOL_TOTAL_TURNS * 100), 100);
+  // 센터 다이아몬드: 턴 정보만 표시 (플레이어 정보는 코너 카드로 이동)
+  panel.innerHTML = `
+    <div class="iso-cp-turn-only">
+      <div class="iso-cp-turn-label">🎤 ${turn} / ${IDOL_TOTAL_TURNS}</div>
+      <div class="iso-cp-progress"><div class="iso-cp-prog-bar" style="width:${turnPct}%"></div></div>
+    </div>`;
+}
 
-  // 명성 기준 내림차순 정렬
+// ─── 코너 플레이어 카드 (보드 4모서리) ────────────
+// boardWrapper 안, viewport 밖에 절대배치 → 카메라 줌/팬 영향 안 받음
+const _CORNER_POS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+
+function idolRenderCornerCards() {
+  const wrapper = document.getElementById('idolBoardWrapper');
+  if (!wrapper || !idolState) return;
+
+  const currentP = idolCurrentPlayer();
+
+  // dirty-flag
+  const ccFp = idolState.players.map(p =>
+    `${p.id}:${p.fame}:${p.money}:${p.bankrupt}:${currentP && p.id === currentP.id ? 1 : 0}`
+  ).join(',');
+  if (_idolRenderCache.cornerCards === ccFp) return;
+  _idolRenderCache.cornerCards = ccFp;
+
+  // 컨테이너 생성/재사용
+  let container = document.getElementById('idolCornerCards');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'idolCornerCards';
+    container.className = 'idol-corner-cards';
+    wrapper.appendChild(container);
+  }
+
+  // 명성 기준 정렬 (순위)
   const sorted = [...idolState.order]
     .map(id => idolState.players.find(p => p.id === id))
     .filter(Boolean)
     .sort((a, b) => b.fame - a.fame);
 
-  const maxFame   = Math.max(...sorted.map(p => p.fame), 1);
-  const medals    = ['🥇', '🥈', '🥉', '4️⃣'];
+  const medals = ['🥇', '🥈', '🥉', '4️⃣'];
 
-  if (isLandscape) {
-    // ── 가로모드 컴팩트 ──
-    const compactRows = sorted.map((p, i) => {
-      const isCur  = currentP && p.id === currentP.id;
-      const medal  = p.bankrupt ? '💀' : (medals[i] || `${i + 1}`);
-      const name   = escapeHTML(p.name.length > 6 ? p.name.slice(0, 6) + '…' : p.name);
-      return `<div class="iso-cp-compact-row${isCur ? ' is-current' : ''}${p.bankrupt ? ' is-bankrupt' : ''}"
-                   style="--cp-accent:${idolUxGetPlayerAccent(p.id)}">
-        <span class="iso-cp-compact-medal">${medal}</span>
-        <span class="iso-cp-compact-av">${p.avatar || '🙂'}</span>
-        <span class="iso-cp-compact-name">${name}</span>
-        <span class="iso-cp-compact-fame">⭐${p.fame}</span>
-      </div>`;
-    }).join('');
-
-    panel.innerHTML = `
-      <div class="iso-cp-compact-header">
-        <span class="iso-cp-compact-turn">${turn}/${IDOL_TOTAL_TURNS}</span>
-        <div class="iso-cp-compact-prog"><div class="iso-cp-prog-bar" style="width:${turnPct}%"></div></div>
-      </div>
-      ${compactRows}`;
-    // maxWidth는 다이아몬드 clip-path가 자동 처리 — 별도 제한 불필요
-    panel.style.maxWidth = '';
-    return;
-  }
-
-  // ── 세로모드/PC 기존 렌더링 ──
-  panel.style.maxWidth = '';
-
-  const rows = sorted.map((p, i) => {
+  const cards = sorted.map((p, i) => {
     const isCur    = currentP && p.id === currentP.id;
+    const corner   = _CORNER_POS[i] || 'bottom-right';
     const accent   = idolUxGetPlayerAccent(p.id);
     const medal    = p.bankrupt ? '💀' : (medals[i] || `${i + 1}`);
     const name     = escapeHTML(p.name.length > 5 ? p.name.slice(0, 5) + '…' : p.name);
-    const famePct  = Math.round(p.fame / maxFame * 100);
     const moneyFmt = p.money >= 10000 ? Math.round(p.money / 1000) + 'k'
                    : p.money >= 1000  ? (p.money / 1000).toFixed(1) + 'k'
                    : String(p.money);
-    return `<div class="iso-cp-row${isCur ? ' is-current' : ''}${p.bankrupt ? ' is-bankrupt' : ''}"
-                 style="--cp-accent:${accent}">
-      <span class="iso-cp-medal">${medal}</span>
-      <span class="iso-cp-av">${p.avatar || '🙂'}</span>
-      <div class="iso-cp-mid">
-        <div class="iso-cp-toprow">
-          <span class="iso-cp-name">${name}</span>
-          <span class="iso-cp-money">💰${moneyFmt}</span>
-        </div>
-        <div class="iso-cp-famewrap">
-          <div class="iso-cp-famebar" style="width:${famePct}%;--bar-clr:${accent}"></div>
-        </div>
-      </div>
-      <span class="iso-cp-fame">⭐${p.fame}</span>
+    return `<div class="idol-corner-card idol-corner-${corner}${isCur ? ' is-current' : ''}${p.bankrupt ? ' is-bankrupt' : ''}"
+                 style="--cc-accent:${accent}">
+      <span class="idol-cc-medal">${medal}</span>
+      <span class="idol-cc-av">${p.avatar || '🙂'}</span>
+      <span class="idol-cc-name">${name}</span>
+      <span class="idol-cc-stats">⭐${p.fame} 💰${moneyFmt}</span>
     </div>`;
   }).join('');
 
-  panel.innerHTML = `
-    <div class="iso-cp-header">
-      <span class="iso-cp-title">🎤 아이돌 매니지먼트</span>
-      <span class="iso-cp-turn-badge">${turn} / ${IDOL_TOTAL_TURNS} 턴</span>
-    </div>
-    <div class="iso-cp-progress">
-      <div class="iso-cp-prog-bar" style="width:${turnPct}%"></div>
-    </div>
-    ${rows}`;
+  container.innerHTML = cards;
 }
 
 // 오버라이드 표시 (이벤트 연출용 — 지금은 흰색 빈 박스)
@@ -2748,5 +2735,6 @@ function idolCenterPanelHideOverride() {
   const overlay = document.getElementById('idolCenterOverlay');
   if (!overlay) return;
   overlay.style.display = 'none';
-  idolRenderCenterPanel(); // 스탯 패널 갱신
+  idolRenderCenterPanel();
+  idolRenderCornerCards();
 }

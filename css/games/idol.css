@@ -3504,6 +3504,120 @@
   text-shadow: 0 0 6px rgba(255,215,0,0.5);
 }
 
+/* ── 센터 다이아몬드 턴 전용 표시 ─────────────── */
+.iso-cp-turn-only {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: calc(var(--iso-hw, 40px) * 0.15);
+}
+.iso-cp-turn-label {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: calc(var(--iso-hw, 40px) * 0.45);
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.9), 0 0 8px rgba(255,215,0,0.5);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+/* ── 코너 플레이어 카드 ──────────────────────── */
+.idol-corner-cards {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.idol-corner-card {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: rgba(5, 7, 15, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #c8c4d4;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: auto;
+  transition: opacity 0.3s, transform 0.3s;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+}
+
+.idol-corner-card.is-current {
+  border-color: var(--cc-accent, #ffd700);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--cc-accent, #ffd700) 35%, transparent),
+              0 2px 12px rgba(0,0,0,0.5);
+  color: #fff;
+  background: rgba(5, 7, 15, 0.92);
+}
+.idol-corner-card.is-bankrupt {
+  opacity: 0.35;
+  text-decoration: line-through;
+}
+
+/* 모서리 위치 */
+.idol-corner-top-left     { top: 6px;    left: 6px;   }
+.idol-corner-top-right    { top: 6px;    right: 6px;  }
+.idol-corner-bottom-left  { bottom: 6px; left: 6px;   }
+.idol-corner-bottom-right { bottom: 6px; right: 6px;  }
+
+.idol-cc-medal { flex-shrink: 0; font-size: 12px; }
+.idol-cc-av    { flex-shrink: 0; font-size: 13px; }
+.idol-cc-name  {
+  font-weight: 700;
+  max-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: inherit;
+}
+.idol-cc-stats {
+  font-size: 10px;
+  color: #ffe082;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* 모바일 작은 화면 */
+@media (max-width: 500px) {
+  .idol-corner-card {
+    font-size: 10px;
+    padding: 3px 6px;
+    gap: 3px;
+  }
+  .idol-cc-medal { font-size: 10px; }
+  .idol-cc-av    { font-size: 11px; }
+  .idol-cc-name  { max-width: 40px; }
+  .idol-cc-stats { font-size: 9px; }
+}
+
+/* 가로모드: 액션패널(우상단)과 겹침 방지 — top-right 카드 아래로 밀기 */
+@media (max-height: 500px) and (orientation: landscape) {
+  .idol-corner-top-right {
+    top: auto;
+    right: 6px;
+    bottom: calc(50% + 6px);
+  }
+  .idol-corner-bottom-right {
+    bottom: 6px;
+    right: 6px;
+  }
+  .idol-corner-card {
+    font-size: 10px;
+    padding: 2px 5px;
+    gap: 2px;
+  }
+  .idol-cc-medal { font-size: 10px; }
+  .idol-cc-av    { font-size: 11px; }
+  .idol-cc-stats { font-size: 9px; }
+}
+
 /* ── 오버라이드 패널 (이벤트 연출용) ─────────── */
 #idolGame .idol-iso-center-overlay {
   background: rgba(4, 2, 14, 0.88);
@@ -4035,6 +4149,11 @@
 #idolGame.idol-fx-minimal .iso-cp-row {
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
   background: rgba(8, 4, 18, 0.85) !important;
+}
+#idolGame.idol-fx-reduced .idol-corner-card,
+#idolGame.idol-fx-minimal .idol-corner-card {
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  background: rgba(5, 7, 15, 0.92) !important;
 }
 
 /* ── reduced: 필터 애니메이션 제거, float만 유지 ── */
