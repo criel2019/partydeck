@@ -88,7 +88,9 @@ function _pts(arr) {
 }
 
 // ─── SVG <defs> 빌더 ─────────────────────────────────
+let _isoDefsHTMLCache = null;
 function _isoDefsHTML() {
+  if (_isoDefsHTMLCache) return _isoDefsHTMLCache;
   let html = '<defs>';
 
   // 셀 타입별 상단면 그라디언트
@@ -143,13 +145,14 @@ function _isoDefsHTML() {
           `<circle cx="0.5" cy="0.5" r="0.5"/>` +
           `</clipPath>`;
 
-  // 하단부 스테이지 라이트 글로우 필터
+  // 하단부 스테이지 라이트 글로우 필터 (경량화: stdDeviation 8→4, feMerge 3→2)
   html += `<filter id="isoStageLight" x="-100%" y="-100%" width="300%" height="300%">` +
-          `<feGaussianBlur stdDeviation="8" result="b"/>` +
-          `<feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>` +
+          `<feGaussianBlur stdDeviation="4" result="b"/>` +
+          `<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>` +
           `</filter>`;
 
   html += '</defs>';
+  _isoDefsHTMLCache = html;
   return html;
 }
 
@@ -270,18 +273,22 @@ function _isoCreateCellGroup(idx, c, r, state) {
   const iconSize = isCorner ? Math.round(HW * 2.2) : Math.round(HW * 1.8);
   const halfIcon = iconSize / 2;
   if (iconPath) {
-    // ④-a 아이콘 후광 원 (아이콘 뒤에서 빛나는 컬러드 오브)
-    const orbDur = (2.6 + (idx % 6) * 0.32).toFixed(1);
-    const orbDel = `-${((idx * 0.19) % parseFloat(orbDur)).toFixed(2)}s`;
-    const glowCirc = document.createElementNS(ns, 'circle');
-    glowCirc.setAttribute('class', 'iso-icon-glow');
-    glowCirc.setAttribute('cx', cx.toFixed(1));
-    glowCirc.setAttribute('cy', (cy + 1).toFixed(1));
-    glowCirc.setAttribute('r', (iconSize * 0.40).toFixed(1));
-    glowCirc.setAttribute('fill', `url(#isoIconGlow_${colorType})`);
-    glowCirc.setAttribute('pointer-events', 'none');
-    glowCirc.style.animation = `isoGlowOrb ${orbDur}s ease-in-out infinite ${orbDel}`;
-    g.appendChild(glowCirc);
+    const tier = (typeof _idolFxTier !== 'undefined') ? _idolFxTier : 'full';
+
+    // ④-a 아이콘 후광 원 — full 티어에서만 생성
+    if (tier === 'full') {
+      const orbDur = (2.6 + (idx % 6) * 0.32).toFixed(1);
+      const orbDel = `-${((idx * 0.19) % parseFloat(orbDur)).toFixed(2)}s`;
+      const glowCirc = document.createElementNS(ns, 'circle');
+      glowCirc.setAttribute('class', 'iso-icon-glow');
+      glowCirc.setAttribute('cx', cx.toFixed(1));
+      glowCirc.setAttribute('cy', (cy + 1).toFixed(1));
+      glowCirc.setAttribute('r', (iconSize * 0.40).toFixed(1));
+      glowCirc.setAttribute('fill', `url(#isoIconGlow_${colorType})`);
+      glowCirc.setAttribute('pointer-events', 'none');
+      glowCirc.style.animation = `isoGlowOrb ${orbDur}s ease-in-out infinite ${orbDel}`;
+      g.appendChild(glowCirc);
+    }
 
     // ④-b 아이콘 이미지
     const imgEl = document.createElementNS(ns, 'image');
@@ -294,12 +301,19 @@ function _isoCreateCellGroup(idx, c, r, state) {
     imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     imgEl.setAttribute('pointer-events', 'none');
     // 셀마다 다른 타이밍으로 둥실 + 글로우 애니메이션
-    const floatDur = (2.4 + (idx % 4) * 0.3).toFixed(1);
-    const floatDel = `-${((idx * 0.17) % floatDur).toFixed(2)}s`;
-    const glowDel  = `-${((idx * 0.31) % 4.5).toFixed(2)}s`;
-    imgEl.style.animation =
-      `isoIconFloat ${floatDur}s ease-in-out infinite ${floatDel},` +
-      `isoIconGlow 4.5s ease-in-out infinite ${glowDel}`;
+    if (tier === 'full') {
+      const floatDur = (2.4 + (idx % 4) * 0.3).toFixed(1);
+      const floatDel = `-${((idx * 0.17) % floatDur).toFixed(2)}s`;
+      const glowDel  = `-${((idx * 0.31) % 4.5).toFixed(2)}s`;
+      imgEl.style.animation =
+        `isoIconFloat ${floatDur}s ease-in-out infinite ${floatDel},` +
+        `isoIconGlow 4.5s ease-in-out infinite ${glowDel}`;
+    } else if (tier === 'reduced') {
+      const floatDur = (2.4 + (idx % 4) * 0.3).toFixed(1);
+      const floatDel = `-${((idx * 0.17) % floatDur).toFixed(2)}s`;
+      imgEl.style.animation = `isoIconFloat ${floatDur}s ease-in-out infinite ${floatDel}`;
+    }
+    // minimal: 애니메이션 없음
     g.appendChild(imgEl);
   }
 
@@ -505,76 +519,81 @@ function idolRenderIsoBoard(container, state) {
   gRim.appendChild(rimPoly2);
   svg.insertBefore(gRim, gCells);
 
-  // ─── 하단부 스테이지 라이트 (다이아몬드 아래쪽 셀 아래 보라색 광원) ───
+  // ─── 하단부 스테이지 라이트 (full 티어에서만) ───
   {
-    const gLights = document.createElementNS(ns, 'g');
-    gLights.id = 'iso-stage-lights';
-    gLights.setAttribute('pointer-events', 'none');
+    const tier = (typeof _idolFxTier !== 'undefined') ? _idolFxTier : 'full';
+    if (tier === 'full') {
+      const gLights = document.createElementNS(ns, 'g');
+      gLights.id = 'iso-stage-lights';
+      gLights.setAttribute('pointer-events', 'none');
 
-    // 하단부 셀들: 좌하변(셀 19~26) + 우하변(셀 28~35) + 바닥코너(셀 27)
-    const bottomCells = [];
-    for (let i = 19; i <= 35; i++) bottomCells.push(i);
+      const bottomCells = [];
+      for (let i = 19; i <= 35; i++) bottomCells.push(i);
 
-    const coords = idolGetCellGridCoords();
-    const lightColors = [
-      'rgba(180,100,255,0.55)',  // 보라
-      'rgba(220,80,220,0.45)',   // 핑크보라
-      'rgba(140,80,255,0.50)',   // 진보라
-    ];
+      const coords = idolGetCellGridCoords();
+      const lightColors = [
+        'rgba(180,100,255,0.55)',
+        'rgba(220,80,220,0.45)',
+        'rgba(140,80,255,0.50)',
+      ];
 
-    bottomCells.forEach((cellIdx, i) => {
-      if (cellIdx >= coords.length) return;
-      const [cc, rr] = coords[cellIdx];
-      const vtx = _isoVtx(cc, rr);
-      const isCorner = _ISO_CORNERS.has(cellIdx);
-      const depth = isCorner ? DEPTH_C : ISO_BOARD.DEPTH;
+      bottomCells.forEach((cellIdx, i) => {
+        if (cellIdx >= coords.length) return;
+        const [cc, rr] = coords[cellIdx];
+        const vtx = _isoVtx(cc, rr);
+        const isCorner = _ISO_CORNERS.has(cellIdx);
+        const depth = isCorner ? DEPTH_C : ISO_BOARD.DEPTH;
 
-      // 셀 하단 중앙 (남쪽 벽 아래)
-      const cx = vtx.bottom.x;
-      const cy = vtx.bottom.y + depth + HH * 0.5;
+        const cx = vtx.bottom.x;
+        const cy = vtx.bottom.y + depth + HH * 0.5;
 
-      const light = document.createElementNS(ns, 'ellipse');
-      light.setAttribute('cx', cx.toFixed(1));
-      light.setAttribute('cy', cy.toFixed(1));
-      light.setAttribute('rx', (HW * 0.7).toFixed(1));
-      light.setAttribute('ry', (HH * 0.5).toFixed(1));
-      light.setAttribute('fill', lightColors[i % lightColors.length]);
-      light.setAttribute('filter', 'url(#isoStageLight)');
-      light.style.animation = `isoStageLightPulse ${(2.0 + (i % 5) * 0.4).toFixed(1)}s ease-in-out infinite ${(-i * 0.3).toFixed(1)}s`;
-      gLights.appendChild(light);
-    });
+        const light = document.createElementNS(ns, 'ellipse');
+        light.setAttribute('cx', cx.toFixed(1));
+        light.setAttribute('cy', cy.toFixed(1));
+        light.setAttribute('rx', (HW * 0.7).toFixed(1));
+        light.setAttribute('ry', (HH * 0.5).toFixed(1));
+        light.setAttribute('fill', lightColors[i % lightColors.length]);
+        light.setAttribute('filter', 'url(#isoStageLight)');
+        light.style.animation = `isoStageLightPulse ${(2.0 + (i % 5) * 0.4).toFixed(1)}s ease-in-out infinite ${(-i * 0.3).toFixed(1)}s`;
+        gLights.appendChild(light);
+      });
 
-    svg.insertBefore(gLights, gCells);
+      svg.insertBefore(gLights, gCells);
+    }
   }
 
-  // ─── 스파클 파티클 (타일 위 반짝이는 별 점들) ───────
-  const gSparkle = document.createElementNS(ns, 'g');
-  gSparkle.id = 'iso-sparkles';
-  const sparkCoords = idolGetCellGridCoords();
-  const sparkColors = ['#ffffff', '#ffe8c0', '#ffc8e8', '#c8e8ff', '#e8c8ff'];
-  sparkCoords.forEach(([sc, sr], tileIdx) => {
-    const vtx = _isoVtx(sc, sr);
-    // 타일당 1~2개 스파클
-    const positions = [
-      { x: vtx.top.x   + ((tileIdx % 5) - 2) * 2.5, y: vtx.top.y   - 4 },
-      ...(tileIdx % 2 === 0 ? [
-        { x: vtx.right.x + 2, y: vtx.right.y - 2 },
-      ] : []),
-    ];
-    positions.forEach((pos, pi) => {
-      const dot = document.createElementNS(ns, 'circle');
-      dot.setAttribute('cx', pos.x.toFixed(1));
-      dot.setAttribute('cy', pos.y.toFixed(1));
-      dot.setAttribute('r',  (0.8 + (tileIdx % 3) * 0.45).toFixed(1));
-      dot.setAttribute('fill', sparkColors[(tileIdx + pi) % sparkColors.length]);
-      dot.setAttribute('pointer-events', 'none');
-      const dur = (1.3 + (tileIdx * 0.17 + pi * 0.6) % 2.4).toFixed(1);
-      const del = `-${((tileIdx * 0.31 + pi * 0.9) % parseFloat(dur)).toFixed(2)}s`;
-      dot.style.animation = `isoSparkle ${dur}s ease-in-out infinite ${del}`;
-      gSparkle.appendChild(dot);
-    });
-  });
-  svg.appendChild(gSparkle);
+  // ─── 스파클 파티클 (full 티어에서만) ───────
+  {
+    const tier = (typeof _idolFxTier !== 'undefined') ? _idolFxTier : 'full';
+    if (tier === 'full') {
+      const gSparkle = document.createElementNS(ns, 'g');
+      gSparkle.id = 'iso-sparkles';
+      const sparkCoords = idolGetCellGridCoords();
+      const sparkColors = ['#ffffff', '#ffe8c0', '#ffc8e8', '#c8e8ff', '#e8c8ff'];
+      sparkCoords.forEach(([sc, sr], tileIdx) => {
+        const vtx = _isoVtx(sc, sr);
+        const positions = [
+          { x: vtx.top.x   + ((tileIdx % 5) - 2) * 2.5, y: vtx.top.y   - 4 },
+          ...(tileIdx % 2 === 0 ? [
+            { x: vtx.right.x + 2, y: vtx.right.y - 2 },
+          ] : []),
+        ];
+        positions.forEach((pos, pi) => {
+          const dot = document.createElementNS(ns, 'circle');
+          dot.setAttribute('cx', pos.x.toFixed(1));
+          dot.setAttribute('cy', pos.y.toFixed(1));
+          dot.setAttribute('r',  (0.8 + (tileIdx % 3) * 0.45).toFixed(1));
+          dot.setAttribute('fill', sparkColors[(tileIdx + pi) % sparkColors.length]);
+          dot.setAttribute('pointer-events', 'none');
+          const dur = (1.3 + (tileIdx * 0.17 + pi * 0.6) % 2.4).toFixed(1);
+          const del = `-${((tileIdx * 0.31 + pi * 0.9) % parseFloat(dur)).toFixed(2)}s`;
+          dot.style.animation = `isoSparkle ${dur}s ease-in-out infinite ${del}`;
+          gSparkle.appendChild(dot);
+        });
+      });
+      svg.appendChild(gSparkle);
+    }
+  }
 
   // 하이라이트 그룹 (플레이어 위치, 이동 스텝 오버레이 — 가장 앞)
   const gHL = document.createElementNS(ns, 'g');

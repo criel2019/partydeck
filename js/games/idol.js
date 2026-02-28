@@ -85,6 +85,38 @@ function idolBgInit() {
   setTimeout(idolBgNext, 150);
 }
 
+// ─── FX 티어 시스템 (모바일 퍼포먼스 최적화) ───
+let _idolFxTier = 'full'; // 'full' | 'reduced' | 'minimal'
+
+function _idolDetectFxTier() {
+  // 강제 오버라이드 (디버그용)
+  if (window._idolForceFxTier) { _idolFxTier = window._idolForceFxTier; _idolApplyFxClass(); return; }
+  const ua = navigator.userAgent;
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+  const cores = navigator.hardwareConcurrency || 2;
+  const mem = navigator.deviceMemory || 4; // GB, Chrome only
+  if (!isMobile) { _idolFxTier = 'full'; }
+  else if (cores <= 2 || mem <= 2) { _idolFxTier = 'minimal'; }
+  else { _idolFxTier = 'reduced'; }
+  _idolApplyFxClass();
+}
+
+function _idolApplyFxClass() {
+  const el = document.getElementById('idolGame');
+  if (!el) return;
+  el.classList.remove('idol-fx-full', 'idol-fx-reduced', 'idol-fx-minimal');
+  el.classList.add('idol-fx-' + _idolFxTier);
+}
+
+// ─── 렌더 캐시 (dirty-flag) ─────────────────
+const _idolRenderCache = { resourceBar: null, centerPanel: null, actionPanel: null };
+
+function _idolInvalidateRenderCache() {
+  _idolRenderCache.resourceBar = null;
+  _idolRenderCache.centerPanel = null;
+  _idolRenderCache.actionPanel = null;
+}
+
 // ─── 3D 다이스 로더 ──────────────────────────
 let _idolThreeState = 'none'; // 'none' | 'loading' | 'ready'
 let _idolThreeQueue = [];
@@ -232,6 +264,8 @@ function startIdolManagement() {
 
 // 호스트가 초기 게임 생성 (모든 플레이어 선택 완료 후)
 function idolInitGame(selections) {
+  _idolDetectFxTier();
+  _idolInvalidateRenderCache();
   // Three.js 미리 로드 (첫 주사위 전에 완료되도록)
   loadIdolDiceThree();
   // selections: [{ playerId, idolTypeId, idolName }]
@@ -1070,6 +1104,7 @@ function idolGetRank(playerId) {
 function renderIdolView(gs) {
   if (gs) {
     idolState = gs;
+    _idolInvalidateRenderCache();
     // 브로드캐스트 시 숨겨진 내 호감도 복원
     if (idolState._myFavor !== undefined) {
       const me = idolState.players.find(p => p.id === state.myId);
@@ -1123,6 +1158,9 @@ function idolRenderBoard() {
     // 이미 SVG가 있으면 하이라이트/소유자 점만 갱신 (가벼운 업데이트)
     idolIsoUpdateCellHighlights(idolState);
   } else if (typeof idolRenderIsoBoard === 'function') {
+    // 래퍼 크기가 0이면 SVG 빌드 스킵 (rAF 콜백에서 재빌드됨)
+    const wrapper = document.getElementById('idolBoardWrapper');
+    if (wrapper && wrapper.offsetWidth === 0) return;
     // 최초 렌더 또는 SVG 소실 시 전체 재빌드
     idolRenderIsoBoard(viewport, idolState);
   }
@@ -1283,13 +1321,16 @@ function idolAnimateMoveToken(playerId, fromPos, toPos, onDone) {
   nextStep();
 }
 
-// 36칸 → 10x10 외곽 그리드 좌표
+// 36칸 → 10x10 외곽 그리드 좌표 (캐싱)
+let _idolCellGridCoordsCache = null;
 function idolGetCellGridCoords() {
+  if (_idolCellGridCoordsCache) return _idolCellGridCoordsCache;
   const coords = [];
   for (let i = 0; i <= 9; i++) coords.push([i, 9]);       // 하단: 0~9
   for (let i = 8; i >= 0; i--) coords.push([9, i]);        // 우측: 10~18
   for (let i = 8; i >= 0; i--) coords.push([i, 0]);        // 상단: 19~27
   for (let i = 1; i <= 8; i++) coords.push([0, i]);         // 좌측: 28~35
+  _idolCellGridCoordsCache = coords;
   return coords;
 }
 
@@ -1899,7 +1940,33 @@ function idolRemoveSelectOverlay() {
   if (overlay) overlay.remove();
 }
 
+function _idolPreloadAssets() {
+  if (_idolPreloadAssets._done) return;
+  _idolPreloadAssets._done = true;
+  // 1. 배경 이미지
+  IDOL_BG_IMAGES.forEach(src => { const img = new Image(); img.src = src; });
+  // 2. 보드 아이콘 이미지
+  Object.values(_ISO_ICONS || {}).forEach(src => { const img = new Image(); img.src = src; });
+  // 3. 아이돌 타입 이미지
+  if (typeof IDOL_TYPES !== 'undefined') {
+    IDOL_TYPES.forEach(t => { if (t.img) { const img = new Image(); img.src = t.img; } });
+  }
+  // 4. Three.js CDN preload (힌트만)
+  if (typeof THREE === 'undefined') {
+    const link = document.createElement('link');
+    link.rel = 'preload'; link.as = 'script';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+    document.head.appendChild(link);
+  }
+  // 5. _isoDefsHTML 캐시 프리빌드
+  if (typeof _isoDefsHTML === 'function') _isoDefsHTML();
+  // 6. idolGetCellGridCoords 캐시 프리빌드
+  if (typeof idolGetCellGridCoords === 'function') idolGetCellGridCoords();
+}
+
 function idolShowSelectPhase() {
+  _idolDetectFxTier();
+  _idolPreloadAssets();
   if (idolState) {
     idolRenderAll();
     return;
@@ -2166,6 +2233,12 @@ function idolRenderResourceBar() {
   const bar = document.getElementById('idolResourceBar');
   if (!bar) return;
 
+  // dirty-flag: 핑거프린트 비교 → 동일하면 skip
+  const favorDir = idolState._myFavorDir ?? me.lastFavorDir ?? null;
+  const fp = `${me.money},${me.fame},${me.talent},${me.looks},${me.pos},${me.bankrupt},${idolState.turnNum},${idolState.order[idolState.currentIdx]},${idolState.pendingAction?.type},${favorDir}`;
+  if (_idolRenderCache.resourceBar === fp) return;
+  _idolRenderCache.resourceBar = fp;
+
   bar.setAttribute('role', 'region');
   bar.setAttribute('aria-label', '내 상태 요약');
 
@@ -2324,105 +2397,6 @@ function idolCreateCellElement(cell, idx) {
   return el;
 }
 
-function idolRenderCenterHTML() {
-  const currentP = idolCurrentPlayer();
-  if (!currentP) {
-    return `<div class="idol-center-shell"><div class="idol-center-empty">현재 턴 정보를 불러오는 중...</div></div>`;
-  }
-
-  const stage = getIdolStage(currentP.looks);
-  const currentType = IDOL_TYPES.find(t => t.id === currentP.idolType);
-  const currentRank = idolGetRank(currentP.id);
-  const actionMeta = idolUxGetActionMeta(idolState.pendingAction);
-  const actionHint = idolUxGetActionHint(idolState.pendingAction, currentP, idolIsMyTurn());
-  const cellMeta = idolUxGetBoardCellMeta(currentP);
-
-  const playersHTML = idolState.order.map(id => {
-    const p = idolState.players.find(pl => pl.id === id);
-    if (!p) return '';
-    const isCurrent = id === currentP.id;
-    const pType = IDOL_TYPES.find(t => t.id === p.idolType);
-    const pRank = idolGetRank(p.id);
-    const pStage = getIdolStage(p.looks);
-
-    const idolImgHTML = pType?.img
-      ? `<img src="${pType.img}" alt="${pType.name}" class="idol-mini-idol-img">`
-      : `<span class="idol-mini-idol-emoji">${pType?.emoji ?? '🌟'}</span>`;
-    return `
-      <div class="idol-player-mini ${isCurrent ? 'is-current' : ''} ${p.bankrupt ? 'is-bankrupt' : ''}" style="--idol-accent:${idolUxGetPlayerAccent(p.id)};">
-        <div class="idol-player-mini-portraits">
-          <div class="idol-mini-producer" title="${escapeHTML(p.name)} (프로듀서)" style="--tok-color:${idolUxGetPlayerAccent(p.id)}">
-            <span class="idol-mini-producer-emoji">${p.avatar || '🙂'}</span>
-          </div>
-          <div class="idol-mini-idol" title="${pType?.name ?? '아이돌'}">
-            ${idolImgHTML}
-          </div>
-        </div>
-        <div class="idol-player-mini-body">
-          <div class="idol-player-mini-top">
-            <div class="idol-player-mini-name">${escapeHTML(p.name)}</div>
-            <div class="idol-player-mini-rank">${p.bankrupt ? '탈락' : `${pRank}위`}</div>
-          </div>
-          <div class="idol-player-mini-stats">
-            <span class="idol-player-mini-fame">${p.fame}⭐</span>
-            <span class="idol-player-mini-money">${p.money.toLocaleString()}만</span>
-            <span class="idol-player-mini-stage" style="color:${pStage.color};">${pStage.emoji}</span>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  return `
-    <div class="idol-center-shell">
-      <div class="idol-center-head">
-        <div class="idol-center-title-wrap">
-          <div class="idol-center-title">현재 턴</div>
-          <div class="idol-center-subtitle">${idolState.turnNum} / ${IDOL_TOTAL_TURNS}턴 · ${currentRank}위</div>
-        </div>
-        <div class="idol-center-statuses">
-          <span class="idol-status-chip ${idolUxToneClass(actionMeta.tone)}">${actionMeta.label}</span>
-          <span class="idol-status-chip tone-muted">${idolIsMyTurn() ? '내 차례' : '관전'}</span>
-        </div>
-      </div>
-
-      <div class="idol-center-main">
-        <div class="idol-center-portrait idol-stage-${stage.stage}">
-          ${currentType?.img
-            ? `<img src="${currentType.img}" alt="${escapeHTML(currentP.idolName ?? '')}" class="idol-center-img">`
-            : `<div class="idol-center-img-placeholder">${currentType?.emoji ?? '🎤'}</div>`}
-          <div class="idol-center-name">${escapeHTML(currentP.idolName ?? currentP.name)}</div>
-          <div class="idol-center-stage" style="color:${stage.color};">${stage.emoji} ${stage.name}</div>
-        </div>
-
-        <div class="idol-center-summary">
-          <div class="idol-center-current-name" style="--idol-accent:${idolUxGetPlayerAccent(currentP.id)};">
-            ${currentP.avatar ?? '🎤'} ${escapeHTML(currentP.name)}
-          </div>
-          <div class="idol-center-current-meta">
-            <span>💰 ${currentP.money.toLocaleString()}만</span>
-            <span>⭐ ${currentP.fame}</span>
-            <span>🎵 ${currentP.talent}</span>
-            <span>💄 ${currentP.looks}</span>
-          </div>
-
-          <div class="idol-center-cell-card">
-            <div class="idol-center-cell-title">현재 위치</div>
-            <div class="idol-center-cell-name">${cellMeta ? `${cellMeta.emoji} ${escapeHTML(cellMeta.name)}` : '위치 확인 중'}</div>
-            <div class="idol-center-cell-detail">${cellMeta?.detail ? escapeHTML(cellMeta.detail) : '효과 없음'}</div>
-            ${cellMeta?.ownerName ? `<div class="idol-center-cell-detail">소유자: ${escapeHTML(cellMeta.ownerName)}</div>` : ''}
-          </div>
-
-          <div class="idol-center-hint">${escapeHTML(actionHint)}</div>
-        </div>
-      </div>
-
-      <div class="idol-center-roster-label">플레이어 현황</div>
-      <div class="idol-players-mini">${playersHTML}</div>
-    </div>
-  `;
-}
-
 function idolUxRenderActionContextCard(currentP, action, isMyTurn) {
   if (!currentP) {
     return `
@@ -2506,6 +2480,11 @@ function idolRenderActionPanel() {
   const isMyTurn = idolIsMyTurn();
   const currentP = idolCurrentPlayer();
   const isHost = state.isHost;
+
+  // dirty-flag: 핑거프린트 비교 → 동일하면 skip
+  const apFp = `${JSON.stringify(action)},${idolState.order[idolState.currentIdx]},${isMyTurn},${idolState.phase}`;
+  if (_idolRenderCache.actionPanel === apFp) return;
+  _idolRenderCache.actionPanel = apFp;
 
   panel.setAttribute('role', 'region');
   panel.setAttribute('aria-live', 'polite');
@@ -2609,6 +2588,12 @@ function idolRenderCenterPanel() {
   // 오버라이드 중이면 스탯 갱신 안 함
   const overlay = document.getElementById('idolCenterOverlay');
   if (overlay && overlay.style.display !== 'none') return;
+
+  // dirty-flag: 핑거프린트 비교 → 동일하면 skip
+  const cpFp = `${idolState.turnNum},${idolState.order[idolState.currentIdx]},` +
+    idolState.players.map(p => `${p.id}:${p.fame}:${p.money}:${p.bankrupt}`).join(',');
+  if (_idolRenderCache.centerPanel === cpFp) return;
+  _idolRenderCache.centerPanel = cpFp;
 
   const currentP  = idolCurrentPlayer();
   const turn      = idolState.turnNum || 1;
