@@ -782,7 +782,7 @@
 
 /* 선택 시 타입별 하이라이트 */
 .idol-type-card[data-type="luna"].selected { border-color: #ff6b9d; background: rgba(255,107,157,0.09); box-shadow: 0 0 18px rgba(255,107,157,0.3); }
-.idol-type-card[data-type="bibi"].selected { border-color: #ff9500; background: rgba(255,149,0,0.09);   box-shadow: 0 0 18px rgba(255,149,0,0.3); }
+.idol-type-card[data-type="ddyobi"].selected { border-color: #ff9500; background: rgba(255,149,0,0.09);   box-shadow: 0 0 18px rgba(255,149,0,0.3); }
 .idol-type-card[data-type="jun"].selected  { border-color: #c084fc; background: rgba(192,132,252,0.09); box-shadow: 0 0 18px rgba(192,132,252,0.3); }
 .idol-type-card[data-type="ai"].selected   { border-color: #22d3ee; background: rgba(34,211,238,0.09);  box-shadow: 0 0 18px rgba(34,211,238,0.3); }
 
@@ -812,7 +812,7 @@
 }
 /* 타입 태그 색상 */
 .idol-type-card[data-type="luna"] .idol-type-tag { color: #ff6b9d; background: rgba(255,107,157,0.18); }
-.idol-type-card[data-type="bibi"] .idol-type-tag { color: #ff9500; background: rgba(255,149,0,0.18); }
+.idol-type-card[data-type="ddyobi"] .idol-type-tag { color: #ff9500; background: rgba(255,149,0,0.18); }
 .idol-type-card[data-type="jun"]  .idol-type-tag { color: #c084fc; background: rgba(192,132,252,0.18); }
 .idol-type-card[data-type="ai"]   .idol-type-tag { color: #22d3ee; background: rgba(34,211,238,0.18); }
 
@@ -3215,7 +3215,7 @@
 #idolGame .idol-type-card[data-type="luna"].selected {
   box-shadow: 0 0 24px rgba(255,107,157,0.52), 0 0 52px rgba(255,107,157,0.24) !important;
 }
-#idolGame .idol-type-card[data-type="bibi"].selected {
+#idolGame .idol-type-card[data-type="ddyobi"].selected {
   box-shadow: 0 0 24px rgba(255,149,0,0.52),   0 0 52px rgba(255,149,0,0.24)   !important;
 }
 #idolGame .idol-type-card[data-type="jun"].selected {

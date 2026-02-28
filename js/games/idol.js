@@ -558,7 +558,7 @@ function idolTrainAtShop(shopId, isOwned) {
   // 아이돌 타입 시너지
   const cat = shop.cat;
   if ((p.idolType === 'luna' && cat === 'music') ||
-      (p.idolType === 'bibi' && (cat === 'beauty' || cat === 'media')) ||
+      (p.idolType === 'ddyobi' && (cat === 'beauty' || cat === 'media')) ||
       (p.idolType === 'ai')) {
     gain += 1;
   }

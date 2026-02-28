@@ -10,8 +10,8 @@ const IDOL_TYPES = [
     shopBonus: 'music',
   },
   {
-    id: 'bibi', name: '뜌비', emoji: '💃', type: '댄서형',
-    img: 'img/games/idol/bibi.png', color: '#ff9500',
+    id: 'ddyobi', name: '뜌비', emoji: '💃', type: '댄서형',
+    img: 'img/games/idol/ddyobi.png', color: '#ff9500',
     bonus: { talent: 0, looks: 1 },
     desc: '뷰티/패션 샵 시너지',
     shopBonus: 'beauty',
