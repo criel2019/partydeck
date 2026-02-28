@@ -466,7 +466,7 @@ function idolHandleShop(p, shopId, isDouble) {
     let rent = shop.rent[level];
 
     // 배우형: 미디어 샵 수수료 감면
-    if (p.idolType === 'lin' && shop.cat === 'media') rent = Math.floor(rent * 0.7);
+    if (p.idolType === 'el' && shop.cat === 'media') rent = Math.floor(rent * 0.7);
 
     p.money -= rent;
     if (owner) owner.money += rent;

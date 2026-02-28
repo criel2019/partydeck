@@ -17,8 +17,8 @@ const IDOL_TYPES = [
     shopBonus: 'beauty',
   },
   {
-    id: 'lin', name: '엘', emoji: '🎬', type: '배우형',
-    img: 'img/games/idol/lin.png', color: '#c084fc',
+    id: 'el', name: '엘', emoji: '🎬', type: '배우형',
+    img: 'img/games/idol/el.png', color: '#c084fc',
     bonus: { talent: 0, looks: 0 },
     desc: '미디어 샵 수수료 감면 & 이벤트 선택지 추가',
     shopBonus: 'media',
