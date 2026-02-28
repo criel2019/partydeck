@@ -1424,6 +1424,8 @@ function _idolCamZoomAt(newZoom, sx, sy) {
 function idolCamFollowPos(cx, cy) {
   // 현재 팔로우 세션이 취소됐으면 무시
   if (_idolCamFollowId <= _idolCamFollowCancelled) return;
+  // 줌 1.0 이하(전체 보기)이면 추적 불필요 — 보드 전체가 이미 보임
+  if (_idolCam.tzoom <= 1.05) return;
 
   const bW = (typeof ISO_BOARD !== 'undefined') ? ISO_BOARD.SVG_W : 580;
   const bH = (typeof ISO_BOARD !== 'undefined') ? ISO_BOARD.SVG_H : 320;
