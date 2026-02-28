@@ -368,3 +368,230 @@ function getEnding(isBankrupt, famRank1, favor) {
   if (!isFirst && favor >= 5)  return ENDINGS.find(e => e.id === 'normal');
   return ENDINGS.find(e => e.id === 'normal');
 }
+
+// ─── 아이템 시스템 상수 ────────────────────────────
+const IDOL_MAX_ITEMS = 5;
+const IDOL_ITEM_SELL_RATIO = 0.5;
+
+// ─── 타인 땅 관련 상수 ─────────────────────────────
+const IDOL_OTHER_LAND_TRAIN_COST_RATIO = 0.3; // 훈련 추가비용 = 샵가격 × 비율
+const IDOL_ITEM_OWNER_CUT = 0.1;              // 아이템 구매시 땅주인에게 10%
+
+// ─── 턴 타이머 상수 ────────────────────────────────
+const TURN_TIMER_SEC = 60;
+const TURN_TIMER_EXTEND_COST_GOLD = 100;
+const TURN_TIMER_EXTEND_COST_DIAMOND = 1;
+const TURN_TIMER_EXTEND_SEC = 60;
+
+// ─── 페스티벌 상수 ─────────────────────────────────
+const FESTIVAL_INTERVAL = 5; // 5턴마다 페스티벌
+
+// 1~4등 차등 보상 (fame 보너스 + 추가 보상)
+const FESTIVAL_REWARDS = [
+  { rank: 1, fame: 6, money: 800,  talent: 1, looks: 1 }, // 1등
+  { rank: 2, fame: 4, money: 500,  talent: 0, looks: 1 }, // 2등
+  { rank: 3, fame: 2, money: 300,  talent: 0, looks: 0 }, // 3등
+  { rank: 4, fame: 1, money: 100,  talent: 0, looks: 0 }, // 4등
+];
+
+// ─── 콤보 공식 상수 ────────────────────────────────
+// 콤보 보너스는 페스티벌 점수 계산 시에만 적용
+const COMBO_JAIL_MULT     = 10;  // 경찰서 수감횟수 × 10 = 호감도 보너스
+const COMBO_LAND_MULT     = 5;   // 구매 땅 수 × 5 = 재능 보너스
+const COMBO_ITEMS_MULT    = 3;   // 보유 물품 수 × 3 = 전체 스탯 보너스
+const COMBO_MONEY_DIVISOR = 1000; // 보유 돈 / 1000 = 인기도 보너스
+
+// ─── 아이템 카탈로그 ───────────────────────────────
+// 각 아이템: id, name, emoji, price, cat(관련 샵 카테고리), baseStat{}, comboType, comboDesc
+const IDOL_ITEMS = [
+  // 음악 장비 (4)
+  { id: 'i1',  name: '골든 마이크',    emoji: '🎤', price: 400,  cat: 'music',
+    baseStat: { talent: 2 },
+    comboType: 'jail', comboDesc: '수감횟수×10 호감도' },
+  { id: 'i2',  name: '작곡 노트북',    emoji: '💻', price: 600,  cat: 'music',
+    baseStat: { talent: 3 },
+    comboType: 'items', comboDesc: '물품수×3 스탯' },
+  { id: 'i3',  name: '빈티지 기타',    emoji: '🎸', price: 350,  cat: 'music',
+    baseStat: { talent: 1, fame: 1 },
+    comboType: 'land', comboDesc: '땅수×5 재능' },
+  { id: 'i4',  name: '플래티넘 앨범',  emoji: '💿', price: 800,  cat: 'music',
+    baseStat: { fame: 3 },
+    comboType: 'money', comboDesc: '보유돈/1000 인기도' },
+
+  // 패션 아이템 (4)
+  { id: 'i5',  name: '디자이너 드레스', emoji: '👗', price: 500,  cat: 'beauty',
+    baseStat: { looks: 2 },
+    comboType: 'land', comboDesc: '땅수×5 재능' },
+  { id: 'i6',  name: '럭셔리 선글라스', emoji: '🕶️', price: 300,  cat: 'beauty',
+    baseStat: { looks: 1, fame: 1 },
+    comboType: 'money', comboDesc: '보유돈/1000 인기도' },
+  { id: 'i7',  name: '시그니처 향수',  emoji: '🌸', price: 450,  cat: 'beauty',
+    baseStat: { looks: 2, favor: 1 },
+    comboType: 'jail', comboDesc: '수감횟수×10 호감도' },
+  { id: 'i8',  name: '스타일링 키트',  emoji: '💅', price: 700,  cat: 'beauty',
+    baseStat: { looks: 3 },
+    comboType: 'items', comboDesc: '물품수×3 스탯' },
+
+  // 미디어 용품 (4)
+  { id: 'i9',  name: '연기 교본',      emoji: '📖', price: 350,  cat: 'media',
+    baseStat: { talent: 1, looks: 1 },
+    comboType: 'jail', comboDesc: '수감횟수×10 호감도' },
+  { id: 'i10', name: 'SNS 부스터',     emoji: '📱', price: 500,  cat: 'media',
+    baseStat: { fame: 2 },
+    comboType: 'items', comboDesc: '물품수×3 스탯' },
+  { id: 'i11', name: '광고 계약서',    emoji: '📝', price: 650,  cat: 'media',
+    baseStat: { money: 300, fame: 1 },
+    comboType: 'money', comboDesc: '보유돈/1000 인기도' },
+  { id: 'i12', name: '황금 트로피',    emoji: '🏆', price: 900,  cat: 'media',
+    baseStat: { fame: 4 },
+    comboType: 'land', comboDesc: '땅수×5 재능' },
+
+  // 행사 용품 (4)
+  { id: 'i13', name: '팬사인 포스터',  emoji: '🖼️', price: 250,  cat: 'event',
+    baseStat: { fame: 1, favor: 1 },
+    comboType: 'jail', comboDesc: '수감횟수×10 호감도' },
+  { id: 'i14', name: '콘서트 세트',    emoji: '🎪', price: 600,  cat: 'event',
+    baseStat: { fame: 2, talent: 1 },
+    comboType: 'land', comboDesc: '땅수×5 재능' },
+  { id: 'i15', name: 'VIP 초대권',     emoji: '🎫', price: 400,  cat: 'event',
+    baseStat: { fame: 1, money: 200 },
+    comboType: 'money', comboDesc: '보유돈/1000 인기도' },
+  { id: 'i16', name: '월드투어 패스',  emoji: '✈️', price: 1000, cat: 'event',
+    baseStat: { fame: 3, talent: 2, looks: 1 },
+    comboType: 'items', comboDesc: '물품수×3 스탯' },
+];
+
+// ─── 역전 보정 가챠 확률 ───────────────────────────
+// 순위별 가챠 확률 조정 (기본 GACHA_TABLE 대비)
+const GACHA_RANK_ADJUST = {
+  last:  { legend: 0.25, hit: 0.45, common: 0.30 }, // 꼴찌 → 레전드 25%
+  first: { legend: 0.10, hit: 0.45, common: 0.45 }, // 1위 → 레전드 10%
+};
+
+// 역전 보정 적용된 가챠 롤
+function rollGachaWithRank(rank, totalPlayers) {
+  const isLast  = (rank === totalPlayers && totalPlayers > 1);
+  const isFirst = (rank === 1 && totalPlayers > 1);
+  let probs;
+  if (isLast)       probs = GACHA_RANK_ADJUST.last;
+  else if (isFirst) probs = GACHA_RANK_ADJUST.first;
+  else              probs = null; // 기본 확률
+
+  if (probs) {
+    const r = Math.random();
+    let cum = 0;
+    const tiers = [
+      { ...GACHA_TABLE[0], prob: probs.legend },
+      { ...GACHA_TABLE[1], prob: probs.hit },
+      { ...GACHA_TABLE[2], prob: probs.common },
+    ];
+    for (const tier of tiers) {
+      cum += tier.prob;
+      if (r < cum) {
+        const reward = tier.rewards[Math.floor(Math.random() * tier.rewards.length)];
+        return { grade: tier.grade, emoji: tier.emoji, label: tier.label, reward };
+      }
+    }
+  }
+  return rollGacha(); // fallback: 기본 확률
+}
+
+// ─── 페스티벌 점수 계산 ────────────────────────────
+// 아이템 baseStat 합산 + 콤보 보너스
+function calcFestivalScore(player) {
+  const items = player.items || [];
+  const tracking = {
+    jailCount:  player.jailCount  || 0,
+    landCount:  player.ownedShops ? player.ownedShops.length : 0,
+    itemCount:  items.length,
+    money:      player.money || 0,
+  };
+
+  // 1. 아이템 baseStat 합산
+  let totalTalent = 0, totalLooks = 0, totalFame = 0, totalFavor = 0, totalMoney = 0;
+  items.forEach(item => {
+    const def = IDOL_ITEMS.find(d => d.id === item.id);
+    if (!def) return;
+    totalTalent += def.baseStat.talent || 0;
+    totalLooks  += def.baseStat.looks  || 0;
+    totalFame   += def.baseStat.fame   || 0;
+    totalFavor  += def.baseStat.favor  || 0;
+    totalMoney  += def.baseStat.money  || 0;
+  });
+
+  // 2. 기본 스탯 보너스 (기존 calcSettlementBonus 로직)
+  const ownedShopObjs = (player.ownedShops || []).map(id => SHOPS.find(s => s.id === id)).filter(Boolean);
+  const baseBonus = calcSettlementBonus(player.talent + totalTalent, player.looks + totalLooks, ownedShopObjs);
+
+  // 3. 콤보 보너스 계산
+  const combos = [];
+  items.forEach(item => {
+    const def = IDOL_ITEMS.find(d => d.id === item.id);
+    if (!def || !def.comboType) return;
+    let comboValue = 0;
+    switch (def.comboType) {
+      case 'jail':
+        comboValue = tracking.jailCount * COMBO_JAIL_MULT;
+        if (comboValue > 0) combos.push({ item: def, type: 'favor', value: comboValue, desc: `수감${tracking.jailCount}회 → 호감도+${comboValue}` });
+        break;
+      case 'land':
+        comboValue = tracking.landCount * COMBO_LAND_MULT;
+        if (comboValue > 0) combos.push({ item: def, type: 'talent', value: comboValue, desc: `땅${tracking.landCount}개 → 재능+${comboValue}` });
+        break;
+      case 'items':
+        comboValue = tracking.itemCount * COMBO_ITEMS_MULT;
+        if (comboValue > 0) combos.push({ item: def, type: 'all', value: comboValue, desc: `물품${tracking.itemCount}개 → 전체+${comboValue}` });
+        break;
+      case 'money':
+        comboValue = Math.floor(tracking.money / COMBO_MONEY_DIVISOR);
+        if (comboValue > 0) combos.push({ item: def, type: 'fame', value: comboValue, desc: `자금${tracking.money}만 → 인기도+${comboValue}` });
+        break;
+    }
+  });
+
+  // 4. 콤보 보너스 스탯 합산
+  let comboTalent = 0, comboLooks = 0, comboFame = 0, comboFavor = 0;
+  combos.forEach(c => {
+    switch (c.type) {
+      case 'talent': comboTalent += c.value; break;
+      case 'fame':   comboFame   += c.value; break;
+      case 'favor':  comboFavor  += c.value; break;
+      case 'all':    comboTalent += c.value; comboLooks += c.value; comboFame += c.value; break;
+    }
+  });
+
+  // 5. 총 페스티벌 점수 = baseBonus + 아이템 fame + 콤보 fame
+  const festivalScore = baseBonus + totalFame + comboFame;
+
+  return {
+    baseBonus,
+    itemStats: { talent: totalTalent, looks: totalLooks, fame: totalFame, favor: totalFavor, money: totalMoney },
+    combos,
+    comboStats: { talent: comboTalent, looks: comboLooks, fame: comboFame, favor: comboFavor },
+    totalScore: festivalScore,
+  };
+}
+
+// ─── 아이템 유틸 함수 ──────────────────────────────
+function getItemDef(itemId) {
+  return IDOL_ITEMS.find(d => d.id === itemId) || null;
+}
+
+// 샵 카테고리에 맞는 아이템 목록
+function getItemsForShopCat(shopCat) {
+  return IDOL_ITEMS.filter(item => item.cat === shopCat);
+}
+
+// 가격순 정렬 (저렴→비싼)
+function getItemsSortedByPrice(items) {
+  return [...items].sort((a, b) => a.price - b.price);
+}
+
+// 전광판 연출용 캐릭터별 스프라이트 매핑
+// 에셋 없으면 null → CSS fallback 사용
+const IDOL_BILLBOARD_SPRITES = {
+  luna:   'img/games/idol/sol-sprite.jpg',
+  ddyobi: null,
+  el:     null,
+  ai:     null,
+};

@@ -253,7 +253,206 @@ function idolCreatePlayer(p, idolTypeId, idolName) {
     shopLevels: {},  // { shopId: 0-3 }
     consecutiveDoubles: 0,
     lastFavorDir: null,  // 'up'|'down' (다른 플레이어에게는 안 보임)
+    // ── 신규 시스템 필드 ──
+    items: [],              // 보유 아이템 [{id, purchaseTurn}] (최대 IDOL_MAX_ITEMS)
+    jailCount: 0,           // 경찰서 수감 횟수 (콤보 추적)
+    purchasedLandCount: 0,  // 구매한 땅 누적 수 (콤보 추적)
+    purchasedItemCount: 0,  // 구매한 물품 누적 수 (콤보 추적)
+    diamond: 0,             // 다이아 보유 (턴 연장용 — 가챠 레전드에서 획득)
   };
+}
+
+// ─── 턴 타이머 시스템 ─────────────────────────────
+let _idolTurnTimer = null;   // setInterval ID
+let _idolTimerEnd  = 0;      // 타이머 종료 시각 (Date.now + ms)
+let _idolTimerUpdateRaf = null;
+
+function idolStartTurnTimer() {
+  idolStopTurnTimer();
+  _idolTimerEnd = Date.now() + TURN_TIMER_SEC * 1000;
+  _idolTurnTimer = setInterval(() => {
+    const remaining = Math.max(0, _idolTimerEnd - Date.now());
+    if (remaining <= 0) {
+      idolStopTurnTimer();
+      idolOnTimerExpire();
+    }
+    idolRenderTimerUI(remaining);
+  }, 250);
+  idolRenderTimerUI(TURN_TIMER_SEC * 1000);
+}
+
+function idolStopTurnTimer() {
+  if (_idolTurnTimer) { clearInterval(_idolTurnTimer); _idolTurnTimer = null; }
+  const el = document.getElementById('idolTimerWrap');
+  if (el) el.style.display = 'none';
+}
+
+function idolOnTimerExpire() {
+  if (!state.isHost || !idolState) return;
+  const p = idolCurrentPlayer();
+  if (!p || p.bankrupt) return;
+  showToast(`⏰ ${escapeHTML(p.name)} 시간 초과! 턴을 넘깁니다.`);
+  idolState.pendingAction = { type: 'turn-end-auto' };
+  broadcastIdolState();
+  idolRenderAll();
+  setTimeout(() => idolOnTurnEnd(false), 400);
+}
+
+function idolExtendTimer(type) {
+  if (!state.isHost || !idolState) return;
+  const p = idolCurrentPlayer();
+  if (!p) return;
+
+  if (type === 'gold') {
+    if (p.money < TURN_TIMER_EXTEND_COST_GOLD) { showToast('골드가 부족합니다'); return; }
+    p.money -= TURN_TIMER_EXTEND_COST_GOLD;
+  } else if (type === 'diamond') {
+    if (p.diamond < TURN_TIMER_EXTEND_COST_DIAMOND) { showToast('다이아가 부족합니다'); return; }
+    p.diamond -= TURN_TIMER_EXTEND_COST_DIAMOND;
+  } else return;
+
+  _idolTimerEnd += TURN_TIMER_EXTEND_SEC * 1000;
+  showToast(`⏰ +${TURN_TIMER_EXTEND_SEC}초 연장!`);
+  broadcastIdolState();
+  idolRenderAll();
+}
+
+function idolRenderTimerUI(remainingMs) {
+  let wrap = document.getElementById('idolTimerWrap');
+  if (!wrap) {
+    const header = document.querySelector('.idol-header');
+    if (!header) return;
+    wrap = document.createElement('div');
+    wrap.id = 'idolTimerWrap';
+    wrap.className = 'idol-timer-wrap';
+    header.appendChild(wrap);
+  }
+  wrap.style.display = 'flex';
+  const secs = Math.ceil(remainingMs / 1000);
+  const pct = Math.max(0, Math.min(100, (remainingMs / (TURN_TIMER_SEC * 1000)) * 100));
+  const isWarning = secs <= 20;
+  const isCritical = secs <= 10;
+  const barClass = isCritical ? 'critical' : isWarning ? 'warning' : '';
+
+  const isMyTurn = idolIsMyTurn();
+  const extendBtns = isMyTurn && state.isHost ? `
+    <button class="idol-timer-extend-btn" onclick="idolExtendTimer('gold')">💰${TURN_TIMER_EXTEND_COST_GOLD}</button>
+    <button class="idol-timer-extend-btn" onclick="idolExtendTimer('diamond')">💎${TURN_TIMER_EXTEND_COST_DIAMOND}</button>
+  ` : '';
+
+  wrap.innerHTML = `
+    <div class="idol-timer-bar"><div class="idol-timer-bar-fill ${barClass}" style="width:${pct}%"></div></div>
+    <span class="idol-timer-text ${barClass}">${secs}s</span>
+    ${extendBtns}
+  `;
+}
+
+// ─── 아이템 슬롯 관리 ─────────────────────────────
+
+function idolBuyItem(itemId) {
+  if (!state.isHost) return;
+  const p = idolCurrentPlayer();
+  const def = getItemDef(itemId);
+  if (!p || !def) return;
+  if (p.money < def.price) { showToast('자금이 부족합니다'); return; }
+
+  // 슬롯이 꽉 찼으면 교체 UI로 전환
+  if (p.items.length >= IDOL_MAX_ITEMS) {
+    idolState.pendingAction = {
+      type: 'item-replace',
+      newItemId: itemId,
+      playerId: p.id,
+      isDouble: idolState.pendingAction?.isDouble ?? false,
+    };
+    broadcastIdolState();
+    idolRenderAll();
+    return;
+  }
+
+  // 구매 실행
+  _idolExecuteItemBuy(p, def);
+}
+
+function _idolExecuteItemBuy(p, def) {
+  p.money -= def.price;
+  p.items.push({ id: def.id, purchaseTurn: idolState.turnNum });
+  p.purchasedItemCount++;
+
+  // 타인 땅에서 구매 시 땅주인에게 10% 지급
+  const action = idolState.pendingAction;
+  if (action && action.landOwnerId && action.landOwnerId !== p.id) {
+    const cut = Math.floor(def.price * IDOL_ITEM_OWNER_CUT);
+    const owner = idolState.players.find(pl => pl.id === action.landOwnerId);
+    if (owner) {
+      owner.money += cut;
+      showToast(`💰 ${escapeHTML(owner.name)}에게 수수료 ${cut}만원 지급`);
+    }
+  }
+
+  // baseStat 즉시 적용 (money 제외 — 페스티벌 보너스 계산용만)
+  // favor는 즉시 적용
+  if (def.baseStat.favor) {
+    p.favor += def.baseStat.favor;
+    p.lastFavorDir = 'up';
+    idolShowFavorToast(p.id, 'up', null);
+  }
+
+  showToast(`${def.emoji} ${def.name} 구매 완료!`);
+  idolCheckBankruptcy(p);
+}
+
+function idolReplaceItem(slotIdx) {
+  if (!state.isHost) return;
+  const action = idolState.pendingAction;
+  if (!action || action.type !== 'item-replace') return;
+  const p = idolState.players.find(pl => pl.id === action.playerId);
+  const def = getItemDef(action.newItemId);
+  if (!p || !def || slotIdx < 0 || slotIdx >= p.items.length) return;
+
+  // 기존 아이템 제거
+  const removed = p.items.splice(slotIdx, 1)[0];
+  const removedDef = getItemDef(removed?.id);
+  if (removedDef) {
+    // 제거된 아이템 반환 (반환금 = 0, 교체만)
+    showToast(`${removedDef.emoji} ${removedDef.name} 교체됨`);
+  }
+
+  // 새 아이템 구매 실행
+  _idolExecuteItemBuy(p, def);
+
+  const isDouble = action.isDouble ?? false;
+  idolState.pendingAction = { type: 'turn-end-auto' };
+  broadcastIdolState();
+  idolRenderAll();
+  setTimeout(() => idolOnTurnEnd(isDouble), 400);
+}
+
+function idolCancelItemReplace() {
+  if (!state.isHost) return;
+  const isDouble = idolState.pendingAction?.isDouble ?? false;
+  idolState.pendingAction = { type: 'turn-end-auto' };
+  broadcastIdolState();
+  idolRenderAll();
+  setTimeout(() => idolOnTurnEnd(isDouble), 300);
+}
+
+function idolRenderItemSlots() {
+  const me = idolState?.players?.find(p => p.id === state.myId);
+  if (!me) return '';
+  const slots = [];
+  for (let i = 0; i < IDOL_MAX_ITEMS; i++) {
+    const item = me.items[i];
+    if (item) {
+      const def = getItemDef(item.id);
+      slots.push(`<div class="idol-item-slot filled" title="${escapeHTML(def?.name || '?')}\n${escapeHTML(def?.comboDesc || '')}">
+        <span class="idol-item-emoji">${def?.emoji || '?'}</span>
+        <span class="idol-item-label">${escapeHTML((def?.name || '').slice(0, 4))}</span>
+      </div>`);
+    } else {
+      slots.push(`<div class="idol-item-slot"><span class="idol-item-emoji" style="opacity:.3;">+</span></div>`);
+    }
+  }
+  return `<div class="idol-item-bar">${slots.join('')}</div>`;
 }
 
 // ─── 게임 시작 ────────────────────────────────
@@ -396,6 +595,7 @@ function idolRollDice() {
     if (p.consecutiveDoubles >= 3) {
       p.consecutiveDoubles = 0;
       p.jailTurns = 1;
+      p.jailCount = (p.jailCount || 0) + 1; // 콤보 추적용
       idolState.pendingAction = { type: 'goto-jail', dice: [d1, d2] };
       broadcastIdolState();
       idolRenderAll();
@@ -453,6 +653,7 @@ function idolProcessCell(p, pos, isDouble) {
       break;
     case 'police':
       p.jailTurns = 1;
+      p.jailCount = (p.jailCount || 0) + 1; // 콤보 추적용
       idolShowCellResult(p, '🚓 경찰서! 1턴 수감');
       idolState.pendingAction = { type: 'turn-end-auto' };
       break;
@@ -527,8 +728,11 @@ function idolHandleShop(p, shopId, isDouble) {
 
     idolShowCellResult(p, `💰 ${shop.name} 수수료 ${rent}만원`);
 
-    // 훈련 여부 팝업 (수수료 낸 후)
-    idolState.pendingAction = { type: 'shop-train-other', shopId, playerId: p.id, isDouble: !!isDouble };
+    // 수수료 낸 후: "아이템 구매" vs "훈련" 선택 (스펙: 타 유저 땅 도착 시 선택 구조)
+    idolState.pendingAction = {
+      type: 'land-choice', shopId, playerId: p.id, isDouble: !!isDouble,
+      landOwnerId: ownerId, rentPaid: rent,
+    };
   }
 
   broadcastIdolState();
@@ -546,6 +750,7 @@ function idolBuyShop(shopId) {
 
   p.money -= shop.price;
   p.ownedShops.push(shopId);
+  p.purchasedLandCount = (p.purchasedLandCount || 0) + 1; // 콤보 추적용
   idolState.shopOwners[shopId] = p.id;
   idolState.shopLevels[shopId] = 0;
 
@@ -587,6 +792,53 @@ function idolUpgradeShop(shopId) {
 }
 
 // ─── 샵 훈련 ──────────────────────────────────
+// 타인 땅에서 "훈련" 선택 시 호출
+function idolTrainAtOtherLand(shopId) {
+  if (!state.isHost) return;
+  const p = idolCurrentPlayer();
+  const shop = SHOPS.find(s => s.id === shopId);
+  if (!p || !shop) return;
+
+  // 추가 비용 부과 (스펙: 내 땅과 동일 효율, 단 추가 비용 부과)
+  const extraCost = Math.floor(shop.price * IDOL_OTHER_LAND_TRAIN_COST_RATIO);
+  if (p.money < extraCost) {
+    showToast(`자금 부족 (필요: ${extraCost}만원)`);
+    return;
+  }
+  p.money -= extraCost;
+  showToast(`💰 훈련 비용 ${extraCost}만원 지출`);
+  idolCheckBankruptcy(p);
+  if (p.bankrupt) { broadcastIdolState(); idolRenderAll(); return; }
+
+  // 내 땅과 동일 효율로 훈련 (isOwned=true)
+  idolTrainAtShop(shopId, true);
+}
+
+// 타인 땅에서 "아이템 구매" 선택 시 호출
+function idolOpenItemShop(shopId) {
+  if (!state.isHost) return;
+  const p = idolCurrentPlayer();
+  const shop = SHOPS.find(s => s.id === shopId);
+  if (!p || !shop) return;
+  const ownerId = idolState.shopOwners[shopId];
+
+  // 해당 샵 카테고리에 맞는 아이템 목록
+  const availableItems = getItemsForShopCat(shop.cat);
+  if (availableItems.length === 0) {
+    showToast('구매 가능한 아이템이 없습니다');
+    return;
+  }
+
+  idolState.pendingAction = {
+    type: 'item-shop',
+    shopId, playerId: p.id,
+    landOwnerId: ownerId,
+    isDouble: idolState.pendingAction?.isDouble ?? false,
+  };
+  broadcastIdolState();
+  idolRenderAll();
+}
+
 function idolTrainAtShop(shopId, isOwned) {
   if (!state.isHost) return;
   const p = idolCurrentPlayer();
@@ -832,19 +1084,29 @@ function idolChooseEvent(cardId, choiceIdx) {
 function idolDoGacha() {
   if (!state.isHost) return;
   const p = idolCurrentPlayer();
-  const result = rollGacha();
+  // 역전 보정 적용된 가챠 롤 (꼴찌→레전드 25%, 1위→레전드 10%)
+  const activePlayers = idolState.players.filter(x => !x.bankrupt);
+  const rank = idolGetRank(p.id);
+  const result = rollGachaWithRank(rank, activePlayers.length);
 
   idolApplyGachaReward(p, result.reward);
 
   if (result.grade === 'legend') {
     p.favor += 2;
     p.lastFavorDir = 'up';
+    p.diamond = (p.diamond || 0) + 1; // 레전드 보상: 다이아 +1
   }
 
   idolState.pendingAction = { type: 'gacha-result', result, playerId: p.id };
   broadcastIdolState();
   idolRenderAll();
-  setTimeout(() => idolOnTurnEnd(false), result.grade === 'legend' ? 2500 : 1500);
+
+  // 레전드 당첨 시 축하 연출 후 턴 종료
+  if (result.grade === 'legend' && typeof idolLegendCelebration === 'function') {
+    idolLegendCelebration(p, result.reward).then(() => idolOnTurnEnd(false));
+  } else {
+    setTimeout(() => idolOnTurnEnd(false), result.grade === 'legend' ? 2500 : 1500);
+  }
 }
 
 function idolApplyGachaReward(p, reward) {
@@ -1005,6 +1267,7 @@ function idolCheckBeautyMonopoly(p) {
 // ─── 턴 종료 ──────────────────────────────────
 function idolOnTurnEnd(isDouble) {
   if (!idolState) return;
+  idolStopTurnTimer(); // 턴 종료 시 타이머 정지
 
   // 더블이면 한 번 더
   if (isDouble) {
@@ -1014,16 +1277,28 @@ function idolOnTurnEnd(isDouble) {
     return;
   }
 
-  // 5턴 결산 체크 (이미 settlement 중이면 중복 방지)
-  if (idolState.turnNum % 5 === 0 && idolState.pendingAction?.type !== 'settlement') {
-    idolRunSettlement();
-    const settleTurn = idolState.turnNum;
-    setTimeout(() => {
-      if (idolState?.pendingAction?.type === 'settlement'
-          && idolState.turnNum === settleTurn) {
-        idolAdvanceTurn();
-      }
-    }, 3500);
+  // 5턴 결산 → 페스티벌 시스템 (이미 settlement/festival 중이면 중복 방지)
+  if (idolState.turnNum % FESTIVAL_INTERVAL === 0
+      && idolState.pendingAction?.type !== 'settlement'
+      && idolState.pendingAction?.type !== 'festival') {
+    // 페스티벌 시스템이 로드됐으면 풀 연출, 아니면 기존 간이 결산
+    if (typeof idolFestivalStart === 'function') {
+      idolState.pendingAction = { type: 'festival' };
+      broadcastIdolState();
+      idolRenderAll();
+      idolFestivalStart().then(() => {
+        if (idolState) idolAdvanceTurn();
+      });
+    } else {
+      idolRunSettlement();
+      const settleTurn = idolState.turnNum;
+      setTimeout(() => {
+        if (idolState?.pendingAction?.type === 'settlement'
+            && idolState.turnNum === settleTurn) {
+          idolAdvanceTurn();
+        }
+      }, 3500);
+    }
     return;
   }
 
@@ -1069,6 +1344,12 @@ function idolAdvanceTurn() {
   idolState.pendingAction = { type: 'waiting-roll' };
   broadcastIdolState();
   idolRenderAll();
+
+  // 턴 타이머 시작 (CPU 턴은 타이머 불필요)
+  const turnP = idolCurrentPlayer();
+  if (turnP && !idolIsCpuPlayerId(turnP.id)) {
+    idolStartTurnTimer();
+  }
 
   // Watchdog: CPU 턴이면 AI가 응답하지 않을 경우 3.5초 후 재시도
   const watchdogIdx = idolState.currentIdx;
@@ -1842,6 +2123,12 @@ function idolShowEndings() {
 function idolShowEvolution(p, newStage) {
   const stage = IDOL_STAGES[newStage];
   showToast(`${p.idolName || p.name} 아이돌이 ${stage.emoji} ${stage.name}으로 진화!`);
+
+  // 전체 플레이어 화면에 축하 연출 (idol-festival.js가 로드됐으면)
+  if (typeof idolEvolutionCelebration === 'function') {
+    const prevStage = newStage > 0 ? IDOL_STAGES[newStage - 1] : null;
+    idolEvolutionCelebration(p, stage, prevStage);
+  }
 }
 
 // ─── 호감도 토스트 ────────────────────────────
@@ -2245,6 +2532,10 @@ function idolUxGetActionMeta(action) {
     case 'gacha-result': return { label: '가챠 결과', tone: 'gold' };
     case 'chance-card': return { label: '찬스 카드', tone: 'info' };
     case 'settlement': return { label: '턴 결산', tone: 'info' };
+    case 'festival': return { label: '페스티벌', tone: 'gold' };
+    case 'land-choice': return { label: '행동 선택', tone: 'warn' };
+    case 'item-shop': return { label: '아이템 구매', tone: 'gold' };
+    case 'item-replace': return { label: '아이템 교체', tone: 'warn' };
     case 'bankrupt': return { label: '파산 처리', tone: 'danger' };
     case 'roll-again': return { label: '더블 보너스', tone: 'gold' };
     case 'goto-jail': return { label: '경찰서 이동', tone: 'danger' };
@@ -2273,6 +2564,10 @@ function idolUxGetActionHint(action, currentP, isMyTurn) {
     case 'stage-gacha': return isMyTurn ? '가챠를 실행해 결과를 확인하세요.' : '가챠 연출이 재생 중입니다.';
     case 'gacha-result': return '가챠 보상이 반영되었습니다.';
     case 'settlement': return '현재 순위와 보너스를 확인하세요.';
+    case 'festival': return '페스티벌 무대가 진행 중입니다.';
+    case 'land-choice': return isMyTurn ? '아이템 구매 또는 훈련을 선택하세요.' : '행동 선택을 기다리는 중입니다.';
+    case 'item-shop': return isMyTurn ? '구매할 아이템을 선택하세요.' : '아이템 구매 중입니다.';
+    case 'item-replace': return isMyTurn ? '교체할 아이템 슬롯을 선택하세요.' : '아이템 교체 중입니다.';
     case 'roll-again': return isMyTurn ? '더블 보너스로 한 번 더 굴릴 수 있습니다.' : '더블 보너스 턴 처리 중입니다.';
     case 'goto-jail': return '3연속 더블로 경찰서로 이동합니다.';
     case 'turn-end-auto': return '다음 턴으로 전환 중입니다.';
@@ -2295,7 +2590,8 @@ function idolRenderResourceBar() {
 
   // dirty-flag: 핑거프린트 비교 → 동일하면 skip
   const favorDir = idolState._myFavorDir ?? me.lastFavorDir ?? null;
-  const fp = `${me.money},${me.fame},${me.talent},${me.looks},${me.pos},${me.bankrupt},${idolState.turnNum},${idolState.order[idolState.currentIdx]},${idolState.pendingAction?.type},${favorDir}`;
+  const itemFp = (me.items || []).map(i => i.id).join(':');
+  const fp = `${me.money},${me.fame},${me.talent},${me.looks},${me.pos},${me.bankrupt},${idolState.turnNum},${idolState.order[idolState.currentIdx]},${idolState.pendingAction?.type},${favorDir},${itemFp},${me.diamond || 0}`;
   if (_idolRenderCache.resourceBar === fp) return;
   _idolRenderCache.resourceBar = fp;
 
@@ -2384,6 +2680,7 @@ function idolRenderResourceBar() {
           <span class="idol-res-value">비공개</span>
         </div>
       </div>
+      ${idolRenderItemSlots()}
     </div>
   `;
 }
@@ -2610,6 +2907,18 @@ function idolRenderActionPanel() {
     case 'settlement':
       contentHtml = idolRenderSettlementPanel(action);
       break;
+    case 'festival':
+      contentHtml = `<div class="idol-action-title">🎪 페스티벌 진행 중...</div>`;
+      break;
+    case 'land-choice':
+      contentHtml = isMyTurn ? idolRenderLandChoicePanel(action) : `<div class="idol-action-title">행동 선택 대기 중...</div>`;
+      break;
+    case 'item-shop':
+      contentHtml = isMyTurn ? idolRenderItemShopPanel(action) : `<div class="idol-action-title">아이템 구매 중...</div>`;
+      break;
+    case 'item-replace':
+      contentHtml = isMyTurn ? idolRenderItemReplacePanel(action) : `<div class="idol-action-title">아이템 교체 중...</div>`;
+      break;
     case 'bankrupt':
       contentHtml = idolRenderBankruptPanel(action.playerId);
       break;
@@ -2738,6 +3047,92 @@ function idolRenderCornerCards() {
   }).join('');
 
   container.innerHTML = cards;
+}
+
+// ─── 타인 땅 선택 패널 ───────────────────────
+function idolRenderLandChoicePanel(action) {
+  const shop = SHOPS.find(s => s.id === action.shopId);
+  const cat = SHOP_CATEGORIES[shop.cat];
+  const trainCost = Math.floor(shop.price * IDOL_OTHER_LAND_TRAIN_COST_RATIO);
+  const p = idolCurrentPlayer();
+  const canTrain = p && p.money >= trainCost;
+  const availableItems = getItemsForShopCat(shop.cat);
+  const hasItems = availableItems.length > 0;
+
+  return `
+    <div class="idol-action-title">${cat.emoji} ${escapeHTML(shop.name)}</div>
+    <div class="idol-land-fee-notice">💰 수수료 ${action.rentPaid || 0}만원 자동 차감됨</div>
+    <div class="idol-popup-sub">아이템 구매 또는 훈련 중 하나를 선택하세요</div>
+    <div class="idol-land-choice-wrap">
+      <div class="idol-action-buttons">
+        ${hasItems ? `<button class="idol-btn idol-btn-gold" onclick="idolOpenItemShop('${action.shopId}')">
+          🛒 아이템 구매
+        </button>` : ''}
+        <button class="idol-btn idol-btn-primary" onclick="idolTrainAtOtherLand('${action.shopId}')" ${canTrain ? '' : 'disabled'}>
+          🎓 훈련 (${trainCost}만원)
+        </button>
+        <button class="idol-btn" onclick="idolPassShop()">그냥 지나가기</button>
+      </div>
+    </div>`;
+}
+
+// ─── 아이템 구매 패널 ─────────────────────────
+function idolRenderItemShopPanel(action) {
+  const shop = SHOPS.find(s => s.id === action.shopId);
+  const p = idolCurrentPlayer();
+  const availableItems = getItemsForShopCat(shop.cat);
+  const sorted = getItemsSortedByPrice(availableItems);
+
+  const itemsHTML = sorted.map(item => {
+    const canAfford = p && p.money >= item.price;
+    const statText = Object.entries(item.baseStat)
+      .filter(([, v]) => v > 0)
+      .map(([k, v]) => {
+        const labels = { talent: '재능', looks: '외모', fame: '인기도', favor: '호감도', money: '돈' };
+        return `${labels[k] || k}+${v}`;
+      }).join(' ');
+    return `<div class="idol-item-option ${canAfford ? '' : 'disabled'}" onclick="${canAfford ? `idolBuyItem('${item.id}')` : ''}">
+      <div style="font-size:24px;margin-bottom:4px;">${item.emoji}</div>
+      <div style="font-weight:bold;font-size:13px;">${escapeHTML(item.name)}</div>
+      <div style="font-size:11px;color:#aaa;">${statText}</div>
+      <div style="font-size:12px;color:#ffd700;margin-top:4px;">💰 ${item.price}만</div>
+      <div style="font-size:10px;color:#69f0ae;">${escapeHTML(item.comboDesc)}</div>
+    </div>`;
+  }).join('');
+
+  const ownerNote = action.landOwnerId ? `<div class="idol-popup-sub" style="font-size:11px;color:#ff9500;">구매액의 ${Math.round(IDOL_ITEM_OWNER_CUT * 100)}%가 땅 주인에게 지급됩니다</div>` : '';
+
+  return `
+    <div class="idol-action-title">🛒 아이템 구매</div>
+    ${ownerNote}
+    <div class="idol-item-grid">${itemsHTML}</div>
+    <div class="idol-action-buttons" style="margin-top:8px;">
+      <button class="idol-btn" onclick="idolPassShop()">구매 취소</button>
+    </div>`;
+}
+
+// ─── 아이템 교체 패널 ─────────────────────────
+function idolRenderItemReplacePanel(action) {
+  const p = idolState.players.find(pl => pl.id === action.playerId);
+  const newDef = getItemDef(action.newItemId);
+  if (!p || !newDef) return '<div class="idol-action-title">오류</div>';
+
+  const slotsHTML = p.items.map((item, i) => {
+    const def = getItemDef(item.id);
+    return `<div class="idol-item-option" onclick="idolReplaceItem(${i})" style="cursor:pointer;">
+      <div style="font-size:20px;">${def?.emoji || '?'}</div>
+      <div style="font-size:12px;font-weight:bold;">${escapeHTML(def?.name || '?')}</div>
+      <div style="font-size:10px;color:#ff6b6b;">탭하여 교체</div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="idol-action-title">🔄 슬롯 꽉 참! 교체할 아이템을 선택하세요</div>
+    <div class="idol-popup-sub">새 아이템: ${newDef.emoji} ${escapeHTML(newDef.name)} (${newDef.price}만원)</div>
+    <div class="idol-item-grid">${slotsHTML}</div>
+    <div class="idol-action-buttons" style="margin-top:8px;">
+      <button class="idol-btn" onclick="idolCancelItemReplace()">구매 취소</button>
+    </div>`;
 }
 
 // 오버라이드 표시 (이벤트 연출용 — 지금은 흰색 빈 박스)

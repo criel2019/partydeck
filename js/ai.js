@@ -1396,13 +1396,72 @@ function aiIdol() {
       break;
     }
 
+    // ── 타인 땅 도착 시 선택 (아이템 구매 vs 훈련) ───
+    case 'land-choice': {
+      if (!action.playerId || action.playerId !== currentP.id) break;
+      const lcShop = (typeof SHOPS !== 'undefined') ? SHOPS.find(s => s.id === action.shopId) : null;
+      const lcTrainCost = lcShop ? Math.floor(lcShop.price * (typeof IDOL_OTHER_LAND_TRAIN_COST_RATIO !== 'undefined' ? IDOL_OTHER_LAND_TRAIN_COST_RATIO : 0.3)) : 999;
+      const canTrain = currentP.money >= lcTrainCost;
+      const r2 = Math.random();
+      if (canTrain && r2 < 0.65 && typeof idolTrainAtOtherLand === 'function') {
+        idolTrainAtOtherLand(action.shopId); // 65% 훈련
+      } else if (r2 < 0.85 && typeof idolOpenItemShop === 'function') {
+        idolOpenItemShop(action.shopId); // 20% 아이템 구매
+      } else if (typeof idolPassShop === 'function') {
+        idolPassShop(); // 15% 패스
+      }
+      break;
+    }
+
+    // ── 아이템 구매 ────────────────────────────
+    case 'item-shop': {
+      if (!action.playerId || action.playerId !== currentP.id) break;
+      const lcShop2 = (typeof SHOPS !== 'undefined') ? SHOPS.find(s => s.id === action.shopId) : null;
+      if (!lcShop2 || typeof getItemsForShopCat !== 'function' || typeof idolBuyItem !== 'function') {
+        if (typeof idolPassShop === 'function') idolPassShop();
+        break;
+      }
+      const availItems = getItemsForShopCat(lcShop2.cat).filter(item => currentP.money >= item.price);
+      if (availItems.length > 0) {
+        // 가장 비싼 구매 가능 아이템 선택
+        const best = availItems.sort((a, b) => b.price - a.price)[0];
+        idolBuyItem(best.id);
+      } else if (typeof idolPassShop === 'function') {
+        idolPassShop();
+      }
+      break;
+    }
+
+    // ── 아이템 교체 ────────────────────────────
+    case 'item-replace': {
+      if (!action.playerId || action.playerId !== currentP.id) break;
+      if (typeof idolReplaceItem !== 'function') { if (typeof idolCancelItemReplace === 'function') idolCancelItemReplace(); break; }
+      // 가장 약한(가격 낮은) 아이템 교체
+      const items = currentP.items || [];
+      if (items.length === 0) { if (typeof idolCancelItemReplace === 'function') idolCancelItemReplace(); break; }
+      let weakIdx = 0;
+      let weakPrice = Infinity;
+      items.forEach((it, i) => {
+        const def = typeof getItemDef === 'function' ? getItemDef(it.id) : null;
+        const pr = def ? def.price : 0;
+        if (pr < weakPrice) { weakPrice = pr; weakIdx = i; }
+      });
+      idolReplaceItem(weakIdx);
+      break;
+    }
+
+    // ── 페스티벌 (자동 진행 대기) ───────────────
+    case 'festival':
+      // 페스티벌은 idol-festival.js의 Promise로 자동 진행
+      break;
+
     // ── 자동 처리 상태들 (AI 개입 불필요) ─────
     // rolling, landed, gacha-result, turn-end-auto,
     // settlement, bankrupt, goto-jail, ending → 모두 자동 진행됨
     // 단, 이 상태에서 자동진행이 멈춘 경우 대비 watchdog 예약
     default: {
       const autoStates = ['rolling', 'landed', 'gacha-result',
-        'turn-end-auto', 'settlement', 'bankrupt', 'goto-jail'];
+        'turn-end-auto', 'settlement', 'bankrupt', 'goto-jail', 'festival'];
       if (autoStates.includes(actionType) && idolIsCpuPlayerId(currentP.id)) {
         // 자동진행 상태에서 너무 오래 머물면 nudge
         const snapIdx = idolState.currentIdx;
