@@ -3504,6 +3504,16 @@
   70%            { opacity: 0.60; transform: scale(0.70); }
 }
 
+/* ── 하단 스테이지 라이트 펄스 ──────────────── */
+@keyframes isoStageLightPulse {
+  0%, 100% { opacity: 0.4; transform: scaleX(1.0) scaleY(1.0); }
+  50%      { opacity: 0.8; transform: scaleX(1.3) scaleY(1.4); }
+}
+#idolGame #idolIsoBoardSvg #iso-stage-lights ellipse {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
 /* ── 코너 셀 펄스 글로우 ───────────────────── */
 #idolGame #idolIsoBoardSvg .iso-corner-cell {
   animation: isoCornerPulse 2.8s ease-in-out infinite;

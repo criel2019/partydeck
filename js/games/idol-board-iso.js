@@ -143,6 +143,12 @@ function _isoDefsHTML() {
           `<circle cx="0.5" cy="0.5" r="0.5"/>` +
           `</clipPath>`;
 
+  // 하단부 스테이지 라이트 글로우 필터
+  html += `<filter id="isoStageLight" x="-100%" y="-100%" width="300%" height="300%">` +
+          `<feGaussianBlur stdDeviation="8" result="b"/>` +
+          `<feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>` +
+          `</filter>`;
+
   html += '</defs>';
   return html;
 }
@@ -409,23 +415,23 @@ function idolRenderIsoBoard(container, state) {
       const ly = upperHalf
         ? vtx.top.y - HH * 1.05
         : vtx.bottom.y + depth + HH * 0.85;
-      // 글자 수에 따라 폰트 크기 조정
+      // 글자 수에 따라 폰트 크기 조정 (가독성 위해 기존보다 20% 키움)
       const charLen = label.length;
-      const baseFz = isCorner ? HW * 0.32 : HW * 0.26;
+      const baseFz = isCorner ? HW * 0.38 : HW * 0.32;
       const lFz = Math.round(charLen > 5 ? baseFz * 0.78 : charLen > 3 ? baseFz * 0.88 : baseFz);
 
       // pill 배경 — 글자 수에 비례한 너비
       const pillW = lFz * (charLen * 0.72 + 1.2);
       const pillH = lFz * 1.45;
       const pillR = pillH / 2;
-      const pillFill = 'rgba(0,0,0,0.55)';
+      const pillFill = 'rgba(0,0,0,0.72)';
 
       // ── 말풍선 꼬리(삼각형 포인터) ──
       // 앵커: 타일 쪽 꼭짓점
       const anchorX = upperHalf ? vtx.top.x : vtx.bottom.x;
       const anchorY = upperHalf ? vtx.top.y : vtx.bottom.y + depth;
-      // 삼각형 밑변 (pill 가장자리) — pill 너비의 ~30%
-      const triBaseHalf = pillW * 0.2;
+      // 삼각형 밑변 — 고정 크기 (가로=세로 동일 비율)
+      const triBaseHalf = lFz * 0.45;
       const triEdgeY = upperHalf
         ? ly + pillH / 2    // pill 하단
         : ly - pillH / 2;   // pill 상단
@@ -460,9 +466,9 @@ function idolRenderIsoBoard(container, state) {
       lbl.setAttribute('font-size', lFz + 'px');
       lbl.setAttribute('font-weight', 'bold');
       lbl.setAttribute('font-family', "'Black Han Sans','Noto Sans KR',sans-serif");
-      lbl.setAttribute('fill', '#ffffff');
-      lbl.setAttribute('stroke', 'rgba(0,0,0,0.6)');
-      lbl.setAttribute('stroke-width', '0.8');
+      lbl.setAttribute('fill', '#fff8f0');
+      lbl.setAttribute('stroke', 'rgba(0,0,0,0.85)');
+      lbl.setAttribute('stroke-width', '1.2');
       lbl.setAttribute('paint-order', 'stroke fill');
       lbl.setAttribute('pointer-events', 'none');
       lbl.textContent = label;
@@ -498,6 +504,48 @@ function idolRenderIsoBoard(container, state) {
   rimPoly2.setAttribute('filter', 'url(#isoGlow)');
   gRim.appendChild(rimPoly2);
   svg.insertBefore(gRim, gCells);
+
+  // ─── 하단부 스테이지 라이트 (다이아몬드 아래쪽 셀 아래 보라색 광원) ───
+  {
+    const gLights = document.createElementNS(ns, 'g');
+    gLights.id = 'iso-stage-lights';
+    gLights.setAttribute('pointer-events', 'none');
+
+    // 하단부 셀들: 좌하변(셀 19~26) + 우하변(셀 28~35) + 바닥코너(셀 27)
+    const bottomCells = [];
+    for (let i = 19; i <= 35; i++) bottomCells.push(i);
+
+    const coords = idolGetCellGridCoords();
+    const lightColors = [
+      'rgba(180,100,255,0.55)',  // 보라
+      'rgba(220,80,220,0.45)',   // 핑크보라
+      'rgba(140,80,255,0.50)',   // 진보라
+    ];
+
+    bottomCells.forEach((cellIdx, i) => {
+      if (cellIdx >= coords.length) return;
+      const [cc, rr] = coords[cellIdx];
+      const vtx = _isoVtx(cc, rr);
+      const isCorner = _ISO_CORNERS.has(cellIdx);
+      const depth = isCorner ? DEPTH_C : ISO_BOARD.DEPTH;
+
+      // 셀 하단 중앙 (남쪽 벽 아래)
+      const cx = vtx.bottom.x;
+      const cy = vtx.bottom.y + depth + HH * 0.5;
+
+      const light = document.createElementNS(ns, 'ellipse');
+      light.setAttribute('cx', cx.toFixed(1));
+      light.setAttribute('cy', cy.toFixed(1));
+      light.setAttribute('rx', (HW * 0.7).toFixed(1));
+      light.setAttribute('ry', (HH * 0.5).toFixed(1));
+      light.setAttribute('fill', lightColors[i % lightColors.length]);
+      light.setAttribute('filter', 'url(#isoStageLight)');
+      light.style.animation = `isoStageLightPulse ${(2.0 + (i % 5) * 0.4).toFixed(1)}s ease-in-out infinite ${(-i * 0.3).toFixed(1)}s`;
+      gLights.appendChild(light);
+    });
+
+    svg.insertBefore(gLights, gCells);
+  }
 
   // ─── 스파클 파티클 (타일 위 반짝이는 별 점들) ───────
   const gSparkle = document.createElementNS(ns, 'g');
