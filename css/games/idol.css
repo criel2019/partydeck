@@ -800,10 +800,10 @@
 
 .idol-type-info {
   position: absolute; bottom: 0; left: 0; right: 0;
-  padding: 4px 6px 5px;
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  padding: 3px 6px 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.65));
+  pointer-events: none;
 }
 .idol-type-name {
   font-size: 13px; font-weight: 700; color: #fff;
@@ -814,9 +814,11 @@
   padding: 1px 6px; border-radius: 20px;
 }
 .idol-type-desc {
-  font-size: 9px; color: rgba(255,255,255,0.88);
+  font-size: 9px; color: rgba(200,200,220,0.95);
   text-align: center; line-height: 1.3;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  padding: 4px 6px 5px;
+  background: rgba(0,0,0,0.35);
+  border-radius: 0 0 14px 14px;
 }
 /* 타입 태그 색상 */
 .idol-type-card[data-type="luna"] .idol-type-tag { color: #ff6b9d; background: rgba(255,107,157,0.18); }
@@ -831,7 +833,6 @@
 @media (max-height: 640px) {
   .idol-board { width: min(270px, 92vw); height: min(270px, 92vw); }
   .idol-action-panel { max-height: 35vh; }
-  .idol-type-img-wrap { aspect-ratio: 1 / 1; }
 }
 @media (min-width: 430px) {
   .idol-board { width: min(400px, calc(100vw - 20px)); height: min(400px, calc(100vw - 20px)); }
@@ -2902,8 +2903,7 @@
 }
 
 #idolGame .idol-type-info {
-  background: rgba(60,20,50,0.45) !important;
-  backdrop-filter: blur(4px) !important; -webkit-backdrop-filter: blur(4px) !important;
+  background: linear-gradient(transparent, rgba(60,20,50,0.65)) !important;
 }
 
 #idolGame .idol-type-name {
@@ -2918,7 +2918,8 @@
 }
 
 #idolGame .idol-type-desc {
-  color: rgba(255,255,255,0.85) !important;
+  color: rgba(255,235,250,0.9) !important;
+  background: rgba(60,20,50,0.35) !important;
 }
 
 /* 선택된 아이돌 표시 */
@@ -3780,9 +3781,6 @@
   /* 아이돌 선택 카드 — 모바일 */
   .idol-type-grid {
     gap: 8px;
-  }
-  .idol-type-img-wrap {
-    aspect-ratio: 1 / 1;
   }
 
   /* 주사위 3D */

@@ -1964,9 +1964,9 @@ function idolShowSelectPhase() {
           <div class="idol-type-info">
             <div class="idol-type-name">${t.name}</div>
             <span class="idol-type-tag">${t.type}</span>
-            <div class="idol-type-desc">${t.desc}</div>
           </div>
         </div>
+        <div class="idol-type-desc">${t.desc}</div>
       </div>`).join('');
 
   overlay.innerHTML = `
