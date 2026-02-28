@@ -219,6 +219,16 @@ const _CAM_LERP     = 0.13;   // lerp 계수 (0~1, 낮을수록 부드럽고 느
 const _CAM_ZOOM_MIN = 0.75;
 const _CAM_ZOOM_MAX = 2.8;
 
+// ── 카메라 팔로우 캔슬 시스템 ──
+// 각 팔로우 트리거(이동 애니메이션 등)마다 _followId 증가
+// 유저가 터치/마우스/휠로 개입하면 현재 _followId를 취소
+let _idolCamFollowId = 0;        // 현재 팔로우 세션 ID
+let _idolCamFollowCancelled = 0; // 취소된 세션 ID (이 이하는 무시)
+
+function _idolCamCancelFollow() {
+  _idolCamFollowCancelled = _idolCamFollowId;
+}
+
 const IDOL_TOTAL_TURNS = 25;
 const IDOL_START_MONEY = 2000;
 const IDOL_SALARY     = 400;  // 출발 통과 월급
@@ -1262,6 +1272,9 @@ function idolSyncTokenLayer(parent, _unused) {
 function idolAnimateMoveToken(playerId, fromPos, toPos, onDone) {
   const totalCells = BOARD_CELLS.length; // 36
 
+  // 새 팔로우 세션 시작 — 유저 개입 시 카메라 추적만 취소 (애니메이션은 계속)
+  idolCamFollowBegin();
+
   // 이동 경로 (시계방향)
   const path = [];
   let cur = fromPos;
@@ -1407,7 +1420,11 @@ function _idolCamZoomAt(newZoom, sx, sy) {
 // ── 공개 API ──────────────────────────────────
 
 // 보드 로컬 좌표 → 화면 중심으로 lerp 이동
+// 유저가 개입(드래그/핀치/휠)하면 현재 세션의 나머지 팔로우가 자동 취소됨
 function idolCamFollowPos(cx, cy) {
+  // 현재 팔로우 세션이 취소됐으면 무시
+  if (_idolCamFollowId <= _idolCamFollowCancelled) return;
+
   const bW = (typeof ISO_BOARD !== 'undefined') ? ISO_BOARD.SVG_W : 580;
   const bH = (typeof ISO_BOARD !== 'undefined') ? ISO_BOARD.SVG_H : 320;
   _idolCam.tx = -_idolCam.tzoom * (cx - bW / 2);
@@ -1416,8 +1433,14 @@ function idolCamFollowPos(cx, cy) {
   _idolCamKick();
 }
 
-// 셀 인덱스 기준 팔로우
+// 새 팔로우 세션 시작 (이동 애니메이션 등에서 호출)
+function idolCamFollowBegin() {
+  _idolCamFollowId++;
+}
+
+// 셀 인덱스 기준 팔로우 (단독 호출 시 새 세션 시작)
 function idolCamFollow(cellIdx) {
+  idolCamFollowBegin();
   const c = idolGetCellCenter(cellIdx);
   if (c) idolCamFollowPos(c.x, c.y);
 }
@@ -1452,6 +1475,7 @@ function idolCamInitGestures() {
   // ── 마우스 휠 줌 ──
   wrapper.addEventListener('wheel', e => {
     e.preventDefault();
+    _idolCamCancelFollow(); // 유저 개입 → 카메라 팔로우 취소
     const factor = e.deltaY < 0 ? 1.1 : 0.91;
     const wc = wrapCenter();
     _idolCamZoomAt(_idolCam.tzoom * factor, e.clientX - wc.cx, e.clientY - wc.cy);
@@ -1462,6 +1486,7 @@ function idolCamInitGestures() {
   let _mPrev = null;
   wrapper.addEventListener('mousedown', e => {
     if (e.button !== 0) return;
+    _idolCamCancelFollow(); // 유저 개입 → 카메라 팔로우 취소
     _mPrev = { x: e.clientX, y: e.clientY };
     const vp = document.getElementById('idolBoardViewport');
     if (vp) vp.classList.add('dragging');
@@ -1488,6 +1513,7 @@ function idolCamInitGestures() {
   let _prevTouches = [];
 
   wrapper.addEventListener('touchstart', e => {
+    _idolCamCancelFollow(); // 유저 개입 → 카메라 팔로우 취소
     _prevTouches = Array.from(e.touches).map(t => ({ id: t.identifier, x: t.clientX, y: t.clientY }));
   }, { passive: true });
 
