@@ -3799,26 +3799,90 @@
   }
 }
 
-/* ── 매우 작은 화면 높이 (≤600px, 가로 모드 / 작은 폰) ──── */
-@media (max-height: 600px) {
+/* ── 세로모드 공간 최적화: 보드 우선 ──── */
+@media (max-height: 750px) {
   #idolGame .idol-header {
-    padding: 5px 10px !important;
+    padding: 4px 10px !important;
+  }
+  #idolGame .idol-header-title {
+    font-size: 13px !important;
   }
   #idolGame .idol-resource-bar {
-    padding: 4px 8px 2px !important;
-  }
-  #idolGame .idol-res-hero {
-    padding: 5px !important;
-    gap: 4px !important;
-  }
-  #idolGame .idol-res-hero-meta {
-    display: none; /* 스탯 필(pill)을 숨겨서 공간 확보 */
+    padding: 3px 8px 2px !important;
   }
   #idolGame .idol-action-panel {
-    max-height: min(20vh, 150px) !important;
+    max-height: min(18vh, 140px) !important;
+    padding: 6px 10px calc(6px + env(safe-area-inset-bottom, 0)) !important;
   }
   #idolGame .idol-board-wrapper {
     padding: 2px 4px 0 !important;
+  }
+}
+
+/* ── 가로 모드 (높이 ≤500px) — 좌우 분할 레이아웃 ──── */
+@media (max-height: 500px) and (orientation: landscape) {
+  #idolGame.active {
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 280px) !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+  }
+
+  #idolGame .idol-header {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+    padding: 3px 10px !important;
+  }
+  #idolGame .idol-header-title {
+    font-size: 12px !important;
+  }
+  #idolGame .idol-turn-badge {
+    font-size: 10px !important;
+    padding: 2px 8px !important;
+  }
+
+  /* 리소스바 숨기기 — 가로모드에서는 보드 안 센터패널이 스탯 표시 */
+  #idolGame .idol-resource-bar {
+    display: none !important;
+  }
+
+  /* 보드: 왼쪽 전체 */
+  #idolGame .idol-board-wrapper {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    padding: 2px !important;
+  }
+
+  /* 액션패널: 오른쪽 사이드바 */
+  #idolGame .idol-action-panel {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    max-height: none !important;
+    border-top: none !important;
+    border-left: 1px solid rgba(255,255,255,0.07) !important;
+    padding: 6px 8px !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* ── 가로 모드 (높이 ≤600px, landscape가 아닌 작은 폰 포함) ──── */
+@media (max-height: 500px) {
+  #idolGame .idol-header {
+    padding: 3px 10px !important;
+  }
+  #idolGame .idol-resource-bar {
+    padding: 2px 6px 1px !important;
+  }
+  #idolGame .idol-res-hero {
+    padding: 4px !important;
+    gap: 3px !important;
+  }
+  #idolGame .idol-res-hero-meta {
+    display: none !important;
+  }
+  #idolGame .idol-action-panel {
+    max-height: min(15vh, 100px) !important;
+  }
+  #idolGame .idol-board-wrapper {
+    padding: 1px 2px 0 !important;
   }
 }
 
