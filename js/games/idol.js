@@ -1961,10 +1961,11 @@ function idolShowSelectPhase() {
       <div class="idol-type-card ${selectedType === t.id ? 'selected' : ''}" id="idolTypeCard_${t.id}" data-type="${t.id}" onclick="idolSelectType('${t.id}')">
         <div class="idol-type-img-wrap">
           <img src="${t.img}" alt="${t.name}" class="idol-type-img" loading="lazy">
-        </div>
-        <div class="idol-type-info">
-          <div class="idol-type-name">${t.name}</div>
-          <span class="idol-type-tag">${t.type}</span>
+          <div class="idol-type-info">
+            <div class="idol-type-name">${t.name}</div>
+            <span class="idol-type-tag">${t.type}</span>
+            <div class="idol-type-desc">${t.desc}</div>
+          </div>
         </div>
       </div>`).join('');
 

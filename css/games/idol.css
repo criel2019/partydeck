@@ -799,16 +799,24 @@
 }
 
 .idol-type-info {
-  padding: 8px 8px 10px;
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 4px 6px 5px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
 }
 .idol-type-name {
-  font-size: 15px; font-weight: 700; color: #fff;
-  text-align: center;
+  font-size: 13px; font-weight: 700; color: #fff;
+  text-align: center; text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 .idol-type-tag {
-  font-size: 10px; font-weight: 600;
-  padding: 2px 8px; border-radius: 20px;
+  font-size: 9px; font-weight: 600;
+  padding: 1px 6px; border-radius: 20px;
+}
+.idol-type-desc {
+  font-size: 9px; color: rgba(255,255,255,0.88);
+  text-align: center; line-height: 1.3;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
 }
 /* 타입 태그 색상 */
 .idol-type-card[data-type="luna"] .idol-type-tag { color: #ff6b9d; background: rgba(255,107,157,0.18); }
@@ -2893,14 +2901,24 @@
   box-shadow: 0 0 0 3px rgba(200,80,160,0.3), 0 8px 28px rgba(200,80,160,0.35) !important;
 }
 
+#idolGame .idol-type-info {
+  background: rgba(60,20,50,0.45) !important;
+  backdrop-filter: blur(4px) !important; -webkit-backdrop-filter: blur(4px) !important;
+}
+
 #idolGame .idol-type-name {
-  color: #6a2060 !important;
+  color: #fff !important;
   font-weight: 700 !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5) !important;
 }
 
 #idolGame .idol-type-tag {
-  background: rgba(255,220,240,0.85) !important;
-  color: #802060 !important;
+  background: rgba(255,220,240,0.35) !important;
+  color: #ffd6f0 !important;
+}
+
+#idolGame .idol-type-desc {
+  color: rgba(255,255,255,0.85) !important;
 }
 
 /* 선택된 아이돌 표시 */
