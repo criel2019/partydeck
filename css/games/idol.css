@@ -1865,7 +1865,8 @@
 #idolGame.active {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  /* 헤더 | 리소스바 | 보드(유동) | 액션패널(최소 130px 보장) */
+  grid-template-rows: auto auto minmax(0, 1fr) minmax(130px, auto);
   align-items: stretch;
   overflow: hidden;
 }
@@ -1887,7 +1888,6 @@
   grid-column: 1;
   grid-row: 3;
   min-height: 0;
-  max-height: calc(100vh - 200px); /* 액션패널+헤더+리소스바 공간 확보 */
   padding: 8px 10px 6px;
   position: relative;
   align-items: center;
