@@ -760,9 +760,7 @@
 .idol-select-screen {
   padding: 14px 14px 12px;
   display: flex; flex-direction: column; gap: 9px;
-  overflow-y: auto; scrollbar-width: none;
 }
-.idol-select-screen::-webkit-scrollbar { display: none; }
 .idol-select-title { font-family: 'Black Han Sans', sans-serif; font-size: 20px; color: #fff; text-align: center; }
 
 /* 아이돌 타입 카드 — 2×2 썸네일 그리드 */
@@ -790,7 +788,7 @@
 .idol-type-card[data-type="ai"].selected   { border-color: #22d3ee; background: rgba(34,211,238,0.12);  box-shadow: 0 0 24px rgba(34,211,238,0.4); }
 
 .idol-type-img-wrap {
-  position: relative; width: 100%; aspect-ratio: 3 / 4; overflow: hidden;
+  position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden;
   background: rgba(0,0,0,0.15);
 }
 .idol-type-img {
@@ -2216,8 +2214,11 @@
   position: absolute;
   inset: 0;
   z-index: 40;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   padding: 14px;
   background:
     radial-gradient(120% 100% at 0% 0%, rgba(255, 79, 154, 0.16), transparent 60%),
@@ -2226,11 +2227,11 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
+#idolGame .idol-select-overlay::-webkit-scrollbar { display: none; }
 
 #idolGame .idol-select-overlay-card {
   width: min(640px, 100%);
-  max-height: min(92dvh, 820px);
-  overflow: auto;
+  margin: auto;
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,0.1);
   background:
@@ -2315,14 +2316,15 @@
 
 @media (max-width: 600px) {
   #idolGame .idol-select-overlay {
-    padding: 10px;
-    place-items: stretch;
+    padding: 0;
   }
 
   #idolGame .idol-select-overlay-card {
     width: 100%;
-    max-height: none;
-    border-radius: 16px;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
   }
 
   #idolGame .idol-select-picked {
@@ -3778,9 +3780,16 @@
     font-size: 13px !important;
   }
 
-  /* 아이돌 선택 카드 — 모바일 */
+  /* 아이돌 선택 카드 — 모바일: 뷰포트에 맞추기 */
   .idol-type-grid {
-    gap: 8px;
+    gap: 6px;
+  }
+  .idol-type-img-wrap {
+    aspect-ratio: 4 / 3;
+  }
+  .idol-type-desc {
+    font-size: 8px;
+    padding: 3px 5px 4px;
   }
 
   /* 주사위 3D */
