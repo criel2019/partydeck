@@ -3537,19 +3537,19 @@
   align-items: stretch;
   gap: 0;
   padding: 0;
-  border-radius: 12px;
+  border-radius: 14px;
   background: rgba(10, 8, 22, 0.88);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1.5px solid rgba(255,255,255,0.10);
   color: #c8c4d4;
-  font-size: 11px;
+  font-size: 13px;
   white-space: nowrap;
   pointer-events: auto;
   transition: border-color 0.3s, box-shadow 0.3s;
   box-shadow: 0 4px 16px rgba(0,0,0,0.55);
   overflow: hidden;
-  max-width: 150px;
+  max-width: 180px;
 }
 
 .idol-corner-card.is-current {
@@ -3568,9 +3568,6 @@
   text-shadow: 0 1px 4px rgba(0,0,0,0.9);
   letter-spacing: 0.02em;
 }
-.idol-corner-card.is-me {
-  border-color: rgba(255,255,255,0.25);
-}
 .idol-corner-card.is-bankrupt {
   opacity: 0.3;
   filter: grayscale(1);
@@ -3585,10 +3582,10 @@
 /* 초상화 영역 */
 .idol-cc-img-wrap {
   position: relative;
-  width: 44px;
-  min-height: 50px;
+  width: 56px;
+  min-height: 62px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(var(--cc-accent-rgb, 255,200,0), 0.15), rgba(0,0,0,0.3));
+  background: linear-gradient(135deg, rgba(255,200,0,0.08), rgba(0,0,0,0.3));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3601,19 +3598,19 @@
   display: block;
 }
 .idol-cc-portrait-fallback {
-  font-size: 22px;
+  font-size: 28px;
 }
 .idol-cc-rank {
   position: absolute;
-  bottom: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
+  bottom: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.7);
-  border: 1px solid var(--cc-accent, #ffd700);
+  background: rgba(0,0,0,0.75);
+  border: 1.5px solid var(--cc-accent, #ffd700);
   color: #fff;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -3626,24 +3623,24 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 4px 7px;
-  gap: 2px;
+  padding: 5px 10px;
+  gap: 3px;
   min-width: 0;
 }
 .idol-cc-names {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 1px;
 }
 .idol-cc-idol-name {
   font-weight: 800;
-  font-size: 11px;
+  font-size: 13px;
   color: #fff;
   line-height: 1.2;
   text-shadow: 0 1px 4px rgba(0,0,0,0.7);
 }
 .idol-cc-player-name {
-  font-size: 9px;
+  font-size: 10px;
   color: #a8a0b8;
   line-height: 1.2;
   overflow: hidden;
@@ -3651,8 +3648,8 @@
 }
 .idol-cc-stat-row {
   display: flex;
-  gap: 6px;
-  font-size: 10px;
+  gap: 8px;
+  font-size: 12px;
   font-weight: 700;
 }
 .idol-cc-fame {
@@ -3663,27 +3660,29 @@
   color: #8cf;
 }
 .idol-cc-stage {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   line-height: 1;
 }
 
-/* 모바일 작은 화면 */
-@media (max-width: 500px) {
+/* 모바일 — 원래 사이즈 유지 */
+@media (max-width: 768px) {
   .idol-corner-card {
-    max-width: 130px;
+    max-width: 140px;
     border-radius: 10px;
+    font-size: 11px;
   }
   .idol-cc-img-wrap {
-    width: 36px;
-    min-height: 42px;
+    width: 40px;
+    min-height: 46px;
   }
-  .idol-cc-info { padding: 3px 5px; gap: 1px; }
-  .idol-cc-idol-name { font-size: 10px; }
-  .idol-cc-player-name { font-size: 8px; }
-  .idol-cc-stat-row { font-size: 9px; gap: 4px; }
-  .idol-cc-stage { font-size: 8px; }
-  .idol-cc-rank { width: 14px; height: 14px; font-size: 8px; }
+  .idol-cc-portrait-fallback { font-size: 22px; }
+  .idol-cc-info { padding: 4px 6px; gap: 2px; }
+  .idol-cc-idol-name { font-size: 11px; }
+  .idol-cc-player-name { font-size: 9px; }
+  .idol-cc-stat-row { font-size: 10px; gap: 5px; }
+  .idol-cc-stage { font-size: 9px; }
+  .idol-cc-rank { width: 16px; height: 16px; font-size: 9px; }
 }
 
 /* 가로모드: 액션패널(우상단)과 겹침 방지 */

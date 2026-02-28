@@ -2693,15 +2693,15 @@ function idolRenderCornerCards() {
     wrapper.appendChild(container);
   }
 
-  // order 순서로 코너 배치 (모든 플레이어 — 본인 포함)
-  const allPlayers = idolState.order
+  // order 순서로 코너 배치 (본인 제외 — 리소스바에서 이미 표시)
+  const others = idolState.order
     .map(id => idolState.players.find(p => p.id === id))
-    .filter(Boolean);
+    .filter(p => p && p.id !== state.myId);
 
-  const cards = allPlayers.map((p, i) => {
+  let cornerIdx = 0;
+  const cards = others.map((p) => {
     const isCur    = currentP && p.id === currentP.id;
-    const isMe     = p.id === state.myId;
-    const corner   = _CORNER_POS[i] || 'bottom-right';
+    const corner   = _CORNER_POS[cornerIdx++] || 'bottom-right';
     const accent   = idolUxGetPlayerAccent(p.id);
     const rank     = idolGetRank(p.id);
     const stage    = getIdolStage(p.looks);
@@ -2717,7 +2717,7 @@ function idolRenderCornerCards() {
       ? `<img src="${portrait}" alt="${idolName}" class="idol-cc-portrait">`
       : `<span class="idol-cc-portrait-fallback">${meType?.emoji || '🌟'}</span>`;
 
-    return `<div class="idol-corner-card idol-corner-${corner}${isCur ? ' is-current' : ''}${isMe ? ' is-me' : ''}${p.bankrupt ? ' is-bankrupt' : ''}"
+    return `<div class="idol-corner-card idol-corner-${corner}${isCur ? ' is-current' : ''}${p.bankrupt ? ' is-bankrupt' : ''}"
                  style="--cc-accent:${accent}">
       <div class="idol-cc-img-wrap">
         ${portraitHTML}
