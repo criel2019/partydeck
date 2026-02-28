@@ -16,7 +16,7 @@ function _isoCalcConstants(wW, wH) {
     Math.floor(wW / 22),
     Math.floor(wH / 11.5),
   );
-  const HW = Math.max(28, maxHW); // 최소 28px
+  const HW = Math.max(16, maxHW); // 최소 16px (모바일 소형 대응)
   const HH = Math.round(HW / 2);
   const DEPTH   = Math.round(HW * 0.35);
   const DEPTH_C = Math.round(HW * 0.50);

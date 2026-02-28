@@ -783,7 +783,7 @@
 /* 선택 시 타입별 하이라이트 */
 .idol-type-card[data-type="luna"].selected { border-color: #ff6b9d; background: rgba(255,107,157,0.09); box-shadow: 0 0 18px rgba(255,107,157,0.3); }
 .idol-type-card[data-type="ddyobi"].selected { border-color: #ff9500; background: rgba(255,149,0,0.09);   box-shadow: 0 0 18px rgba(255,149,0,0.3); }
-.idol-type-card[data-type="jun"].selected  { border-color: #c084fc; background: rgba(192,132,252,0.09); box-shadow: 0 0 18px rgba(192,132,252,0.3); }
+.idol-type-card[data-type="lina"].selected  { border-color: #c084fc; background: rgba(192,132,252,0.09); box-shadow: 0 0 18px rgba(192,132,252,0.3); }
 .idol-type-card[data-type="ai"].selected   { border-color: #22d3ee; background: rgba(34,211,238,0.09);  box-shadow: 0 0 18px rgba(34,211,238,0.3); }
 
 .idol-type-img-wrap {
@@ -813,7 +813,7 @@
 /* 타입 태그 색상 */
 .idol-type-card[data-type="luna"] .idol-type-tag { color: #ff6b9d; background: rgba(255,107,157,0.18); }
 .idol-type-card[data-type="ddyobi"] .idol-type-tag { color: #ff9500; background: rgba(255,149,0,0.18); }
-.idol-type-card[data-type="jun"]  .idol-type-tag { color: #c084fc; background: rgba(192,132,252,0.18); }
+.idol-type-card[data-type="lina"]  .idol-type-tag { color: #c084fc; background: rgba(192,132,252,0.18); }
 .idol-type-card[data-type="ai"]   .idol-type-tag { color: #22d3ee; background: rgba(34,211,238,0.18); }
 
 .idol-type-bonus { font-size: 11px; color: #888; line-height: 1.35; }
@@ -3218,7 +3218,7 @@
 #idolGame .idol-type-card[data-type="ddyobi"].selected {
   box-shadow: 0 0 24px rgba(255,149,0,0.52),   0 0 52px rgba(255,149,0,0.24)   !important;
 }
-#idolGame .idol-type-card[data-type="jun"].selected {
+#idolGame .idol-type-card[data-type="lina"].selected {
   box-shadow: 0 0 24px rgba(192,132,252,0.52), 0 0 52px rgba(192,132,252,0.24) !important;
 }
 #idolGame .idol-type-card[data-type="ai"].selected {
@@ -3582,4 +3582,271 @@
   38%  { filter: brightness(2.0) drop-shadow(0 -6px 14px rgba(255, 250, 180, 0.95));
          transform: translateY(-6px); }
   100% { filter: brightness(1.0);  transform: translateY(0px);  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — 보드가 화면 최대한 차지하도록
+   ═══════════════════════════════════════════════════════ */
+
+/* ── 모바일 세로 (≤430px) ─────────────────────────────── */
+@media (max-width: 430px) {
+  /* 헤더 컴팩트 */
+  #idolGame .idol-header {
+    padding: 8px 10px !important;
+    gap: 6px;
+  }
+  #idolGame .idol-header-title {
+    font-size: 13px !important;
+  }
+  #idolGame .idol-turn-badge {
+    font-size: 10px;
+    padding: 2px 8px !important;
+  }
+
+  /* 자원 바 — 최소 높이로 압축 */
+  #idolGame .idol-resource-bar {
+    padding: 6px 8px 4px !important;
+  }
+  #idolGame .idol-res-hero {
+    padding: 7px !important;
+    gap: 5px !important;
+  }
+  #idolGame .idol-res-hero-name {
+    padding: 5px 8px;
+    gap: 8px;
+  }
+  #idolGame .idol-res-hero-top {
+    gap: 4px;
+  }
+  #idolGame .idol-res-hero-title {
+    font-size: 12px;
+  }
+  #idolGame .idol-res-hero-sub {
+    font-size: 10px;
+  }
+  #idolGame .idol-res-hero-meta {
+    gap: 4px;
+  }
+  #idolGame .idol-res-meta-pill {
+    min-height: 22px;
+    padding: 0 6px;
+    font-size: 10px;
+  }
+  #idolGame .idol-res-portraits .idol-res-producer-wrap,
+  #idolGame .idol-res-portraits .idol-res-idol-wrap {
+    width: 28px;
+    height: 28px;
+  }
+  #idolGame .idol-res-portraits .idol-res-idol-img {
+    width: 28px;
+    height: 28px;
+  }
+  #idolGame .idol-res-portraits .idol-res-producer-emoji,
+  #idolGame .idol-res-portraits .idol-res-idol-emoji {
+    font-size: 15px;
+  }
+  #idolGame .idol-res-grid {
+    gap: 5px;
+  }
+  #idolGame .idol-res-item {
+    padding: 5px 4px;
+    border-radius: 10px;
+    gap: 1px;
+  }
+  #idolGame .idol-res-icon {
+    font-size: 13px;
+  }
+  #idolGame .idol-res-label {
+    font-size: 9px;
+  }
+  #idolGame .idol-res-value {
+    font-size: 13px;
+  }
+
+  /* 보드 래퍼 — 패딩 줄여 공간 확보 */
+  #idolGame .idol-board-wrapper {
+    padding: 4px 6px 2px !important;
+  }
+
+  /* 카메라 버튼 — 터치 영역 확대 */
+  .idol-cam-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  /* 액션 패널 — 높이 제한 강화 */
+  #idolGame .idol-action-panel {
+    max-height: min(22vh, 180px) !important;
+    padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0)) !important;
+  }
+  #idolGame .idol-action-shell {
+    gap: 6px;
+  }
+  #idolGame .idol-action-context {
+    padding: 8px;
+    gap: 6px;
+  }
+  #idolGame .idol-task-card {
+    padding: 8px;
+  }
+  #idolGame .idol-task-card .idol-action-title {
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+  #idolGame .idol-task-card .idol-popup-sub {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+  #idolGame .idol-btn,
+  #idolGame .idol-choice-btn {
+    min-height: 44px;
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  /* 팝업 — 패딩 축소 */
+  .idol-popup {
+    padding: 6px 12px 20px !important;
+    max-width: 100%;
+  }
+  .idol-popup-title {
+    font-size: 16px;
+  }
+  .idol-popup-sub {
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+  .idol-choice-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  /* 가챠 — 이모지 축소 */
+  .idol-gacha-reel {
+    font-size: 40px;
+    height: 58px;
+  }
+  .gacha-legend-content {
+    padding: 20px;
+  }
+  .gacha-legend-emoji {
+    font-size: 64px;
+  }
+
+  /* 엔딩 텍스트 모바일 맞춤 */
+  .idol-ending-text {
+    max-width: 90vw;
+    font-size: 14px;
+  }
+  .idol-ending-emoji {
+    font-size: 60px;
+  }
+  .idol-ending-title {
+    font-size: 22px;
+  }
+
+  /* 결산 순위 — 인라인 스타일 오버라이드 */
+  .idol-rank-list {
+    max-width: 100% !important;
+  }
+  .idol-rank-row {
+    gap: 8px;
+    padding: 6px 10px;
+  }
+  .idol-rank-num {
+    font-size: 14px !important;
+    width: 20px !important;
+  }
+  .idol-rank-avatar {
+    font-size: 18px !important;
+  }
+  .idol-rank-name {
+    font-size: 12px !important;
+  }
+  .idol-rank-fame {
+    font-size: 13px !important;
+  }
+
+  /* 아이돌 선택 카드 */
+  .idol-type-card {
+    min-height: 72px !important;
+  }
+  .idol-type-img-wrap {
+    width: 52px;
+  }
+
+  /* 주사위 3D */
+  .idol-dice-3d-wrap {
+    height: min(48vw, 200px);
+  }
+  .idol-dice-result-badge {
+    font-size: 22px;
+    margin-top: 12px;
+  }
+
+  /* 플레이어 미니 카드 — 좁은 화면 대응 */
+  .idol-player-mini {
+    min-width: 110px;
+    max-width: 110px;
+    padding: 5px;
+    gap: 5px;
+  }
+
+  /* 보드 BOARD 라벨 숨기기 — 공간 절약 */
+  #idolGame .idol-board-wrapper::before {
+    display: none !important;
+  }
+}
+
+/* ── 매우 작은 화면 높이 (≤600px, 가로 모드 / 작은 폰) ──── */
+@media (max-height: 600px) {
+  #idolGame .idol-header {
+    padding: 5px 10px !important;
+  }
+  #idolGame .idol-resource-bar {
+    padding: 4px 8px 2px !important;
+  }
+  #idolGame .idol-res-hero {
+    padding: 5px !important;
+    gap: 4px !important;
+  }
+  #idolGame .idol-res-hero-meta {
+    display: none; /* 스탯 필(pill)을 숨겨서 공간 확보 */
+  }
+  #idolGame .idol-action-panel {
+    max-height: min(20vh, 150px) !important;
+  }
+  #idolGame .idol-board-wrapper {
+    padding: 2px 4px 0 !important;
+  }
+}
+
+/* ── 초소형 폰 (≤360px width) ─────────────────────────── */
+@media (max-width: 360px) {
+  #idolGame .idol-header-title {
+    font-size: 12px !important;
+  }
+  #idolGame .idol-res-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+  #idolGame .idol-res-item {
+    padding: 4px 3px;
+  }
+  #idolGame .idol-res-value {
+    font-size: 12px;
+  }
+  .idol-popup {
+    padding: 4px 10px 16px !important;
+  }
+  .idol-player-mini {
+    min-width: 96px;
+    max-width: 96px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .idol-player-mini-name {
+    font-size: 9px;
+  }
 }
