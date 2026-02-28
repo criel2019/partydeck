@@ -1887,6 +1887,7 @@
   grid-column: 1;
   grid-row: 3;
   min-height: 0;
+  max-height: calc(100vh - 200px); /* 액션패널+헤더+리소스바 공간 확보 */
   padding: 8px 10px 6px;
   position: relative;
   align-items: center;
@@ -1973,8 +1974,8 @@
 #idolGame .idol-action-panel {
   grid-column: 1;
   grid-row: 4;
-  min-height: 0;
-  max-height: min(26vh, 236px);
+  min-height: 120px;
+  max-height: min(30vh, 260px);
   padding: 8px 10px calc(12px + env(safe-area-inset-bottom, 0));
   border-top: 1px solid rgba(255,255,255,0.07);
   background: rgba(5, 7, 13, 0.78);
@@ -3713,9 +3714,10 @@
     font-size: 18px;
   }
 
-  /* 액션 패널 — 높이 제한 강화 */
+  /* 액션 패널 — 높이 제한 (터치 최소 공간 보장) */
   #idolGame .idol-action-panel {
-    max-height: min(22vh, 180px) !important;
+    max-height: min(28vh, 220px) !important;
+    min-height: 100px !important;
     padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0)) !important;
   }
   #idolGame .idol-action-shell {
@@ -3853,7 +3855,8 @@
     padding: 3px 8px 2px !important;
   }
   #idolGame .idol-action-panel {
-    max-height: min(18vh, 140px) !important;
+    max-height: min(25vh, 200px) !important;
+    min-height: 90px !important;
     padding: 6px 10px calc(6px + env(safe-area-inset-bottom, 0)) !important;
   }
   #idolGame .idol-board-wrapper {
@@ -3881,6 +3884,7 @@
     grid-column: 1 !important;
     grid-row: 1 !important;
     padding: 0 !important;
+    max-height: none !important;
     z-index: 2 !important;
     position: relative !important;
   }
@@ -3903,6 +3907,7 @@
     top: 4px !important;
     right: 4px !important;
     width: clamp(140px, 22vw, 200px) !important;
+    min-height: 0 !important;
     max-height: calc(100% - 8px) !important;
     height: auto !important;
     z-index: 30 !important;
@@ -3914,6 +3919,7 @@
     padding: 6px !important;
     overflow-y: auto !important;
     font-size: 11px !important;
+    color: #e8e4f0 !important;
     box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
     scrollbar-width: none !important;
   }

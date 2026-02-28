@@ -182,14 +182,7 @@
   // ─── 게임 종료 시 자동 저장 후킹 ───
   const _origShowEndings = window.idolShowEndings?._perfOriginal || window.idolShowEndings;
   if (_origShowEndings) {
-    // idolShowEndings는 이미 wrapFn으로 래핑됨 → 거기에 후처리 추가
-    const _wrappedEndings = window.idolShowEndings;
-    window.idolShowEndings = function (...args) {
-      const result = _wrappedEndings.apply(this, args);
-      // 2초 뒤 자동 다운로드 (엔딩 화면 렌더 후)
-      setTimeout(_download, 2000);
-      return result;
-    };
+    // 엔딩 자동 다운로드 비활성화 — 수동 버튼으로만 저장
   }
 
   // ─── 수동 다운로드 버튼 (화면 좌하단) ───
@@ -207,12 +200,6 @@
   // ─── 글로벌 API ───
   window.idolPerf = { download: _download, report: _buildReport, fps: _getFPS };
 
-  // ─── 30초 후 자동 저장 ───
-  setTimeout(() => {
-    console.log('[PERF] 30초 경과 — 자동 저장');
-    _download();
-  }, 30000);
-
-  console.log('[PERF] 준비 완료 — 30초 후 자동 저장 or [PERF 저장] 버튼 클릭');
+  console.log('[PERF] 준비 완료 — [PERF 저장] 버튼으로 수동 저장');
 
 })();
