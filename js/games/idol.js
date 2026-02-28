@@ -2245,7 +2245,6 @@ function idolRenderResourceBar() {
   const activePlayers = idolState.players.filter(p => !p.bankrupt);
   const rank = idolGetRank(me.id);
   const stage = getIdolStage(me.looks);
-  const favorDir = idolState._myFavorDir ?? me.lastFavorDir ?? null;
   const favorIcon = favorDir === 'up' ? '💗⬆' : favorDir === 'down' ? '💗⬇' : '💗';
   const turnProgress = Math.max(0, Math.min(100, Math.round((idolState.turnNum / IDOL_TOTAL_TURNS) * 100)));
   const currentP = idolCurrentPlayer();
