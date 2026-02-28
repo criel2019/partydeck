@@ -207,6 +207,12 @@
   // ─── 글로벌 API ───
   window.idolPerf = { download: _download, report: _buildReport, fps: _getFPS };
 
-  console.log('[PERF] 준비 완료 — 게임 종료 시 자동 저장 or [PERF 저장] 버튼 클릭');
+  // ─── 30초 후 자동 저장 ───
+  setTimeout(() => {
+    console.log('[PERF] 30초 경과 — 자동 저장');
+    _download();
+  }, 30000);
+
+  console.log('[PERF] 준비 완료 — 30초 후 자동 저장 or [PERF 저장] 버튼 클릭');
 
 })();
