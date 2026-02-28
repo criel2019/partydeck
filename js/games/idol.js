@@ -2643,11 +2643,10 @@ function idolRenderCenterPanel() {
 
   if (isLandscape) {
     // ── 가로모드 컴팩트 ──
-    const hw = (typeof ISO_BOARD !== 'undefined') ? ISO_BOARD.HW : 28;
     const compactRows = sorted.map((p, i) => {
       const isCur  = currentP && p.id === currentP.id;
       const medal  = p.bankrupt ? '💀' : (medals[i] || `${i + 1}`);
-      const name   = escapeHTML(p.name.length > 4 ? p.name.slice(0, 4) + '…' : p.name);
+      const name   = escapeHTML(p.name.length > 6 ? p.name.slice(0, 6) + '…' : p.name);
       return `<div class="iso-cp-compact-row${isCur ? ' is-current' : ''}${p.bankrupt ? ' is-bankrupt' : ''}"
                    style="--cp-accent:${idolUxGetPlayerAccent(p.id)}">
         <span class="iso-cp-compact-medal">${medal}</span>
@@ -2663,7 +2662,8 @@ function idolRenderCenterPanel() {
         <div class="iso-cp-compact-prog"><div class="iso-cp-prog-bar" style="width:${turnPct}%"></div></div>
       </div>
       ${compactRows}`;
-    panel.style.maxWidth = Math.round(hw * 10) + 'px';
+    // maxWidth는 다이아몬드 clip-path가 자동 처리 — 별도 제한 불필요
+    panel.style.maxWidth = '';
     return;
   }
 

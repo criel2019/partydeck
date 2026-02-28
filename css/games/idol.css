@@ -107,6 +107,22 @@
   text-shadow: 0 0 20px rgba(255,215,0,0.8);
 }
 
+/* ── 가로모드: 주사위 오버레이 컴팩트 ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .idol-dice-overlay {
+    background: rgba(8, 8, 16, 0.70) !important;
+  }
+  .idol-dice-3d-wrap {
+    width: min(50vw, 280px) !important;
+    height: min(30vw, 160px) !important;
+    border-radius: 12px !important;
+  }
+  .idol-dice-result-badge {
+    margin-top: 8px !important;
+    font-size: 20px !important;
+  }
+}
+
 /* ─── 헤더 ──────────────────────────────────── */
 .idol-header {
   display: flex;
@@ -594,15 +610,16 @@
 
 /* ─── 주사위 ─────────────────────────────────── */
 .idol-dice-area {
-  display: flex; gap: 14px; justify-content: center; align-items: center; margin: 12px 0;
+  display: flex; gap: 10px; justify-content: center; align-items: center; margin: 6px 0;
 }
 .idol-dice {
-  width: 52px; height: 52px;
+  width: 42px; height: 42px;
   background: linear-gradient(145deg, #fff, #d0d0d0);
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 26px; color: #1a1a2e; font-weight: 900;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 3px rgba(255,255,255,0.8);
+  font-size: 22px; color: #1a1a2e; font-weight: 900;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.8);
+  flex-shrink: 0;
 }
 .idol-dice.rolling { animation: diceRoll 0.45s ease-out; }
 @keyframes diceRoll {
@@ -613,9 +630,10 @@
   100% { transform: rotate(360deg) scale(1); }
 }
 .idol-dice-sum {
-  font-size: 28px; font-weight: 900; color: #ffd700;
-  font-family: 'Outfit', sans-serif;
+  font-size: 28px; font-weight: 900; color: #fff;
+  font-family: 'Black Han Sans', 'Outfit', sans-serif;
   min-width: 40px; text-align: center;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6), 0 0 12px rgba(255,215,0,0.4);
 }
 
 /* ─── 가챠 ───────────────────────────────────── */
@@ -3422,38 +3440,49 @@
 .iso-cp-compact-header {
   display: flex;
   align-items: center;
-  gap: calc(var(--iso-hw, 40px) * 0.15);
-  margin-bottom: calc(var(--iso-hw, 40px) * 0.08);
+  justify-content: center;
+  gap: calc(var(--iso-hw, 40px) * 0.18);
+  margin-bottom: calc(var(--iso-hw, 40px) * 0.12);
 }
 .iso-cp-compact-turn {
-  font-size: calc(var(--iso-hw, 40px) * 0.22);
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: calc(var(--iso-hw, 40px) * 0.32);
   font-weight: 800;
-  color: #ffe082;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 4px rgba(255,215,0,0.6);
   white-space: nowrap;
   flex-shrink: 0;
 }
 .iso-cp-compact-prog {
   flex: 1;
-  height: 3px;
-  background: rgba(255,255,255,0.1);
+  max-width: calc(var(--iso-hw, 40px) * 3);
+  height: 4px;
+  background: rgba(255,255,255,0.15);
   border-radius: 2px;
   overflow: hidden;
 }
 .iso-cp-compact-row {
   display: flex;
   align-items: center;
-  gap: calc(var(--iso-hw, 40px) * 0.08);
-  padding: calc(var(--iso-hw, 40px) * 0.04) 0;
-  font-size: calc(var(--iso-hw, 40px) * 0.19);
-  line-height: 1.1;
-  color: #e0e0f0;
+  justify-content: center;
+  gap: calc(var(--iso-hw, 40px) * 0.10);
+  padding: calc(var(--iso-hw, 40px) * 0.06) calc(var(--iso-hw, 40px) * 0.15);
+  font-size: calc(var(--iso-hw, 40px) * 0.26);
+  line-height: 1.2;
+  color: #e8e4f0;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: calc(var(--iso-hw, 40px) * 0.15);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
 }
 .iso-cp-compact-row.is-current {
   color: #fff;
-  text-shadow: 0 0 6px var(--cp-accent, #ffd700);
+  background: rgba(255,255,255,0.15);
+  border: 1px solid var(--cp-accent, #ffd700);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cp-accent, #ffd700) 40%, transparent);
+  text-shadow: 0 0 6px var(--cp-accent, #ffd700), 0 1px 4px rgba(0,0,0,0.8);
 }
 .iso-cp-compact-row.is-bankrupt {
-  opacity: 0.35;
+  opacity: 0.3;
   text-decoration: line-through;
 }
 .iso-cp-compact-medal { flex-shrink: 0; }
@@ -3464,11 +3493,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 700;
 }
 .iso-cp-compact-fame {
   color: #ffe082;
   white-space: nowrap;
   flex-shrink: 0;
+  font-weight: 800;
+  text-shadow: 0 0 6px rgba(255,215,0,0.5);
 }
 
 /* ── 오버라이드 패널 (이벤트 연출용) ─────────── */
@@ -3829,29 +3861,22 @@
   }
 }
 
-/* ── 가로 모드 (높이 ≤500px) — 보드 풀스크린 + 사이드바 ──── */
+/* ── 가로 모드 (높이 ≤500px) — 보드 풀스크린 + 액션 오버레이 ──── */
 @media (max-height: 500px) and (orientation: landscape) {
+  /* 그리드: 보드만 풀 1fr, 사이드바 컬럼 제거 */
   #idolGame.active {
-    grid-template-columns: minmax(0, 1fr) clamp(130px, 18vw, 190px) !important;
-    grid-template-rows: minmax(0, 1fr) !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 1fr !important;
   }
 
-  /* 헤더 숨기기 — 가로모드에서는 보드가 전부 */
-  #idolGame .idol-header {
-    display: none !important;
-  }
-
-  /* 리소스바 숨기기 */
-  #idolGame .idol-resource-bar {
-    display: none !important;
-  }
-
-  /* 전광판 테스트 버튼 숨기기 */
+  /* 헤더·리소스바·전광판 버튼 숨기기 */
+  #idolGame .idol-header,
+  #idolGame .idol-resource-bar,
   #idolGame > button[onclick*="idolEventScreenShow"] {
     display: none !important;
   }
 
-  /* 보드: 왼쪽 전체 (높이 100%) — 배경 위로, 패딩 최소화 */
+  /* 보드: 풀스크린 */
   #idolGame .idol-board-wrapper {
     grid-column: 1 !important;
     grid-row: 1 !important;
@@ -3860,46 +3885,74 @@
     position: relative !important;
   }
 
-  /* 줌 컨트롤 크기 축소 */
+  /* 줌 컨트롤: 좌상단, 작게 */
+  #idolGame .idol-cam-controls {
+    top: 4px !important;
+    left: 4px !important;
+    right: auto !important;
+  }
   #idolGame .idol-cam-btn {
-    width: 28px !important;
-    height: 28px !important;
-    font-size: 14px !important;
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 13px !important;
   }
 
-  /* 액션패널: 오른쪽 사이드바 — 축소된 너비 + 간결한 UI */
+  /* ── 액션패널 → 보드 위 우상단 플로팅 오버레이 ── */
   #idolGame .idol-action-panel {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    max-height: none !important;
-    height: 100% !important;
-    border-top: none !important;
-    border-left: 1px solid rgba(255,255,255,0.1) !important;
-    padding: 4px 4px !important;
+    position: absolute !important;
+    top: 4px !important;
+    right: 4px !important;
+    width: clamp(140px, 22vw, 200px) !important;
+    max-height: calc(100% - 8px) !important;
+    height: auto !important;
+    z-index: 30 !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    background: rgba(5, 7, 13, 0.92) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    padding: 6px !important;
     overflow-y: auto !important;
     font-size: 11px !important;
-    z-index: 2 !important;
-    position: relative !important;
-    background: rgba(5, 7, 13, 0.96) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+    scrollbar-width: none !important;
   }
+  #idolGame .idol-action-panel::-webkit-scrollbar { display: none !important; }
 
   /* 사이드바 내 상세 설명 숨김 — 공간 절약 */
   #idolGame .idol-action-context {
     display: none !important;
   }
 
-  /* 사이드바 내 버튼/텍스트 축소 */
+  /* 버튼/텍스트 축소 */
   #idolGame .idol-action-panel .idol-btn {
     padding: 5px 6px !important;
     font-size: 11px !important;
-    min-height: 30px !important;
+    min-height: 28px !important;
   }
   #idolGame .idol-action-panel .idol-action-title {
     font-size: 11px !important;
     margin-bottom: 3px !important;
   }
   #idolGame .idol-task-card {
-    padding: 6px !important;
+    padding: 5px !important;
+    border-radius: 8px !important;
+  }
+
+  /* 주사위 영역 컴팩트 */
+  #idolGame .idol-dice-area {
+    margin: 4px 0 !important;
+    gap: 6px !important;
+  }
+  #idolGame .idol-dice {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 18px !important;
+    border-radius: 8px !important;
+  }
+  #idolGame .idol-dice-sum {
+    font-size: 18px !important;
+    min-width: 24px !important;
   }
 }
 
