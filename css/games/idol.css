@@ -765,50 +765,50 @@
 .idol-select-screen::-webkit-scrollbar { display: none; }
 .idol-select-title { font-family: 'Black Han Sans', sans-serif; font-size: 20px; color: #fff; text-align: center; }
 
-/* 아이돌 타입 카드 — 가로형 */
-.idol-type-grid { display: flex; flex-direction: column; gap: 8px; }
+/* 아이돌 타입 카드 — 2×2 썸네일 그리드 */
+.idol-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
 
 .idol-type-card {
-  display: flex; align-items: stretch;
-  border-radius: 14px;
-  border: 2px solid rgba(255,255,255,0.1);
+  display: flex; flex-direction: column;
+  border-radius: 16px;
+  border: 2.5px solid rgba(255,255,255,0.1);
   background: rgba(255,255,255,0.04);
   cursor: pointer; overflow: hidden;
-  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  transition: border-color 0.2s, background 0.2s, transform 0.12s, box-shadow 0.2s;
   -webkit-tap-highlight-color: transparent;
-  height: 80px;
 }
-.idol-type-card:active { transform: scale(0.98); }
+.idol-type-card:active { transform: scale(0.96); }
 
 /* 선택 시 타입별 하이라이트 */
-.idol-type-card[data-type="luna"].selected { border-color: #ff6b9d; background: rgba(255,107,157,0.09); box-shadow: 0 0 18px rgba(255,107,157,0.3); }
-.idol-type-card[data-type="ddyobi"].selected { border-color: #ff9500; background: rgba(255,149,0,0.09);   box-shadow: 0 0 18px rgba(255,149,0,0.3); }
-.idol-type-card[data-type="lin"].selected  { border-color: #c084fc; background: rgba(192,132,252,0.09); box-shadow: 0 0 18px rgba(192,132,252,0.3); }
-.idol-type-card[data-type="ai"].selected   { border-color: #22d3ee; background: rgba(34,211,238,0.09);  box-shadow: 0 0 18px rgba(34,211,238,0.3); }
+.idol-type-card[data-type="luna"].selected { border-color: #ff6b9d; background: rgba(255,107,157,0.12); box-shadow: 0 0 24px rgba(255,107,157,0.4); }
+.idol-type-card[data-type="ddyobi"].selected { border-color: #ff9500; background: rgba(255,149,0,0.12);   box-shadow: 0 0 24px rgba(255,149,0,0.4); }
+.idol-type-card[data-type="lin"].selected  { border-color: #c084fc; background: rgba(192,132,252,0.12); box-shadow: 0 0 24px rgba(192,132,252,0.4); }
+.idol-type-card[data-type="ai"].selected   { border-color: #22d3ee; background: rgba(34,211,238,0.12);  box-shadow: 0 0 24px rgba(34,211,238,0.4); }
 
 .idol-type-img-wrap {
-  position: relative; width: 60px; flex-shrink: 0; overflow: hidden;
+  position: relative; width: 100%; aspect-ratio: 3 / 4; overflow: hidden;
+  background: rgba(0,0,0,0.15);
 }
 .idol-type-img {
   width: 100%; height: 100%;
   object-fit: cover; object-position: top center; display: block;
 }
-.idol-type-img-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent 55%, rgba(8,8,16,0.75));
-}
 
 .idol-type-info {
-  flex: 1; padding: 10px 12px 10px 10px;
-  display: flex; flex-direction: column; justify-content: center; gap: 4px;
+  padding: 8px 8px 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
 }
 .idol-type-name {
   font-size: 15px; font-weight: 700; color: #fff;
-  display: flex; align-items: center; gap: 6px;
+  text-align: center;
 }
 .idol-type-tag {
   font-size: 10px; font-weight: 600;
-  padding: 1px 7px; border-radius: 20px;
+  padding: 2px 8px; border-radius: 20px;
 }
 /* 타입 태그 색상 */
 .idol-type-card[data-type="luna"] .idol-type-tag { color: #ff6b9d; background: rgba(255,107,157,0.18); }
@@ -816,14 +816,14 @@
 .idol-type-card[data-type="lin"]  .idol-type-tag { color: #c084fc; background: rgba(192,132,252,0.18); }
 .idol-type-card[data-type="ai"]   .idol-type-tag { color: #22d3ee; background: rgba(34,211,238,0.18); }
 
-.idol-type-bonus { font-size: 11px; color: #888; line-height: 1.35; }
+.idol-type-bonus { display: none; }
 .idol-type-emoji { display: none; }
 
 /* ─── 반응형 ──────────────────────────────────── */
 @media (max-height: 640px) {
   .idol-board { width: min(270px, 92vw); height: min(270px, 92vw); }
   .idol-action-panel { max-height: 35vh; }
-  .idol-type-card { height: 68px; }
+  .idol-type-img-wrap { aspect-ratio: 1 / 1; }
 }
 @media (min-width: 430px) {
   .idol-board { width: min(400px, calc(100vw - 20px)); height: min(400px, calc(100vw - 20px)); }
@@ -1751,11 +1751,6 @@
 
 .idol-type-card {
   border-radius: 16px;
-  min-height: 84px;
-}
-
-.idol-type-info {
-  padding: 10px 12px;
 }
 
 .idol-select-screen .idol-btn {
@@ -2879,23 +2874,23 @@
   color: #7a5590 !important;
 }
 
-/* 아이돌 타입 카드 */
+/* 아이돌 타입 카드 — 썸네일 */
 #idolGame .idol-type-card {
   background: rgba(255,248,252,0.92) !important;
-  border: 1.5px solid rgba(210,168,196,0.55) !important;
+  border: 2.5px solid rgba(210,168,196,0.45) !important;
   color: #3a2840 !important;
 }
 
 #idolGame .idol-type-card:hover {
   background: rgba(255,235,248,0.97) !important;
   border-color: rgba(200,100,160,0.7) !important;
-  box-shadow: 0 6px 20px rgba(200,80,160,0.25) !important;
+  box-shadow: 0 8px 24px rgba(200,80,160,0.3) !important;
 }
 
 #idolGame .idol-type-card.selected {
   background: rgba(255,210,240,0.97) !important;
   border-color: rgba(200,80,160,0.85) !important;
-  box-shadow: 0 0 0 3px rgba(200,80,160,0.3), 0 6px 20px rgba(200,80,160,0.3) !important;
+  box-shadow: 0 0 0 3px rgba(200,80,160,0.3), 0 8px 28px rgba(200,80,160,0.35) !important;
 }
 
 #idolGame .idol-type-name {
@@ -2906,10 +2901,6 @@
 #idolGame .idol-type-tag {
   background: rgba(255,220,240,0.85) !important;
   color: #802060 !important;
-}
-
-#idolGame .idol-type-bonus {
-  color: #5a3060 !important;
 }
 
 /* 선택된 아이돌 표시 */
@@ -3768,12 +3759,12 @@
     font-size: 13px !important;
   }
 
-  /* 아이돌 선택 카드 */
-  .idol-type-card {
-    min-height: 72px !important;
+  /* 아이돌 선택 카드 — 모바일 */
+  .idol-type-grid {
+    gap: 8px;
   }
   .idol-type-img-wrap {
-    width: 52px;
+    aspect-ratio: 1 / 1;
   }
 
   /* 주사위 3D */
