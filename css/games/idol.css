@@ -3599,64 +3599,33 @@
     padding: 2px 8px !important;
   }
 
-  /* 자원 바 — 최소 높이로 압축 */
+  /* 자원 바 — 히어로 카드 숨기고 스탯만 한 줄 표시 */
   #idolGame .idol-resource-bar {
-    padding: 6px 8px 4px !important;
+    padding: 4px 8px !important;
   }
   #idolGame .idol-res-hero {
-    padding: 7px !important;
-    gap: 5px !important;
+    display: none !important;
   }
-  #idolGame .idol-res-hero-name {
-    padding: 5px 8px;
-    gap: 8px;
-  }
-  #idolGame .idol-res-hero-top {
-    gap: 4px;
-  }
-  #idolGame .idol-res-hero-title {
-    font-size: 12px;
-  }
-  #idolGame .idol-res-hero-sub {
-    font-size: 10px;
-  }
-  #idolGame .idol-res-hero-meta {
-    gap: 4px;
-  }
-  #idolGame .idol-res-meta-pill {
-    min-height: 22px;
-    padding: 0 6px;
-    font-size: 10px;
-  }
-  #idolGame .idol-res-portraits .idol-res-producer-wrap,
-  #idolGame .idol-res-portraits .idol-res-idol-wrap {
-    width: 28px;
-    height: 28px;
-  }
-  #idolGame .idol-res-portraits .idol-res-idol-img {
-    width: 28px;
-    height: 28px;
-  }
-  #idolGame .idol-res-portraits .idol-res-producer-emoji,
-  #idolGame .idol-res-portraits .idol-res-idol-emoji {
-    font-size: 15px;
+  #idolGame .idol-topdash {
+    gap: 0 !important;
   }
   #idolGame .idol-res-grid {
-    gap: 5px;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 4px !important;
   }
   #idolGame .idol-res-item {
-    padding: 5px 4px;
-    border-radius: 10px;
-    gap: 1px;
+    padding: 3px 2px;
+    border-radius: 8px;
+    gap: 0;
   }
   #idolGame .idol-res-icon {
-    font-size: 13px;
+    font-size: 12px;
   }
   #idolGame .idol-res-label {
-    font-size: 9px;
+    font-size: 8px;
   }
   #idolGame .idol-res-value {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   /* 보드 래퍼 — 패딩 줄여 공간 확보 */
@@ -3841,34 +3810,36 @@
     display: none !important;
   }
 
-  /* 보드: 왼쪽 전체 (높이 100%) */
+  /* 보드: 왼쪽 전체 (높이 100%) — 배경 위로 올리기 */
   #idolGame .idol-board-wrapper {
     grid-column: 1 !important;
     grid-row: 1 !important;
     padding: 2px !important;
+    z-index: 2 !important;
+    position: relative !important;
   }
 
-  /* 줌 컨트롤 — 좌측 상단으로 이동 (보드와 겹침 최소화) */
-  #idolGame .idol-cam-controls {
-    top: 4px !important;
-    right: 4px !important;
-  }
+  /* 줌 컨트롤 크기 축소 */
   #idolGame .idol-cam-btn {
     width: 28px !important;
     height: 28px !important;
     font-size: 14px !important;
   }
 
-  /* 액션패널: 오른쪽 사이드바 (좁게) */
+  /* 액션패널: 오른쪽 사이드바 — 반드시 배경 위로 */
   #idolGame .idol-action-panel {
     grid-column: 2 !important;
     grid-row: 1 !important;
     max-height: none !important;
+    height: 100% !important;
     border-top: none !important;
-    border-left: 1px solid rgba(255,255,255,0.07) !important;
+    border-left: 1px solid rgba(255,255,255,0.1) !important;
     padding: 6px 6px !important;
     overflow-y: auto !important;
     font-size: 11px !important;
+    z-index: 2 !important;
+    position: relative !important;
+    background: rgba(5, 7, 13, 0.96) !important;
   }
 
   /* 사이드바 내 버튼/텍스트 축소 */
