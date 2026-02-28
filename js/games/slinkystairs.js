@@ -8,7 +8,7 @@ const SLK_VIS_B = 5, SLK_VIS_A = 14;
 const SLK_IN_CD = 42;
 const SLK_NC = 14, SLK_POUR_START = 480, SLK_POUR_MIN = 340;
 const SLK_ARCH_H = 34, SLK_SPREAD = 0.72, SLK_COIL_THICK = 3.5;
-const SLK_CL_GRACE = 4;
+const SLK_CL_GRACE = 1;
 const SLK_DEAD_BASE = 2000;   // 기본 Dead 시간 (ms) — 밟은 후 무너지기까지
 const SLK_DEAD_MIN = 700;     // 최소 Dead 시간 (ms)
 const SLK_DEAD_REDUCE = 6.5;  // 단계당 줄어드는 시간 (ms)
@@ -93,7 +93,7 @@ function slkInit() {
     flipped: false,
     dead: false, deathReason: '', deathTime: 0,
     stars: 0, starSlots: slkGenStars(slkSD), mText: '', mTime: 0, shakeEnd: 0, cdStart: 0,
-    cl: -2, clActive: false, cst: {}, lastMove: 0, stairTimers: { 0: 0 }, deadProgress: 0,
+    cl: -2, clActive: false, cst: {}, lastMove: 0, stairTimers: {}, deadProgress: 0,
     fg: 0, fv: false, fe: 0,
     sh: false, shSlots: slkGenShields(slkSD),
     ghosts: [], slines: [], landT: 0, landS: -1, vel: 0, pcy: 0, redF: 0,
@@ -134,7 +134,8 @@ function slkInp(dir) {
 
   const ok = slkG.fv || dir === slkSD[nextStep];
   if (ok) {
-    if (slkG.pouring) { slkG.step = slkG.pourTo; slkG.flipped = !slkG.flipped; }
+    if (slkG.pouring) { slkG.step = slkG.pourTo; slkG.flipped = !slkG.flipped; if (slkG.stairTimers[slkG.step] === undefined) slkG.stairTimers[slkG.step] = now; }
+    if (slkG.stairTimers[0] === undefined) slkG.stairTimers[0] = now;
 
     slkG.pourFrom = slkG.step; slkG.pourTo = nextStep; slkG.pourStart = now;
     const stepSpeedup = Math.min(nextStep * 0.4, 180);
@@ -155,7 +156,6 @@ function slkInp(dir) {
     slkBurstStep(nextStep, slkG.face);
     for (const m of SLK_ML) if (nextStep === m) { slkG.mText = `${m}칸!`; slkG.mTime = now; slkBurstMile(nextStep); slkG.shakeEnd = now + 200; }
     slkG.score = nextStep; slkG.landT = now; slkG.landS = nextStep;
-    slkG.stairTimers[nextStep] = now; // per-stair dead timer 기록
     const n = 2 + Math.min(~~(slkG.combo * .2), 6);
     for (let i = 0; i < n; i++) slkG.slines.push({ x: Math.random() * slkW, y: -10, l: 30 + Math.random() * 60, sp: 400 + Math.random() * 600, a: .8 });
     if (nextStep >= SLK_CL_GRACE && !slkG.clActive) slkG.clActive = true;
@@ -237,6 +237,31 @@ function slkDrawCollapsingStair(sx, sy, ci, progress) {
   ctx.fillStyle = slkDimH(c.f, 30 + fall * 30); ctx.fillRect(-SLK_STAIR_W / 2, -SLK_STAIR_H / 2, SLK_STAIR_W / 2 - fall * 4, SLK_STAIR_H);
   ctx.fillStyle = slkDimH(c.f, 35 + fall * 25); ctx.fillRect(fall * 4, -SLK_STAIR_H / 2 + fall * 6, SLK_STAIR_W / 2, SLK_STAIR_H);
   ctx.restore(); ctx.globalAlpha = 1;
+}
+
+function slkDrawStairGauge(sx, sy, idx, ts, al) {
+  if (idx === 0 && slkG.stairTimers[0] === undefined) return;
+  if (slkG.stairTimers[idx] === undefined) return;
+  if (slkG.cst[idx]) return;
+  const deadTime = Math.max(SLK_DEAD_MIN, SLK_DEAD_BASE - idx * SLK_DEAD_REDUCE);
+  const elapsed = ts - slkG.stairTimers[idx];
+  const ratio = Math.max(0, Math.min(1, 1 - elapsed / deadTime));
+  const ctx = slkCtx;
+  const bW = SLK_STAIR_W * 0.82, bH = 2.5;
+  const bx = sx - bW / 2, by = sy - SLK_STAIR_H / 2 - SLK_STAIR_D - bH - 2;
+  ctx.globalAlpha = al * 0.65;
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(bx, by, bW, bH);
+  const hue = ratio * 120;
+  ctx.fillStyle = `hsl(${hue},85%,50%)`;
+  ctx.fillRect(bx, by, bW * ratio, bH);
+  if (ratio < 0.3) {
+    const pulse = Math.sin(ts * 0.02) * 0.3 + 0.3;
+    ctx.globalAlpha = al * pulse;
+    ctx.fillStyle = `hsl(${hue},90%,60%)`;
+    ctx.fillRect(bx, by, bW * ratio, bH);
+  }
+  ctx.globalAlpha = 1;
 }
 
 function slkDrawShield(sx, sy, t) {
@@ -368,8 +393,9 @@ function slkDrawHUD(now) {
     const deadColor = dp < .5 ? '#4caf50' : dp < .75 ? '#ff9800' : '#f44336';
     ctx.fillStyle = deadColor; ctx.fillRect(dX, dY, dW * dp, dH);
     if (dp > .6) { ctx.globalAlpha = .15 + dp * .25; ctx.strokeStyle = '#ff0000'; ctx.lineWidth = 2; ctx.strokeRect(dX - 1, dY - 1, dW + 2, dH + 2); ctx.globalAlpha = 1; }
-    const deadMs = Math.max(SLK_DEAD_MIN, SLK_DEAD_BASE - slkG.score * SLK_DEAD_REDUCE);
-    const remaining = Math.max(0, deadMs - (performance.now() - slkG.lastMove));
+    const curS = slkG.pouring ? slkG.pourFrom : slkG.step;
+    const deadMs = Math.max(SLK_DEAD_MIN, SLK_DEAD_BASE - curS * SLK_DEAD_REDUCE);
+    const remaining = slkG.stairTimers[curS] ? Math.max(0, deadMs - (performance.now() - slkG.stairTimers[curS])) : deadMs;
     ctx.font = '600 9px "Baloo 2",sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = dp > .75 ? '#ff4444' : 'rgba(255,255,255,.4)';
     ctx.fillText((remaining / 1000).toFixed(1) + 's', W / 2, dY + dH + 10);
   }
@@ -396,7 +422,7 @@ function slkDrawCD(now) {
   const ctx = slkCtx, W = slkW, H = slkH;
   const el = (now - slkG.cdStart) / 1000; let txt;
   if (el < .7) txt = '3'; else if (el < 1.4) txt = '2'; else if (el < 2.1) txt = '1';
-  else { txt = 'GO!'; if (el > 2.5) { slkGs = 'playing'; var _now = performance.now(); slkG.lastMove = _now; slkG.stairTimers[0] = _now; return; } }
+  else { txt = 'GO!'; if (el > 2.5) { slkGs = 'playing'; var _now = performance.now(); slkG.lastMove = _now; return; } }
   const ph = (el % .7) / .7;
   ctx.globalAlpha = txt === 'GO!' ? Math.max(0, 1 - (el - 2.1) * 2.5) : 1;
   ctx.fillStyle = txt === 'GO!' ? '#55efc4' : '#fff';
@@ -419,22 +445,23 @@ function slkLoop(ts) {
     if (slkG.fv && ts > slkG.fe) { slkG.fv = false; slkG.fg = 0; }
     if (slkG.clActive && !slkG.dead) {
       const currentStair = slkG.pouring ? slkG.pourFrom : slkG.step;
-      const idleTime = ts - slkG.lastMove;
-      const deadDuration = Math.max(SLK_DEAD_MIN, SLK_DEAD_BASE - slkG.score * SLK_DEAD_REDUCE);
-      slkG.deadProgress = Math.min(1, idleTime / deadDuration);
 
-      // 현재 계단 Dead 타이머 — 이동하지 않으면 무너짐
-      if (idleTime >= deadDuration) {
-        if (!slkG.cst[currentStair]) {
-          slkG.cst[currentStair] = { start: ts };
-          slkBurstCollapse(currentStair);
+      // 현재 계단 Dead 타이머 (stair 0은 안전)
+      if (currentStair > 0 && slkG.stairTimers[currentStair] !== undefined) {
+        const deadDuration = Math.max(SLK_DEAD_MIN, SLK_DEAD_BASE - currentStair * SLK_DEAD_REDUCE);
+        const elapsed = ts - slkG.stairTimers[currentStair];
+        slkG.deadProgress = Math.min(1, elapsed / deadDuration);
+        if (elapsed >= deadDuration) {
+          if (!slkG.cst[currentStair]) { slkG.cst[currentStair] = { start: ts }; slkBurstCollapse(currentStair); }
+          slkDie('collapse');
         }
-        slkDie('collapse');
+      } else {
+        slkG.deadProgress = 0;
       }
 
       // 지나간 계단들 per-stair 타이머로 무너뜨리기
       for (let i = 0; i < currentStair; i++) {
-        if (slkG.stairTimers[i] && !slkG.cst[i]) {
+        if (slkG.stairTimers[i] !== undefined && !slkG.cst[i]) {
           const stairDeadTime = Math.max(SLK_DEAD_MIN, SLK_DEAD_BASE - i * SLK_DEAD_REDUCE);
           if (ts - slkG.stairTimers[i] > stairDeadTime) {
             slkG.cst[i] = { start: ts };
@@ -456,7 +483,7 @@ function slkLoop(ts) {
   // Pour progress
   if (slkG.pouring) {
     slkG.pourT = (ts - slkG.pourStart) / slkG.pourDur;
-    if (slkG.pourT >= 1) { slkG.pourT = 1; slkG.pouring = false; slkG.step = slkG.pourTo; slkG.flipped = !slkG.flipped; }
+    if (slkG.pourT >= 1) { slkG.pourT = 1; slkG.pouring = false; slkG.step = slkG.pourTo; slkG.flipped = !slkG.flipped; if (slkG.stairTimers[slkG.step] === undefined) slkG.stairTimers[slkG.step] = ts; }
   }
 
   // Camera
@@ -495,6 +522,7 @@ function slkLoop(ts) {
       ctx.fillText(d > 0 ? '\u203A' : '\u2039', ax + d * 8, sy + 5); ctx.globalAlpha = pulse * .1; ctx.fillText(d > 0 ? '\u203A' : '\u2039', ax + d * 18, sy + 5); ctx.globalAlpha = 1;
     }
     slkDrawStair(sx, sy, i, cur, al, ts);
+    if (slkG.clActive) slkDrawStairGauge(sx, sy, i, ts, al);
     if (slkG.starSlots[i]) slkDrawStar(sx, sy, ts);
     if (slkG.shSlots[i]) slkDrawShield(sx, sy, ts);
   }

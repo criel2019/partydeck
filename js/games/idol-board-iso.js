@@ -407,8 +407,8 @@ function idolRenderIsoBoard(container, state) {
       const upperHalf = (c + r) <= 9;
       const lx = upperHalf ? vtx.top.x : vtx.bottom.x;
       const ly = upperHalf
-        ? vtx.top.y - HH * 0.25
-        : vtx.bottom.y + depth + HH * 0.15;
+        ? vtx.top.y - HH * 1.05
+        : vtx.bottom.y + depth + HH * 0.85;
       // 글자 수에 따라 폰트 크기 조정
       const charLen = label.length;
       const baseFz = isCorner ? HW * 0.32 : HW * 0.26;
@@ -425,7 +425,7 @@ function idolRenderIsoBoard(container, state) {
       const anchorX = upperHalf ? vtx.top.x : vtx.bottom.x;
       const anchorY = upperHalf ? vtx.top.y : vtx.bottom.y + depth;
       // 삼각형 밑변 (pill 가장자리) — pill 너비의 ~30%
-      const triBaseHalf = pillW * 0.15;
+      const triBaseHalf = pillW * 0.2;
       const triEdgeY = upperHalf
         ? ly + pillH / 2    // pill 하단
         : ly - pillH / 2;   // pill 상단
