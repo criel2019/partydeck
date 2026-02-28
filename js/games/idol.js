@@ -1187,22 +1187,29 @@ function idolGetCellCenter(cellIdx) {
 }
 
 // 같은 칸에 여러 토큰이 있을 때 퍼뜨리는 오프셋 (ISO SVG 좌표 기준)
-const _TOK_SCATTER = [
+// 기준 HW=28 에서의 정규화 값 — 실행 시 HW 비례로 스케일링
+const _TOK_SCATTER_NORM = [
   [[0, 0]],
-  [[-20, -8], [20, -8]],
-  [[-20, -8], [20, -8], [0, 14]],
-  [[-20, -8], [20, -8], [-20, 12], [20, 12]],
+  [[-0.71, -0.29], [0.71, -0.29]],
+  [[-0.71, -0.29], [0.71, -0.29], [0, 0.5]],
+  [[-0.71, -0.29], [0.71, -0.29], [-0.71, 0.43], [0.71, 0.43]],
 ];
 function _idolTokOffset(totalOnCell, myIdx) {
-  const pat = _TOK_SCATTER[Math.min(Math.max(totalOnCell, 1), 4) - 1] || [[0, 0]];
+  const pat = _TOK_SCATTER_NORM[Math.min(Math.max(totalOnCell, 1), 4) - 1] || [[0, 0]];
   const o   = pat[Math.max(myIdx, 0) % pat.length];
-  return { dx: o[0], dy: o[1] };
+  const hw  = (typeof ISO_BOARD !== 'undefined') ? ISO_BOARD.HW : 28;
+  return { dx: Math.round(o[0] * hw), dy: Math.round(o[1] * hw) };
 }
 
 // 토큰 레이어 동기화 (ISO 보드: viewport 안에 토큰 레이어 배치)
 function idolSyncTokenLayer(parent, _unused) {
   if (!parent) parent = document.getElementById('idolBoardViewport');
   if (!parent || !idolState) return;
+
+  // --tok-size: HW 비례 토큰 크기 (HW=28 → ~15px, HW=40 → ~22px)
+  const hw = (typeof ISO_BOARD !== 'undefined') ? ISO_BOARD.HW : 28;
+  const tokSize = Math.round(hw * 0.55);
+  parent.style.setProperty('--tok-size', tokSize + 'px');
 
   let layer = document.getElementById('idolTokenLayer');
   if (!layer) {
@@ -1535,6 +1542,27 @@ function idolCamInitGestures() {
   wrapper.addEventListener('touchcancel', () => {
     _prevTouches = [];
   }, { passive: true });
+
+  // ── 오리엔테이션/리사이즈 핸들러 (디바운스 300ms) ──
+  let _idolResizeTimer = 0;
+  const _idolOnResize = () => {
+    clearTimeout(_idolResizeTimer);
+    _idolResizeTimer = setTimeout(() => {
+      if (!idolState) return;
+      // 렌더 캐시 무효화 → 다음 렌더에서 강제 갱신
+      _idolInvalidateRenderCache();
+      // ISO defs 캐시도 무효화 (타일 크기가 바뀔 수 있음)
+      if (typeof _isoDefsHTMLCache !== 'undefined') _isoDefsHTMLCache = null;
+      // SVG 재빌드 (기존 SVG 제거 → 래퍼 크기 기반 재계산)
+      const oldSvg = document.getElementById('idolIsoBoardSvg');
+      if (oldSvg) oldSvg.remove();
+      idolRenderBoard();
+      idolRenderCenterPanel();
+      idolRenderActionPanel();
+    }, 300);
+  };
+  window.addEventListener('resize', _idolOnResize);
+  window.addEventListener('orientationchange', _idolOnResize);
 }
 
 // idolRenderResourceBar, idolCreateCellElement, idolRenderCenterHTML →
@@ -2581,6 +2609,9 @@ function idolRenderActionPanel() {
 
 // ─── ISO 보드 중앙 패널 ────────────────────────
 // 평상시: 타이틀 + 턴 진행 + 플레이어 랭킹 스코어보드
+const _idolLandscapeMQ = (typeof matchMedia !== 'undefined')
+  ? matchMedia('(max-height:500px) and (orientation:landscape)') : null;
+
 function idolRenderCenterPanel() {
   const panel = document.getElementById('idolCenterPanel');
   if (!panel || !idolState) return;
@@ -2589,8 +2620,10 @@ function idolRenderCenterPanel() {
   const overlay = document.getElementById('idolCenterOverlay');
   if (overlay && overlay.style.display !== 'none') return;
 
-  // dirty-flag: 핑거프린트 비교 → 동일하면 skip
-  const cpFp = `${idolState.turnNum},${idolState.order[idolState.currentIdx]},` +
+  const isLandscape = _idolLandscapeMQ && _idolLandscapeMQ.matches;
+
+  // dirty-flag: 핑거프린트 비교 → 동일하면 skip (오리엔테이션 포함)
+  const cpFp = `${isLandscape ? 'L' : 'P'},${idolState.turnNum},${idolState.order[idolState.currentIdx]},` +
     idolState.players.map(p => `${p.id}:${p.fame}:${p.money}:${p.bankrupt}`).join(',');
   if (_idolRenderCache.centerPanel === cpFp) return;
   _idolRenderCache.centerPanel = cpFp;
@@ -2607,6 +2640,35 @@ function idolRenderCenterPanel() {
 
   const maxFame   = Math.max(...sorted.map(p => p.fame), 1);
   const medals    = ['🥇', '🥈', '🥉', '4️⃣'];
+
+  if (isLandscape) {
+    // ── 가로모드 컴팩트 ──
+    const hw = (typeof ISO_BOARD !== 'undefined') ? ISO_BOARD.HW : 28;
+    const compactRows = sorted.map((p, i) => {
+      const isCur  = currentP && p.id === currentP.id;
+      const medal  = p.bankrupt ? '💀' : (medals[i] || `${i + 1}`);
+      const name   = escapeHTML(p.name.length > 4 ? p.name.slice(0, 4) + '…' : p.name);
+      return `<div class="iso-cp-compact-row${isCur ? ' is-current' : ''}${p.bankrupt ? ' is-bankrupt' : ''}"
+                   style="--cp-accent:${idolUxGetPlayerAccent(p.id)}">
+        <span class="iso-cp-compact-medal">${medal}</span>
+        <span class="iso-cp-compact-av">${p.avatar || '🙂'}</span>
+        <span class="iso-cp-compact-name">${name}</span>
+        <span class="iso-cp-compact-fame">⭐${p.fame}</span>
+      </div>`;
+    }).join('');
+
+    panel.innerHTML = `
+      <div class="iso-cp-compact-header">
+        <span class="iso-cp-compact-turn">${turn}/${IDOL_TOTAL_TURNS}</span>
+        <div class="iso-cp-compact-prog"><div class="iso-cp-prog-bar" style="width:${turnPct}%"></div></div>
+      </div>
+      ${compactRows}`;
+    panel.style.maxWidth = Math.round(hw * 10) + 'px';
+    return;
+  }
+
+  // ── 세로모드/PC 기존 렌더링 ──
+  panel.style.maxWidth = '';
 
   const rows = sorted.map((p, i) => {
     const isCur    = currentP && p.id === currentP.id;

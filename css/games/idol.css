@@ -323,7 +323,7 @@
 .idol-board-token {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 20px; height: 20px;
+  width: var(--tok-size, 20px); height: var(--tok-size, 20px);
   border-radius: 50%;
   border: 2.5px solid var(--tok-color, #ffd700);
   background: rgba(10, 10, 24, 0.9);
@@ -340,7 +340,7 @@
 }
 
 .idol-board-token-inner {
-  font-size: 11px;
+  font-size: calc(var(--tok-size, 20px) * 0.55);
   line-height: 1;
   display: block;
   pointer-events: none;
@@ -1179,16 +1179,7 @@
   right: 3px;
 }
 
-/* 데스크탑에서 토큰 크기 확대 */
-.idol-board-token {
-  width: 26px;
-  height: 26px;
-  border-width: 3px;
-}
-
-.idol-board-token-inner {
-  font-size: 14px;
-}
+/* 데스크탑 토큰 — --tok-size CSS 변수가 자동 처리 (JS에서 HW 비례 계산) */
 
 .idol-cell:focus-visible {
   outline: 2px solid rgba(0, 217, 255, 0.7);
@@ -3427,6 +3418,59 @@
 /* 명성 숫자 */
 .iso-cp-fame  { font-size: calc(var(--iso-hw, 40px) * 0.22); color: #ffe082; white-space: nowrap; flex-shrink: 0; }
 
+/* ── 가로모드 컴팩트 센터패널 ─────────────────── */
+.iso-cp-compact-header {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--iso-hw, 40px) * 0.15);
+  margin-bottom: calc(var(--iso-hw, 40px) * 0.08);
+}
+.iso-cp-compact-turn {
+  font-size: calc(var(--iso-hw, 40px) * 0.22);
+  font-weight: 800;
+  color: #ffe082;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.iso-cp-compact-prog {
+  flex: 1;
+  height: 3px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.iso-cp-compact-row {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--iso-hw, 40px) * 0.08);
+  padding: calc(var(--iso-hw, 40px) * 0.04) 0;
+  font-size: calc(var(--iso-hw, 40px) * 0.19);
+  line-height: 1.1;
+  color: #e0e0f0;
+}
+.iso-cp-compact-row.is-current {
+  color: #fff;
+  text-shadow: 0 0 6px var(--cp-accent, #ffd700);
+}
+.iso-cp-compact-row.is-bankrupt {
+  opacity: 0.35;
+  text-decoration: line-through;
+}
+.iso-cp-compact-medal { flex-shrink: 0; }
+.iso-cp-compact-av    { flex-shrink: 0; }
+.iso-cp-compact-name  {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iso-cp-compact-fame {
+  color: #ffe082;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ── 오버라이드 패널 (이벤트 연출용) ─────────── */
 #idolGame .idol-iso-center-overlay {
   background: rgba(4, 2, 14, 0.88);
@@ -3788,7 +3832,7 @@
 /* ── 가로 모드 (높이 ≤500px) — 보드 풀스크린 + 사이드바 ──── */
 @media (max-height: 500px) and (orientation: landscape) {
   #idolGame.active {
-    grid-template-columns: minmax(0, 1fr) clamp(160px, 22vw, 240px) !important;
+    grid-template-columns: minmax(0, 1fr) clamp(130px, 18vw, 190px) !important;
     grid-template-rows: minmax(0, 1fr) !important;
   }
 
@@ -3807,11 +3851,11 @@
     display: none !important;
   }
 
-  /* 보드: 왼쪽 전체 (높이 100%) — 배경 위로 올리기 */
+  /* 보드: 왼쪽 전체 (높이 100%) — 배경 위로, 패딩 최소화 */
   #idolGame .idol-board-wrapper {
     grid-column: 1 !important;
     grid-row: 1 !important;
-    padding: 2px !important;
+    padding: 0 !important;
     z-index: 2 !important;
     position: relative !important;
   }
@@ -3823,7 +3867,7 @@
     font-size: 14px !important;
   }
 
-  /* 액션패널: 오른쪽 사이드바 — 반드시 배경 위로 */
+  /* 액션패널: 오른쪽 사이드바 — 축소된 너비 + 간결한 UI */
   #idolGame .idol-action-panel {
     grid-column: 2 !important;
     grid-row: 1 !important;
@@ -3831,7 +3875,7 @@
     height: 100% !important;
     border-top: none !important;
     border-left: 1px solid rgba(255,255,255,0.1) !important;
-    padding: 6px 6px !important;
+    padding: 4px 4px !important;
     overflow-y: auto !important;
     font-size: 11px !important;
     z-index: 2 !important;
@@ -3839,18 +3883,23 @@
     background: rgba(5, 7, 13, 0.96) !important;
   }
 
+  /* 사이드바 내 상세 설명 숨김 — 공간 절약 */
+  #idolGame .idol-action-context {
+    display: none !important;
+  }
+
   /* 사이드바 내 버튼/텍스트 축소 */
   #idolGame .idol-action-panel .idol-btn {
-    padding: 6px 8px !important;
+    padding: 5px 6px !important;
     font-size: 11px !important;
-    min-height: 32px !important;
+    min-height: 30px !important;
   }
   #idolGame .idol-action-panel .idol-action-title {
     font-size: 11px !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 3px !important;
   }
   #idolGame .idol-task-card {
-    padding: 8px !important;
+    padding: 6px !important;
   }
 }
 
