@@ -418,6 +418,27 @@ function idolRenderIsoBoard(container, state) {
       const pillW = lFz * (charLen * 0.72 + 1.2);
       const pillH = lFz * 1.45;
       const pillR = pillH / 2;
+      const pillFill = 'rgba(0,0,0,0.55)';
+
+      // ── 말풍선 꼬리(삼각형 포인터) ──
+      // 앵커: 타일 쪽 꼭짓점
+      const anchorX = upperHalf ? vtx.top.x : vtx.bottom.x;
+      const anchorY = upperHalf ? vtx.top.y : vtx.bottom.y + depth;
+      // 삼각형 밑변 (pill 가장자리) — pill 너비의 ~30%
+      const triBaseHalf = pillW * 0.15;
+      const triEdgeY = upperHalf
+        ? ly + pillH / 2    // pill 하단
+        : ly - pillH / 2;   // pill 상단
+      const tri = document.createElementNS(ns, 'polygon');
+      tri.setAttribute('points',
+        `${anchorX.toFixed(1)},${anchorY.toFixed(1)} ` +
+        `${(lx - triBaseHalf).toFixed(1)},${triEdgeY.toFixed(1)} ` +
+        `${(lx + triBaseHalf).toFixed(1)},${triEdgeY.toFixed(1)}`);
+      tri.setAttribute('fill', pillFill);
+      tri.setAttribute('pointer-events', 'none');
+      gLabels.appendChild(tri);
+
+      // pill rect
       const bgRect = document.createElementNS(ns, 'rect');
       bgRect.setAttribute('x', (lx - pillW / 2).toFixed(1));
       bgRect.setAttribute('y', (ly - pillH / 2).toFixed(1));
@@ -425,7 +446,7 @@ function idolRenderIsoBoard(container, state) {
       bgRect.setAttribute('height', pillH.toFixed(1));
       bgRect.setAttribute('rx', pillR.toFixed(1));
       bgRect.setAttribute('ry', pillR.toFixed(1));
-      bgRect.setAttribute('fill', 'rgba(0,0,0,0.55)');
+      bgRect.setAttribute('fill', pillFill);
       bgRect.setAttribute('pointer-events', 'none');
       gLabels.appendChild(bgRect);
 

@@ -4,28 +4,28 @@
 const IDOL_TYPES = [
   {
     id: 'luna', name: '루나', emoji: '🎤', type: '가수형',
-    img: 'assets/idol/luna.jpg', color: '#ff6b9d',
+    img: 'img/games/idol/luna.png', color: '#ff6b9d',
     bonus: { talent: 1, looks: 0 },
     desc: '음악 샵 훈련 효율 최고',
     shopBonus: 'music',
   },
   {
-    id: 'bibi', name: '비비', emoji: '💃', type: '댄서형',
-    img: 'assets/idol/bibi.jpg', color: '#ff9500',
+    id: 'bibi', name: '뜌비', emoji: '💃', type: '댄서형',
+    img: 'img/games/idol/bibi.png', color: '#ff9500',
     bonus: { talent: 0, looks: 1 },
     desc: '뷰티/패션 샵 시너지',
     shopBonus: 'beauty',
   },
   {
     id: 'jun', name: '준', emoji: '🎬', type: '배우형',
-    img: 'assets/idol/jun.jpg', color: '#c084fc',
+    img: 'img/games/idol/jun.png', color: '#c084fc',
     bonus: { talent: 0, looks: 0 },
     desc: '미디어 샵 수수료 감면 & 이벤트 선택지 추가',
     shopBonus: 'media',
   },
   {
     id: 'ai', name: '아이', emoji: '🌟', type: '만능형',
-    img: 'assets/idol/ai.jpg', color: '#22d3ee',
+    img: 'img/games/idol/ai.png', color: '#22d3ee',
     bonus: { talent: 0, looks: 0 },
     desc: '모든 샵 훈련 효율 균등',
     shopBonus: null,
