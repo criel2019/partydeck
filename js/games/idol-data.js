@@ -11,14 +11,14 @@ const IDOL_TYPES = [
   },
   {
     id: 'ddyobi', name: '뜌비', emoji: '💃', type: '댄서형',
-    img: 'img/games/idol/ddyobi.png', color: '#ff9500',
+    img: 'img/games/idol/ddyobi.jpg', color: '#ff9500',
     bonus: { talent: 0, looks: 1 },
     desc: '뷰티/패션 샵 시너지',
     shopBonus: 'beauty',
   },
   {
-    id: 'lina', name: '리나', emoji: '🎬', type: '배우형',
-    img: 'img/games/idol/lina.png', color: '#c084fc',
+    id: 'lin', name: '린', emoji: '🎬', type: '배우형',
+    img: 'img/games/idol/lin.png', color: '#c084fc',
     bonus: { talent: 0, looks: 0 },
     desc: '미디어 샵 수수료 감면 & 이벤트 선택지 추가',
     shopBonus: 'media',
