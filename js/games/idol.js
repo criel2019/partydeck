@@ -836,7 +836,7 @@ function idolProcessCell(p, pos, isDouble) {
       idolState.pendingAction = { type: 'turn-end-auto' };
       break;
     case 'stage':
-      idolState.pendingAction = { type: 'gacha', playerId: p.id };
+      idolState.pendingAction = { type: 'gacha', playerId: p.id, isDouble };
       break;
     case 'tax':
       p.money -= cell.amount;
@@ -847,13 +847,13 @@ function idolProcessCell(p, pos, isDouble) {
       if (!p.bankrupt) idolState.pendingAction = { type: 'turn-end-auto' };
       break;
     case 'event':
-      idolDrawEventCard(p);
+      idolDrawEventCard(p, isDouble);
       return;
     case 'gacha':
-      idolState.pendingAction = { type: 'gacha', playerId: p.id };
+      idolState.pendingAction = { type: 'gacha', playerId: p.id, isDouble };
       break;
     case 'chance':
-      idolDrawChanceCard(p);
+      idolDrawChanceCard(p, isDouble);
       return;
     case 'shop':
       idolHandleShop(p, cell.shopId, isDouble);
@@ -1199,7 +1199,7 @@ function idolRenderTakeoverPanel(action) {
 }
 
 // ─── 이벤트 카드 ──────────────────────────────
-function idolDrawEventCard(p) {
+function idolDrawEventCard(p, isDouble) {
   const isLast = idolGetRank(p.id) === idolState.players.filter(x => !x.bankrupt).length;
   const isFirst = idolGetRank(p.id) === 1;
 
@@ -1215,7 +1215,7 @@ function idolDrawEventCard(p) {
     card = EVENT_CARDS[Math.floor(Math.random() * EVENT_CARDS.length)];
   }
 
-  idolState.pendingAction = { type: 'event-card', card, playerId: p.id };
+  idolState.pendingAction = { type: 'event-card', card, playerId: p.id, isDouble: !!isDouble };
   broadcastIdolState();
   idolRenderAll();
 }
@@ -1226,6 +1226,7 @@ function idolChooseEvent(cardId, choiceIdx) {
   const action = idolState.pendingAction;
   if (!action || action.type !== 'event-card') return;
 
+  const savedIsDouble = !!action.isDouble;
   const card = action.card;
 
   if (card.type === 'reversal') {
@@ -1254,13 +1255,14 @@ function idolChooseEvent(cardId, choiceIdx) {
   idolState.pendingAction = { type: 'turn-end-auto' };
   broadcastIdolState();
   idolRenderAll();
-  setTimeout(() => idolOnTurnEnd(false), 1000);
+  setTimeout(() => idolOnTurnEnd(savedIsDouble), 1000);
 }
 
 // ─── 가챠 ─────────────────────────────────────
 function idolDoGacha() {
   if (!state.isHost) return;
   const p = idolCurrentPlayer();
+  const savedIsDouble = !!(idolState.pendingAction && idolState.pendingAction.isDouble);
   // 역전 보정 적용된 가챠 롤 (꼴찌→레전드 25%, 1위→레전드 10%)
   const activePlayers = idolState.players.filter(x => !x.bankrupt);
   const rank = idolGetRank(p.id);
@@ -1284,9 +1286,9 @@ function idolDoGacha() {
     idolRenderAll();
 
     if (result.grade === 'legend' && typeof idolLegendCelebration === 'function') {
-      idolLegendCelebration(p, result.reward).then(() => idolOnTurnEnd(false));
+      idolLegendCelebration(p, result.reward).then(() => idolOnTurnEnd(savedIsDouble));
     } else {
-      setTimeout(() => idolOnTurnEnd(false), result.grade === 'legend' ? 2500 : 1000);
+      setTimeout(() => idolOnTurnEnd(savedIsDouble), result.grade === 'legend' ? 2500 : 1000);
     }
   };
 
@@ -1314,9 +1316,9 @@ function idolApplyGachaReward(p, reward) {
 }
 
 // ─── 찬스 카드 ────────────────────────────────
-function idolDrawChanceCard(p) {
+function idolDrawChanceCard(p, isDouble) {
   const card = CHANCE_CARDS[Math.floor(Math.random() * CHANCE_CARDS.length)];
-  idolState.pendingAction = { type: 'chance-card', card, playerId: p.id };
+  idolState.pendingAction = { type: 'chance-card', card, playerId: p.id, isDouble: !!isDouble };
   broadcastIdolState();
   idolRenderAll();
 }
@@ -1327,6 +1329,7 @@ function idolApplyChance(cardId, targetId) {
   const action = idolState.pendingAction;
   if (!action || action.type !== 'chance-card') return;
 
+  const savedIsDouble = !!action.isDouble;
   const card = CHANCE_CARDS.find(c => c.id === cardId);
   if (!card) return;
 
@@ -1347,7 +1350,7 @@ function idolApplyChance(cardId, targetId) {
   idolState.pendingAction = { type: 'turn-end-auto' };
   broadcastIdolState();
   idolRenderAll();
-  setTimeout(() => idolOnTurnEnd(false), 600);
+  setTimeout(() => idolOnTurnEnd(savedIsDouble), 600);
 }
 
 // ─── 효과 적용 헬퍼 ───────────────────────────
@@ -1480,6 +1483,7 @@ function idolOnTurnEnd(isDouble) {
         if (idolState) idolAdvanceTurn();
       });
     } else {
+      idolState.lastFestivalTurn = idolState.turnNum; // 중복 방지 마킹 (fallback 경로)
       idolRunSettlement();
       const settleTurn = idolState.turnNum;
       setTimeout(() => {

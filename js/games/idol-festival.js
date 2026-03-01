@@ -400,14 +400,28 @@ async function _festShowRanking(overlay, scored, tier) {
   const RANK_MEDALS = ['🥇', '🥈', '🥉', '4️⃣'];
   const RANK_COLORS = ['#ffd700', '#c0c0c0', '#cd7f32', '#8899aa'];
 
+  // 동점 그룹 → 같은 등수 부여
+  const rankIndices = [];
+  for (let i = 0; i < ranked.length; i++) {
+    let rIdx = i;
+    for (let j = 0; j < i; j++) {
+      if (ranked[j].scoreData.totalScore === ranked[i].scoreData.totalScore) {
+        rIdx = j;
+        break;
+      }
+    }
+    rankIndices.push(rIdx);
+  }
+
   // 역순 공개 (4등→1등)
   for (let i = ranked.length - 1; i >= 0; i--) {
     const entry = ranked[i];
     const p = entry.player;
-    const rankNum = i + 1;
-    const isFirst = (i === 0);
-    const medal = RANK_MEDALS[i] || `${rankNum}`;
-    const color = RANK_COLORS[i] || '#8899aa';
+    const rIdx = rankIndices[i];
+    const rankNum = rIdx + 1;
+    const isFirst = (rIdx === 0);
+    const medal = RANK_MEDALS[rIdx] || `${rankNum}`;
+    const color = RANK_COLORS[rIdx] || '#8899aa';
 
     const row = _festEl('div', 'idol-festival-rank-row', [
       'display:flex', 'align-items:center', 'gap:10px',
@@ -455,17 +469,26 @@ async function _festShowRanking(overlay, scored, tier) {
   await _festDelay(tier === 'full' ? 1000 : 500);
 }
 
-/** Step 4: 보상 적용 (실제 스탯 변경) */
+/** Step 4: 보상 적용 (실제 스탯 변경) — 동점자는 같은 보상 */
 function _festApplyRewards(scored) {
   if (!idolState) return;
 
   // 점수 높은 순으로 정렬
   const ranked = [...scored].sort((a, b) => b.scoreData.totalScore - a.scoreData.totalScore);
 
+  // 동점 그룹별 같은 등수(=같은 보상) 부여
   ranked.forEach((entry, i) => {
     const p = entry.player;
-    const rewardDef = (typeof FESTIVAL_REWARDS !== 'undefined' && FESTIVAL_REWARDS[i])
-      ? FESTIVAL_REWARDS[i]
+    // 동점자는 그룹 내 첫 번째 인덱스의 보상을 받음
+    let rankIdx = i;
+    for (let j = 0; j < i; j++) {
+      if (ranked[j].scoreData.totalScore === entry.scoreData.totalScore) {
+        rankIdx = j;
+        break;
+      }
+    }
+    const rewardDef = (typeof FESTIVAL_REWARDS !== 'undefined' && FESTIVAL_REWARDS[rankIdx])
+      ? FESTIVAL_REWARDS[rankIdx]
       : { fame: 1, money: 100, talent: 0, looks: 0 };
 
     // 실제 스탯 반영
@@ -484,6 +507,7 @@ function _festApplyRewards(scored) {
     }
 
     entry.rewardDef = rewardDef;
+    entry.rankIdx = rankIdx; // 순위 표시용 저장
   });
 
   // P2P 동기화
