@@ -1,16 +1,17 @@
 // =============================================
 // KINGSTAGRAM (킹스타그램) — Las Vegas Dice Variant
 // 6 lands, follower cards, dice placement
+// 1 die per turn, auto-place on corresponding land
 // =============================================
 
 // ===== CONSTANTS =====
 var KING_LANDS = [
-  { id: 1, name: '제로투 춤', emoji: '💃' },
-  { id: 2, name: '코카인 춤', emoji: '🕺' },
-  { id: 3, name: '골반통신', emoji: '😏' },
-  { id: 4, name: '윤정아', emoji: '🎵' },
-  { id: 5, name: '초전도체 춤', emoji: '⚡' },
-  { id: 6, name: '마라탕후루', emoji: '🌶' }
+  { id: 1, name: '\uc81c\ub85c\ud22c \ucda4', emoji: '\ud83d\udc83' },
+  { id: 2, name: '\ucf54\uce74\uc778 \ucda4', emoji: '\ud83d\udd7a' },
+  { id: 3, name: '\uace8\ubc18\ud1b5\uc2e0', emoji: '\ud83d\ude0f' },
+  { id: 4, name: '\uc724\uc815\uc544', emoji: '\ud83c\udfb5' },
+  { id: 5, name: '\ucd08\uc804\ub3c4\uccb4 \ucda4', emoji: '\u26a1' },
+  { id: 6, name: '\ub9c8\ub77c\ud0d5\ud6c4\ub8e8', emoji: '\ud83c\udf36' }
 ];
 
 var KING_DECK_TEMPLATE = [
@@ -30,7 +31,6 @@ var KING_DECK_TEMPLATE = [
 var kingState = null; // host-only full state
 var _kingView = null; // client-side last received view
 var _kingTimers = [];
-var _kingSelectedNumber = null; // locally selected dice group number
 var _kingShowRankings = false; // toggle rankings overlay
 var _kingRecorded = false; // prevent duplicate recordGame calls
 
@@ -54,7 +54,6 @@ function kingCreateDeck() {
 }
 
 function dealCardsToLands(deck, lands) {
-  // Reset land cards
   for (var i = 0; i < lands.length; i++) {
     lands[i].cards = [];
   }
@@ -69,7 +68,6 @@ function dealCardsToLands(deck, lands) {
       continue;
     }
     lands[landIdx].cards.push(deck.shift());
-    // Recompute sum
     sum = 0;
     for (var s = 0; s < lands[landIdx].cards.length; s++) {
       sum += lands[landIdx].cards[s];
@@ -78,7 +76,6 @@ function dealCardsToLands(deck, lands) {
       landIdx++;
     }
   }
-  // Sort each land's cards descending (highest first for awarding)
   for (var l = 0; l < lands.length; l++) {
     lands[l].cards.sort(function(a, b) { return b - a; });
   }
@@ -88,8 +85,8 @@ function dealCardsToLands(deck, lands) {
 function kingFormatFollowers(n) {
   if (n >= 10000) {
     var man = n / 10000;
-    if (man === Math.floor(man)) return Math.floor(man) + '만';
-    return man.toFixed(1) + '만';
+    if (man === Math.floor(man)) return Math.floor(man) + '\ub9cc';
+    return man.toFixed(1) + '\ub9cc';
   }
   return String(n);
 }
@@ -97,18 +94,10 @@ function kingFormatFollowers(n) {
 function kingFormatTotal(n) {
   if (n >= 10000) {
     var man = n / 10000;
-    if (man === Math.floor(man)) return Math.floor(man) + '만';
-    return man.toFixed(1) + '만';
+    if (man === Math.floor(man)) return Math.floor(man) + '\ub9cc';
+    return man.toFixed(1) + '\ub9cc';
   }
   return String(n);
-}
-
-// ===== NEUTRAL DICE COUNT =====
-function kingGetNeutralCount(playerCount) {
-  if (playerCount <= 1) return 4;
-  if (playerCount === 2) return 4;
-  if (playerCount <= 5) return 2;
-  return 0; // 6 players
 }
 
 // ===== HOST: START GAME =====
@@ -116,10 +105,21 @@ function startKingstagram() {
   if (!state.isHost) return;
   closeKingstagramCleanup();
 
-  var deck = kingCreateDeck();
+  // Add CPUs to fill up to 4 players
+  var allPlayers = state.players.slice();
+  var cpuIdx = 0;
+  while (allPlayers.length < 4) {
+    allPlayers.push({
+      id: 'ai-' + cpuIdx,
+      name: 'CPU ' + (cpuIdx + 1),
+      avatar: '\ud83e\udd16',
+    });
+    cpuIdx++;
+  }
+  // Update state.players so AI system can detect CPU turns
+  state.players = allPlayers;
 
-  var playerCount = state.players.length;
-  var neutralCount = kingGetNeutralCount(playerCount);
+  var deck = kingCreateDeck();
 
   var lands = [];
   for (var i = 0; i < KING_LANDS.length; i++) {
@@ -128,20 +128,18 @@ function startKingstagram() {
       name: KING_LANDS[i].name,
       emoji: KING_LANDS[i].emoji,
       cards: [],
-      dice: {},       // { playerId: count }
-      neutralCount: 0 // neutral dice placed here
+      dice: {} // { playerId: count }
     });
   }
 
   dealCardsToLands(deck, lands);
 
-  var players = state.players.map(function(p) {
+  var players = allPlayers.map(function(p) {
     return {
       id: p.id,
       name: p.name,
       avatar: p.avatar,
       diceLeft: 8,
-      neutralDice: neutralCount,
       totalFollowers: 0,
       cards: []
     };
@@ -150,12 +148,12 @@ function startKingstagram() {
   kingState = {
     players: players,
     lands: lands,
-    deck: deck, // remaining after dealing
+    deck: deck,
     round: 1,
     maxRounds: 4,
     turnIdx: 0,
-    currentRoll: [], // {value:1-6, isNeutral:bool}[]
-    phase: 'rolling', // rolling | choosing | scoring | round-end | gameover
+    lastRoll: null, // { value, landName, landEmoji, playerId, playerName }
+    phase: 'rolling', // rolling | placed | scoring | round-end | gameover
     startPlayerIdx: 0
   };
 
@@ -175,7 +173,6 @@ function getKingView() {
         name: p.name,
         avatar: p.avatar,
         diceLeft: p.diceLeft,
-        neutralDice: p.neutralDice,
         totalFollowers: p.totalFollowers,
         cardCount: p.cards.length
       };
@@ -186,14 +183,13 @@ function getKingView() {
         name: land.name,
         emoji: land.emoji,
         cards: land.cards.slice(),
-        dice: Object.assign({}, land.dice),
-        neutralCount: land.neutralCount
+        dice: Object.assign({}, land.dice)
       };
     }),
     round: ks.round,
     maxRounds: ks.maxRounds,
     turnIdx: ks.turnIdx,
-    currentRoll: ks.currentRoll.slice(),
+    lastRoll: ks.lastRoll,
     phase: ks.phase,
     startPlayerIdx: ks.startPlayerIdx,
     rankings: ks.phase === 'gameover' ? getKingRankings() : null
@@ -209,7 +205,7 @@ function broadcastKingState() {
   renderKingView(view);
 }
 
-// ===== HOST: PROCESS ROLL =====
+// ===== HOST: PROCESS ROLL (1 die per turn) =====
 function processKingRoll(fromId) {
   if (!state.isHost || !kingState) return;
   if (kingState.phase !== 'rolling') return;
@@ -217,73 +213,37 @@ function processKingRoll(fromId) {
   var ks = kingState;
   var player = ks.players[ks.turnIdx];
   if (!player || player.id !== fromId) return;
-  if (player.diceLeft <= 0 && player.neutralDice <= 0) return;
+  if (player.diceLeft <= 0) return;
 
-  // Roll all remaining dice
-  var roll = [];
-  for (var i = 0; i < player.diceLeft; i++) {
-    roll.push({ value: Math.floor(Math.random() * 6) + 1, isNeutral: false });
-  }
-  for (var j = 0; j < player.neutralDice; j++) {
-    roll.push({ value: Math.floor(Math.random() * 6) + 1, isNeutral: true });
-  }
-  ks.currentRoll = roll;
-  ks.phase = 'choosing';
-  broadcastKingState();
-}
+  // Roll 1 die (1-6)
+  var value = Math.floor(Math.random() * 6) + 1;
 
-// ===== HOST: PROCESS CHOOSE =====
-function processKingChoose(fromId, number) {
-  if (!state.isHost || !kingState) return;
-  if (kingState.phase !== 'choosing') return;
-  if (typeof number !== 'number' || number < 1 || number > 6) return;
-
-  var ks = kingState;
-  var player = ks.players[ks.turnIdx];
-  if (!player || player.id !== fromId) return;
-
-  // Count dice of chosen number
-  var personalCount = 0;
-  var neutralCount = 0;
-  for (var i = 0; i < ks.currentRoll.length; i++) {
-    if (ks.currentRoll[i].value === number) {
-      if (ks.currentRoll[i].isNeutral) neutralCount++;
-      else personalCount++;
-    }
-  }
-
-  if (personalCount + neutralCount === 0) return; // no dice of that number
-
-  // Place dice on corresponding land
-  var landIdx = number - 1;
+  // Place on corresponding land
+  var landIdx = value - 1;
   var land = ks.lands[landIdx];
-  if (!land) return;
+  if (!land.dice[player.id]) land.dice[player.id] = 0;
+  land.dice[player.id]++;
+  player.diceLeft--;
 
-  // Place personal dice
-  if (personalCount > 0) {
-    if (!land.dice[player.id]) land.dice[player.id] = 0;
-    land.dice[player.id] += personalCount;
-    player.diceLeft -= personalCount;
-  }
+  // Set display info
+  var landInfo = KING_LANDS[landIdx];
+  ks.lastRoll = {
+    value: value,
+    landName: landInfo.name,
+    landEmoji: landInfo.emoji,
+    playerId: player.id,
+    playerName: player.name
+  };
+  ks.phase = 'placed';
+  broadcastKingState();
 
-  // Place neutral dice
-  if (neutralCount > 0) {
-    land.neutralCount += neutralCount;
-    player.neutralDice -= neutralCount;
-  }
-
-  // Clear roll
-  ks.currentRoll = [];
-  _kingSelectedNumber = null;
-
-  // Check if player is done
-  if (player.diceLeft <= 0 && player.neutralDice <= 0) {
+  // After brief display, advance turn
+  var t = setTimeout(function() {
+    if (!kingState || kingState.phase !== 'placed') return;
+    kingState.lastRoll = null;
     advanceKingTurn();
-  } else {
-    // Player still has dice, back to rolling
-    ks.phase = 'rolling';
-    broadcastKingState();
-  }
+  }, 1200);
+  _kingTimers.push(t);
 }
 
 // ===== HOST: ADVANCE TURN =====
@@ -296,16 +256,15 @@ function advanceKingTurn() {
   for (var i = 1; i <= pCount; i++) {
     var nextIdx = (ks.turnIdx + i) % pCount;
     var nextPlayer = ks.players[nextIdx];
-    if (nextPlayer.diceLeft > 0 || nextPlayer.neutralDice > 0) {
+    if (nextPlayer.diceLeft > 0) {
       ks.turnIdx = nextIdx;
       ks.phase = 'rolling';
-      ks.currentRoll = [];
       broadcastKingState();
       return;
     }
   }
 
-  // All players have placed all dice → score round
+  // All players have placed all dice -> score round
   processKingScoring();
 }
 
@@ -314,7 +273,7 @@ function processKingScoring() {
   if (!kingState) return;
   var ks = kingState;
   ks.phase = 'scoring';
-  ks.currentRoll = [];
+  ks.lastRoll = null;
 
   var scoringResults = [];
 
@@ -325,22 +284,18 @@ function processKingScoring() {
       landName: land.name,
       landEmoji: land.emoji,
       cards: land.cards.slice(),
-      awards: [],    // [{playerId, playerName, card, cancelled}]
-      neutralWins: 0 // cards discarded due to neutral winning
+      awards: [] // [{playerId, playerName, card, cancelled}]
     };
 
-    // Build ranking: [{id, count, isNeutral}]
+    // Build ranking: [{id, count}]
     var entries = [];
     var playerIds = Object.keys(land.dice);
     for (var p = 0; p < playerIds.length; p++) {
       var pid = playerIds[p];
       var cnt = land.dice[pid];
       if (cnt > 0) {
-        entries.push({ id: pid, count: cnt, isNeutral: false });
+        entries.push({ id: pid, count: cnt });
       }
-    }
-    if (land.neutralCount > 0) {
-      entries.push({ id: '__neutral__', count: land.neutralCount, isNeutral: true });
     }
 
     // Sort by count descending
@@ -350,7 +305,6 @@ function processKingScoring() {
     var cardIdx = 0;
     var i = 0;
     while (i < entries.length && cardIdx < land.cards.length) {
-      // Find group of entries with same count
       var groupCount = entries[i].count;
       var group = [];
       while (i < entries.length && entries[i].count === groupCount) {
@@ -359,50 +313,31 @@ function processKingScoring() {
       }
 
       if (group.length === 1) {
-        // No tie — award card
+        // No tie - award card
         var entry = group[0];
-        if (entry.isNeutral) {
-          // Neutral wins → discard card
-          landResult.neutralWins++;
+        var winner = ks.players.find(function(pp) { return pp.id === entry.id; });
+        if (winner) {
+          winner.totalFollowers += land.cards[cardIdx];
+          winner.cards.push(land.cards[cardIdx]);
           landResult.awards.push({
-            playerId: '__neutral__',
-            playerName: '중립',
+            playerId: entry.id,
+            playerName: winner.name,
             card: land.cards[cardIdx],
-            cancelled: false,
-            isNeutral: true
+            cancelled: false
           });
-          cardIdx++;
-        } else {
-          // Player wins card
-          var winner = ks.players.find(function(pp) { return pp.id === entry.id; });
-          if (winner) {
-            winner.totalFollowers += land.cards[cardIdx];
-            winner.cards.push(land.cards[cardIdx]);
-            landResult.awards.push({
-              playerId: entry.id,
-              playerName: winner.name,
-              card: land.cards[cardIdx],
-              cancelled: false,
-              isNeutral: false
-            });
-          }
-          cardIdx++;
         }
+        cardIdx++;
       } else {
-        // Tie — all tied players/neutral cancel out, skip cards for each
+        // Tie - all tied players cancel out, skip cards for each
         for (var t = 0; t < group.length; t++) {
           var tiedEntry = group[t];
-          var tiedName = '중립';
-          if (!tiedEntry.isNeutral) {
-            var tiedPlayer = ks.players.find(function(pp) { return pp.id === tiedEntry.id; });
-            if (tiedPlayer) tiedName = tiedPlayer.name;
-          }
+          var tiedPlayer = ks.players.find(function(pp) { return pp.id === tiedEntry.id; });
+          var tiedName = tiedPlayer ? tiedPlayer.name : '???';
           landResult.awards.push({
             playerId: tiedEntry.id,
             playerName: tiedName,
             card: cardIdx < land.cards.length ? land.cards[cardIdx] : 0,
-            cancelled: true,
-            isNeutral: tiedEntry.isNeutral
+            cancelled: true
           });
           if (cardIdx < land.cards.length) cardIdx++;
         }
@@ -416,9 +351,8 @@ function processKingScoring() {
   broadcast({ type: 'king-scoring', results: scoringResults });
   kingShowScoring(scoringResults);
 
-  // After scoring animation, proceed to next round or gameover
-  var delay = (ks.lands.length * 800) + 2000; // 800ms per land + 2s buffer
-  var t = setTimeout(function() {
+  var delay = (ks.lands.length * 800) + 2000;
+  var tEnd = setTimeout(function() {
     if (!kingState) return;
     if (kingState.round < kingState.maxRounds) {
       processKingRoundEnd();
@@ -427,10 +361,7 @@ function processKingScoring() {
       broadcastKingState();
     }
   }, delay);
-  _kingTimers.push(t);
-
-  // NOTE: Do NOT call broadcastKingState() here — renderKingView's innerHTML
-  // would destroy the scoring overlay DOM. State broadcast happens in the timer above.
+  _kingTimers.push(tEnd);
 }
 
 // ===== HOST: ROUND END =====
@@ -442,18 +373,14 @@ function processKingRoundEnd() {
   ks.startPlayerIdx = (ks.startPlayerIdx + 1) % ks.players.length;
   ks.turnIdx = ks.startPlayerIdx;
 
-  var neutralCount = kingGetNeutralCount(ks.players.length);
-
   // Reset player dice
   for (var p = 0; p < ks.players.length; p++) {
     ks.players[p].diceLeft = 8;
-    ks.players[p].neutralDice = neutralCount;
   }
 
   // Reset land dice
   for (var l = 0; l < ks.lands.length; l++) {
     ks.lands[l].dice = {};
-    ks.lands[l].neutralCount = 0;
     ks.lands[l].cards = [];
   }
 
@@ -462,7 +389,7 @@ function processKingRoundEnd() {
     dealCardsToLands(ks.deck, ks.lands);
   }
 
-  ks.currentRoll = [];
+  ks.lastRoll = null;
   ks.phase = 'rolling';
   broadcastKingState();
 }
@@ -472,7 +399,7 @@ function getKingRankings() {
   if (!kingState) return [];
   var sorted = kingState.players.slice().sort(function(a, b) {
     if (b.totalFollowers !== a.totalFollowers) return b.totalFollowers - a.totalFollowers;
-    return b.cards.length - a.cards.length; // tiebreak: more cards
+    return b.cards.length - a.cards.length;
   });
   return sorted.map(function(p, idx) {
     return {
@@ -492,7 +419,7 @@ function kingRoll() {
   if (_kingView.phase !== 'rolling') return;
   var currentPlayer = _kingView.players[_kingView.turnIdx];
   if (!currentPlayer || currentPlayer.id !== state.myId) {
-    showToast('당신의 차례가 아닙니다');
+    showToast('\ub2f9\uc2e0\uc758 \ucc28\ub840\uac00 \uc544\ub2d9\ub2c8\ub2e4');
     return;
   }
 
@@ -501,45 +428,6 @@ function kingRoll() {
   } else {
     sendToHost({ type: 'king-roll' });
   }
-}
-
-// ===== CLIENT: CHOOSE NUMBER =====
-function kingChoose(number) {
-  if (!_kingView) return;
-  if (_kingView.phase !== 'choosing') return;
-  var currentPlayer = _kingView.players[_kingView.turnIdx];
-  if (!currentPlayer || currentPlayer.id !== state.myId) return;
-
-  // Validate number exists in current roll
-  var found = false;
-  for (var i = 0; i < _kingView.currentRoll.length; i++) {
-    if (_kingView.currentRoll[i].value === number) { found = true; break; }
-  }
-  if (!found) {
-    showToast('해당 숫자의 주사위가 없습니다');
-    return;
-  }
-
-  if (state.isHost) {
-    processKingChoose(state.myId, number);
-  } else {
-    sendToHost({ type: 'king-choose', number: number });
-  }
-}
-
-// ===== CLIENT: SELECT DICE GROUP (local highlight before confirm) =====
-function kingSelectNumber(number) {
-  _kingSelectedNumber = number;
-  if (_kingView) renderKingView(_kingView);
-}
-
-function kingConfirmChoice() {
-  if (_kingSelectedNumber === null) {
-    showToast('주사위 그룹을 선택하세요');
-    return;
-  }
-  kingChoose(_kingSelectedNumber);
-  _kingSelectedNumber = null;
 }
 
 // ===== CLIENT: TOGGLE RANKINGS =====
@@ -569,25 +457,28 @@ function renderKingView(view) {
     }
   }
 
-  // Build HTML
   var html = '';
 
   // === Top bar ===
   html += '<div class="king-topbar">';
-  html += '<button class="king-back-btn" onclick="closeKingstagramGame()">✕</button>';
-  html += '<div class="king-round-badge">' + view.round + '/' + view.maxRounds + ' 라운드</div>';
-  html += '<button class="king-rank-btn" onclick="kingToggleRankings()">🏆</button>';
+  html += '<button class="king-back-btn" onclick="closeKingstagramGame()">\u2715</button>';
+  html += '<div class="king-round-badge">' + view.round + '/' + view.maxRounds + ' \ub77c\uc6b4\ub4dc</div>';
+  html += '<button class="king-rank-btn" onclick="kingToggleRankings()">\ud83c\udfc6</button>';
   html += '</div>';
 
   // === Turn indicator ===
   html += '<div class="king-turn-indicator">';
   if (view.phase === 'gameover') {
-    html += '<span class="king-turn-text">게임 종료!</span>';
+    html += '<span class="king-turn-text">\uac8c\uc784 \uc885\ub8cc!</span>';
   } else if (view.phase === 'scoring') {
-    html += '<span class="king-turn-text">결산 중...</span>';
+    html += '<span class="king-turn-text">\uacb0\uc0b0 \uc911...</span>';
+  } else if (view.phase === 'placed' && view.lastRoll) {
+    // Show who placed what
+    html += '<span class="king-turn-text">' + escapeHTML(view.lastRoll.playerName) + ': \ud83c\udfb2 ' +
+      view.lastRoll.value + ' \u2192 ' + view.lastRoll.landEmoji + ' ' + view.lastRoll.landName + '</span>';
   } else if (currentPlayer) {
-    var turnName = currentPlayer.id === state.myId ? '내' : escapeHTML(currentPlayer.name) + '의';
-    html += '<span class="king-turn-text">' + turnName + ' 차례</span>';
+    var turnName = currentPlayer.id === state.myId ? '\ub0b4' : escapeHTML(currentPlayer.name) + '\uc758';
+    html += '<span class="king-turn-text">' + turnName + ' \ucc28\ub840</span>';
     if (currentPlayer.id !== state.myId) {
       var cpIdx = view.players.indexOf(currentPlayer);
       html += '<span class="king-turn-avatar" style="background:' + PLAYER_COLORS[cpIdx % PLAYER_COLORS.length] + ';">' + currentPlayer.avatar + '</span>';
@@ -606,19 +497,21 @@ function renderKingView(view) {
     html += '<div class="king-player-name">' + escapeHTML(p.name) + '</div>';
     html += '<div class="king-player-followers">' + kingFormatTotal(p.totalFollowers) + '</div>';
     html += '</div>';
-    html += '<div class="king-player-dice-count">🎲' + p.diceLeft + (p.neutralDice > 0 ? '+' + p.neutralDice : '') + '</div>';
+    html += '<div class="king-player-dice-count">\ud83c\udfb2' + p.diceLeft + '</div>';
     html += '</div>';
   }
   html += '</div>';
 
-  // === Lands grid (3×2) ===
+  // === Lands grid (3x2) ===
   html += '<div class="king-lands-grid">';
   for (var li = 0; li < KING_LANDS.length; li++) {
     var land = view.lands[li];
     if (!land) continue;
 
-    html += '<div class="king-land-card">';
-    // Land header
+    // Highlight the land that was just placed on
+    var justPlaced = view.phase === 'placed' && view.lastRoll && view.lastRoll.value === (li + 1);
+
+    html += '<div class="king-land-card' + (justPlaced ? ' king-land-highlight' : '') + '">';
     html += '<div class="king-land-header">';
     html += '<span class="king-land-emoji">' + land.emoji + '</span>';
     html += '<span class="king-land-name">' + land.name + '</span>';
@@ -627,7 +520,6 @@ function renderKingView(view) {
     // Cards in land
     html += '<div class="king-land-cards">';
     if (land.cards.length > 0) {
-      // Show total and individual cards
       var landSum = 0;
       for (var lc = 0; lc < land.cards.length; lc++) landSum += land.cards[lc];
       html += '<div class="king-land-total">' + kingFormatFollowers(landSum) + '</div>';
@@ -637,7 +529,7 @@ function renderKingView(view) {
       }
       html += '</div>';
     } else {
-      html += '<div class="king-land-empty">—</div>';
+      html += '<div class="king-land-empty">\u2014</div>';
     }
     html += '</div>';
 
@@ -648,7 +540,6 @@ function renderKingView(view) {
       var dPlayerId = diceKeys[dk];
       var dCount = land.dice[dPlayerId];
       if (dCount <= 0) continue;
-      // Find player index for color
       var dPlayerIdx = -1;
       for (var pf = 0; pf < view.players.length; pf++) {
         if (view.players[pf].id === dPlayerId) { dPlayerIdx = pf; break; }
@@ -658,88 +549,31 @@ function renderKingView(view) {
         html += '<div class="king-die-dot" style="background:' + dColor + ';" title="' + (dPlayerIdx >= 0 ? escapeHTML(view.players[dPlayerIdx].name) : '?') + '"></div>';
       }
     }
-    // Neutral dice
-    for (var nn = 0; nn < land.neutralCount; nn++) {
-      html += '<div class="king-die-dot king-die-neutral" title="중립">⚪</div>';
-    }
     html += '</div>';
 
     html += '</div>'; // .king-land-card
   }
   html += '</div>'; // .king-lands-grid
 
-  // === Roll results / Action area ===
+  // === Action area ===
   html += '<div class="king-action-area">';
 
   if (view.phase === 'rolling' && isMyTurn) {
-    // Show dice remaining info + roll button
     html += '<div class="king-dice-info">';
-    html += '🎲 ×' + (myPlayer ? myPlayer.diceLeft : 0);
-    if (myPlayer && myPlayer.neutralDice > 0) {
-      html += ' + ⚪×' + myPlayer.neutralDice;
-    }
-    html += ' 남음';
+    html += '\ud83c\udfb2 \xd7' + (myPlayer ? myPlayer.diceLeft : 0) + ' \ub0a8\uc74c';
     html += '</div>';
-    html += '<button class="king-roll-btn" onclick="kingRoll()">🎲 굴리기</button>';
-  } else if (view.phase === 'choosing') {
-    // Show roll results grouped by number
-    var groups = {}; // {number: {personal, neutral}}
-    for (var ri = 0; ri < view.currentRoll.length; ri++) {
-      var die = view.currentRoll[ri];
-      if (!groups[die.value]) groups[die.value] = { personal: 0, neutral: 0 };
-      if (die.isNeutral) groups[die.value].neutral++;
-      else groups[die.value].personal++;
-    }
-
-    html += '<div class="king-roll-results">';
-    html += '<div class="king-roll-title">주사위 결과 — 배치할 숫자를 선택하세요</div>';
-    html += '<div class="king-dice-groups">';
-    var groupKeys = Object.keys(groups).sort(function(a, b) { return Number(a) - Number(b); });
-    for (var gi = 0; gi < groupKeys.length; gi++) {
-      var num = Number(groupKeys[gi]);
-      var grp = groups[num];
-      var landInfo = KING_LANDS[num - 1];
-      var isSelected = _kingSelectedNumber === num;
-      var canClick = isMyTurn;
-      html += '<div class="king-dice-group' + (isSelected ? ' selected' : '') + (canClick ? ' clickable' : '') + '" ' +
-        (canClick ? 'onclick="kingSelectNumber(' + num + ')"' : '') + '>';
-      html += '<div class="king-dice-group-land">' + (landInfo ? landInfo.emoji : '') + ' ' + num + '</div>';
-      html += '<div class="king-dice-group-count">';
-      // Show personal dice as colored
-      if (myIdx >= 0) {
-        for (var dp = 0; dp < grp.personal; dp++) {
-          html += '<span class="king-die-mini" style="background:' + PLAYER_COLORS[myIdx % PLAYER_COLORS.length] + ';">' + num + '</span>';
-        }
-      } else {
-        for (var dp2 = 0; dp2 < grp.personal; dp2++) {
-          html += '<span class="king-die-mini">' + num + '</span>';
-        }
-      }
-      // Show neutral dice as gray
-      for (var dnn = 0; dnn < grp.neutral; dnn++) {
-        html += '<span class="king-die-mini king-die-mini-neutral">' + num + '</span>';
-      }
-      html += '</div>';
-      html += '<div class="king-dice-group-label">' + (landInfo ? landInfo.name : '') + '</div>';
-      html += '</div>';
-    }
-    html += '</div>'; // .king-dice-groups
-
-    if (isMyTurn) {
-      html += '<button class="king-choose-btn' + (_kingSelectedNumber !== null ? '' : ' disabled') + '" onclick="kingConfirmChoice()" ' +
-        (_kingSelectedNumber === null ? 'disabled' : '') + '>✅ ' +
-        (_kingSelectedNumber !== null ? KING_LANDS[_kingSelectedNumber - 1].emoji + ' ' + KING_LANDS[_kingSelectedNumber - 1].name + '에 배치' : '선택하세요') +
-        '</button>';
-    } else {
-      html += '<div class="king-waiting-text">' + escapeHTML(currentPlayer ? currentPlayer.name : '') + '이(가) 선택 중...</div>';
-    }
-    html += '</div>'; // .king-roll-results
+    html += '<button class="king-roll-btn" onclick="kingRoll()">\ud83c\udfb2 \uad74\ub9ac\uae30</button>';
+  } else if (view.phase === 'placed' && view.lastRoll) {
+    // Show placement result
+    html += '<div class="king-placed-result">';
+    html += '<span class="king-placed-die">' + view.lastRoll.value + '</span>';
+    html += '<span class="king-placed-arrow">\u2192</span>';
+    html += '<span class="king-placed-land">' + view.lastRoll.landEmoji + ' ' + view.lastRoll.landName + '</span>';
+    html += '</div>';
   } else if (view.phase === 'rolling' && !isMyTurn) {
-    html += '<div class="king-waiting-text">' + escapeHTML(currentPlayer ? currentPlayer.name : '') + '이(가) 주사위를 굴리는 중...</div>';
+    html += '<div class="king-waiting-text">' + escapeHTML(currentPlayer ? currentPlayer.name : '') + '\uc774(\uac00) \uc8fc\uc0ac\uc704\ub97c \uad74\ub9ac\ub294 \uc911...</div>';
   } else if (view.phase === 'scoring') {
-    html += '<div class="king-scoring-text">📊 결산 중...</div>';
-  } else if (view.phase === 'gameover') {
-    // Show gameover
+    html += '<div class="king-scoring-text">\ud83d\udcca \uacb0\uc0b0 \uc911...</div>';
   }
 
   html += '</div>'; // .king-action-area
@@ -761,7 +595,7 @@ function renderKingView(view) {
 function kingBuildGameOverHTML(rankings, players) {
   var html = '<div class="king-gameover-overlay">';
   html += '<div class="king-gameover-panel">';
-  html += '<div class="king-gameover-title">👑 킹스타그램 최종 순위</div>';
+  html += '<div class="king-gameover-title">\ud83d\udc51 \ud0b9\uc2a4\ud0c0\uadf8\ub7a8 \ucd5c\uc885 \uc21c\uc704</div>';
 
   for (var i = 0; i < rankings.length; i++) {
     var r = rankings[i];
@@ -776,20 +610,20 @@ function kingBuildGameOverHTML(rankings, players) {
     }
 
     html += '<div class="king-rank-item ' + rankClass + '">';
-    html += '<div class="king-rank-number">' + r.rank + '위</div>';
+    html += '<div class="king-rank-number">' + r.rank + '\uc704</div>';
     html += '<div class="king-rank-avatar" style="background:' + PLAYER_COLORS[pIdx >= 0 ? pIdx % PLAYER_COLORS.length : 0] + ';">' + r.avatar + '</div>';
     html += '<div class="king-rank-info">';
-    html += '<div class="king-rank-name">' + escapeHTML(r.name) + (r.id === state.myId ? ' (나)' : '') + '</div>';
-    html += '<div class="king-rank-detail">카드 ' + r.cardCount + '장</div>';
+    html += '<div class="king-rank-name">' + escapeHTML(r.name) + (r.id === state.myId ? ' (\ub098)' : '') + '</div>';
+    html += '<div class="king-rank-detail">\uce74\ub4dc ' + r.cardCount + '\uc7a5</div>';
     html += '</div>';
     html += '<div class="king-rank-score">' + kingFormatTotal(r.totalFollowers) + '</div>';
     html += '</div>';
   }
 
-  html += '<button class="king-close-btn" onclick="closeKingstagramGame()">로비로 돌아가기</button>';
+  html += '<button class="king-close-btn" onclick="closeKingstagramGame()">\ub85c\ube44\ub85c \ub3cc\uc544\uac00\uae30</button>';
   html += '</div></div>';
 
-  // Record game (only once per game)
+  // Record game (only once)
   if (!_kingRecorded && rankings.length > 0) {
     _kingRecorded = true;
     var myRank = -1;
@@ -809,7 +643,6 @@ function kingBuildGameOverHTML(rankings, players) {
 
 // ===== BUILD RANKINGS OVERLAY =====
 function kingBuildRankingsOverlay(view) {
-  var rankings = [];
   var sorted = view.players.slice().sort(function(a, b) {
     if (b.totalFollowers !== a.totalFollowers) return b.totalFollowers - a.totalFollowers;
     return b.cardCount - a.cardCount;
@@ -820,7 +653,7 @@ function kingBuildRankingsOverlay(view) {
 
   var html = '<div class="king-rankings-overlay" onclick="kingToggleRankings()">';
   html += '<div class="king-rankings-panel" onclick="event.stopPropagation()">';
-  html += '<div class="king-rankings-title">🏆 현재 순위 (라운드 ' + view.round + '/' + view.maxRounds + ')</div>';
+  html += '<div class="king-rankings-title">\ud83c\udfc6 \ud604\uc7ac \uc21c\uc704 (\ub77c\uc6b4\ub4dc ' + view.round + '/' + view.maxRounds + ')</div>';
 
   for (var i2 = 0; i2 < sorted.length; i2++) {
     var p = sorted[i2];
@@ -829,14 +662,14 @@ function kingBuildRankingsOverlay(view) {
       if (view.players[pi].id === p.id) { pIdx = pi; break; }
     }
     html += '<div class="king-ranking-row">';
-    html += '<span class="king-ranking-pos">' + p._rank + '위</span>';
+    html += '<span class="king-ranking-pos">' + p._rank + '\uc704</span>';
     html += '<span class="king-ranking-avatar" style="background:' + PLAYER_COLORS[pIdx >= 0 ? pIdx % PLAYER_COLORS.length : 0] + ';">' + p.avatar + '</span>';
-    html += '<span class="king-ranking-name">' + escapeHTML(p.name) + (p.id === state.myId ? ' (나)' : '') + '</span>';
+    html += '<span class="king-ranking-name">' + escapeHTML(p.name) + (p.id === state.myId ? ' (\ub098)' : '') + '</span>';
     html += '<span class="king-ranking-score">' + kingFormatTotal(p.totalFollowers) + '</span>';
     html += '</div>';
   }
 
-  html += '<button class="king-close-overlay-btn" onclick="kingToggleRankings()">닫기</button>';
+  html += '<button class="king-close-overlay-btn" onclick="kingToggleRankings()">\ub2eb\uae30</button>';
   html += '</div></div>';
   return html;
 }
@@ -854,7 +687,7 @@ function kingShowScoring(results) {
 
   var title = document.createElement('div');
   title.className = 'king-scoring-title';
-  title.textContent = '📊 라운드 결산';
+  title.textContent = '\ud83d\udcca \ub77c\uc6b4\ub4dc \uacb0\uc0b0';
   panel.appendChild(title);
 
   var landsContainer = document.createElement('div');
@@ -866,7 +699,6 @@ function kingShowScoring(results) {
   var gameScreen = document.getElementById('kingstagramGame');
   if (gameScreen) gameScreen.appendChild(overlay);
 
-  // Reveal each land one by one
   for (var i = 0; i < results.length; i++) {
     (function(idx) {
       var t = setTimeout(function() {
@@ -879,21 +711,18 @@ function kingShowScoring(results) {
 
         var awardsHtml = '';
         if (result.awards.length === 0) {
-          awardsHtml = '<div class="king-scoring-empty">주사위 없음</div>';
+          awardsHtml = '<div class="king-scoring-empty">\uc8fc\uc0ac\uc704 \uc5c6\uc74c</div>';
         } else {
           for (var a = 0; a < result.awards.length; a++) {
             var award = result.awards[a];
             var cls = 'king-scoring-award';
             if (award.cancelled) cls += ' cancelled';
-            if (award.isNeutral) cls += ' neutral';
             awardsHtml += '<div class="' + cls + '">';
             awardsHtml += '<span class="king-scoring-player">' + escapeHTML(award.playerName) + '</span>';
             if (award.cancelled) {
-              awardsHtml += '<span class="king-scoring-result">동률 상쇄! ❌</span>';
-            } else if (award.isNeutral) {
-              awardsHtml += '<span class="king-scoring-result">중립 승리 → ' + kingFormatFollowers(award.card) + ' 폐기</span>';
+              awardsHtml += '<span class="king-scoring-result">\ub3d9\ub960 \uc0c1\uc1c4! \u274c</span>';
             } else {
-              awardsHtml += '<span class="king-scoring-result">→ ' + kingFormatFollowers(award.card) + ' 획득! ✅</span>';
+              awardsHtml += '<span class="king-scoring-result">\u2192 ' + kingFormatFollowers(award.card) + ' \ud68d\ub4dd! \u2705</span>';
             }
             awardsHtml += '</div>';
           }
@@ -907,7 +736,6 @@ function kingShowScoring(results) {
     })(i);
   }
 
-  // Auto-close after all revealed
   var closeDelay = results.length * 800 + 1500;
   var tClose = setTimeout(function() {
     var el = document.getElementById('kingScoringOverlay');
@@ -916,17 +744,11 @@ function kingShowScoring(results) {
   _kingTimers.push(tClose);
 }
 
-// ===== CLIENT: GAME OVER =====
-function kingShowGameOver(rankings) {
-  // Already handled by renderKingView when phase === 'gameover'
-}
-
 // ===== CLEANUP =====
 function closeKingstagramCleanup() {
   _kingTimers.forEach(function(t) { clearTimeout(t); });
   _kingTimers = [];
   _kingView = null;
-  _kingSelectedNumber = null;
   _kingShowRankings = false;
   _kingRecorded = false;
   kingState = null;
@@ -946,7 +768,5 @@ function handleKingAction(peerId, msg) {
 
   if (msg.type === 'king-roll') {
     processKingRoll(peerId);
-  } else if (msg.type === 'king-choose') {
-    processKingChoose(peerId, msg.number);
   }
 }

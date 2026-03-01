@@ -402,11 +402,7 @@
   /* background is set inline by JS per player color */
 }
 
-.king-die-neutral {
-  background: var(--king-neutral) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  font-size: 8px;
-}
+/* neutral dice removed — CPUs replace neutrals */
 
 
 /* ==============================================
@@ -583,37 +579,49 @@
 }
 
 
-/* ===== CHOOSE / CONFIRM BUTTON ===== */
-.king-choose-btn {
-  width: 100%;
-  max-width: 300px;
-  padding: 12px 8px;
-  border: none;
+/* ===== PLACEMENT RESULT DISPLAY ===== */
+.king-placed-result {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 0;
+  animation: kingPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.king-placed-die {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 36px;
+  color: var(--king-gold);
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+  background: rgba(255, 215, 0, 0.1);
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 12px;
-  font-size: 15px;
-  font-weight: 900;
-  font-family: 'Noto Sans KR', sans-serif;
-  cursor: pointer;
-  transition: all 0.15s;
-  background: linear-gradient(135deg, #00c853, #00e676);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(0, 200, 83, 0.3);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  letter-spacing: 0.5px;
-  user-select: none;
-  -webkit-user-select: none;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+}
+.king-placed-arrow {
+  font-size: 24px;
+  color: var(--king-text-dim);
+}
+.king-placed-land {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px;
+  color: var(--king-text);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.1);
 }
 
-.king-choose-btn:active {
-  transform: scale(0.95);
+/* ===== LAND HIGHLIGHT (just placed) ===== */
+.king-land-card.king-land-highlight {
+  border-color: rgba(255, 215, 0, 0.6) !important;
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.25), inset 0 0 20px rgba(255, 215, 0, 0.05);
+  animation: kingLandPulse 0.8s ease-out;
 }
-
-.king-choose-btn.disabled,
-.king-choose-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
+@keyframes kingLandPulse {
+  0% { transform: scale(1.05); box-shadow: 0 0 24px rgba(255, 215, 0, 0.5); }
+  100% { transform: scale(1); }
 }
 
 

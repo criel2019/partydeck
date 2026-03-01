@@ -1,55 +1,49 @@
-// ===== E CARD ENGINE =====
+// ===== E CARD ENGINE (v2 — 12판 구조) =====
+// 룰: 황제(1)+시민(4) vs 노예(1)+시민(4)
+// 황제 먼저 제출 → 노예 제출 → 동시 공개
+// 노예>황제, 황제>시민, 시민>노예 (순환)
+// 한 판에 5교환, 황제와 노예가 만나면 노예 승, 안 만나면 황제 승
+
 let ecState = {
-  player1: { id: '', name: '', avatar: '', role: 'emperor', cards: [], played: null },
-  player2: { id: '', name: '', avatar: '', role: 'slave', cards: [], played: null },
-  round: 1,
-  maxRounds: 5,
-  score: { emperor: 0, slave: 0 },
-  bet: 100,
-  betProposed: null,
-  betAccepted: false,
-  phase: 'role-assign',
+  player1: { id: '', name: '', avatar: '' },
+  player2: { id: '', name: '', avatar: '' },
+  gameNum: 1,
+  maxGames: 12,
+  exchange: 1, // 현재 교환 번호 (1~5)
+  emperorPlayerId: '',
+  slavePlayerId: '',
+  emperorCards: [],
+  slaveCards: [],
+  emperorPlayed: null,
+  slavePlayed: null,
+  phase: 'emperor-play', // emperor-play, slave-play, reveal, game-result, gameover
+  score: { p1: 0, p2: 0 }, // 플레이어별 승수
   selectedCard: null,
+  _lastResult: null,
 };
 
 function startECard() {
   if (state.players.length !== 2) {
-    showToast('E\uce74\ub4dc\ub294 \uc815\ud655\ud788 2\uba85\ub9cc \ud50c\ub808\uc774 \uac00\ub2a5\ud569\ub2c8\ub2e4');
+    showToast('E카드는 정확히 2명만 플레이 가능합니다');
     return;
   }
 
-  const roles = ['emperor', 'slave'];
-  const shuffled = roles.sort(() => Math.random() - 0.5);
-
   ecState = {
-    player1: {
-      id: state.players[0].id,
-      name: state.players[0].name,
-      avatar: state.players[0].avatar,
-      role: shuffled[0],
-      cards: shuffled[0] === 'emperor'
-        ? ['emperor', 'citizen', 'citizen', 'citizen', 'citizen']
-        : ['slave', 'dummy', 'citizen', 'citizen', 'citizen'],
-      played: null,
-    },
-    player2: {
-      id: state.players[1].id,
-      name: state.players[1].name,
-      avatar: state.players[1].avatar,
-      role: shuffled[1],
-      cards: shuffled[1] === 'emperor'
-        ? ['emperor', 'citizen', 'citizen', 'citizen', 'citizen']
-        : ['slave', 'dummy', 'citizen', 'citizen', 'citizen'],
-      played: null,
-    },
-    round: 1,
-    maxRounds: 5,
-    score: { emperor: 0, slave: 0 },
-    bet: 100,
-    betProposed: null,
-    betAccepted: false,
-    phase: 'betting',
+    player1: { id: state.players[0].id, name: state.players[0].name, avatar: state.players[0].avatar },
+    player2: { id: state.players[1].id, name: state.players[1].name, avatar: state.players[1].avatar },
+    gameNum: 1,
+    maxGames: 12,
+    exchange: 1,
+    emperorPlayerId: state.players[0].id, // 첫 판: P1이 황제
+    slavePlayerId: state.players[1].id,
+    emperorCards: ['emperor', 'citizen', 'citizen', 'citizen', 'citizen'],
+    slaveCards: ['slave', 'citizen', 'citizen', 'citizen', 'citizen'],
+    emperorPlayed: null,
+    slavePlayed: null,
+    phase: 'emperor-play',
+    score: { p1: 0, p2: 0 },
     selectedCard: null,
+    _lastResult: null,
   };
 
   state.ecard = ecState;
@@ -57,32 +51,42 @@ function startECard() {
   showScreen('ecardGame');
 }
 
-function broadcastECardState() {
-  const ec = state.ecard;
+function ecardGetMyRole(view) {
+  return view.myRole;
+}
 
-  [ec.player1, ec.player2].forEach(p => {
-    const opponent = p === ec.player1 ? ec.player2 : ec.player1;
-    const view = {
+function broadcastECardState() {
+  var ec = state.ecard;
+  var p1 = ec.player1, p2 = ec.player2;
+
+  [p1, p2].forEach(function(p) {
+    var isEmperor = p.id === ec.emperorPlayerId;
+    var opp = p === p1 ? p2 : p1;
+    var myCards = isEmperor ? ec.emperorCards : ec.slaveCards;
+    var oppCards = isEmperor ? ec.slaveCards : ec.emperorCards;
+    var myPlayed = isEmperor ? ec.emperorPlayed : ec.slavePlayed;
+    var oppPlayed = isEmperor ? ec.slavePlayed : ec.emperorPlayed;
+
+    var view = {
       type: 'ec-state',
       myId: p.id,
-      myRole: p.role,
-      myCards: p.cards,
-      myPlayed: p.played,
+      myRole: isEmperor ? 'emperor' : 'slave',
+      myCards: myCards.slice(),
+      myPlayed: myPlayed,
       myName: p.name,
       myAvatar: p.avatar,
-      oppId: opponent.id,
-      oppName: opponent.name,
-      oppAvatar: opponent.avatar,
-      oppRole: opponent.role,
-      oppCardsCount: opponent.cards.length,
-      oppPlayed: opponent.played,
-      round: ec.round,
-      maxRounds: ec.maxRounds,
+      oppId: opp.id,
+      oppName: opp.name,
+      oppAvatar: opp.avatar,
+      oppRole: isEmperor ? 'slave' : 'emperor',
+      oppCardsCount: oppCards.length,
+      oppPlayed: oppPlayed,
+      gameNum: ec.gameNum,
+      maxGames: ec.maxGames,
+      exchange: ec.exchange,
       score: ec.score,
-      bet: ec.bet,
-      betProposed: ec.betProposed,
-      betAccepted: ec.betAccepted,
       phase: ec.phase,
+      _lastResult: ec._lastResult,
     };
 
     if (p.id === state.myId) {
@@ -96,26 +100,35 @@ function broadcastECardState() {
 function renderECardView(view) {
   state._ecardView = view;
 
-  document.getElementById('ecardRound').textContent = view.round;
-  document.getElementById('ecardScoreEmperor').textContent = view.score.emperor;
-  document.getElementById('ecardScoreSlave').textContent = view.score.slave;
+  // 라운드 표시
+  document.getElementById('ecardRound').textContent = view.gameNum;
+  // maxRounds 표시 (5 → 12로 변경된 것을 HTML에도 반영)
+  var roundEl = document.getElementById('ecardRound');
+  if (roundEl && roundEl.parentNode) {
+    roundEl.parentNode.innerHTML = 'G<span id="ecardRound">' + view.gameNum + '</span>/' + view.maxGames + ' E' + view.exchange;
+  }
 
-  const roleIcon = view.myRole === 'emperor' ? '\ud83d\udc51' : '\u26d3\ufe0f';
-  const roleName = view.myRole === 'emperor' ? '\ud669\uc81c' : '\ub178\uc608';
-  const roleColor = view.myRole === 'emperor' ? 'var(--gold)' : '#c0c0c0';
+  document.getElementById('ecardScoreEmperor').textContent = view.score.p1;
+  document.getElementById('ecardScoreSlave').textContent = view.score.p2;
+
+  var roleIcon = view.myRole === 'emperor' ? '👑' : '⛓️';
+  var roleName = view.myRole === 'emperor' ? '황제' : '노예';
+  var roleColor = view.myRole === 'emperor' ? 'var(--gold)' : '#c0c0c0';
 
   document.getElementById('ecardRoleIcon').textContent = roleIcon;
   document.getElementById('ecardRoleName').textContent = roleName;
   document.getElementById('ecardRoleName').style.color = roleColor;
 
-  const oppIndex = state.players.findIndex(p => p.id === view.oppId);
+  var oppIndex = state.players.findIndex(function(p) { return p.id === view.oppId; });
   document.getElementById('ecardOppAvatar').style.background = PLAYER_COLORS[oppIndex % PLAYER_COLORS.length];
   document.getElementById('ecardOppAvatar').textContent = view.oppAvatar;
   document.getElementById('ecardOppName').textContent = view.oppName;
   document.getElementById('ecardOppCardsCount').textContent = view.oppCardsCount;
 
-  const oppPlayedEl = document.getElementById('ecardOppPlayedCard');
-  if (view.phase === 'emperor-play' && view.myRole === 'emperor' && view.oppPlayed) {
+  // 상대 낸 카드 표시 (심리전: 황제가 먼저 내면 노예에게 뒷면으로 표시)
+  var oppPlayedEl = document.getElementById('ecardOppPlayedCard');
+  if (view.phase === 'slave-play' && view.myRole === 'slave' && view.oppPlayed) {
+    // 황제가 냈지만 아직 미공개 → 뒷면
     oppPlayedEl.innerHTML = ecardCardHTML(null, true, 'ecard-card-opp-small');
   } else if (view.phase === 'reveal' && view.oppPlayed) {
     oppPlayedEl.innerHTML = ecardCardHTML(view.oppPlayed, false, 'ecard-card-opp-small');
@@ -123,17 +136,19 @@ function renderECardView(view) {
     oppPlayedEl.innerHTML = '';
   }
 
+  // 내 카드 표시
   document.getElementById('ecardMyCardsCount').textContent = view.myCards.length;
-  const myCardsEl = document.getElementById('ecardMyCards');
-  myCardsEl.innerHTML = view.myCards.map((card, i) =>
-    '<div class="ecard-card ecard-card-' + card + ' ' + (ecState.selectedCard === i ? 'selected' : '') + '"' +
+  var myCardsEl = document.getElementById('ecardMyCards');
+  myCardsEl.innerHTML = view.myCards.map(function(card, i) {
+    return '<div class="ecard-card ecard-card-' + card + ' ' + (ecState.selectedCard === i ? 'selected' : '') + '"' +
           ' onclick="ecardSelectCard(' + i + ')" data-card-idx="' + i + '">' +
       '<div class="ecard-card-icon">' + ecardCardIcon(card) + '</div>' +
       '<div class="ecard-card-name">' + ecardCardName(card) + '</div>' +
-    '</div>'
-  ).join('');
+    '</div>';
+  }).join('');
 
-  const battleArea = document.getElementById('ecardBattleArea');
+  // 배틀 영역
+  var battleArea = document.getElementById('ecardBattleArea');
   if (view.phase === 'reveal' && view.myPlayed && view.oppPlayed) {
     battleArea.style.display = 'flex';
     document.getElementById('ecardBattleOpp').innerHTML = ecardCardHTML(view.oppPlayed, false, 'ecard-card-battle');
@@ -142,36 +157,33 @@ function renderECardView(view) {
     battleArea.style.display = 'none';
   }
 
-  const resultTextEl = document.getElementById('ecardResultText');
-  if (view.phase === 'result') {
-    const result = state.ecard._lastResult;
-    if (result) {
-      resultTextEl.textContent = result.message;
-      resultTextEl.style.color = result.winner === view.myRole ? 'var(--gold)' : 'var(--text-dim)';
-    }
+  // 결과 텍스트
+  var resultTextEl = document.getElementById('ecardResultText');
+  if ((view.phase === 'result' || view.phase === 'game-result') && view._lastResult) {
+    resultTextEl.textContent = view._lastResult.message;
+    resultTextEl.style.color = view._lastResult.myWin ? 'var(--gold)' : 'var(--text-dim)';
   } else {
     resultTextEl.textContent = '';
   }
 
-  const betArea = document.getElementById('ecardBetArea');
-  const betResponse = document.getElementById('ecardBetResponse');
-  const actionButtons = document.getElementById('ecardActionButtons');
-  const waiting = document.getElementById('ecardWaiting');
+  // 액션 영역
+  var actionButtons = document.getElementById('ecardActionButtons');
+  var waiting = document.getElementById('ecardWaiting');
+  var betArea = document.getElementById('ecardBetArea');
+  var betResponse = document.getElementById('ecardBetResponse');
 
   betArea.style.display = 'none';
   betResponse.style.display = 'none';
   actionButtons.style.display = 'none';
   waiting.style.display = 'none';
 
-  if (view.phase === 'betting') {
-    if (view.myRole === 'slave' && !view.betProposed) {
-      betArea.style.display = 'block';
-    } else if (view.myRole === 'emperor' && view.betProposed && !view.betAccepted) {
-      betResponse.style.display = 'block';
-      document.getElementById('ecardBetProposed').textContent = view.betProposed;
+  if (view.phase === 'emperor-play') {
+    if (view.myRole === 'emperor') {
+      actionButtons.style.display = 'flex';
+      document.getElementById('ecardSubmitBtn').disabled = ecState.selectedCard === null;
     } else {
       waiting.style.display = 'flex';
-      document.getElementById('ecardWaitingText').textContent = '\ubc30\ud305 \ub300\uae30 \uc911...';
+      document.getElementById('ecardWaitingText').textContent = '황제가 카드를 선택 중...';
     }
   } else if (view.phase === 'slave-play') {
     if (view.myRole === 'slave') {
@@ -179,42 +191,26 @@ function renderECardView(view) {
       document.getElementById('ecardSubmitBtn').disabled = ecState.selectedCard === null;
     } else {
       waiting.style.display = 'flex';
-      document.getElementById('ecardWaitingText').textContent = '\ub178\uc608\uac00 \uce74\ub4dc\ub97c \uc120\ud0dd \uc911...';
+      document.getElementById('ecardWaitingText').textContent = '노예가 카드를 선택 중...';
     }
-  } else if (view.phase === 'emperor-play') {
-    if (view.myRole === 'emperor') {
-      actionButtons.style.display = 'flex';
-      document.getElementById('ecardSubmitBtn').disabled = ecState.selectedCard === null;
-    } else {
-      waiting.style.display = 'flex';
-      document.getElementById('ecardWaitingText').textContent = '\ud669\uc81c\uac00 \uce74\ub4dc\ub97c \uc120\ud0dd \uc911...';
-    }
+  } else if (view.phase === 'game-result' || view.phase === 'gameover') {
+    // 결과 표시 중 — 아무 버튼 안 보임
   }
 }
 
 function ecardCardIcon(card) {
-  const icons = {
-    emperor: '\ud83d\udc51',
-    citizen: '\ud83e\udd35',
-    slave: '\u26d3\ufe0f',
-    dummy: '\u2753',
-  };
+  var icons = { emperor: '👑', citizen: '🤵', slave: '⛓️' };
   return icons[card] || '?';
 }
 
 function ecardCardName(card) {
-  const names = {
-    emperor: '\ud669\uc81c',
-    citizen: '\uc2dc\ubbfc',
-    slave: '\ub178\uc608',
-    dummy: '\ub354\ubbf8',
-  };
+  var names = { emperor: '황제', citizen: '시민', slave: '노예' };
   return names[card] || '?';
 }
 
 function ecardCardHTML(card, isBack, sizeClass) {
   var cls = sizeClass ? ' ' + sizeClass : '';
-  if (isBack) {
+  if (isBack || !card) {
     return '<div class="ecard-card ecard-card-back' + cls + '"></div>';
   }
   return '<div class="ecard-card ecard-card-' + card + cls + '">' +
@@ -224,162 +220,134 @@ function ecardCardHTML(card, isBack, sizeClass) {
 }
 
 function ecardSelectCard(idx) {
-  const view = state._ecardView;
+  var view = state._ecardView;
   if (!view) return;
 
-  const canPlay = (view.phase === 'slave-play' && view.myRole === 'slave') ||
-                  (view.phase === 'emperor-play' && view.myRole === 'emperor');
-
+  var canPlay = (view.phase === 'emperor-play' && view.myRole === 'emperor') ||
+                (view.phase === 'slave-play' && view.myRole === 'slave');
   if (!canPlay) return;
 
   ecState.selectedCard = idx;
   renderECardView(view);
 }
 
-document.getElementById('ecardBetSlider').addEventListener('input', function(e) {
-  document.getElementById('ecardBetAmount').textContent = e.target.value;
-});
-
-function ecardSubmitBet() {
-  const bet = parseInt(document.getElementById('ecardBetSlider').value);
-  if (state.isHost) {
-    processECardBet(state.myId, bet);
-  } else {
-    sendToHost({ type: 'ec-bet', bet });
-  }
+// 배팅 슬라이더 (기존 호환)
+var betSlider = document.getElementById('ecardBetSlider');
+if (betSlider) {
+  betSlider.addEventListener('input', function(e) {
+    document.getElementById('ecardBetAmount').textContent = e.target.value;
+  });
 }
 
-function ecardAcceptBet() {
-  if (state.isHost) {
-    processECardBetResponse(state.myId, true);
-  } else {
-    sendToHost({ type: 'ec-bet-response', accept: true });
-  }
-}
-
-function ecardRejectBet() {
-  if (state.isHost) {
-    processECardBetResponse(state.myId, false);
-  } else {
-    sendToHost({ type: 'ec-bet-response', accept: false });
-  }
-}
+function ecardSubmitBet() {} // 배팅 제거 — 빈 함수 유지
+function ecardAcceptBet() {}
+function ecardRejectBet() {}
 
 function ecardSubmitCard() {
   if (ecState.selectedCard === null) {
-    showToast('\uce74\ub4dc\ub97c \uc120\ud0dd\ud558\uc138\uc694');
+    showToast('카드를 선택하세요');
     return;
   }
 
-  const view = state._ecardView;
-  const cardType = view.myCards[ecState.selectedCard];
+  var view = state._ecardView;
+  var cardType = view.myCards[ecState.selectedCard];
 
   if (state.isHost) {
     processECardPlay(state.myId, cardType, ecState.selectedCard);
   } else {
-    sendToHost({ type: 'ec-play', cardType, cardIdx: ecState.selectedCard });
+    sendToHost({ type: 'ec-play', cardType: cardType, cardIdx: ecState.selectedCard });
   }
 
   ecState.selectedCard = null;
 }
 
-function processECardBet(playerId, bet) {
-  if (!state.isHost) return;
-  const ec = state.ecard;
-  if (ec.phase !== 'betting') return;
-
-  const player = ec.player1.id === playerId ? ec.player1 : ec.player2;
-  if (player.role !== 'slave') return;
-
-  ec.betProposed = bet;
-  broadcastECardState();
-}
-
-function processECardBetResponse(playerId, accept) {
-  if (!state.isHost) return;
-  const ec = state.ecard;
-  if (ec.phase !== 'betting') return;
-
-  const player = ec.player1.id === playerId ? ec.player1 : ec.player2;
-  if (player.role !== 'emperor') return;
-
-  if (accept) {
-    ec.bet = ec.betProposed;
-    ec.betAccepted = true;
-    ec.phase = 'slave-play';
-    broadcastECardState();
-  } else {
-    ec.betProposed = null;
-    broadcastECardState();
-    showToast('\ud669\uc81c\uac00 \ubc30\ud305\uc744 \uac70\uc808\ud588\uc2b5\ub2c8\ub2e4. \ub2e4\uc2dc \uc81c\uc548\ud558\uc138\uc694.');
-  }
-}
-
 function processECardPlay(playerId, cardType, cardIdx) {
   if (!state.isHost) return;
-  const ec = state.ecard;
-  const validCards = ['emperor', 'citizen', 'slave', 'dummy'];
-  if(!validCards.includes(cardType)) return;
-  if(typeof cardIdx !== 'number' || cardIdx < 0) return;
+  var ec = state.ecard;
+  var validCards = ['emperor', 'citizen', 'slave'];
+  if (validCards.indexOf(cardType) === -1) return;
+  if (typeof cardIdx !== 'number' || cardIdx < 0) return;
 
-  const player = ec.player1.id === playerId ? ec.player1 : ec.player2;
-  if(cardIdx >= player.cards.length) return;
+  var isEmperor = playerId === ec.emperorPlayerId;
 
-  if (ec.phase === 'slave-play' && player.role === 'slave') {
-    player.played = cardType;
-    player.cards.splice(cardIdx, 1);
-    ec.phase = 'emperor-play';
+  if (ec.phase === 'emperor-play' && isEmperor) {
+    if (cardIdx >= ec.emperorCards.length) return;
+    ec.emperorPlayed = cardType;
+    ec.emperorCards.splice(cardIdx, 1);
+    ec.phase = 'slave-play';
     broadcastECardState();
-  } else if (ec.phase === 'emperor-play' && player.role === 'emperor') {
-    player.played = cardType;
-    player.cards.splice(cardIdx, 1);
+  } else if (ec.phase === 'slave-play' && !isEmperor) {
+    if (cardIdx >= ec.slaveCards.length) return;
+    ec.slavePlayed = cardType;
+    ec.slaveCards.splice(cardIdx, 1);
     ec.phase = 'reveal';
     broadcastECardState();
-    setTimeout(() => ecardReveal(), 1500);
+    setTimeout(function() { ecardRevealExchange(); }, 1500);
   }
 }
 
-function ecardReveal() {
+function ecardRevealExchange() {
   if (!state.isHost) return;
-  const ec = state.ecard;
+  var ec = state.ecard;
 
-  const card1 = ec.player1.played;
-  const card2 = ec.player2.played;
+  var empCard = ec.emperorPlayed;
+  var slvCard = ec.slavePlayed;
 
-  const result = ecardJudge(card1, card2);
+  // 황제와 노예가 만났는지 체크
+  var emperorMeetsSlave = (empCard === 'emperor' && slvCard === 'slave');
+  var slaveMeetsEmperor = (empCard === 'slave' && slvCard === 'emperor'); // shouldn't happen but safety
 
-  let winner = null;
-  let message = '';
+  var exchangeResult = ecardJudge(empCard, slvCard);
 
-  if (result === 0) {
-    message = '\ubb34\uc2b9\ubd80! (\ub354\ubbf8 \ub610\ub294 \uc2dc\ubbfc vs \uc2dc\ubbfc)';
-  } else if (result === 1) {
-    winner = ec.player1.role;
-    message = ec.player1.name + ' \uc2b9\ub9ac!';
-    if (ec.player1.role === 'emperor') ec.score.emperor++;
-    else ec.score.slave++;
-  } else {
-    winner = ec.player2.role;
-    message = ec.player2.name + ' \uc2b9\ub9ac!';
-    if (ec.player2.role === 'emperor') ec.score.emperor++;
-    else ec.score.slave++;
+  if (emperorMeetsSlave) {
+    // 노예 승리! — 이 판 종료
+    var slavePlayerKey = ec.slavePlayerId === ec.player1.id ? 'p1' : 'p2';
+    ec.score[slavePlayerKey]++;
+
+    var slaveName = ec.slavePlayerId === ec.player1.id ? ec.player1.name : ec.player2.name;
+    ec._lastResult = { message: '노예 승리! ' + slaveName + ' +1점', winner: 'slave' };
+    ec.phase = 'game-result';
+    broadcastECardState();
+
+    setTimeout(function() { ecardNextGame(); }, 2500);
+    return;
   }
 
-  ec._lastResult = { winner, message };
+  // 마지막 교환이면 황제 승리
+  if (ec.exchange >= 5) {
+    var empPlayerKey = ec.emperorPlayerId === ec.player1.id ? 'p1' : 'p2';
+    ec.score[empPlayerKey]++;
+
+    var empName = ec.emperorPlayerId === ec.player1.id ? ec.player1.name : ec.player2.name;
+    ec._lastResult = { message: '황제 승리! ' + empName + ' +1점 (노예 회피 성공)', winner: 'emperor' };
+    ec.phase = 'game-result';
+    broadcastECardState();
+
+    setTimeout(function() { ecardNextGame(); }, 2500);
+    return;
+  }
+
+  // 다음 교환
+  var resultMsg = '';
+  if (exchangeResult === 0) resultMsg = '무승부 (시민 vs 시민)';
+  else if (exchangeResult === 1) resultMsg = '황제측 교환 승리';
+  else resultMsg = '노예측 교환 승리';
+
+  ec._lastResult = { message: resultMsg + ' — 교환 ' + ec.exchange + '/5', winner: null };
   ec.phase = 'result';
   broadcastECardState();
 
-  setTimeout(() => {
-    if (ec.round >= ec.maxRounds) {
-      ecardGameOver();
-    } else {
-      ecardNextRound();
-    }
-  }, 3000);
+  setTimeout(function() {
+    ec.exchange++;
+    ec.emperorPlayed = null;
+    ec.slavePlayed = null;
+    ec._lastResult = null;
+    ec.phase = 'emperor-play';
+    broadcastECardState();
+  }, 2000);
 }
 
 function ecardJudge(card1, card2) {
-  if (card1 === 'dummy' || card2 === 'dummy') return 0;
   if (card1 === 'citizen' && card2 === 'citizen') return 0;
   if (card1 === 'emperor' && card2 === 'citizen') return 1;
   if (card1 === 'citizen' && card2 === 'emperor') return -1;
@@ -390,50 +358,63 @@ function ecardJudge(card1, card2) {
   return 0;
 }
 
-function ecardNextRound() {
+function ecardNextGame() {
   if (!state.isHost) return;
-  const ec = state.ecard;
+  var ec = state.ecard;
 
-  ec.round++;
-  ec.player1.played = null;
-  ec.player2.played = null;
-  ec.betProposed = null;
-  ec.betAccepted = false;
-  ec.phase = 'betting';
+  if (ec.gameNum >= ec.maxGames) {
+    ecardGameOver();
+    return;
+  }
+
+  ec.gameNum++;
+  ec.exchange = 1;
+  ec.emperorPlayed = null;
+  ec.slavePlayed = null;
   ec._lastResult = null;
 
+  // 역할 교대 (매 게임마다 교대)
+  var temp = ec.emperorPlayerId;
+  ec.emperorPlayerId = ec.slavePlayerId;
+  ec.slavePlayerId = temp;
+
+  // 새 카드 배분
+  ec.emperorCards = ['emperor', 'citizen', 'citizen', 'citizen', 'citizen'];
+  ec.slaveCards = ['slave', 'citizen', 'citizen', 'citizen', 'citizen'];
+
+  ec.phase = 'emperor-play';
   broadcastECardState();
 }
 
 function ecardGameOver() {
   if (!state.isHost) return;
-  const ec = state.ecard;
+  var ec = state.ecard;
 
-  const emperorScore = ec.score.emperor;
-  const slaveScore = ec.score.slave;
+  var p1Score = ec.score.p1;
+  var p2Score = ec.score.p2;
 
-  let winnerRole = null;
-  let message = '';
+  var winnerId = null;
+  var winnerName = '무승부';
+  var message = '';
 
-  if (emperorScore > slaveScore) {
-    winnerRole = 'emperor';
-    message = '\ud669\uc81c \uc2b9\ub9ac!';
-  } else if (slaveScore > emperorScore) {
-    winnerRole = 'slave';
-    message = '\ub178\uc608 \uc2b9\ub9ac! \ub300\uc5ed\uc804!';
+  if (p1Score > p2Score) {
+    winnerId = ec.player1.id;
+    winnerName = ec.player1.name;
+    message = ec.player1.name + ' 승리! (' + p1Score + ':' + p2Score + ')';
+  } else if (p2Score > p1Score) {
+    winnerId = ec.player2.id;
+    winnerName = ec.player2.name;
+    message = ec.player2.name + ' 승리! (' + p1Score + ':' + p2Score + ')';
   } else {
-    message = '\ubb34\uc2b9\ubd80!';
+    message = '무승부! (' + p1Score + ':' + p2Score + ')';
   }
 
-  const winner = ec.player1.role === winnerRole ? ec.player1 : (ec.player2.role === winnerRole ? ec.player2 : null);
-
-  const result = {
+  var result = {
     type: 'ec-result',
-    winnerId: winner?.id,
-    winnerName: winner?.name || '\ubb34\uc2b9\ubd80',
-    winnerRole,
-    message,
-    score: ec.score,
+    winnerId: winnerId,
+    winnerName: winnerName,
+    message: message,
+    score: { emperor: p1Score, slave: p2Score },
   };
 
   broadcast(result);
@@ -441,15 +422,17 @@ function ecardGameOver() {
 }
 
 function handleECardResult(msg) {
-  const won = msg.winnerId === state.myId;
+  var won = msg.winnerId === state.myId;
   recordGame(won, won ? 40 : 5);
 
-  document.getElementById('resultTitle').textContent = won ? '\uc2b9\ub9ac!' : (msg.winnerId ? '\ud328\ubc30...' : '\ubb34\uc2b9\ubd80');
+  document.getElementById('resultTitle').textContent = won ? '승리!' : (msg.winnerId ? '패배...' : '무승부');
   document.getElementById('resultTitle').style.color = won ? 'var(--gold)' : 'var(--text-dim)';
   document.getElementById('winnerName').textContent = msg.message;
-  document.getElementById('resultHand').textContent = '\ucd5c\uc885 \uc810\uc218: \ud669\uc81c ' + msg.score.emperor + ' - ' + msg.score.slave + ' \ub178\uc608';
+  document.getElementById('resultHand').textContent = '최종 점수: ' + msg.score.emperor + ' : ' + msg.score.slave;
   document.getElementById('resultPot').textContent = '';
   document.getElementById('resultCards').innerHTML = '';
   document.getElementById('resultOverlay').classList.add('active');
 }
 
+function processECardBet() {}
+function processECardBetResponse() {}

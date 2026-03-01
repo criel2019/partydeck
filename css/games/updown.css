@@ -252,13 +252,15 @@
   padding: 0 4px;
 }
 
-/* UP / DOWN Buttons */
-.ud-choice-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+/* Action Area (dynamic buttons) */
+.ud-action-area {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
+  align-items: center;
 }
 .ud-btn {
+  width: 100%;
   padding: 18px 10px;
   border: none;
   border-radius: 14px;
@@ -283,36 +285,55 @@
   letter-spacing: 4px;
 }
 
-/* UP = Casino Green */
-.ud-btn-up {
-  background: linear-gradient(180deg, #2a8a3a, #0e4a18);
+/* Draw Button = Casino Gold/Brown */
+.ud-btn-draw {
+  background: linear-gradient(180deg, #8B6914, #5C3D0A);
   color: #fff;
-  border-bottom: 4px solid #072e0e;
+  border-bottom: 4px solid #3a2505;
   box-shadow:
-    0 8px 24px rgba(14,74,24,0.5),
+    0 8px 24px rgba(92,61,10,0.5),
     inset 0 2px 0 rgba(255,255,255,0.15);
 }
-.ud-btn-up:hover:not(:disabled) {
+.ud-btn-draw:hover:not(:disabled) {
   transform: translateY(-3px);
   box-shadow:
-    0 12px 32px rgba(14,74,24,0.7),
+    0 12px 32px rgba(92,61,10,0.7),
     inset 0 2px 0 rgba(255,255,255,0.15);
 }
 
-/* DOWN = Casino Blue */
-.ud-btn-down {
-  background: linear-gradient(180deg, #3a6aaa, #1a3a6a);
+/* Submit Button = Casino Red */
+.ud-btn-submit {
+  background: linear-gradient(180deg, #c41e3a, #8b0000);
   color: #fff;
-  border-bottom: 4px solid #0e2040;
+  border-bottom: 4px solid #5a0000;
   box-shadow:
-    0 8px 24px rgba(26,58,106,0.5),
+    0 8px 24px rgba(196,30,58,0.5),
     inset 0 2px 0 rgba(255,255,255,0.15);
+  animation: udSubmitPulse 1.5s ease-in-out infinite;
 }
-.ud-btn-down:hover:not(:disabled) {
+.ud-btn-submit:hover:not(:disabled) {
   transform: translateY(-3px);
   box-shadow:
-    0 12px 32px rgba(26,58,106,0.7),
+    0 12px 32px rgba(196,30,58,0.7),
     inset 0 2px 0 rgba(255,255,255,0.15);
+}
+@keyframes udSubmitPulse {
+  0%, 100% { box-shadow: 0 8px 24px rgba(196,30,58,0.5), inset 0 2px 0 rgba(255,255,255,0.15); }
+  50% { box-shadow: 0 8px 32px rgba(196,30,58,0.8), 0 0 16px rgba(196,30,58,0.3), inset 0 2px 0 rgba(255,255,255,0.15); }
+}
+
+/* Waiting Text */
+.ud-waiting-text {
+  text-align: center;
+  color: rgba(232,216,168,0.6);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 18px 0;
+  animation: udWaitPulse 1.5s ease-in-out infinite;
+}
+@keyframes udWaitPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 /* ===== Bet Area ===== */

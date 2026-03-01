@@ -685,10 +685,11 @@
     <!-- Setup Panel (Host Only) -->
     <div class="lottery-setup-panel" id="lotterySetupPanel" style="display:none;">
       <div class="setup-title">🎯 뽑기 항목 설정 (호스트만 가능)</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">항목명 입력 + 개수 설정</div>
       <div class="lottery-fields-container" id="lotteryFieldsContainer">
-        <div class="lottery-field-row"><span class="lottery-field-num">1</span><input type="text" class="lottery-field-input" maxlength="20" placeholder="예: 당첨!"><button class="lottery-field-del" onclick="removeLotteryField(this)">✕</button></div>
-        <div class="lottery-field-row"><span class="lottery-field-num">2</span><input type="text" class="lottery-field-input" maxlength="20" placeholder="예: 꽝"><button class="lottery-field-del" onclick="removeLotteryField(this)">✕</button></div>
-        <div class="lottery-field-row"><span class="lottery-field-num">3</span><input type="text" class="lottery-field-input" maxlength="20" placeholder="예: 벌칙: 원샷"><button class="lottery-field-del" onclick="removeLotteryField(this)">✕</button></div>
+        <div class="lottery-field-row"><span class="lottery-field-num">1</span><input type="text" class="lottery-field-input" maxlength="20" placeholder="예: 당첨!"><input type="number" class="lottery-field-count" min="1" max="99" value="1" placeholder="개수"><button class="lottery-field-del" onclick="removeLotteryField(this)">✕</button></div>
+        <div class="lottery-field-row"><span class="lottery-field-num">2</span><input type="text" class="lottery-field-input" maxlength="20" placeholder="예: 꽝"><input type="number" class="lottery-field-count" min="1" max="99" value="3" placeholder="개수"><button class="lottery-field-del" onclick="removeLotteryField(this)">✕</button></div>
+        <div class="lottery-field-row"><span class="lottery-field-num">3</span><input type="text" class="lottery-field-input" maxlength="20" placeholder="예: 벌칙"><input type="number" class="lottery-field-count" min="1" max="99" value="1" placeholder="개수"><button class="lottery-field-del" onclick="removeLotteryField(this)">✕</button></div>
       </div>
       <button class="btn btn-secondary" onclick="addLotteryField('lotteryFieldsContainer')" style="font-size:13px;padding:8px 14px;margin-bottom:8px;">+ 항목 추가</button>
       <div class="setup-row">
@@ -797,16 +798,7 @@
 
     <!-- Bottom panel: buttons + bet + penalty -->
     <div class="ud-bottom-panel">
-      <div class="ud-choice-buttons" id="updownChoiceButtons">
-        <button class="ud-btn ud-btn-up" onclick="udChoice('up')">
-          <span class="ud-btn-arrow">&#9650;</span>
-          <span class="ud-btn-label">UP</span>
-        </button>
-        <button class="ud-btn ud-btn-down" onclick="udChoice('down')">
-          <span class="ud-btn-label">DOWN</span>
-          <span class="ud-btn-arrow">&#9660;</span>
-        </button>
-      </div>
+      <div id="updownChoiceButtons" class="ud-action-area"></div>
 
       <div class="ud-bet-area">
         <input type="text" class="ud-bet-input" id="updownBetInput" placeholder="벌칙 내용 입력..." maxlength="30">
@@ -995,7 +987,7 @@
   <div class="ecard-compact-header">
     <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">&#10005;</button>
     <button onclick="toggleHandRanking('ecard')" style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;cursor:pointer;">규칙</button>
-    <div class="ecard-header-round">R<span id="ecardRound">1</span>/5</div>
+    <div class="ecard-header-round">G<span id="ecardRound">1</span>/12</div>
     <div class="ecard-header-score">
       <span class="ecard-hscore-emperor">&#128081;</span>
       <span class="ecard-hscore-val" id="ecardScoreEmperor">0</span>
@@ -1066,39 +1058,53 @@
 
 <!-- SUTDA GAME -->
 <div class="screen" id="sutdaGame">
-  <!-- 상단 바 -->
-  <div class="sutda-top-bar">
-    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">&#10005;</button>
-    <div class="sutda-title-area">
-      <span class="sutda-title-text">장땡 섯다</span>
-      <span class="sutda-pot-badge" id="sutdaPotBadge">0</span>
+  <div class="sutda-felt"></div>
+  <div class="sutda-content">
+    <!-- 상단 바 (포커 스타일) -->
+    <div class="sutda-top-bar">
+      <div class="sutda-top-info">
+        <div class="sutda-chip-display">
+          <span class="sutda-chip-icon">🪙</span>
+          <span class="sutda-chip-value" id="sutdaMyBalance">0</span>
+        </div>
+        <div class="sutda-pot-display">
+          <span class="sutda-pot-label">POT</span>
+          <span class="sutda-pot-value" id="sutdaPotBadge">0</span>
+        </div>
+      </div>
+      <span class="sutda-round-badge" id="sutdaRoundBadge">섯다</span>
+      <button onclick="toggleHandRanking('sutda')" style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;cursor:pointer;">족보</button>
+      <button class="back-btn" onclick="leaveGame()">&#10005;</button>
     </div>
-    <button onclick="toggleHandRanking('sutda')" style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;cursor:pointer;">족보</button>
-    <div class="sutda-my-balance" id="sutdaMyBalance">0</div>
-  </div>
 
-  <!-- 상대방 영역 -->
-  <div class="sutda-opponents" id="sutdaOpponents"></div>
+    <!-- 상대방 영역 (포커 스타일 컴팩트) -->
+    <div class="sutda-opponents" id="sutdaOpponents"></div>
 
-  <!-- 테이블 중앙 -->
-  <div class="sutda-table">
-    <div class="sutda-table-felt">
+    <!-- 중앙: 판돈 + 내 카드 -->
+    <div class="sutda-center-area">
+      <div class="sutda-pot-glow"></div>
       <div class="sutda-pot-center">
         <div class="sutda-pot-label">판돈</div>
         <div class="sutda-pot-amount" id="sutdaPotAmount">0</div>
       </div>
       <div class="sutda-turn-indicator" id="sutdaTurnIndicator"></div>
     </div>
-  </div>
 
-  <!-- 내 패 영역 -->
-  <div class="sutda-my-area">
-    <div class="sutda-my-info">
-      <div class="sutda-my-name" id="sutdaMyName">나</div>
-      <div class="sutda-my-chips" id="sutdaMyChips">0</div>
+    <!-- 내 패 영역 (포커 히어로카드 스타일) -->
+    <div class="sutda-my-area">
+      <div class="sutda-my-cards" id="sutdaMyCards"></div>
+      <div class="sutda-my-rank" id="sutdaMyRank"></div>
     </div>
-    <div class="sutda-my-cards" id="sutdaMyCards"></div>
-    <div class="sutda-my-rank" id="sutdaMyRank"></div>
+
+    <!-- 배팅 버튼 (포커 스타일) -->
+    <div class="sutda-action-bar" id="sutdaActionBar">
+      <button class="sutda-bet-btn sutda-bet-10k" onclick="sutdaBet('raise',10000)" id="sutdaBtn10k">+1만</button>
+      <button class="sutda-bet-btn sutda-bet-50k" onclick="sutdaBet('raise',50000)" id="sutdaBtn50k">+5만</button>
+      <button class="sutda-bet-btn sutda-bet-100k" onclick="sutdaBet('raise',100000)" id="sutdaBtn100k">+10만</button>
+      <button class="sutda-bet-btn sutda-bet-call" onclick="sutdaBet('call',0)" id="sutdaBtnCall">콜</button>
+      <button class="sutda-bet-btn sutda-bet-die" onclick="sutdaBet('die',0)" id="sutdaBtnDie">다이</button>
+      <button class="sutda-bet-btn sutda-bet-allin" onclick="sutdaBet('allin',0)" id="sutdaBtnAllin">올인</button>
+    </div>
   </div>
 
   <!-- 세륙 선택 패널 -->
@@ -1107,26 +1113,16 @@
     <div class="sutda-seryuk-desc">밀기: 10끗으로 계산 | 깽판: 패 재분배</div>
     <div class="sutda-seryuk-buttons">
       <button class="sutda-seryuk-btn sutda-seryuk-push" onclick="sutdaSeryukChoice('push')">
-        <span class="sutda-seryuk-icon">&#x1F4AA;</span>
+        <span class="sutda-seryuk-icon">💪</span>
         <span>밀기</span>
         <span class="sutda-seryuk-sub">10끗</span>
       </button>
       <button class="sutda-seryuk-btn sutda-seryuk-chaos" onclick="sutdaSeryukChoice('chaos')">
-        <span class="sutda-seryuk-icon">&#x1F300;</span>
+        <span class="sutda-seryuk-icon">🌀</span>
         <span>깽판</span>
         <span class="sutda-seryuk-sub">패 재분배</span>
       </button>
     </div>
-  </div>
-
-  <!-- 배팅 버튼 -->
-  <div class="sutda-action-bar" id="sutdaActionBar">
-    <button class="sutda-bet-btn sutda-bet-10k" onclick="sutdaBet('raise',10000)" id="sutdaBtn10k">+1만</button>
-    <button class="sutda-bet-btn sutda-bet-50k" onclick="sutdaBet('raise',50000)" id="sutdaBtn50k">+5만</button>
-    <button class="sutda-bet-btn sutda-bet-100k" onclick="sutdaBet('raise',100000)" id="sutdaBtn100k">+10만</button>
-    <button class="sutda-bet-btn sutda-bet-call" onclick="sutdaBet('call',0)" id="sutdaBtnCall">콜</button>
-    <button class="sutda-bet-btn sutda-bet-die" onclick="sutdaBet('die',0)" id="sutdaBtnDie">다이</button>
-    <button class="sutda-bet-btn sutda-bet-allin" onclick="sutdaBet('allin',0)" id="sutdaBtnAllin">올인</button>
   </div>
 
   <!-- 결과 오버레이 -->

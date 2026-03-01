@@ -328,9 +328,11 @@ function renderSutdaView(vs) {
   const me = vs.players.find(p => p.id === state.myId);
   const isMyTurn = vs.players[vs.turnIdx]?.id === state.myId && vs.phase === 'betting' && !me?.died;
 
-  // 상단
+  // 상단 (포커 스타일)
   document.getElementById('sutdaPotBadge').textContent = formatChips(vs.pot);
   document.getElementById('sutdaMyBalance').textContent = formatChips(me?.chips || 0);
+  var roundBadge = document.getElementById('sutdaRoundBadge');
+  if (roundBadge) roundBadge.textContent = 'R' + (vs.roundNum || 1);
 
   // 판돈
   document.getElementById('sutdaPotAmount').textContent = formatChips(vs.pot);
@@ -348,7 +350,7 @@ function renderSutdaView(vs) {
     document.getElementById('sutdaTurnIndicator').textContent = '';
   }
 
-  // 상대방
+  // 상대방 (포커 스타일 컴팩트: 아바타 + 이름 + 칩 + 카드 한 줄)
   const oppArea = document.getElementById('sutdaOpponents');
   const ops = vs.players.filter(p => p.id !== state.myId);
   oppArea.innerHTML = ops.map(p => {
@@ -370,7 +372,7 @@ function renderSutdaView(vs) {
       '<div class="sutda-opp-chips">' + formatChips(p.chips) + '</div>' +
       '<div class="sutda-opp-status ' + statusClass + '">' + statusText + '</div>' +
       '<div class="sutda-opp-cards">' + cardsHTML + '</div>' +
-      (p.rank && vs.phase === 'showdown' ? '<div style="font-size:11px;color:#ff1744;font-weight:700;margin-top:2px;">' + p.rank.name + '</div>' : '') +
+      (p.rank && vs.phase === 'showdown' ? '<span style="font-size:10px;color:#ff1744;font-weight:700;margin-left:2px;">' + p.rank.name + '</span>' : '') +
       '</div>';
   }).join('');
 
@@ -381,10 +383,6 @@ function renderSutdaView(vs) {
   } else {
     myCardsEl.innerHTML = hwatuCardHTML(null, true) + hwatuCardHTML(null, true);
   }
-
-  // 내 칩
-  document.getElementById('sutdaMyChips').textContent = formatChips(me?.chips || 0);
-  document.getElementById('sutdaMyName').textContent = me?.name || '나';
 
   // 족보 표시
   const rankEl = document.getElementById('sutdaMyRank');
@@ -409,7 +407,6 @@ function renderSutdaView(vs) {
   if (isMyTurn && vs.phase === 'betting') {
     allBtns.forEach(b => b.disabled = false);
 
-    // 콜 금액 계산
     const toCall = vs.currentBet - (me?.bet || 0);
     const callBtn = document.getElementById('sutdaBtnCall');
     if (toCall > 0) {
@@ -418,7 +415,6 @@ function renderSutdaView(vs) {
       callBtn.textContent = '콜';
     }
 
-    // 칩이 부족하면 레이즈 비활성화
     if (me && me.chips <= 0) {
       document.getElementById('sutdaBtn10k').disabled = true;
       document.getElementById('sutdaBtn50k').disabled = true;

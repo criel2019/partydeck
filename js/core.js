@@ -518,7 +518,8 @@ function handleMessage(peerId, raw) {
     'roulette-spin': () => handleLotteryMessage(peerId, msg),
     // UpDown handlers
     'ud-state': () => { showScreen('updownGame'); renderUpDownView(msg.state); },
-    'ud-choice': () => { if(state.isHost) processUpDownChoice(peerId, msg.choice); },
+    'ud-draw': () => { if(state.isHost) processUpDownDraw(peerId); },
+    'ud-submit': () => { if(state.isHost) processUpDownSubmit(peerId); },
     'ud-addbet': () => {
       if(state.isHost) {
         const text = (typeof msg.text === 'string' ? msg.text : '').trim().slice(0, 100);
@@ -601,7 +602,7 @@ function handleMessage(peerId, raw) {
     // Kingstagram handlers
     'king-state': () => { showScreen('kingstagramGame'); renderKingView(msg.state || msg); },
     'king-roll': () => { if(state.isHost) processKingRoll(peerId); },
-    'king-choose': () => { if(state.isHost) processKingChoose(peerId, msg.number); },
+    // king-choose removed: 1 die per turn, auto-placed
     'king-scoring': () => { if(typeof kingShowScoring === 'function') kingShowScoring(msg.results); },
     'player-left': () => {
       state.players = state.players.filter(p => p.id !== msg.playerId);
@@ -904,11 +905,12 @@ const HAND_RANKINGS = {
     title: '🃏 업다운 규칙',
     content: `<div style="display:flex;flex-direction:column;gap:6px;">
 <div style="color:#ffd700;font-weight:700;">기본 규칙</div>
-<div>현재 카드를 보고 다음 카드가 <b>높을지(UP)</b> <b>낮을지(DOWN)</b> 맞추세요.</div>
-<div>맞추면 다음 플레이어 차례, 틀리면 <b>벌칙!</b></div>
+<div>덱에서 카드를 1장 <b>뽑습니다</b>. 본인만 확인 가능!</div>
+<div>확인 후 <b>제출</b>하면 모두에게 공개됩니다.</div>
+<div>기준 카드보다 <b>높으면 안전</b>, <b>같거나 낮으면 벌칙!</b></div>
 <div style="color:#ff6b35;font-weight:700;margin-top:8px;">특수 카드</div>
-<div><b>J / Q</b> — 틀려도 벌칙 없음! 대신 다른 플레이어를 <b>지목</b>하여 그 사람에게 벌칙 가능</div>
-<div><b>K</b> — 틀려도 벌칙 없음! 원하는 플레이어에게 <b>강제 벌칙</b> 부여</div>
+<div><b>J / Q</b> — 걸려도 벌칙 없음! 대신 다른 플레이어를 <b>지목</b>하여 그 사람에게 벌칙 가능</div>
+<div><b>K</b> — 걸려도 벌칙 없음! 원하는 플레이어에게 <b>강제 벌칙</b> 부여</div>
 <div style="color:#4fc3f7;font-weight:700;margin-top:8px;">벌칙 시스템</div>
 <div>플레이어들이 직접 벌칙을 추가할 수 있어요</div>
 <div>벌칙이 없으면 랜덤 기본 벌칙이 적용됩니다</div>

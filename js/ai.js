@@ -54,7 +54,7 @@ const AI_COUNTS = {
   blackjack: 2,
   idol: 2,
   drinkpoker: 2,
-  kingstagram: 2,
+  kingstagram: 3,
 };
 
 // ========== ENTRY / EXIT ==========
@@ -374,7 +374,7 @@ function handleBroadcastForAI(data) {
         _udContinuePending = false;
         if (!isAIActive() || !udState) return;
         // Guard: if turn already advanced (e.g. human also accepted penalty), skip
-        if (udState.phase === 'playing') return;
+        if (udState.phase === 'drawing') return;
         if (state.isHost && typeof continueUpDown === 'function') continueUpDown();
       }, 800);
       _aiTimers.push(t);
@@ -625,25 +625,21 @@ function aiUpDown() {
     return;
   }
 
-  if (udState.phase !== 'playing') return;
-
-  const currentPlayer = udState.players[udState.turnIdx];
-  if (!currentPlayer || !currentPlayer.id.startsWith('ai-')) return;
-
-  // AI decision: check card value
-  const cardVal = getCardValue(udState.currentCard);
-  let choice;
-
-  if (cardVal <= 6) {
-    choice = 'up';
-  } else if (cardVal >= 8) {
-    choice = 'down';
-  } else {
-    // 7: coin flip
-    choice = Math.random() < 0.5 ? 'up' : 'down';
+  // Phase: drawing -> auto-draw
+  if (udState.phase === 'drawing') {
+    const currentPlayer = udState.players[udState.turnIdx];
+    if (!currentPlayer || !currentPlayer.id.startsWith('ai-')) return;
+    processUpDownDraw(currentPlayer.id);
+    return;
   }
 
-  processUpDownChoice(currentPlayer.id, choice);
+  // Phase: drawn -> auto-submit (scheduling delay provides natural tension)
+  if (udState.phase === 'drawn') {
+    const currentPlayer = udState.players[udState.turnIdx];
+    if (!currentPlayer || !currentPlayer.id.startsWith('ai-')) return;
+    processUpDownSubmit(currentPlayer.id);
+    return;
+  }
 }
 
 // ========== QUICKDRAW AI ==========
@@ -1661,13 +1657,13 @@ function aiDrinkPoker() {
 // ========== KINGSTAGRAM AI ==========
 
 function aiKingstagram() {
-  if (!kingState || kingState.phase === 'gameover' || kingState.phase === 'scoring' || kingState.phase === 'round-end') return;
+  if (!kingState || kingState.phase === 'gameover' || kingState.phase === 'scoring' || kingState.phase === 'placed') return;
 
   var ks = kingState;
   var currentPlayer = ks.players[ks.turnIdx];
   if (!currentPlayer || !currentPlayer.id.startsWith('ai-')) return;
 
-  // === ROLLING PHASE ===
+  // 1 die per turn: just auto-roll
   if (ks.phase === 'rolling') {
     var rollPlayerId = currentPlayer.id;
     var rollTurnIdx = ks.turnIdx;
@@ -1675,77 +1671,7 @@ function aiKingstagram() {
       if (!kingState || kingState.phase !== 'rolling') return;
       if (kingState.turnIdx !== rollTurnIdx) return;
       processKingRoll(rollPlayerId);
-    }, 600 + Math.random() * 400);
+    }, 400 + Math.random() * 400);
     _aiTimers.push(t);
-    return;
-  }
-
-  // === CHOOSING PHASE ===
-  if (ks.phase === 'choosing') {
-    if (!ks.currentRoll || ks.currentRoll.length === 0) return;
-
-    // Group dice by value
-    var groups = {};
-    for (var i = 0; i < ks.currentRoll.length; i++) {
-      var d = ks.currentRoll[i];
-      if (!groups[d.value]) groups[d.value] = { personal: 0, neutral: 0 };
-      if (d.isNeutral) groups[d.value].neutral++;
-      else groups[d.value].personal++;
-    }
-
-    // Score each option: land card value * chance to win
-    var bestNumber = null;
-    var bestScore = -Infinity;
-
-    for (var num in groups) {
-      if (!groups.hasOwnProperty(num)) continue;
-      var n = parseInt(num);
-      var landIdx = n - 1;
-      if (landIdx < 0 || landIdx >= ks.lands.length) continue;
-      var land = ks.lands[landIdx];
-
-      // Calculate total card value for this land
-      var landValue = 0;
-      if (land.cards) {
-        for (var c = 0; c < land.cards.length; c++) landValue += land.cards[c];
-      }
-
-      // My dice on this land after placement
-      var myExisting = (land.dice && land.dice[currentPlayer.id]) || 0;
-      var myTotal = myExisting + groups[num].personal;
-
-      // Find highest competitor
-      var maxOther = land.neutralCount || 0;
-      if (land.dice) {
-        for (var pid in land.dice) {
-          if (pid === currentPlayer.id) continue;
-          if (land.dice[pid] > maxOther) maxOther = land.dice[pid];
-        }
-      }
-
-      // Simple score: value * advantage_factor
-      var advantage = myTotal > maxOther ? 1.5 : (myTotal === maxOther ? 0.2 : 0.5);
-      var diceCount = groups[num].personal + groups[num].neutral;
-      var score = landValue * advantage + diceCount * 5000;
-
-      if (score > bestScore) { bestScore = score; bestNumber = n; }
-    }
-
-    if (bestNumber === null) {
-      // Fallback: pick first available
-      for (var num2 in groups) {
-        if (groups.hasOwnProperty(num2)) { bestNumber = parseInt(num2); break; }
-      }
-    }
-
-    var choosePlayerId = currentPlayer.id;
-    var chooseTurnIdx = ks.turnIdx;
-    var chooseNumber = bestNumber;
-    var t2 = setTimeout(function() {
-      if (!kingState || kingState.phase !== 'choosing') return;
-      if (kingState.turnIdx !== chooseTurnIdx) return;
-      processKingChoose(choosePlayerId, chooseNumber);
-    }, 700 + Math.random() * 500);
-    _aiTimers.push(t2);
   }
 }
