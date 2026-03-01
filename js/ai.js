@@ -1460,7 +1460,7 @@ function aiIdol() {
     // settlement, bankrupt, goto-jail, ending → 모두 자동 진행됨
     // 단, 이 상태에서 자동진행이 멈춘 경우 대비 watchdog 예약
     default: {
-      const autoStates = ['rolling', 'landed', 'gacha-result',
+      const autoStates = ['rolling', 'landed', 'gacha-result', 'gacha-rolling',
         'turn-end-auto', 'settlement', 'bankrupt', 'goto-jail', 'festival'];
       if (autoStates.includes(actionType) && idolIsCpuPlayerId(currentP.id)) {
         // 자동진행 상태에서 너무 오래 머물면 nudge

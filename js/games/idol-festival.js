@@ -938,3 +938,187 @@ function idolEvolutionCelebration(player, newStage) {
     }, 2000);
   });
 }
+
+
+// ═══════════════════════════════════════════════
+// 5. idolGachaAnimation() — 가챠 릴 연출
+// ═══════════════════════════════════════════════
+
+/** 릴 이모지 풀 */
+const _GACHA_REEL_EMOJIS = ['🎤','🎵','💎','⭐','🌟','✨','🎪','🎭','💫','🎶','🌈','🔥','💖','🎸','🎹'];
+
+/**
+ * 가챠 릴 회전 → 등급 판정 연출
+ * @param {string} grade - 'common'|'hit'|'legend'
+ * @param {string} emoji - 결과 이모지
+ * @param {string} label - 결과 라벨 텍스트
+ * @returns {Promise<void>}
+ */
+function idolGachaAnimation(grade, emoji, label) {
+  _festInjectStyles();
+  _gachaInjectStyles();
+  const tier = _festGetTier();
+
+  return new Promise(async (resolve) => {
+    // ── minimal: 릴 없이 딜레이만 ──
+    if (tier === 'minimal') {
+      await _festDelay(500);
+      resolve();
+      return;
+    }
+
+    // ── 레전드는 이 함수에서 처리 안함 ──
+    if (grade === 'legend') {
+      resolve();
+      return;
+    }
+
+    const isReduced = (tier === 'reduced');
+
+    // ── Step 1: 오버레이 등장 ──
+    const overlay = _festEl('div', 'idol-gacha-overlay', [
+      'position:fixed', 'inset:0', 'z-index:9999',
+      'display:flex', 'flex-direction:column',
+      'align-items:center', 'justify-content:center',
+      'background:rgba(0,0,0,0.85)',
+      'opacity:0', 'transition:opacity 0.2s ease',
+      'pointer-events:auto',
+    ].join(';'));
+    document.body.appendChild(overlay);
+    void overlay.offsetWidth;
+    overlay.style.opacity = '1';
+
+    // 가챠 머신 프레임
+    const machine = _festEl('div', 'idol-gacha-machine', '');
+    overlay.appendChild(machine);
+
+    // 타이틀
+    const title = _festEl('div', 'idol-gacha-title', '', escapeHTML('가챠!'));
+    machine.appendChild(title);
+
+    // 릴 박스 컨테이너
+    const reelBox = _festEl('div', 'idol-gacha-reel-box', '');
+    machine.appendChild(reelBox);
+
+    // 릴 슬롯 생성 (reduced=1개, full=3개)
+    const reelCount = isReduced ? 1 : 3;
+    const slots = [];
+    for (let i = 0; i < reelCount; i++) {
+      const slot = _festEl('div', 'idol-gacha-reel-slot', '');
+      const content = _festEl('span', 'idol-gacha-reel-content', '', _gachaRandomEmoji());
+      slot.appendChild(content);
+      reelBox.appendChild(slot);
+      slots.push({ el: slot, content, timer: null });
+    }
+
+    await _festDelay(200);
+
+    // ── Step 2: 릴 스핀 시작 ──
+    slots.forEach(s => {
+      s.content.classList.add('idol-gacha-spinning');
+      s.timer = setInterval(() => {
+        s.content.textContent = _gachaRandomEmoji();
+      }, 60);
+    });
+
+    // ── Step 3: 순차 정지 ──
+    const stopDelays = isReduced ? [800] : [1200, 1800, 2400];
+
+    for (let i = 0; i < slots.length; i++) {
+      await _festDelay(i === 0 ? stopDelays[0] : (stopDelays[i] - stopDelays[i - 1]));
+      // 감속: interval 늘리다가 정지
+      const s = slots[i];
+      clearInterval(s.timer);
+      // 감속 단계
+      s.timer = setInterval(() => { s.content.textContent = _gachaRandomEmoji(); }, 200);
+      await _festDelay(200);
+      clearInterval(s.timer);
+      s.timer = setInterval(() => { s.content.textContent = _gachaRandomEmoji(); }, 300);
+      await _festDelay(300);
+      clearInterval(s.timer);
+      // 최종 이모지 (마지막 릴은 결과 이모지)
+      s.content.textContent = (i === slots.length - 1) ? (emoji || '🌀') : _gachaRandomEmoji();
+      s.content.classList.remove('idol-gacha-spinning');
+      s.content.classList.add('idol-gacha-stopped');
+    }
+
+    // ── Step 4: 등급 판정 연출 ──
+    const reveal = _festEl('div', 'idol-gacha-grade-reveal', '');
+    machine.appendChild(reveal);
+
+    if (grade === 'hit') {
+      // 히트: 화면 플래시 + 바운스 텍스트
+      const flash = _festEl('div', 'idol-gacha-flash', '');
+      overlay.appendChild(flash);
+      await _festDelay(150);
+      if (flash.parentNode) flash.parentNode.removeChild(flash);
+
+      reveal.className = 'idol-gacha-grade-reveal idol-gacha-grade-hit';
+      reveal.innerHTML = escapeHTML('✨ 히트!');
+      await _festDelay(1000);
+    } else {
+      // 커먼: 페이드인
+      reveal.className = 'idol-gacha-grade-reveal idol-gacha-grade-common';
+      reveal.innerHTML = escapeHTML('🌀 커먼');
+      await _festDelay(800);
+    }
+
+    // ── Step 5: 보상 텍스트 페이드인 ──
+    if (label) {
+      const reward = _festEl('div', 'idol-gacha-reward-text', '', escapeHTML(label));
+      machine.appendChild(reward);
+      await _festDelay(600);
+    }
+
+    // 닫기
+    overlay.style.opacity = '0';
+    await _festDelay(300);
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+
+    resolve();
+  });
+}
+
+/** 랜덤 릴 이모지 반환 */
+function _gachaRandomEmoji() {
+  return _GACHA_REEL_EMOJIS[Math.floor(Math.random() * _GACHA_REEL_EMOJIS.length)];
+}
+
+/** 가챠 전용 스타일 주입 (한 번만) */
+let _gachaStyleInjected = false;
+function _gachaInjectStyles() {
+  if (_gachaStyleInjected) return;
+  _gachaStyleInjected = true;
+
+  const css = `
+    @keyframes idol-gacha-spin {
+      0%   { transform: translateY(0); }
+      100% { transform: translateY(-20px); }
+    }
+    @keyframes idol-gacha-bounce {
+      0%   { transform: scale(1) translateY(0); }
+      40%  { transform: scale(1.15) translateY(-6px); }
+      70%  { transform: scale(0.95) translateY(2px); }
+      100% { transform: scale(1) translateY(0); }
+    }
+    @keyframes idol-gacha-hit-bounce {
+      0%   { transform: scale(0.5); opacity: 0; }
+      50%  { transform: scale(1.3); opacity: 1; }
+      75%  { transform: scale(0.9); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes idol-gacha-flash-anim {
+      0%   { opacity: 0.9; }
+      100% { opacity: 0; }
+    }
+    @keyframes idol-gacha-reward-fadein {
+      0%   { opacity: 0; transform: translateY(8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+  `;
+
+  const styleEl = document.createElement('style');
+  styleEl.id = 'idol-gacha-reel-styles';
+  styleEl.textContent = css;
+  document.head.appendChild(styleEl);
+}

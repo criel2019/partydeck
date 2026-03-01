@@ -4800,3 +4800,389 @@
 /* reduced: 글로우/파티클/노이즈만 비활성화 */
 .idol-fx-reduced .idol-legend-particle { display: none; }
 .idol-fx-reduced .ies-noise { display: none; }
+
+
+/* ═══════════════════════════════════════════════
+   9. 가챠 릴 연출
+   ═══════════════════════════════════════════════ */
+
+.idol-gacha-overlay {
+  font-family: inherit;
+}
+
+.idol-gacha-machine {
+  background: linear-gradient(135deg, #1a1a2e, #0d0d1a);
+  border: 2px solid #ffd700;
+  border-radius: 16px;
+  padding: 24px 20px;
+  max-width: 340px;
+  width: min(340px, 90vw);
+  text-align: center;
+  box-shadow:
+    0 0 20px rgba(255, 215, 0, 0.2),
+    0 0 60px rgba(255, 215, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.idol-gacha-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffd700;
+  letter-spacing: 4px;
+  margin-bottom: 20px;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+}
+
+.idol-gacha-reel-box {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.idol-gacha-reel-slot {
+  width: 60px;
+  height: 60px;
+  border: 2px solid #ffd70080;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.idol-gacha-reel-content {
+  font-size: 32px;
+  line-height: 1;
+  display: block;
+}
+
+.idol-gacha-reel-content.idol-gacha-spinning {
+  animation: idol-gacha-spin 0.1s linear infinite alternate;
+}
+
+.idol-gacha-reel-content.idol-gacha-stopped {
+  animation: idol-gacha-bounce 0.35s ease-out forwards;
+}
+
+/* 등급 판정 */
+.idol-gacha-grade-reveal {
+  margin-top: 4px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.idol-gacha-grade-common {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+  animation: idol-gacha-reward-fadein 0.5s ease-out forwards;
+}
+
+.idol-gacha-grade-hit {
+  font-size: 24px;
+  color: #ffd700;
+  text-shadow: 0 0 16px rgba(255, 215, 0, 0.8);
+  animation: idol-gacha-hit-bounce 0.5s ease-out forwards;
+}
+
+/* 히트 플래시 (전체 화면) */
+.idol-gacha-flash {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.85);
+  z-index: 10000;
+  pointer-events: none;
+  animation: idol-gacha-flash-anim 0.15s ease-out forwards;
+}
+
+/* 보상 텍스트 */
+.idol-gacha-reward-text {
+  margin-top: 12px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  animation: idol-gacha-reward-fadein 0.4s ease-out forwards;
+}
+
+/* minimal 티어: 가챠 애니메이션 비활성화 */
+.idol-fx-minimal .idol-gacha-reel-content {
+  animation: none !important;
+}
+
+/* reduced 티어: 플래시 비활성화 */
+.idol-fx-reduced .idol-gacha-flash {
+  display: none;
+}
+
+
+/* ═══════════════════════════════════════════════
+   10. 스탯 변화 플로팅 텍스트
+   ═══════════════════════════════════════════════ */
+
+.idol-stat-float {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 16px;
+  font-weight: 900;
+  pointer-events: none;
+  z-index: 500;
+  opacity: 0;
+  white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  transition: none;
+}
+.idol-stat-float.positive { color: #4cff8b; }
+.idol-stat-float.negative { color: #ff4c4c; }
+.idol-stat-float.animate {
+  animation: idol-stat-float-up 1.1s ease-out forwards;
+}
+
+@keyframes idol-stat-float-up {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(0) scale(0.8); }
+  15%  { opacity: 1; transform: translateX(-50%) translateY(-8px) scale(1.1); }
+  70%  { opacity: 1; transform: translateX(-50%) translateY(-30px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-50px) scale(0.9); }
+}
+
+
+/* ═══════════════════════════════════════════════
+   11. 이벤트 카드 효과 플래시
+   ═══════════════════════════════════════════════ */
+
+.idol-event-effect-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 400;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.idol-event-effect-flash.positive {
+  background: radial-gradient(ellipse at center, rgba(76,255,139,0.25) 0%, transparent 70%);
+}
+.idol-event-effect-flash.negative {
+  background: radial-gradient(ellipse at center, rgba(255,76,76,0.25) 0%, transparent 70%);
+}
+.idol-event-effect-flash.active {
+  opacity: 1;
+  animation: idol-event-flash-pulse 0.5s ease-out forwards;
+}
+
+@keyframes idol-event-flash-pulse {
+  0%   { opacity: 0; }
+  30%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+
+/* ═══════════════════════════════════════════════
+   12. 수수료 코인 날아가기
+   ═══════════════════════════════════════════════ */
+
+.idol-rent-coin-fly {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  font-size: 28px;
+  z-index: 500;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1);
+  transition: none;
+}
+.idol-rent-coin-fly.fly {
+  animation: idol-coin-fly 0.9s ease-out forwards;
+}
+
+@keyframes idol-coin-fly {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+  50%  { opacity: 1; transform: translate(calc(-50% + 60px), calc(-50% - 40px)) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + 100px), calc(-50% - 80px)) scale(0.5); }
+}
+
+
+/* ═══════════════════════════════════════════════
+   13. 타이머 긴박감 연출
+   ═══════════════════════════════════════════════ */
+
+.idol-timer-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 300;
+  pointer-events: none;
+  box-shadow: inset 0 0 100px rgba(255, 0, 0, var(--vignette-opacity, 0));
+  transition: box-shadow 0.25s ease;
+}
+
+.idol-timer-countdown {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 72px;
+  font-weight: 900;
+  z-index: 310;
+  pointer-events: none;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+  transition: color 0.2s ease;
+}
+.idol-countdown-bounce {
+  animation: idol-countdown-pulse 0.3s ease-out;
+}
+@keyframes idol-countdown-pulse {
+  0%   { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+}
+
+.idol-timer-shake {
+  animation: idol-shake 0.15s linear infinite;
+}
+@keyframes idol-shake {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-2px, 1px); }
+  50%  { transform: translate(2px, -1px); }
+  75%  { transform: translate(-1px, 2px); }
+  100% { transform: translate(1px, -2px); }
+}
+
+/* TIME OUT 오버레이 */
+.idol-timeout-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.idol-timeout-overlay.active {
+  opacity: 1;
+}
+.idol-timeout-text {
+  font-size: 36px;
+  font-weight: 900;
+  color: #ff4444;
+  text-shadow: 0 0 20px rgba(255, 68, 68, 0.6);
+  animation: idol-timeout-slam 0.3s ease-out;
+}
+@keyframes idol-timeout-slam {
+  0%   { transform: scale(2); opacity: 0; }
+  60%  { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+
+/* ═══════════════════════════════════════════════
+   14. 턴 전환 배너
+   ═══════════════════════════════════════════════ */
+
+.idol-turn-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 450;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(20,20,30,0.92), rgba(30,30,50,0.92));
+  border-bottom: 3px solid var(--banner-color, #ffd700);
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+  pointer-events: none;
+}
+.idol-turn-banner.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+.idol-turn-banner-avatar {
+  font-size: 24px;
+}
+.idol-turn-banner-name {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--banner-color, #ffd700);
+}
+.idol-turn-banner-label {
+  font-size: 16px;
+  color: rgba(255,255,255,0.8);
+}
+
+
+/* ═══════════════════════════════════════════════
+   15. 감옥 진입 연출
+   ═══════════════════════════════════════════════ */
+
+.idol-jail-entry {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.idol-jail-entry.active {
+  opacity: 1;
+}
+.idol-jail-emoji {
+  font-size: 56px;
+  animation: idol-jail-slam 0.4s ease-out;
+}
+.idol-jail-text {
+  font-size: 24px;
+  font-weight: 900;
+  color: #ff6b6b;
+  margin-top: 8px;
+  animation: idol-jail-fadein 0.3s ease-out 0.2s both;
+}
+@keyframes idol-jail-slam {
+  0%   { transform: scale(3); opacity: 0; }
+  50%  { transform: scale(0.85); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes idol-jail-fadein {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.idol-jail-shake {
+  animation: idol-shake 0.12s linear 3;
+}
+
+
+/* ═══════════════════════════════════════════════
+   16. FX 티어 분기 — 새 연출들
+   ═══════════════════════════════════════════════ */
+
+/* minimal: 모든 새 연출 비활성화 */
+.idol-fx-minimal .idol-stat-float,
+.idol-fx-minimal .idol-event-effect-flash,
+.idol-fx-minimal .idol-rent-coin-fly,
+.idol-fx-minimal .idol-timer-vignette,
+.idol-fx-minimal .idol-timer-countdown,
+.idol-fx-minimal .idol-timeout-overlay,
+.idol-fx-minimal .idol-jail-entry {
+  display: none !important;
+}
+.idol-fx-minimal .idol-turn-banner {
+  /* 배너는 minimal에서도 표시 (중요 정보) */
+  transition-duration: 0.1s;
+}
+
+/* reduced: 흔들림/비그넷만 비활성화 */
+.idol-fx-reduced .idol-timer-vignette { display: none; }
+.idol-fx-reduced .idol-timer-shake,
+.idol-fx-reduced .idol-jail-shake { animation: none !important; }

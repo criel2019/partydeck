@@ -285,17 +285,92 @@ function idolStopTurnTimer() {
   if (_idolTurnTimer) { clearInterval(_idolTurnTimer); _idolTurnTimer = null; }
   const el = document.getElementById('idolTimerWrap');
   if (el) el.style.display = 'none';
+  // 긴박감 연출 제거
+  _idolRemoveTimerUrgency();
+}
+
+function _idolRemoveTimerUrgency() {
+  const v = document.getElementById('idolTimerVignette');
+  if (v) v.remove();
+  const c = document.getElementById('idolTimerCountdown');
+  if (c) c.remove();
+  const game = document.getElementById('idolGame');
+  if (game) game.classList.remove('idol-timer-shake');
+}
+
+// ─── 턴 전환 배너 ────────────────────────────
+function idolShowTurnBanner(player) {
+  document.querySelectorAll('.idol-turn-banner').forEach(el => el.remove());
+  const container = document.getElementById('idolGame');
+  if (!container) return;
+
+  const isCpu = idolIsCpuPlayerId(player.id);
+  const duration = isCpu ? 500 : 1200;
+  const playerIdx = idolState.order.indexOf(player.id);
+  const color = (typeof PLAYER_COLORS !== 'undefined' && PLAYER_COLORS[playerIdx]) || '#ffd700';
+
+  const banner = document.createElement('div');
+  banner.className = 'idol-turn-banner';
+  banner.style.setProperty('--banner-color', color);
+  banner.innerHTML = `<span class="idol-turn-banner-avatar">${player.avatar}</span>
+    <span class="idol-turn-banner-name">${escapeHTML(player.name)}</span>
+    <span class="idol-turn-banner-label">의 턴!</span>`;
+
+  container.appendChild(banner);
+  requestAnimationFrame(() => banner.classList.add('visible'));
+  setTimeout(() => {
+    banner.classList.remove('visible');
+    setTimeout(() => banner.remove(), 300);
+  }, duration);
+}
+
+// ─── 감옥 진입 연출 ──────────────────────────
+function idolShowJailEntry(player) {
+  if (_idolFxTier === 'minimal') return;
+  const container = document.getElementById('idolGame');
+  if (!container) return;
+
+  const el = document.createElement('div');
+  el.className = 'idol-jail-entry';
+  el.innerHTML = '<div class="idol-jail-emoji">🚔</div><div class="idol-jail-text">수감!</div>';
+  container.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('active'));
+
+  // 화면 흔들림
+  container.classList.add('idol-jail-shake');
+  setTimeout(() => container.classList.remove('idol-jail-shake'), 350);
+
+  setTimeout(() => {
+    el.classList.remove('active');
+    setTimeout(() => el.remove(), 300);
+  }, 900);
 }
 
 function idolOnTimerExpire() {
   if (!state.isHost || !idolState) return;
   const p = idolCurrentPlayer();
   if (!p || p.bankrupt) return;
+  _idolRemoveTimerUrgency();
+
+  // TIME OUT 전체화면 연출
+  const container = document.getElementById('idolGame');
+  if (container && _idolFxTier !== 'minimal') {
+    const tout = document.createElement('div');
+    tout.className = 'idol-timeout-overlay';
+    tout.innerHTML = '<div class="idol-timeout-text">⏰ TIME OUT!</div>';
+    container.appendChild(tout);
+    requestAnimationFrame(() => tout.classList.add('active'));
+    setTimeout(() => {
+      tout.classList.remove('active');
+      setTimeout(() => tout.remove(), 300);
+    }, 800);
+  }
+
   showToast(`⏰ ${escapeHTML(p.name)} 시간 초과! 턴을 넘깁니다.`);
   idolState.pendingAction = { type: 'turn-end-auto' };
   broadcastIdolState();
   idolRenderAll();
-  setTimeout(() => idolOnTurnEnd(false), 400);
+  setTimeout(() => idolOnTurnEnd(false), 1000);
 }
 
 function idolExtendTimer(type) {
@@ -345,6 +420,51 @@ function idolRenderTimerUI(remainingMs) {
     <span class="idol-timer-text ${barClass}">${secs}s</span>
     ${extendBtns}
   `;
+
+  // ── 10초 이하: 긴박감 연출 ──
+  if (_idolFxTier === 'minimal') return;
+  const game = document.getElementById('idolGame');
+  if (!game) return;
+
+  if (isCritical && isMyTurn) {
+    // 붉은 비그넷
+    let vignette = document.getElementById('idolTimerVignette');
+    if (!vignette) {
+      vignette = document.createElement('div');
+      vignette.id = 'idolTimerVignette';
+      vignette.className = 'idol-timer-vignette';
+      game.appendChild(vignette);
+    }
+    const intensity = Math.min(0.6, ((10 - secs) / 10) * 0.6);
+    vignette.style.setProperty('--vignette-opacity', intensity.toFixed(2));
+
+    // 대형 카운트다운 숫자
+    let countdown = document.getElementById('idolTimerCountdown');
+    if (!countdown) {
+      countdown = document.createElement('div');
+      countdown.id = 'idolTimerCountdown';
+      countdown.className = 'idol-timer-countdown';
+      game.appendChild(countdown);
+    }
+    if (countdown.dataset.lastSec !== String(secs)) {
+      countdown.dataset.lastSec = String(secs);
+      countdown.textContent = secs;
+      countdown.classList.remove('idol-countdown-bounce');
+      void countdown.offsetWidth; // reflow
+      countdown.classList.add('idol-countdown-bounce');
+    }
+    const countdownColor = secs <= 5 ? '#ff2222' : '#ff6b35';
+    countdown.style.color = countdownColor;
+
+    // 5초 이하: 화면 흔들림
+    if (secs <= 5) {
+      game.classList.add('idol-timer-shake');
+    } else {
+      game.classList.remove('idol-timer-shake');
+    }
+  } else {
+    _idolRemoveTimerUrgency();
+  }
 }
 
 // ─── 아이템 슬롯 관리 ─────────────────────────────
@@ -500,6 +620,7 @@ function idolInitGame(selections) {
     shopOwners: {},    // { shopId: playerId }
     shopLevels: {},    // { shopId: 0-3 }
     pendingAction: null,
+    lastFestivalTurn: 0, // 마지막 페스티벌이 실행된 턴 (중복 방지)
   };
 
   _idolSelectionLocked = false;
@@ -599,9 +720,12 @@ function idolRollDice() {
       idolState.pendingAction = { type: 'goto-jail', dice: [d1, d2] };
       broadcastIdolState();
       idolRenderAll();
-      // 다이스 애니메이션 후 자동 턴 진행
+      // 다이스 애니메이션 후 감옥 연출 → 자동 턴 진행
       idolShowDiceOverlay(d1, d2, true, () => {
-        if (idolState?.pendingAction?.type === 'goto-jail') idolOnTurnEnd(false);
+        if (typeof idolShowJailEntry === 'function') idolShowJailEntry(p);
+        setTimeout(() => {
+          if (idolState?.pendingAction?.type === 'goto-jail') idolOnTurnEnd(false);
+        }, 500);
       });
       return;
     }
@@ -654,6 +778,7 @@ function idolProcessCell(p, pos, isDouble) {
     case 'police':
       p.jailTurns = 1;
       p.jailCount = (p.jailCount || 0) + 1; // 콤보 추적용
+      if (typeof idolShowJailEntry === 'function') idolShowJailEntry(p);
       idolShowCellResult(p, '🚓 경찰서! 1턴 수감');
       idolState.pendingAction = { type: 'turn-end-auto' };
       break;
@@ -727,6 +852,7 @@ function idolHandleShop(p, shopId, isDouble) {
     }
 
     idolShowCellResult(p, `💰 ${shop.name} 수수료 ${rent}만원`);
+    if (typeof idolShowRentEffect === 'function') idolShowRentEffect(p.id, ownerId, rent);
 
     // 수수료 낸 후: "아이템 구매" vs "훈련" 선택 (스펙: 타 유저 땅 도착 시 선택 구조)
     idolState.pendingAction = {
@@ -1057,11 +1183,13 @@ function idolChooseEvent(cardId, choiceIdx) {
     // 역전 카드 직접 효과
     idolApplyEffect(p, card.effect);
     idolShowFavorToast(p.id, 'up', `⚡ 역전 카드! +${card.effect.fame} 인기도`);
+    if (typeof idolShowEffectFloats === 'function') idolShowEffectFloats(card.effect);
   } else {
     const choice = card.choices[choiceIdx];
     if (!choice) return;
     const effect = typeof choice.effect === 'function' ? choice.effect(p, idolState) : choice.effect;
     idolApplyEffect(p, effect);
+    if (typeof idolShowEffectFloats === 'function') idolShowEffectFloats(effect);
     if (choice.allPlayers) {
       idolState.players.forEach(pl => idolApplyEffect(pl, choice.allPlayers));
     }
@@ -1077,7 +1205,7 @@ function idolChooseEvent(cardId, choiceIdx) {
   idolState.pendingAction = { type: 'turn-end-auto' };
   broadcastIdolState();
   idolRenderAll();
-  setTimeout(() => idolOnTurnEnd(false), 600);
+  setTimeout(() => idolOnTurnEnd(false), 1000);
 }
 
 // ─── 가챠 ─────────────────────────────────────
@@ -1089,23 +1217,34 @@ function idolDoGacha() {
   const rank = idolGetRank(p.id);
   const result = rollGachaWithRank(rank, activePlayers.length);
 
-  idolApplyGachaReward(p, result.reward);
-
-  if (result.grade === 'legend') {
-    p.favor += 2;
-    p.lastFavorDir = 'up';
-    p.diamond = (p.diamond || 0) + 1; // 레전드 보상: 다이아 +1
-  }
-
-  idolState.pendingAction = { type: 'gacha-result', result, playerId: p.id };
+  // 릴 연출 → 결과 적용 → 등급별 후속 연출
+  idolState.pendingAction = { type: 'gacha-rolling', playerId: p.id };
   broadcastIdolState();
   idolRenderAll();
 
-  // 레전드 당첨 시 축하 연출 후 턴 종료
-  if (result.grade === 'legend' && typeof idolLegendCelebration === 'function') {
-    idolLegendCelebration(p, result.reward).then(() => idolOnTurnEnd(false));
+  const afterAnimation = () => {
+    // 연출 끝난 후 보상 적용
+    idolApplyGachaReward(p, result.reward);
+    if (result.grade === 'legend') {
+      p.favor += 2;
+      p.lastFavorDir = 'up';
+      p.diamond = (p.diamond || 0) + 1;
+    }
+    idolState.pendingAction = { type: 'gacha-result', result, playerId: p.id };
+    broadcastIdolState();
+    idolRenderAll();
+
+    if (result.grade === 'legend' && typeof idolLegendCelebration === 'function') {
+      idolLegendCelebration(p, result.reward).then(() => idolOnTurnEnd(false));
+    } else {
+      setTimeout(() => idolOnTurnEnd(false), result.grade === 'legend' ? 2500 : 1000);
+    }
+  };
+
+  if (typeof idolGachaAnimation === 'function') {
+    idolGachaAnimation(result.grade, result.emoji, result.label).then(afterAnimation);
   } else {
-    setTimeout(() => idolOnTurnEnd(false), result.grade === 'legend' ? 2500 : 1500);
+    setTimeout(afterAnimation, 500);
   }
 }
 
@@ -1277,12 +1416,14 @@ function idolOnTurnEnd(isDouble) {
     return;
   }
 
-  // 5턴 결산 → 페스티벌 시스템 (이미 settlement/festival 중이면 중복 방지)
+  // 5턴 결산 → 페스티벌 시스템 (이미 이번 턴에서 실행했으면 스킵)
   if (idolState.turnNum % FESTIVAL_INTERVAL === 0
+      && idolState.lastFestivalTurn !== idolState.turnNum
       && idolState.pendingAction?.type !== 'settlement'
       && idolState.pendingAction?.type !== 'festival') {
     // 페스티벌 시스템이 로드됐으면 풀 연출, 아니면 기존 간이 결산
     if (typeof idolFestivalStart === 'function') {
+      idolState.lastFestivalTurn = idolState.turnNum; // 중복 방지 마킹
       idolState.pendingAction = { type: 'festival' };
       broadcastIdolState();
       idolRenderAll();
@@ -1345,8 +1486,11 @@ function idolAdvanceTurn() {
   broadcastIdolState();
   idolRenderAll();
 
-  // 턴 타이머 시작 (CPU 턴은 타이머 불필요)
+  // 턴 전환 배너 표시
   const turnP = idolCurrentPlayer();
+  if (turnP) idolShowTurnBanner(turnP);
+
+  // 턴 타이머 시작 (CPU 턴은 타이머 불필요)
   if (turnP && !idolIsCpuPlayerId(turnP.id)) {
     idolStartTurnTimer();
   }
@@ -2139,6 +2283,107 @@ function idolShowFavorToast(playerId, dir, customMsg) {
   div.textContent = customMsg ?? (dir === 'up' ? '💗 호감도 상승!' : '💔 호감도 하락');
   document.body.appendChild(div);
   setTimeout(() => div.remove(), 2600);
+}
+
+// ─── 스탯 변화 플로팅 텍스트 ────────────────
+function idolShowStatFloat(statName, amount) {
+  if (!amount || amount === 0) return;
+  const STAT_MAP = {
+    money: { icon: '💰', label: '자금', cls: 'res-money' },
+    fame:  { icon: '⭐', label: '인기도', cls: 'res-fame' },
+    talent:{ icon: '🎵', label: '재능', cls: 'res-talent' },
+    looks: { icon: '💄', label: '외모', cls: 'res-looks' },
+    favor: { icon: '💗', label: '호감도', cls: 'res-favor' },
+  };
+  const info = STAT_MAP[statName];
+  if (!info) return;
+
+  // 리소스바의 해당 아이템 위치 기준으로 플로팅 표시
+  const target = document.querySelector(`.idol-res-item.${info.cls}`);
+  const container = document.getElementById('idolGame');
+  if (!container) return;
+
+  const el = document.createElement('div');
+  el.className = `idol-stat-float ${amount > 0 ? 'positive' : 'negative'}`;
+  const sign = amount > 0 ? '+' : '';
+  const displayVal = statName === 'money' ? `${sign}${amount.toLocaleString()}` : `${sign}${amount}`;
+  el.textContent = `${info.icon} ${displayVal}`;
+
+  if (target) {
+    const rect = target.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    el.style.left = `${rect.left - containerRect.left + rect.width / 2}px`;
+    el.style.top = `${rect.top - containerRect.top}px`;
+  } else {
+    el.style.left = '50%';
+    el.style.top = '30%';
+  }
+
+  container.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('animate'));
+  setTimeout(() => el.remove(), 1200);
+}
+
+// ─── 이벤트 카드 효과 연출 ──────────────────
+function idolShowEventEffect(effect, isPositive) {
+  if (_idolFxTier === 'minimal') return;
+  const container = document.getElementById('idolGame');
+  if (!container) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = `idol-event-effect-flash ${isPositive ? 'positive' : 'negative'}`;
+  container.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('active'));
+  setTimeout(() => overlay.remove(), 600);
+}
+
+// 이벤트 카드 효과를 스탯 플로팅으로 표시
+function idolShowEffectFloats(effect) {
+  if (!effect) return;
+  let delay = 0;
+  const entries = Object.entries(effect).filter(([k]) =>
+    ['fame', 'money', 'talent', 'looks', 'favor'].includes(k)
+  );
+  const hasPositive = entries.some(([, v]) => (typeof v === 'number' && v > 0));
+  const hasNegative = entries.some(([, v]) => (typeof v === 'number' && v < 0));
+
+  // 긍정/부정 화면 플래시
+  if (hasPositive && !hasNegative) idolShowEventEffect(null, true);
+  else if (hasNegative && !hasPositive) idolShowEventEffect(null, false);
+
+  entries.forEach(([stat, val]) => {
+    if (typeof val !== 'number' || val === 0) return;
+    setTimeout(() => idolShowStatFloat(stat, val), delay);
+    delay += 200;
+  });
+}
+
+// ─── 수수료 납부 코인 연출 ──────────────────
+function idolShowRentEffect(payerId, ownerId, amount) {
+  if (_idolFxTier === 'minimal') return;
+  const container = document.getElementById('idolGame');
+  if (!container) return;
+
+  // 코인 이펙트 오버레이
+  const coinEl = document.createElement('div');
+  coinEl.className = 'idol-rent-coin-fly';
+  coinEl.textContent = '💰';
+  container.appendChild(coinEl);
+
+  // 금액 표시 (납부자 기준)
+  if (payerId === state.myId) {
+    const amtEl = document.createElement('div');
+    amtEl.className = 'idol-stat-float negative';
+    amtEl.textContent = `💰 -${amount.toLocaleString()}`;
+    amtEl.style.left = '50%';
+    amtEl.style.top = '40%';
+    container.appendChild(amtEl);
+    requestAnimationFrame(() => amtEl.classList.add('animate'));
+    setTimeout(() => amtEl.remove(), 1200);
+  }
+
+  requestAnimationFrame(() => coinEl.classList.add('fly'));
+  setTimeout(() => coinEl.remove(), 1000);
 }
 
 // ─── 셀 탭 (정보 보기) ───────────────────────
