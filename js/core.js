@@ -415,8 +415,8 @@ function broadcast(data, exclude) {
     if(conn.open) { conn.send(msg); console.log('[PartyDeck]   → 전송:', pid); }
     else console.warn('[PartyDeck]   → 연결 닫힘:', pid);
   });
-  // Trigger AI for CPU players in the room (lobby CPU mode)
-  if(data && data.type && typeof handleBroadcastForAI === 'function' && state.players.some(p => p.id.startsWith('ai-'))) {
+  // Trigger AI for CPU players in the room (lobby CPU mode + idol cpu* mode)
+  if(data && data.type && typeof handleBroadcastForAI === 'function' && state.players.some(p => p.id.startsWith('ai-') || /^cpu\d/.test(p.id))) {
     handleBroadcastForAI(data);
   }
 }

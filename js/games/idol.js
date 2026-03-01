@@ -627,6 +627,7 @@ function idolInitGame(selections) {
   // 카메라 초기화 (rAF 루프도 정리)
   if (_idolCamRafId) { cancelAnimationFrame(_idolCamRafId); _idolCamRafId = null; }
   _idolCam = { x: 0, y: 0, zoom: 1, tx: 0, ty: 0, tzoom: 1 };
+  _idolStartCpuWatchdog(); // CPU 결정 멈춤 방지 워치독 시작
   broadcastIdolState();
   idolBgInit(); // 씬 배경 초기화
   idolRenderAll();
@@ -664,6 +665,54 @@ function broadcastIdolState() {
   if (!state.isHost) return;
   const publicState = idolGetPublicState();
   broadcast({ type: 'idol-state', state: publicState });
+  // CPU 턴이면 AI 액션 스케줄
+  _idolScheduleCpuAction();
+}
+
+// ─── CPU 액션 스케줄러 (직접 호출 — 글로벌 AI 인프라 의존 없이) ───
+let _idolCpuActionTimer = null;
+function _idolScheduleCpuAction() {
+  if (_idolCpuActionTimer) { clearTimeout(_idolCpuActionTimer); _idolCpuActionTimer = null; }
+  if (!idolState || idolState.phase !== 'playing') return;
+  const cp = idolCurrentPlayer();
+  if (!cp || !idolIsCpuPlayerId(cp.id)) return;
+  const action = idolState.pendingAction;
+  if (!action) return;
+  // 자동 진행 상태는 별도 타이머/Promise로 처리됨 — 스킵
+  const autoStates = ['rolling', 'landed', 'gacha-rolling', 'gacha-result',
+    'turn-end-auto', 'settlement', 'bankrupt', 'goto-jail', 'ending', 'festival'];
+  if (autoStates.includes(action.type)) return;
+  _idolCpuActionTimer = setTimeout(() => {
+    _idolCpuActionTimer = null;
+    if (!idolState || idolState.phase !== 'playing') return;
+    const cp2 = idolCurrentPlayer();
+    if (!cp2 || !idolIsCpuPlayerId(cp2.id)) return;
+    if (typeof aiIdol === 'function') aiIdol();
+  }, 800 + Math.floor(Math.random() * 400));
+}
+
+// ─── CPU 워치독 (결정 상태에서 멈춤 방지) ────────
+let _idolCpuWatchdog = null;
+function _idolStartCpuWatchdog() {
+  _idolStopCpuWatchdog();
+  _idolCpuWatchdog = setInterval(() => {
+    if (!idolState || idolState.phase !== 'playing') { _idolStopCpuWatchdog(); return; }
+    const cp = idolCurrentPlayer();
+    if (!cp || !idolIsCpuPlayerId(cp.id)) return;
+    const action = idolState.pendingAction;
+    if (!action) return;
+    const decisionStates = ['waiting-roll', 'roll-again', 'shop-buy', 'shop-upgrade',
+      'shop-train-self', 'shop-train-other', 'land-choice', 'event-card', 'chance-card',
+      'item-shop', 'item-replace', 'gacha', 'stage-gacha', 'train-result',
+      'shop-takeover-offer'];
+    if (decisionStates.includes(action.type)) {
+      if (typeof aiIdol === 'function') aiIdol();
+    }
+  }, 4000);
+}
+function _idolStopCpuWatchdog() {
+  if (_idolCpuWatchdog) { clearInterval(_idolCpuWatchdog); _idolCpuWatchdog = null; }
+  if (_idolCpuActionTimer) { clearTimeout(_idolCpuActionTimer); _idolCpuActionTimer = null; }
 }
 
 function idolGetPublicState() {
@@ -1513,6 +1562,7 @@ function idolAdvanceTurn() {
 // ─── 게임 종료 ────────────────────────────────
 function idolEndGame() {
   if (!idolState) return;
+  _idolStopCpuWatchdog(); // CPU 워치독 정리
 
   // 인기도 순위 정렬
   const ranked = [...idolState.players]
@@ -2418,7 +2468,8 @@ let _idolSelections = {};
 let _idolSelectionLocked = false;
 
 function idolIsCpuPlayerId(pid) {
-  return /^cpu\d+$/.test(String(pid ?? ''));
+  const s = String(pid ?? '');
+  return /^cpu\d+$/.test(s) || /^ai-\d+$/.test(s);
 }
 
 // ─── 플레이어 연결 끊김 처리 ──────────────────

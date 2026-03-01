@@ -6,7 +6,7 @@ let practiceMode = false;
 
 // Returns true when AI players should be active (practice mode OR lobby CPU mode)
 function isAIActive() {
-  return practiceMode || (state && state.players && state.players.some(p => p.id.startsWith('ai-')));
+  return practiceMode || (state && state.players && state.players.some(p => p.id.startsWith('ai-') || /^cpu\d/.test(p.id)));
 }
 
 let _originalBroadcast = null;
@@ -80,6 +80,7 @@ function leavePracticeMode() {
   if (typeof sutdaHost !== 'undefined') sutdaHost = null;
   if (typeof bsState !== 'undefined') bsState = null;
   if (typeof idolState !== 'undefined') idolState = null;
+  if (typeof _idolStopCpuWatchdog === 'function') _idolStopCpuWatchdog();
   if (typeof idolResetSelectionState === 'function') idolResetSelectionState();
   if (typeof stCleanup === 'function') stCleanup();
   if (typeof tetCleanup === 'function') tetCleanup();
