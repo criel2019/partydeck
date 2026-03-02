@@ -1386,6 +1386,20 @@ function aiIdol() {
       break;
     }
 
+    // ── 내 땅 선택 (아이템 구매 vs 무료 훈련) ────
+    case 'own-land-choice': {
+      if (!action.playerId || action.playerId !== currentP.id) break;
+      const r3 = Math.random();
+      if (r3 < 0.70 && typeof idolTrainAtShop === 'function') {
+        idolTrainAtShop(action.shopId, true); // 70% 무료 훈련
+      } else if (r3 < 0.90 && typeof idolOpenItemShop === 'function') {
+        idolOpenItemShop(action.shopId); // 20% 아이템 구매
+      } else if (typeof idolPassShop === 'function') {
+        idolPassShop(); // 10% 패스
+      }
+      break;
+    }
+
     // ── 타인 땅 도착 시 선택 (아이템 구매 vs 훈련) ───
     case 'land-choice': {
       if (!action.playerId || action.playerId !== currentP.id) break;

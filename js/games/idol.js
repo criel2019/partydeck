@@ -702,7 +702,8 @@ function _idolStartCpuWatchdog() {
     const action = idolState.pendingAction;
     if (!action) return;
     const decisionStates = ['waiting-roll', 'roll-again', 'shop-buy', 'shop-upgrade',
-      'shop-train-self', 'shop-train-other', 'land-choice', 'event-card', 'chance-card',
+      'shop-train-self', 'shop-train-other', 'land-choice', 'own-land-choice',
+      'event-card', 'chance-card',
       'item-shop', 'item-replace', 'gacha', 'stage-gacha', 'train-result',
       'shop-takeover-offer'];
     if (decisionStates.includes(action.type)) {
@@ -933,7 +934,10 @@ function idolBuyShop(shopId) {
   idolCheckBeautyMonopoly(p);
 
   const prevIsDouble = idolState.pendingAction?.isDouble ?? false;
-  idolState.pendingAction = { type: 'shop-train-self', shopId, playerId: p.id, isDouble: prevIsDouble };
+  // 구매 직후 → 아이템 구매/훈련 선택지 제공
+  idolState.pendingAction = {
+    type: 'own-land-choice', shopId, playerId: p.id, isDouble: prevIsDouble,
+  };
   broadcastIdolState();
   idolRenderAll();
 }
@@ -961,7 +965,10 @@ function idolUpgradeShop(shopId) {
   idolState.shopLevels[shopId] = level + 1;
 
   const prevIsDouble = idolState.pendingAction?.isDouble ?? false;
-  idolState.pendingAction = { type: 'shop-train-self', shopId, playerId: p.id, isDouble: prevIsDouble };
+  // 업그레이드 후 → 아이템 구매/훈련 선택지 제공
+  idolState.pendingAction = {
+    type: 'own-land-choice', shopId, playerId: p.id, isDouble: prevIsDouble,
+  };
   broadcastIdolState();
   idolRenderAll();
 }
@@ -2873,6 +2880,7 @@ function idolUxGetActionMeta(action) {
     case 'settlement': return { label: '턴 결산', tone: 'info' };
     case 'festival': return { label: '페스티벌', tone: 'gold' };
     case 'land-choice': return { label: '행동 선택', tone: 'warn' };
+    case 'own-land-choice': return { label: '내 시설 활용', tone: 'success' };
     case 'item-shop': return { label: '아이템 구매', tone: 'gold' };
     case 'item-replace': return { label: '아이템 교체', tone: 'warn' };
     case 'bankrupt': return { label: '파산 처리', tone: 'danger' };
@@ -2905,6 +2913,7 @@ function idolUxGetActionHint(action, currentP, isMyTurn) {
     case 'settlement': return '현재 순위와 보너스를 확인하세요.';
     case 'festival': return '페스티벌 무대가 진행 중입니다.';
     case 'land-choice': return isMyTurn ? '아이템 구매 또는 훈련을 선택하세요.' : '행동 선택을 기다리는 중입니다.';
+    case 'own-land-choice': return isMyTurn ? '내 시설에서 아이템 구매 또는 훈련을 선택하세요.' : '행동 선택을 기다리는 중입니다.';
     case 'item-shop': return isMyTurn ? '구매할 아이템을 선택하세요.' : '아이템 구매 중입니다.';
     case 'item-replace': return isMyTurn ? '교체할 아이템 슬롯을 선택하세요.' : '아이템 교체 중입니다.';
     case 'roll-again': return isMyTurn ? '더블 보너스로 한 번 더 굴릴 수 있습니다.' : '더블 보너스 턴 처리 중입니다.';
@@ -3252,6 +3261,9 @@ function idolRenderActionPanel() {
     case 'land-choice':
       contentHtml = isMyTurn ? idolRenderLandChoicePanel(action) : `<div class="idol-action-title">행동 선택 대기 중...</div>`;
       break;
+    case 'own-land-choice':
+      contentHtml = isMyTurn ? idolRenderOwnLandChoicePanel(action) : `<div class="idol-action-title">행동 선택 대기 중...</div>`;
+      break;
     case 'item-shop':
       contentHtml = isMyTurn ? idolRenderItemShopPanel(action) : `<div class="idol-action-title">아이템 구매 중...</div>`;
       break;
@@ -3415,6 +3427,30 @@ function idolRenderLandChoicePanel(action) {
     </div>`;
 }
 
+// ─── 내 땅 선택 패널 (구매/업그레이드 직후) ───
+function idolRenderOwnLandChoicePanel(action) {
+  const shop = SHOPS.find(s => s.id === action.shopId);
+  const cat = SHOP_CATEGORIES[shop.cat];
+  const p = idolCurrentPlayer();
+  const availableItems = getItemsForShopCat(shop.cat);
+  const hasItems = availableItems.length > 0;
+
+  return `
+    <div class="idol-action-title">${cat.emoji} ${escapeHTML(shop.name)}</div>
+    <div class="idol-popup-sub">내 시설에서 아이템 구매 또는 무료 훈련을 선택하세요</div>
+    <div class="idol-land-choice-wrap">
+      <div class="idol-action-buttons">
+        ${hasItems ? `<button class="idol-btn idol-btn-gold" onclick="idolOpenItemShop('${action.shopId}')">
+          🛒 아이템 구매
+        </button>` : ''}
+        <button class="idol-btn idol-btn-primary" onclick="idolTrainAtShop('${action.shopId}', true)">
+          🎓 무료 훈련 (+보너스)
+        </button>
+        <button class="idol-btn" onclick="idolPassShop()">그냥 지나가기</button>
+      </div>
+    </div>`;
+}
+
 // ─── 아이템 구매 패널 ─────────────────────────
 function idolRenderItemShopPanel(action) {
   const shop = SHOPS.find(s => s.id === action.shopId);
@@ -3439,7 +3475,9 @@ function idolRenderItemShopPanel(action) {
     </div>`;
   }).join('');
 
-  const ownerNote = action.landOwnerId ? `<div class="idol-popup-sub" style="font-size:11px;color:#ff9500;">구매액의 ${Math.round(IDOL_ITEM_OWNER_CUT * 100)}%가 땅 주인에게 지급됩니다</div>` : '';
+  const curP = idolCurrentPlayer();
+  const isOtherLand = action.landOwnerId && curP && action.landOwnerId !== curP.id;
+  const ownerNote = isOtherLand ? `<div class="idol-popup-sub" style="font-size:11px;color:#ff9500;">구매액의 ${Math.round(IDOL_ITEM_OWNER_CUT * 100)}%가 땅 주인에게 지급됩니다</div>` : '';
 
   return `
     <div class="idol-action-title">🛒 아이템 구매</div>
