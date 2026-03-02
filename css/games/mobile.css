@@ -87,196 +87,40 @@
 
 /* SUTDA GAME MOBILE FIXES */
 @media (max-width: 430px) {
-  #sutdaGame {
-    padding: 8px 10px;
-    gap: 4px;
-  }
+  .sutda-top-bar { padding: 6px 10px; }
+  .sutda-opponents { padding: 4px 0; gap: 6px; }
+  .sutda-opp-name { font-size: 9px; max-width: 60px; }
+  .sutda-opp-chips { font-size: 8px; }
+  .sutda-pot-label { font-size: 10px; }
+  .sutda-pot-amount { font-size: 24px; }
 
-  /* Compact top bar */
-  .sutda-top-bar {
-    padding: 6px 10px;
-  }
+  /* Hwatu cards sized for mobile */
+  .hwatu-card { width: 40px; height: 60px; border-radius: 5px; }
+  .hwatu-card-big { width: 100px; height: 150px; border-radius: 10px; }
+  .hwatu-num { font-size: 20px; }
+  .hwatu-card-big .hwatu-num { font-size: 36px; }
+  .hwatu-card.gwang::before { width: 11px; height: 11px; top: 3px; right: 3px; }
+  .hwatu-card-big.gwang::before { width: 18px; height: 18px; top: 5px; right: 5px; }
 
-  .sutda-title-text {
-    font-size: 16px;
-  }
-
-  .sutda-pot-badge {
-    font-size: 12px;
-    padding: 2px 8px;
-  }
-
-  .sutda-my-balance {
-    font-size: 13px;
-  }
-
-  /* Opponent area compact */
-  .sutda-opponents {
-    min-height: 80px;
-    padding: 4px 0;
-    gap: 6px;
-  }
-
-  .sutda-opp-slot {
-    min-width: 55px;
-    max-width: 70px;
-  }
-
-  .sutda-opp-avatar {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
-  }
-
-  .sutda-opp-name {
-    font-size: 9px;
-    max-width: 60px;
-  }
-
-  .sutda-opp-chips {
-    font-size: 8px;
-  }
-
-  /* Table center - visible green felt theme */
-  .sutda-table {
-    flex: 1;
-    min-height: 120px;
-  }
-
-  .sutda-table-felt {
-    max-width: 100%;
-    padding: 16px;
-    border-radius: 50px;
-  }
-
-  .sutda-pot-label {
-    font-size: 10px;
-  }
-
-  .sutda-pot-amount {
-    font-size: 24px;
-  }
-
-  /* Hwatu cards properly sized for mobile */
-  .hwatu-card {
-    width: 40px;
-    height: 60px;
-    border-radius: 5px;
-  }
-
-  .hwatu-card-big {
-    width: 66px;
-    height: 99px;
-    border-radius: 8px;
-  }
-
-  .hwatu-num {
-    font-size: 20px;
-  }
-
-  .hwatu-card-big .hwatu-num {
-    font-size: 32px;
-  }
-
-  .hwatu-card.gwang::before {
-    width: 11px;
-    height: 11px;
-    top: 3px;
-    right: 3px;
-  }
-
-  .hwatu-card-big.gwang::before {
-    width: 18px;
-    height: 18px;
-    top: 5px;
-    right: 5px;
-  }
-
-  /* My hand area */
-  .sutda-my-area {
-    padding: 8px 10px;
-  }
-
-  .sutda-my-info {
-    margin-bottom: 6px;
-  }
-
-  .sutda-my-name {
-    font-size: 12px;
-  }
-
-  .sutda-my-chips {
-    font-size: 11px;
-  }
-
-  .sutda-my-cards {
-    gap: 4px;
-  }
-
-  .sutda-my-rank {
-    margin-top: 6px;
-    font-size: 13px;
-  }
+  .sutda-my-area { padding: 8px 10px; }
+  .sutda-my-cards { gap: 8px; }
+  .sutda-my-rank { margin-top: 6px; font-size: 18px; }
 
   /* Betting bar - 44px min touch targets */
-  .sutda-action-bar {
-    padding: 8px;
-    gap: 4px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .sutda-bet-btn {
-    min-height: 44px;
-    padding: 10px 8px;
-    font-size: 13px;
-    touch-action: manipulation;
-  }
-
+  .sutda-action-bar { padding: 8px; gap: 4px; display: grid; grid-template-columns: repeat(3, 1fr); }
+  .sutda-bet-btn { min-height: 44px; padding: 10px 8px; font-size: 13px; touch-action: manipulation; }
   .sutda-bet-btn.sutda-bet-call,
-  .sutda-bet-btn.sutda-bet-die {
-    font-size: 14px;
-  }
+  .sutda-bet-btn.sutda-bet-die { font-size: 14px; }
+  .sutda-bet-btn.sutda-bet-allin { grid-column: span 3; font-size: 15px; }
 
-  .sutda-bet-btn.sutda-bet-allin {
-    grid-column: span 3;
-    font-size: 15px;
-  }
-
-  /* Seryuk panel */
-  .sutda-seryuk-panel {
-    padding: 14px;
-  }
-
-  .sutda-seryuk-title {
-    font-size: 15px;
-  }
-
-  .sutda-seryuk-desc {
-    font-size: 11px;
-  }
-
-  .sutda-seryuk-btn {
-    min-height: 52px;
-    padding: 10px;
-  }
-
-  .sutda-seryuk-icon {
-    font-size: 26px;
-  }
-
-  /* Result overlay */
-  .sutda-result-overlay {
-    padding: 16px;
-  }
-
-  .sutda-result-box {
-    padding: 20px;
-  }
-
-  .sutda-result-title {
-    font-size: 32px;
-  }
+  .sutda-seryuk-panel { padding: 14px; }
+  .sutda-seryuk-title { font-size: 15px; }
+  .sutda-seryuk-desc { font-size: 11px; }
+  .sutda-seryuk-btn { min-height: 52px; padding: 10px; }
+  .sutda-seryuk-icon { font-size: 26px; }
+  .sutda-result-overlay { padding: 16px; }
+  .sutda-result-box { padding: 20px; }
+  .sutda-result-title { font-size: 32px; }
 }
 
 /* E-CARD GAME MOBILE FIXES */
@@ -956,87 +800,86 @@
 @media (orientation: landscape), (min-aspect-ratio: 1/1) {
 
   /* ───────────────────────────────────────────────
-     SUTDA — Ref: cards LEFT, info+buttons RIGHT
+     SUTDA — Poker-matched felt casino landscape layout
      ─────────────────────────────────────────────── */
-  #sutdaGame.active {
+  #sutdaGame .sutda-content {
     display: grid !important;
-    grid-template-columns: 3fr 2fr !important;
-    grid-template-rows: auto 1fr !important;
-    gap: 0 !important;
-    padding: 0 !important;
+    grid-template-columns: auto 1fr !important;
+    grid-template-rows: auto auto 1fr !important;
+    padding: 8px !important;
+    overflow: hidden !important;
   }
   #sutdaGame .sutda-top-bar {
     grid-column: 1 / -1 !important;
-    padding: 4px 10px !important;
+    grid-row: 1 !important;
+    z-index: 12 !important;
   }
-  /* Hide opponents in landscape — info moves to right panel */
+  /* Opponents top-left (like poker) */
   #sutdaGame .sutda-opponents {
-    display: none !important;
-  }
-  /* LEFT: cards + rank (center) */
-  #sutdaGame .sutda-table {
     grid-column: 1 !important;
     grid-row: 2 !important;
+    z-index: 10 !important;
+    padding: 2px 0 !important;
+    align-self: center !important;
+    max-width: none !important;
+  }
+  /* Center area top-right: pot + turn indicator */
+  #sutdaGame .sutda-center-area {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    flex: none !important;
+    min-height: auto !important;
+    justify-self: end !important;
+    align-self: center !important;
+    padding: 0 4px !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+  }
+  #sutdaGame .sutda-pot-glow { display: none !important; }
+  #sutdaGame .sutda-pot-center .sutda-pot-amount { font-size: 18px !important; }
+  #sutdaGame .sutda-pot-center .sutda-pot-label { font-size: 10px !important; }
+  #sutdaGame .sutda-turn-indicator { font-size: 11px !important; }
+  /* My cards — big & centered (poker hero-card style) */
+  #sutdaGame .sutda-my-area {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    min-height: 0 !important;
+    padding-top: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    min-height: 0 !important;
-    padding: 8px !important;
-    margin: 0 !important;
-  }
-  #sutdaGame .sutda-my-area {
-    grid-column: 1 !important;
-    grid-row: 2 !important;
-    position: absolute !important;
-    bottom: 8px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    z-index: 5 !important;
+    position: relative !important;
+    background: none !important;
+    transform: none !important;
+    left: auto !important;
+    bottom: auto !important;
     width: auto !important;
-    padding: 4px 8px !important;
-    background: rgba(0,0,0,0.5) !important;
-    border-radius: 8px !important;
-  }
-  #sutdaGame .sutda-my-rank {
-    font-size: 24px !important;
-    text-align: center !important;
+    border-radius: 0 !important;
   }
   #sutdaGame .hwatu-card-big {
-    width: min(20vh, 72px) !important;
-    height: min(30vh, 108px) !important;
+    width: min(42vh, 140px) !important;
+    height: min(60vh, 210px) !important;
   }
-  #sutdaGame .sutda-table-felt {
-    max-width: 100% !important;
-  }
-  /* RIGHT: balance info + vertical betting buttons */
+  #sutdaGame .hwatu-card-big .hwatu-num { font-size: min(14vh, 48px) !important; }
+  #sutdaGame .hwatu-card-big .hwatu-month { font-size: min(4vh, 14px) !important; }
+  #sutdaGame .sutda-my-rank { font-size: min(7vh, 28px) !important; }
+  /* Action buttons — absolute bottom-right vertical stack (poker-style) */
   #sutdaGame .sutda-action-bar {
-    grid-column: 2 !important;
-    grid-row: 2 !important;
+    position: absolute !important;
+    bottom: 8px !important;
+    right: 8px !important;
+    width: 200px !important;
+    z-index: 10 !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: center !important;
-    align-items: stretch !important;
-    gap: 6px !important;
-    padding: 12px 16px !important;
-    overflow-y: auto !important;
+    gap: 5px !important;
+    padding: 0 !important;
   }
   #sutdaGame .sutda-bet-btn {
-    width: 100% !important;
-    padding: 10px 8px !important;
     font-size: 14px !important;
-    min-height: 38px !important;
-  }
-  /* Seryuk panel overlay */
-  #sutdaGame .sutda-seryuk-panel {
-    grid-column: 1 / -1 !important;
-    grid-row: 2 !important;
-    z-index: 10 !important;
-  }
-  /* Result overlay */
-  #sutdaGame .sutda-result-overlay {
-    grid-column: 1 / -1 !important;
-    grid-row: 1 / -1 !important;
+    padding: 10px 6px !important;
+    min-height: auto !important;
   }
 
   /* ───────────────────────────────────────────────
@@ -1906,40 +1749,24 @@
     font-size: min(4vh, 14px) !important;
   }
 
-  /* ─── SUTDA ─── */
-  #sutdaGame { border-width: 3px !important; grid-template-columns: 55% 45% !important; }
+  /* ─── SUTDA (small landscape) ─── */
   #sutdaGame .sutda-top-bar { padding: 2px 8px !important; }
-  #sutdaGame .sutda-title-text { font-size: 14px !important; }
-  #sutdaGame .sutda-pot-badge { font-size: 11px !important; padding: 2px 8px !important; }
-  #sutdaGame .sutda-my-balance { font-size: 11px !important; }
-  #sutdaGame .sutda-table { padding: 4px !important; }
-  #sutdaGame .sutda-table-felt {
-    padding: 8px !important;
-    border-radius: 30px !important;
-  }
-  #sutdaGame .sutda-pot-label { font-size: 9px !important; }
-  #sutdaGame .sutda-pot-amount { font-size: 18px !important; }
-  #sutdaGame .sutda-turn-indicator { font-size: 11px !important; }
-  #sutdaGame .hwatu-card-big {
-    width: min(18vh, 64px) !important;
-    height: min(27vh, 96px) !important;
-  }
-  #sutdaGame .hwatu-card-big .hwatu-num { font-size: min(9vh, 28px) !important; }
-  #sutdaGame .sutda-my-area {
-    padding: 2px 6px !important;
-  }
-  #sutdaGame .sutda-my-name { font-size: 10px !important; }
-  #sutdaGame .sutda-my-chips { font-size: 14px !important; }
-  #sutdaGame .sutda-my-rank { font-size: min(6vh, 22px) !important; letter-spacing: 3px !important; }
   #sutdaGame .sutda-action-bar {
-    padding: 6px 10px !important;
-    gap: 4px !important;
+    width: 160px !important;
   }
   #sutdaGame .sutda-bet-btn {
-    min-height: 32px !important;
-    padding: 6px 6px !important;
+    min-height: 30px !important;
+    padding: 6px 4px !important;
     font-size: 12px !important;
   }
+  #sutdaGame .hwatu-card-big {
+    width: min(36vh, 120px) !important;
+    height: min(52vh, 180px) !important;
+  }
+  #sutdaGame .hwatu-card-big .hwatu-num { font-size: min(12vh, 40px) !important; }
+  #sutdaGame .hwatu-card-big .hwatu-month { font-size: min(3.5vh, 12px) !important; }
+  #sutdaGame .sutda-my-rank { font-size: min(6vh, 22px) !important; letter-spacing: 3px !important; }
+  #sutdaGame .sutda-pot-center .sutda-pot-amount { font-size: 16px !important; }
   #sutdaGame .sutda-seryuk-panel { padding: 12px !important; }
   #sutdaGame .sutda-seryuk-title { font-size: 18px !important; }
   #sutdaGame .sutda-seryuk-btn {
