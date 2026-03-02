@@ -1868,8 +1868,7 @@
   /* 헤더 | 리소스바 | 보드(유동) | 액션패널(최소 130px 보장) */
   grid-template-rows: auto auto minmax(0, 1fr) minmax(150px, auto);
   align-items: stretch;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 #idolGame .idol-header {
@@ -1976,10 +1975,13 @@
   grid-column: 1;
   grid-row: 4;
   min-height: 140px;
+  max-height: min(45vh, 400px);
   padding: 10px 12px calc(14px + env(safe-area-inset-bottom, 0));
   border-top: 1px solid rgba(255,255,255,0.07);
   background: rgba(5, 7, 13, 0.78);
   z-index: 1; /* 배경 레이어(z-index:0) 위에 항상 존재 */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 #idolGame .idol-action-shell {
@@ -2172,6 +2174,7 @@
     border-left: 1px solid rgba(255,255,255,0.07);
     background: transparent;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   #idolGame .idol-action-shell {
