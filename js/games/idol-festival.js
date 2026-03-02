@@ -210,6 +210,43 @@ function _festSfx(type) {
   } catch(e) { /* 무음 fallback */ }
 }
 
+/** 스코어 히트 3레이어 사운드 (트랜지언트+바디+테일), pitchMult로 피치 조절 */
+function _festSfxScoreHit(gained, pitchMult) {
+  if (!_festAudioCtx || _festGetTier() === 'minimal') return;
+  const ctx = _festAudioCtx;
+  const now = ctx.currentTime;
+  const pm = pitchMult || 1;
+  const vol = Math.min(0.25, 0.08 + gained * 0.004); // 값에 비례한 볼륨
+  try {
+    // 트랜지언트: 날카로운 어택 (3~5kHz, 10ms)
+    const osc1 = ctx.createOscillator();
+    const g1 = ctx.createGain();
+    osc1.type = 'square'; osc1.frequency.value = 3500 * pm;
+    g1.gain.setValueAtTime(vol, now);
+    g1.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+    osc1.connect(g1); g1.connect(ctx.destination);
+    osc1.start(now); osc1.stop(now + 0.02);
+
+    // 바디: 무게감 (100~300Hz, 80ms)
+    const osc2 = ctx.createOscillator();
+    const g2 = ctx.createGain();
+    osc2.type = 'sine'; osc2.frequency.value = (gained >= 20 ? 120 : 200) * pm;
+    g2.gain.setValueAtTime(vol * 0.8, now);
+    g2.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    osc2.connect(g2); g2.connect(ctx.destination);
+    osc2.start(now); osc2.stop(now + 0.1);
+
+    // 테일: 잔향 (1~2kHz, 200ms)
+    const osc3 = ctx.createOscillator();
+    const g3 = ctx.createGain();
+    osc3.type = 'sine'; osc3.frequency.value = 1500 * pm;
+    g3.gain.setValueAtTime(vol * 0.3, now + 0.01);
+    g3.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    osc3.connect(g3); g3.connect(ctx.destination);
+    osc3.start(now + 0.01); osc3.stop(now + 0.25);
+  } catch(e) {}
+}
+
 // ─── 햅틱 ───
 function _festHaptic(intensity) {
   if (!navigator.vibrate || _festGetTier() === 'minimal') return;
@@ -381,6 +418,9 @@ function idolFestivalStart() {
         _festSfx('swoosh');
         await _festDelay(500);
         preview.remove();
+
+        // 콤보 피치 인덱스 리셋 (플레이어마다 0부터)
+        _festComboIdx = 0;
 
         // 좌우 분할 컨테이너
         const split = _festEl('div', 'fest-split-container', 'z-index:1;');
@@ -766,27 +806,121 @@ function _festScorePlayers(activePlayers) {
   return scored;
 }
 
-/** 숫자 카운트업 애니메이션 */
+/** 콤보 인덱스 → 피치 승수 (콤보 쌓일수록 피치 상승) */
+let _festComboIdx = 0;
+function _festPitchForCombo() {
+  return 1 + _festComboIdx * 0.06; // +6% per combo
+}
+
+/** 숫자 카운트업 애니메이션 (타격감 포함) */
 function _festCountUp(el, target, durationMs) {
   return new Promise(resolve => {
-    if (target <= 0) { el.textContent = '0'; resolve(); return; }
-    const start = performance.now();
-    function tick(now) {
-      const elapsed = now - start;
-      const ratio = Math.min(1, elapsed / durationMs);
-      const eased = 1 - Math.pow(1 - ratio, 3);
-      const current = Math.round(eased * target);
-      el.textContent = String(current);
-      if (ratio < 1) {
-        requestAnimationFrame(tick);
-      } else {
-        el.textContent = String(target);
-        el.style.animation = 'idol-fest-countup 0.3s ease-out';
-        resolve();
+    const from = parseInt(el.textContent) || 0;
+    if (target <= from) { el.textContent = String(target); resolve(); return; }
+    const diff = target - from;
+
+    // 예비 동작 (Anticipation): 살짝 줄어들기
+    el.style.transition = 'transform 0.06s ease-in';
+    el.style.transform = 'scale(0.92)';
+
+    setTimeout(() => {
+      // 카운트업 시작
+      el.style.transition = 'none';
+      el.style.transform = 'scale(1)';
+      const start = performance.now();
+      function tick(now) {
+        const elapsed = now - start;
+        const ratio = Math.min(1, elapsed / durationMs);
+        const eased = 1 - Math.pow(1 - ratio, 3);
+        const current = Math.round(from + eased * diff);
+        el.textContent = String(current);
+        if (ratio < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          el.textContent = String(target);
+          _festScoreImpact(el, diff);
+          resolve();
+        }
       }
-    }
-    requestAnimationFrame(tick);
+      requestAnimationFrame(tick);
+    }, 60); // 예비 동작 60ms
   });
+}
+
+/** 점수 도달 시 타격감 연출 */
+function _festScoreImpact(el, gained) {
+  // 무게 차등: 값에 비례한 강도
+  const isHeavy = gained >= 30;
+  const isMedium = gained >= 10;
+  const peakScale = isHeavy ? 1.5 : isMedium ? 1.3 : 1.15;
+  const shakeIntensity = isHeavy ? 6 : isMedium ? 3 : 0;
+  const hitStopMs = isHeavy ? 80 : isMedium ? 40 : 0;
+
+  // 1) 스케일 펀치 (오버슈트 → 언더슈트 → 정착)
+  el.style.transition = 'none';
+  el.style.transform = `scale(${peakScale})`;
+  el.style.textShadow = '0 0 24px rgba(255,215,0,1), 0 0 48px rgba(255,200,0,0.7)';
+  void el.offsetWidth;
+
+  // 2) 히트스톱: 피크에서 잠깐 멈춤
+  setTimeout(() => {
+    // 스프링 정착: 오버슈트 → 살짝 줄어듦 → 원래
+    el.style.transition = 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), text-shadow 0.5s ease-out';
+    el.style.transform = 'scale(1)';
+    el.style.textShadow = '0 0 12px rgba(255,215,0,0.5)';
+  }, hitStopMs);
+
+  // 3) 3레이어 사운드 + 피치 상승
+  _festSfxScoreHit(gained, _festPitchForCombo());
+  _festComboIdx++;
+
+  // 4) 무게 비례 햅틱
+  _festHaptic(isHeavy ? 'strong' : isMedium ? 'medium' : 'light');
+
+  // 5) 화면 흔들림 (콤보 영역)
+  if (shakeIntensity > 0) {
+    const comboArea = el.closest('.fest-combo-area');
+    if (comboArea) {
+      const dx = (Math.random() - 0.5) * shakeIntensity * 2;
+      const dy = (Math.random() - 0.5) * shakeIntensity;
+      comboArea.style.transition = 'none';
+      comboArea.style.transform = `translate(${dx}px, ${dy}px)`;
+      setTimeout(() => {
+        comboArea.style.transition = 'transform 0.12s ease-out';
+        comboArea.style.transform = 'translate(0,0)';
+      }, 40);
+    }
+  }
+
+  // 6) 잔상 고스트 (값 5 이상)
+  if (gained >= 5) {
+    const ghost = document.createElement('span');
+    ghost.textContent = el.textContent;
+    ghost.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(1.1);opacity:0.6;color:#fff;pointer-events:none;font-size:inherit;font-weight:inherit;transition:opacity 0.35s,transform 0.35s;';
+    const wasPos = el.style.position;
+    if (!wasPos || wasPos === 'static') el.style.position = 'relative';
+    el.appendChild(ghost);
+    void ghost.offsetWidth;
+    ghost.style.opacity = '0';
+    ghost.style.transform = 'translate(-50%,-50%) scale(1.8)';
+    setTimeout(() => ghost.remove(), 400);
+  }
+
+  // 7) 플로팅 +점수 텍스트 (카운터 위로 떠오름)
+  if (gained > 0) {
+    const floater = document.createElement('div');
+    floater.textContent = `+${gained}`;
+    const color = isHeavy ? '#ff4444' : isMedium ? '#ffd700' : '#aaffaa';
+    const size = isHeavy ? 22 : isMedium ? 18 : 14;
+    floater.style.cssText = `position:absolute;left:50%;bottom:100%;transform:translateX(-50%);font-size:${size}px;font-weight:800;color:${color};pointer-events:none;opacity:1;transition:all 0.6s cubic-bezier(0.34,1.56,0.64,1);text-shadow:0 0 8px ${color};white-space:nowrap;z-index:10;`;
+    const wasPos = el.style.position;
+    if (!wasPos || wasPos === 'static') el.style.position = 'relative';
+    el.appendChild(floater);
+    void floater.offsetWidth;
+    floater.style.opacity = '0';
+    floater.style.transform = 'translateX(-50%) translateY(-30px)';
+    setTimeout(() => floater.remove(), 650);
+  }
 }
 
 /** 보상 적용 (실제 스탯 변경) — 동점자는 같은 보상 */
