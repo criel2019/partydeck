@@ -109,19 +109,7 @@ function startKingstagram() {
   if (!state.isHost) return;
   closeKingstagramCleanup();
 
-  // Add CPUs to fill up to 4 players
   var allPlayers = state.players.slice();
-  var cpuIdx = 0;
-  while (allPlayers.length < 4) {
-    allPlayers.push({
-      id: 'ai-' + cpuIdx,
-      name: 'CPU ' + (cpuIdx + 1),
-      avatar: '\ud83e\udd16',
-    });
-    cpuIdx++;
-  }
-  // Update state.players so AI system can detect CPU turns
-  state.players = allPlayers;
 
   var deck = kingCreateDeck();
 
