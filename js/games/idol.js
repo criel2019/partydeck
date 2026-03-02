@@ -1476,7 +1476,18 @@ function idolOnTurnEnd(isDouble) {
     // 페스티벌 시스템이 로드됐으면 풀 연출, 아니면 기존 간이 결산
     if (typeof idolFestivalStart === 'function') {
       idolState.lastFestivalTurn = idolState.turnNum; // 중복 방지 마킹
-      idolState.pendingAction = { type: 'festival' };
+      // 페스티벌 채점 데이터를 pendingAction에 포함 (non-host도 연출 실행 가능)
+      const activePlayers = idolState.players.filter(p => !p.bankrupt);
+      const festScores = activePlayers.map(p => {
+        const sd = typeof calcFestivalScore === 'function'
+          ? calcFestivalScore(p) : { baseBonus:0, itemStats:{}, combos:[], comboStats:{}, totalScore:0 };
+        return { id: p.id, favor: p.favor, scoreData: sd };
+      });
+      idolState.pendingAction = {
+        type: 'festival',
+        festivalScores: festScores,
+        festivalVotes: { skip: [], close: [] },
+      };
       broadcastIdolState();
       idolRenderAll();
       idolFestivalStart().then(() => {
@@ -1543,6 +1554,14 @@ function idolAdvanceTurn() {
   const turnP = idolCurrentPlayer();
   if (turnP) idolShowTurnBanner(turnP);
 
+  // 다음 턴이 페스티벌이면 사전 예고 배너
+  if (typeof _festPreBanner === 'function'
+      && idolState.turnNum % FESTIVAL_INTERVAL === (FESTIVAL_INTERVAL - 1)
+      && !idolState._festBannerShownForTurn) {
+    idolState._festBannerShownForTurn = idolState.turnNum;
+    setTimeout(() => _festPreBanner(), 1200);
+  }
+
   // 턴 타이머 시작 (CPU 턴은 타이머 불필요)
   if (turnP && !idolIsCpuPlayerId(turnP.id)) {
     idolStartTurnTimer();
@@ -1606,6 +1625,15 @@ function renderIdolView(gs) {
   }
   showScreen('idolGame');
   idolRenderAll();
+
+  // Non-host: 페스티벌 pendingAction 수신 시 로컬 연출 실행
+  if (!state.isHost
+      && idolState?.pendingAction?.type === 'festival'
+      && typeof idolFestivalStart === 'function'
+      && !window._festLocalRunning) {
+    window._festLocalRunning = true;
+    idolFestivalStart().then(() => { window._festLocalRunning = false; });
+  }
 }
 
 function idolRenderAll() {
@@ -2746,6 +2774,17 @@ function handleIdolMsg(msg) {
         if (idolState || !msg.from || _idolSelections[msg.from]) break;
         _idolSelections[msg.from] = { typeId: msg.typeId, name: msg.name };
         if (!idolTryStartGameFromSelections()) idolShowSelectPhase();
+      }
+      break;
+    case 'idol-fest-action':
+      if (state.isHost && idolState && idolState.pendingAction?.type === 'festival') {
+        const votes = idolState.pendingAction.festivalVotes;
+        if (!votes) break;
+        const action = msg.action; // 'skip' or 'close'
+        const from = msg.from;
+        if (action === 'skip' && !votes.skip.includes(from)) votes.skip.push(from);
+        if (action === 'close' && !votes.close.includes(from)) votes.close.push(from);
+        broadcastIdolState();
       }
       break;
   }

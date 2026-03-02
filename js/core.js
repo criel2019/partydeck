@@ -594,6 +594,7 @@ function handleMessage(peerId, raw) {
     // Idol Management handlers
     'idol-state': () => { if(typeof renderIdolView === 'function') { showScreen('idolGame'); renderIdolView(msg.state); } },
     'idol-player-select': () => { if(state.isHost && typeof handleIdolMsg === 'function') handleIdolMsg({ ...msg, from: peerId }); },
+    'idol-fest-action': () => { if(state.isHost && typeof handleIdolMsg === 'function') handleIdolMsg({ ...msg, from: peerId }); },
     // DrinkPoker handlers
     'dp-state': () => { showScreen('drinkpokerGame'); renderDPView(msg); },
     'dp-send': () => { if(state.isHost) processDPSend(peerId, msg.cardIdx, msg.targetId, msg.claim); },

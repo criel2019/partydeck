@@ -5186,3 +5186,396 @@
 .idol-fx-reduced .idol-timer-vignette { display: none; }
 .idol-fx-reduced .idol-timer-shake,
 .idol-fx-reduced .idol-jail-shake { animation: none !important; }
+
+
+/* ═══════════════════════════════════════════════
+   17. 페스티벌 v2 — 대규모 연출
+   ═══════════════════════════════════════════════ */
+
+/* ── 사전 예고 배너 ── */
+.idol-prefest-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9990;
+  text-align: center;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #1a0a2e, #2d1b69);
+  color: #ffd700;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+  animation: fest-banner-slide 0.4s ease-out;
+  pointer-events: none;
+}
+.idol-prefest-banner-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+/* ── 좌우 분할 레이아웃 ── */
+.fest-split-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.fest-card-area {
+  width: 45%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  position: relative;
+}
+.fest-combo-area {
+  width: 55%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* ── 플레이어 카드 ── */
+.fest-player-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+  width: 90%;
+  max-width: 200px;
+  text-align: center;
+  animation: fest-slide-in-right 0.5s ease-out forwards;
+}
+.fest-player-card .fest-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 8px;
+}
+.fest-player-card .fest-idol-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.fest-player-card .fest-stats {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 6px;
+}
+.fest-player-card .fest-favor {
+  font-size: 13px;
+  color: #ff69b4;
+  font-weight: 600;
+}
+.fest-player-card .fest-items-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 14px;
+}
+.fest-my-card {
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+}
+
+/* ── 콤보 조건 연출 ── */
+.fest-combo-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 12px;
+  text-align: center;
+}
+.fest-combo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  animation: fest-combo-slide-down 0.35s ease-out forwards;
+  opacity: 0;
+}
+.fest-combo-item.fest-combo-zero {
+  opacity: 0.35;
+  filter: grayscale(0.8);
+}
+.fest-combo-emoji {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.fest-combo-desc {
+  flex: 1;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+}
+.fest-combo-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffd700;
+  min-width: 36px;
+  text-align: right;
+}
+.fest-combo-reaction {
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 4px;
+  animation: fest-reaction-pop 0.3s ease-out;
+}
+.fest-combo-reaction.good { color: #4fc3f7; }
+.fest-combo-reaction.great { color: #ab47bc; }
+.fest-combo-reaction.amazing { color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.6); }
+
+.fest-total-score {
+  font-size: 36px;
+  font-weight: 900;
+  color: #ffd700;
+  text-align: center;
+  margin-top: 16px;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  animation: fest-score-pop 0.4s ease-out;
+}
+.fest-rank-prediction {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 8px;
+}
+
+/* ── 스킵/닫기 UI ── */
+.fest-skip-bar {
+  position: absolute;
+  bottom: 16px;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  z-index: 10;
+}
+.fest-skip-btn, .fest-close-btn {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fest-skip-btn:active, .fest-close-btn:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.95);
+}
+.fest-vote-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── 순위 카드 ── */
+.fest-rank-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto;
+}
+.fest-rank-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  width: 100%;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: fest-drop-in 0.4s ease-out forwards;
+  opacity: 0;
+}
+.fest-rank-first {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1));
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  animation: fest-drop-in 0.4s ease-out forwards, fest-gold-flash 2s ease-in-out infinite 0.5s;
+}
+.fest-rank-tie {
+  animation: fest-wobble 0.5s ease-in-out 0.4s;
+}
+.fest-rank-medal {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.fest-rank-info {
+  flex: 1;
+  min-width: 0;
+}
+.fest-rank-name {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fest-rank-score {
+  font-size: 18px;
+  font-weight: 900;
+  flex-shrink: 0;
+  min-width: 40px;
+  text-align: right;
+}
+.fest-rank-crown {
+  font-size: 24px;
+  animation: fest-crown-pulse 1s ease-in-out infinite;
+}
+.fest-rank-msg {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
+}
+
+/* ── 요약 모드 ── */
+.fest-summary-container {
+  width: 100%;
+  max-width: 360px;
+  padding: 0 16px;
+}
+.fest-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+.fest-summary-medal { font-size: 20px; flex-shrink: 0; }
+.fest-summary-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fest-summary-score {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffd700;
+}
+.fest-summary-rewards {
+  display: flex;
+  gap: 4px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+}
+.fest-summary-rewards span {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* ── 순서 공개 ── */
+.fest-order-list {
+  text-align: center;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.8;
+}
+.fest-order-me {
+  color: #ffd700;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+.fest-name-preview {
+  text-align: center;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8px;
+  animation: fest-fade-in 0.3s ease-out;
+}
+
+/* ── 키프레임 ── */
+@keyframes fest-banner-slide {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(0); }
+}
+@keyframes fest-slide-in-right {
+  0%   { transform: translateX(100%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+@keyframes fest-slide-out-left {
+  0%   { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(-100%); opacity: 0; }
+}
+@keyframes fest-gold-flash {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); }
+  50%      { box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 0 60px rgba(255, 165, 0, 0.2); }
+}
+@keyframes fest-combo-slide-down {
+  0%   { transform: translateY(-12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes fest-reaction-pop {
+  0%   { transform: scale(0); }
+  60%  { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+@keyframes fest-drop-in {
+  0%   { transform: translateY(-40px); opacity: 0; }
+  60%  { transform: translateY(4px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes fest-crown-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.15); }
+}
+@keyframes fest-wobble {
+  0%   { transform: rotate(0); }
+  25%  { transform: rotate(-3deg); }
+  50%  { transform: rotate(3deg); }
+  75%  { transform: rotate(-2deg); }
+  100% { transform: rotate(0); }
+}
+@keyframes fest-score-pop {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes fest-fade-in {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes fest-gradient-bg {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* FX 티어: minimal — 페스티벌 파티클/애니 비활성화 */
+.idol-fx-minimal .fest-combo-item { animation: none; opacity: 1; }
+.idol-fx-minimal .fest-rank-card { animation: none; opacity: 1; }
+.idol-fx-minimal .fest-player-card { animation: none; }
+.idol-fx-minimal .idol-prefest-banner { animation: none; }
+/* FX 티어: reduced — 파티클만 비활성화 */
+.idol-fx-reduced .idol-festival-particle { display: none; }

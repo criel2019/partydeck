@@ -140,12 +140,149 @@ function _festInjectStyles() {
 
 
 // ═══════════════════════════════════════════════
-// 1. idolFestivalStart() — 페스티벌 시퀀스
+// 1. idolFestivalStart() — 페스티벌 시퀀스 v2
 // ═══════════════════════════════════════════════
 
+// ─── 오디오 시스템 (Web Audio API 프로시저럴 사운드) ───
+let _festAudioCtx = null;
+function _festAudioInit() {
+  if (_festAudioCtx) return;
+  try { _festAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+  catch(e) { /* 무음 fallback */ }
+}
+
+function _festSfx(type) {
+  if (!_festAudioCtx || _festGetTier() === 'minimal') return;
+  const ctx = _festAudioCtx;
+  const now = ctx.currentTime;
+  try {
+    if (type === 'sharang') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = 2000;
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now); osc.stop(now + 0.1);
+    } else if (type === 'shararang') {
+      [1500, 2500].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine'; osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.12, now + i * 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25 + i * 0.05);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now + i * 0.05); osc.stop(now + 0.3);
+      });
+    } else if (type === 'shararaRang') {
+      [1200, 1800, 2400].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine'; osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.1, now + i * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5 + i * 0.08);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now + i * 0.08); osc.stop(now + 0.6);
+      });
+    } else if (type === 'swoosh') {
+      const bufSize = ctx.sampleRate * 0.15;
+      const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.08;
+      const src = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      src.buffer = buf;
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      src.connect(gain); gain.connect(ctx.destination);
+      src.start(now);
+    } else if (type === 'fanfare') {
+      [500, 630, 750, 880, 1000].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle'; osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.12, now + i * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5 + i * 0.12);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now + i * 0.12); osc.stop(now + 0.6 + i * 0.12);
+      });
+    }
+  } catch(e) { /* 무음 fallback */ }
+}
+
+// ─── 햅틱 ───
+function _festHaptic(intensity) {
+  if (!navigator.vibrate || _festGetTier() === 'minimal') return;
+  try {
+    if (intensity === 'light') navigator.vibrate(30);
+    else if (intensity === 'medium') navigator.vibrate(80);
+    else if (intensity === 'strong') navigator.vibrate([100, 50, 200]);
+  } catch(e) {}
+}
+
+// ─── 스킵/닫기 투표 관리 ───
+let _festSkipped = false;
+let _festClosed = false;
+
+function _festIsSolo() {
+  return !!(typeof state !== 'undefined' && (state.isPractice || state.players?.length <= 1));
+}
+
+function _festSendVote(action) {
+  if (_festIsSolo()) return;
+  if (typeof state !== 'undefined' && state.isHost) {
+    // 호스트는 직접 집계
+    if (idolState?.pendingAction?.festivalVotes) {
+      const votes = idolState.pendingAction.festivalVotes;
+      if (!votes[action].includes(state.myId)) {
+        votes[action].push(state.myId);
+        if (typeof broadcastIdolState === 'function') broadcastIdolState();
+      }
+    }
+  } else {
+    if (typeof broadcast === 'function') {
+      broadcast({ type: 'idol-fest-action', action });
+    }
+  }
+}
+
+function _festGetVoteCount(action) {
+  if (_festIsSolo()) return 999;
+  const votes = idolState?.pendingAction?.festivalVotes;
+  return votes ? (votes[action]?.length || 0) : 0;
+}
+
+function _festGetTotalPlayers() {
+  if (!idolState) return 1;
+  return idolState.players.filter(p => !p.bankrupt && !idolIsCpuPlayerId(p.id)).length || 1;
+}
+
+function _festCheckAllVoted(action) {
+  if (_festIsSolo()) return true;
+  return _festGetVoteCount(action) >= _festGetTotalPlayers();
+}
+
+// ─── 사전 예고 배너 ───
+function _festPreBanner() {
+  const banner = _festEl('div', 'idol-prefest-banner', '', '');
+  banner.innerHTML = `⭐ 다음 턴 페스티벌! ⭐<div class="idol-prefest-banner-sub">아이템과 스탯을 점검하세요!</div>`;
+  document.body.appendChild(banner);
+  _festHaptic('light');
+  setTimeout(() => {
+    banner.style.opacity = '0';
+    banner.style.transition = 'opacity 0.4s ease';
+    setTimeout(() => { if (banner.parentNode) banner.remove(); }, 400);
+  }, 3000);
+}
+
+// ─── 메인 시퀀스 ───
 function idolFestivalStart() {
   _festInjectStyles();
+  _festAudioInit();
   const tier = _festGetTier();
+
+  _festSkipped = false;
+  _festClosed = false;
 
   return new Promise(async (resolve) => {
     if (!idolState || !idolState.players) { resolve(true); return; }
@@ -158,64 +295,406 @@ function idolFestivalStart() {
 
     const overlay = _festCreateOverlay('idol-festival-overlay');
 
-    // ── Step 1: 오프닝 ──
-    await _festOpening(overlay, tier);
+    // 스킵/닫기 바 (전체 시퀀스 동안 하단 고정)
+    const skipBar = _festEl('div', 'fest-skip-bar', '');
+    const skipBtn = _festEl('button', 'fest-skip-btn', '', '⏩ 스킵');
+    const skipVote = _festEl('span', 'fest-vote-count', '', '');
+    skipBtn.appendChild(skipVote);
+    skipBtn.addEventListener('click', () => {
+      _festSendVote('skip');
+      if (_festIsSolo()) { _festSkipped = true; }
+      skipBtn.style.opacity = '0.5';
+      skipBtn.style.pointerEvents = 'none';
+    });
+    skipBar.appendChild(skipBtn);
+    overlay.appendChild(skipBar);
 
-    // ── Step 2: 각 플레이어 채점 (낮은 순위부터) ──
+    // ── Phase 1: 진입 ──
+    if (!_festSkipped) {
+      overlay.style.background = 'rgba(0,0,0,0)';
+      await _festDelay(50);
+      overlay.style.transition = 'background 0.4s ease';
+      overlay.style.background = 'rgba(0,0,0,0.88)';
+      await _festDelay(400);
+
+      if (tier === 'full') _festSpawnStageParticles(overlay, 15);
+
+      const titleWrap = _festEl('div', '', 'text-align:center;z-index:1;');
+      titleWrap.innerHTML = `<div style="font-size:52px;animation:idol-fest-slam 0.5s ease-out forwards">✨</div>
+        <div style="font-size:26px;font-weight:900;color:#ffd700;letter-spacing:4px;animation:idol-fest-glow 2s ease-in-out infinite;margin-top:8px">${escapeHTML('FESTIVAL')}</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:6px">${escapeHTML(idolState.turnNum + '턴 결산')}</div>`;
+      overlay.appendChild(titleWrap);
+      _festSfx('shararang');
+      _festHaptic('medium');
+      await _festDelay(1500);
+
+      // 타이틀 위로 슬라이드 아웃
+      titleWrap.style.transition = 'transform 0.5s ease-in, opacity 0.5s ease-in';
+      titleWrap.style.transform = 'translateY(-100vh)';
+      titleWrap.style.opacity = '0';
+      await _festDelay(500);
+      titleWrap.remove();
+    }
+    if (_festSkipped || _festCheckAllVoted('skip')) { _festSkipped = true; }
+
+    // ── Phase 2: 순서 공개 ──
     const scored = _festScorePlayers(activePlayers);
-    await _festShowScoring(overlay, scored, tier);
+    if (!_festSkipped) {
+      const orderWrap = _festEl('div', 'fest-order-list', 'z-index:1;');
+      let orderHtml = `<div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:12px">${escapeHTML('🎭 공연 순서')}</div>`;
+      scored.forEach((entry, i) => {
+        const isMe = entry.player.id === state?.myId;
+        const cls = isMe ? 'fest-order-me' : '';
+        orderHtml += `<div class="${cls}">${i + 1}번: ${escapeHTML(entry.player.idolName || entry.player.name)}</div>`;
+      });
+      orderWrap.innerHTML = orderHtml;
+      overlay.appendChild(orderWrap);
+      await _festDelay(2000);
+      orderWrap.style.transition = 'opacity 0.3s ease';
+      orderWrap.style.opacity = '0';
+      await _festDelay(300);
+      orderWrap.remove();
+    }
+    if (_festSkipped || _festCheckAllVoted('skip')) { _festSkipped = true; }
 
-    // ── Step 3: 순위 발표 ──
-    await _festShowRanking(overlay, scored, tier);
+    // ── Phase 3: 플레이어별 카드 + 콤보 루프 ──
+    const rankedSoFar = [];
+    if (!_festSkipped) {
+      for (let i = 0; i < scored.length; i++) {
+        if (_festSkipped || _festCheckAllVoted('skip')) { _festSkipped = true; break; }
 
-    // ── Step 4: 보상 지급 ──
+        const entry = scored[i];
+        const p = entry.player;
+        const sd = entry.scoreData;
+        const idolType = entry.idolType;
+        const accent = typeof idolUxGetPlayerAccent === 'function'
+          ? idolUxGetPlayerAccent(p.id) : '#ffffff';
+        const isMe = p.id === state?.myId;
+
+        // 이름 프리뷰
+        const preview = _festEl('div', 'fest-name-preview', 'z-index:1;',
+          `${i + 1}번째: ${escapeHTML(p.idolName || p.name)}`);
+        overlay.appendChild(preview);
+        _festSfx('swoosh');
+        await _festDelay(500);
+        preview.remove();
+
+        // 좌우 분할 컨테이너
+        const split = _festEl('div', 'fest-split-container', 'z-index:1;');
+        overlay.appendChild(split);
+
+        // 카드 영역 (좌 45%)
+        const cardArea = _festEl('div', 'fest-card-area', '');
+        const card = _festEl('div', `fest-player-card${isMe ? ' fest-my-card' : ''}`, '');
+
+        const avatarEl = _festEl('div', 'fest-avatar', `background:linear-gradient(135deg,${accent}40,${accent}20);border:2px solid ${accent};`,
+          idolType ? idolType.emoji : '🌟');
+        card.appendChild(avatarEl);
+
+        const nameEl = _festEl('div', 'fest-idol-name', '', escapeHTML(p.idolName || p.name));
+        card.appendChild(nameEl);
+
+        // 스탯 표시
+        const statsEl = _festEl('div', 'fest-stats', '',
+          `⭐${p.fame} 🎵${p.talent} 💎${p.looks}`);
+        card.appendChild(statsEl);
+
+        // 호감도 (페스티벌에서 최초 공개)
+        const favorVal = idolState.pendingAction?.festivalScores?.find(s => s.id === p.id)?.favor ?? p.favor ?? 0;
+        const favorEl = _festEl('div', 'fest-favor', '', `💕 호감도: ${favorVal}`);
+        card.appendChild(favorEl);
+
+        // 아이템 행
+        if (p.items && p.items.length > 0) {
+          const itemsRow = _festEl('div', 'fest-items-row', '');
+          p.items.forEach(item => {
+            const def = typeof IDOL_ITEMS !== 'undefined' ? IDOL_ITEMS.find(d => d.id === item.id) : null;
+            if (def) itemsRow.appendChild(_festEl('span', '', '', def.emoji));
+          });
+          card.appendChild(itemsRow);
+        }
+
+        cardArea.appendChild(card);
+        split.appendChild(cardArea);
+
+        // 콤보 영역 (우 55%)
+        const comboArea = _festEl('div', 'fest-combo-area', '');
+        const comboTitle = _festEl('div', 'fest-combo-title', '', '🎯 콤보 계산 중...');
+        comboArea.appendChild(comboTitle);
+        split.appendChild(comboArea);
+
+        _festHaptic('light');
+        await _festDelay(600);
+
+        // 콤보 조건 순차 등장
+        comboTitle.textContent = '🎯 콤보 결과';
+        let runningScore = sd.baseBonus;
+        const allCombos = sd.combos || [];
+
+        // 스코어 카운터
+        const scoreCounter = _festEl('div', '', 'text-align:center;font-size:18px;font-weight:700;color:rgba(255,255,255,0.6);margin-bottom:8px;',
+          `기본 점수: ${sd.baseBonus}`);
+        comboArea.insertBefore(scoreCounter, comboTitle.nextSibling);
+
+        for (let ci = 0; ci < allCombos.length; ci++) {
+          if (_festSkipped) break;
+          const c = allCombos[ci];
+          const delay = ci === 0 ? 500 : ci === 1 ? 400 : 300;
+          await _festDelay(delay);
+
+          const isZero = c.value === 0;
+          const comboItem = _festEl('div', `fest-combo-item${isZero ? ' fest-combo-zero' : ''}`, '');
+          const emojiEl = _festEl('span', 'fest-combo-emoji', '', c.item?.emoji || '📊');
+          const descEl = _festEl('span', 'fest-combo-desc', '', escapeHTML(c.desc));
+          const valEl = _festEl('span', 'fest-combo-value', '', isZero ? '-' : `+${c.value}`);
+          comboItem.appendChild(emojiEl);
+          comboItem.appendChild(descEl);
+          comboItem.appendChild(valEl);
+
+          // 리액션
+          if (!isZero) {
+            let reactionText = '', reactionCls = '';
+            if (c.value >= 50)      { reactionText = 'AMAZING! 🌟'; reactionCls = 'amazing'; }
+            else if (c.value >= 30) { reactionText = 'Great! ✨'; reactionCls = 'great'; }
+            else if (c.value >= 10) { reactionText = 'Good!'; reactionCls = 'good'; }
+            if (reactionText) {
+              const reaction = _festEl('span', `fest-combo-reaction ${reactionCls}`, '', reactionText);
+              comboItem.appendChild(reaction);
+            }
+            _festSfx(c.value >= 30 ? 'shararang' : 'sharang');
+            _festHaptic(c.value >= 50 ? 'medium' : 'light');
+          }
+
+          comboArea.appendChild(comboItem);
+          // Force visible
+          void comboItem.offsetWidth;
+          comboItem.style.opacity = '1';
+
+          // 스크롤 (6개 초과 시)
+          if (ci >= 5) comboArea.scrollTop = comboArea.scrollHeight;
+        }
+
+        if (!_festSkipped) {
+          await _festDelay(400);
+
+          // 최종 점수 중앙 확대
+          const totalEl = _festEl('div', 'fest-total-score', '', String(sd.totalScore));
+          comboArea.appendChild(totalEl);
+          _festSfx('shararaRang');
+          _festHaptic('medium');
+          if (tier === 'full') _festSpawnStageParticles(overlay, 8);
+
+          // 순위 예측
+          rankedSoFar.push({ entry, score: sd.totalScore });
+          rankedSoFar.sort((a, b) => b.score - a.score);
+          const myRank = rankedSoFar.findIndex(r => r.entry === entry) + 1;
+          const predEl = _festEl('div', 'fest-rank-prediction', '', `현재 ${myRank}위 예상`);
+          comboArea.appendChild(predEl);
+
+          await _festDelay(1200);
+
+          // 퇴장
+          split.style.transition = 'transform 0.4s ease-in, opacity 0.4s ease-in';
+          split.style.transform = 'translateX(-100%)';
+          split.style.opacity = '0';
+          _festSfx('swoosh');
+          await _festDelay(500);
+          split.remove();
+        } else {
+          split.remove();
+        }
+      }
+    }
+    // 스킵 시 채점은 실행 but 연출 건너뜀
+    if (rankedSoFar.length === 0) {
+      scored.forEach(entry => rankedSoFar.push({ entry, score: entry.scoreData.totalScore }));
+      rankedSoFar.sort((a, b) => b.score - a.score);
+    }
+
+    // ── 보상 적용 ──
     _festApplyRewards(scored);
-    await _festShowRewards(overlay, scored, tier);
 
-    // ── Step 5: 닫기 ──
-    await _festClosing(overlay, tier);
+    // ── 스킵 시 요약본 표시 ──
+    if (_festSkipped) {
+      // 스킵 버튼 비활성화
+      skipBtn.style.display = 'none';
+      await _festShowSummary(overlay, scored);
+    } else {
+      // ── Phase 4: 최종 순위 ──
+      skipBtn.style.display = 'none'; // Phase 4부터 스킵 불가
+      const ranked = [...scored].sort((a, b) => b.scoreData.totalScore - a.scoreData.totalScore);
+      const rankIndices = [];
+      for (let i = 0; i < ranked.length; i++) {
+        let rIdx = i;
+        for (let j = 0; j < i; j++) {
+          if (ranked[j].scoreData.totalScore === ranked[i].scoreData.totalScore) { rIdx = j; break; }
+        }
+        rankIndices.push(rIdx);
+      }
+
+      const RANK_MEDALS = ['👑', '🥈', '🥉', '4️⃣'];
+      const RANK_COLORS = ['#ffd700', '#c0c0c0', '#cd7f32', '#8899aa'];
+
+      const rankTitle = _festEl('div', '', 'text-align:center;font-size:22px;font-weight:900;color:#fff;z-index:1;margin-bottom:16px;animation:idol-fest-slam 0.5s ease-out forwards',
+        escapeHTML('🏆 최종 순위'));
+      overlay.appendChild(rankTitle);
+
+      const rankContainer = _festEl('div', 'fest-rank-container', 'z-index:1;');
+      overlay.appendChild(rankContainer);
+
+      for (let i = 0; i < ranked.length; i++) {
+        const entry = ranked[i];
+        const p = entry.player;
+        const rIdx = rankIndices[i];
+        const isFirst = rIdx === 0;
+        const isTie = i > 0 && ranked[i - 1].scoreData.totalScore === entry.scoreData.totalScore;
+        const medal = RANK_MEDALS[rIdx] || `${rIdx + 1}`;
+        const color = RANK_COLORS[rIdx] || '#8899aa';
+
+        const rankCard = _festEl('div',
+          `fest-rank-card${isFirst ? ' fest-rank-first' : ''}${isTie ? ' fest-rank-tie' : ''}`, '');
+
+        const medalEl = _festEl('span', 'fest-rank-medal', '', medal);
+        rankCard.appendChild(medalEl);
+
+        if (isFirst) {
+          const crownEl = _festEl('span', 'fest-rank-crown', '', '');
+        }
+
+        const infoEl = _festEl('div', 'fest-rank-info', '');
+        const nameEl = _festEl('div', 'fest-rank-name', `color:${color}`, escapeHTML(p.idolName || p.name));
+        infoEl.appendChild(nameEl);
+
+        if (!isFirst) {
+          const msgEl = _festEl('div', 'fest-rank-msg', '', '다음엔 꼭! 👏');
+          infoEl.appendChild(msgEl);
+        }
+        rankCard.appendChild(infoEl);
+
+        const scoreEl = _festEl('span', 'fest-rank-score', `color:${color}`, String(entry.scoreData.totalScore));
+        rankCard.appendChild(scoreEl);
+
+        rankContainer.appendChild(rankCard);
+
+        await _festDelay(150);
+        void rankCard.offsetWidth;
+        rankCard.style.opacity = '1';
+
+        if (isFirst) {
+          _festSfx('fanfare');
+          _festHaptic('strong');
+          if (tier === 'full') _festSpawnStageParticles(overlay, 20);
+        } else {
+          _festHaptic('light');
+        }
+
+        await _festDelay(tier === 'full' ? 500 : 300);
+      }
+
+      await _festDelay(1000);
+    }
+
+    // ── Phase 5: 닫기 (전원 동의 필요) ──
+    const closeBar = _festEl('div', 'fest-skip-bar', 'z-index:10;');
+    const closeBtn = _festEl('button', 'fest-close-btn', '', '✅ 확인');
+    const closeVote = _festEl('span', 'fest-vote-count', '', '');
+    closeBtn.appendChild(closeVote);
+    overlay.appendChild(closeBar);
+    closeBar.appendChild(closeBtn);
+
+    await new Promise(closeResolve => {
+      let closeDone = false;
+      const tryClose = () => {
+        if (closeDone) return;
+        if (_festCheckAllVoted('close')) {
+          closeDone = true;
+          closeResolve();
+        }
+      };
+
+      closeBtn.addEventListener('click', () => {
+        _festSendVote('close');
+        if (_festIsSolo()) { _festClosed = true; closeDone = true; closeResolve(); return; }
+        closeBtn.style.opacity = '0.5';
+        closeBtn.style.pointerEvents = 'none';
+        // 투표 상태 표시 업데이트
+        const cnt = _festGetVoteCount('close');
+        const total = _festGetTotalPlayers();
+        closeVote.textContent = `👤 ${cnt}/${total}`;
+        tryClose();
+      });
+
+      // 솔로/연습모드: 5초 자동 닫기
+      if (_festIsSolo()) {
+        setTimeout(() => { if (!closeDone) { closeDone = true; closeResolve(); } }, 5000);
+      }
+
+      // 멀티: 주기적으로 투표 체크
+      const voteCheck = setInterval(() => {
+        if (closeDone) { clearInterval(voteCheck); return; }
+        const cnt = _festGetVoteCount('close');
+        const total = _festGetTotalPlayers();
+        closeVote.textContent = total > 1 ? `👤 ${cnt}/${total}` : '';
+        tryClose();
+      }, 500);
+
+      // 30초 타임아웃
+      setTimeout(() => { clearInterval(voteCheck); if (!closeDone) { closeDone = true; closeResolve(); } }, 30000);
+    });
+
+    // 페이드아웃
+    await _festRemoveOverlay(overlay);
+    window._festLocalRunning = false;
 
     resolve(true);
   });
 }
 
-/** Step 1: 오프닝 */
-async function _festOpening(overlay, tier) {
-  overlay.innerHTML = '';
+/** 스킵 요약본 */
+async function _festShowSummary(overlay, scored) {
+  const ranked = [...scored].sort((a, b) => b.scoreData.totalScore - a.scoreData.totalScore);
+  const RANK_MEDALS = ['🥇', '🥈', '🥉', '4️⃣'];
+  const STAT_EMOJIS = { fame: '⭐', money: '💰', talent: '🎵', looks: '💎' };
 
-  // 무대 조명 효과 (full 티어만)
-  if (tier === 'full') {
-    _festSpawnStageParticles(overlay, 15);
+  // 동점 처리
+  const rankIndices = [];
+  for (let i = 0; i < ranked.length; i++) {
+    let rIdx = i;
+    for (let j = 0; j < i; j++) {
+      if (ranked[j].scoreData.totalScore === ranked[i].scoreData.totalScore) { rIdx = j; break; }
+    }
+    rankIndices.push(rIdx);
   }
 
-  const titleWrap = _festEl('div', 'idol-festival-title-wrap', [
-    'text-align:center', 'z-index:1',
-  ].join(';'));
+  const title = _festEl('div', '', 'text-align:center;font-size:18px;font-weight:700;color:#fff;z-index:1;margin-bottom:12px;',
+    escapeHTML('📋 페스티벌 결과'));
+  overlay.appendChild(title);
 
-  const emoji = _festEl('div', 'idol-festival-title-emoji', [
-    'font-size:64px', 'margin-bottom:8px',
-    'animation:idol-fest-slam 0.6s ease-out forwards',
-  ].join(';'), '🎪');
-  titleWrap.appendChild(emoji);
+  const container = _festEl('div', 'fest-summary-container', 'z-index:1;margin:0 auto;');
+  overlay.appendChild(container);
 
-  const title = _festEl('div', 'idol-festival-title-text', [
-    'font-size:28px', 'font-weight:900', 'color:#ffd700',
-    'text-shadow:0 0 20px rgba(255,215,0,0.6), 0 2px 8px rgba(0,0,0,0.8)',
-    'animation:idol-fest-glow 2s ease-in-out infinite',
-    'letter-spacing:4px',
-  ].join(';'), escapeHTML('페스티벌 스테이지!'));
-  titleWrap.appendChild(title);
+  ranked.forEach((entry, i) => {
+    const p = entry.player;
+    const rIdx = rankIndices[i];
+    const medal = RANK_MEDALS[rIdx] || `${rIdx + 1}`;
+    const rw = entry.rewardDef || {};
 
-  const turnInfo = _festEl('div', 'idol-festival-turn', [
-    'font-size:14px', 'color:rgba(255,255,255,0.6)', 'margin-top:8px',
-    'animation:idol-fest-fadeup 0.5s ease-out 0.3s both',
-  ].join(';'), escapeHTML(`${idolState.turnNum}턴 결산`));
-  titleWrap.appendChild(turnInfo);
+    const row = _festEl('div', 'fest-summary-row', '');
+    row.appendChild(_festEl('span', 'fest-summary-medal', '', medal));
+    row.appendChild(_festEl('span', 'fest-summary-name', '', escapeHTML(p.idolName || p.name)));
+    row.appendChild(_festEl('span', 'fest-summary-score', '', String(entry.scoreData.totalScore)));
 
-  overlay.appendChild(titleWrap);
-
-  await _festDelay(1500);
+    const rewards = _festEl('span', 'fest-summary-rewards', '');
+    ['fame', 'money', 'talent', 'looks'].forEach(key => {
+      if (rw[key]) rewards.appendChild(_festEl('span', '', '', `${STAT_EMOJIS[key]}+${rw[key]}`));
+    });
+    row.appendChild(rewards);
+    container.appendChild(row);
+  });
 }
+
+/** 사전 배너 (idol.js에서 호출) */
+// _festPreBanner is defined above
 
 /** Step 2: 플레이어 채점 데이터 준비 (낮은 순위부터 정렬) */
 function _festScorePlayers(activePlayers) {
@@ -232,127 +711,6 @@ function _festScorePlayers(activePlayers) {
   return scored;
 }
 
-/** Step 2: 채점 연출 */
-async function _festShowScoring(overlay, scored, tier) {
-  overlay.innerHTML = '';
-
-  const container = _festEl('div', 'idol-festival-scoring', [
-    'width:100%', 'max-width:380px', 'padding:0 16px',
-    'display:flex', 'flex-direction:column', 'gap:12px',
-    'z-index:1',
-  ].join(';'));
-  overlay.appendChild(container);
-
-  // 섹션 타이틀
-  const sectionTitle = _festEl('div', 'idol-festival-section-title', [
-    'font-size:18px', 'font-weight:700', 'color:#fff',
-    'text-align:center', 'margin-bottom:8px',
-    'animation:idol-fest-fadeup 0.4s ease-out forwards',
-  ].join(';'), escapeHTML('🎤 무대 평가'));
-  container.appendChild(sectionTitle);
-
-  for (let i = 0; i < scored.length; i++) {
-    const entry = scored[i];
-    const p = entry.player;
-    const sd = entry.scoreData;
-    const idolType = entry.idolType;
-    const accent = typeof idolUxGetPlayerAccent === 'function'
-      ? idolUxGetPlayerAccent(p.id) : '#ffffff';
-
-    const card = _festEl('div', 'idol-festival-score-card', [
-      'background:rgba(255,255,255,0.08)',
-      'border:1px solid rgba(255,255,255,0.15)',
-      'border-radius:12px', 'padding:12px 14px',
-      'display:flex', 'align-items:center', 'gap:12px',
-      'animation:idol-fest-slidein-left 0.5s ease-out forwards',
-      'opacity:0',
-    ].join(';'));
-
-    // SD 캐릭터 (이모지 fallback)
-    const avatar = _festEl('div', 'idol-festival-avatar', [
-      'width:48px', 'height:48px', 'border-radius:50%',
-      'display:flex', 'align-items:center', 'justify-content:center',
-      'font-size:28px',
-      `background:linear-gradient(135deg, ${accent}40, ${accent}20)`,
-      `border:2px solid ${accent}`,
-      'flex-shrink:0',
-    ].join(';'), idolType ? idolType.emoji : '🌟');
-    card.appendChild(avatar);
-
-    // 정보 영역
-    const info = _festEl('div', 'idol-festival-info', [
-      'flex:1', 'min-width:0',
-    ].join(';'));
-
-    const nameRow = _festEl('div', 'idol-festival-name', [
-      'font-size:14px', 'font-weight:700', 'color:#fff',
-      'white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis',
-    ].join(';'), `${escapeHTML(p.idolName || p.name)}`);
-    info.appendChild(nameRow);
-
-    // 아이템 아이콘 나열
-    if (p.items && p.items.length > 0) {
-      const itemRow = _festEl('div', 'idol-festival-items', [
-        'display:flex', 'gap:2px', 'margin-top:2px',
-        'font-size:12px', 'opacity:0.7',
-      ].join(';'));
-      p.items.forEach(item => {
-        const def = typeof IDOL_ITEMS !== 'undefined'
-          ? IDOL_ITEMS.find(d => d.id === item.id) : null;
-        if (def) {
-          const icon = _festEl('span', '', '', def.emoji);
-          itemRow.appendChild(icon);
-        }
-      });
-      info.appendChild(itemRow);
-    }
-
-    // 콤보 표시
-    if (sd.combos && sd.combos.length > 0 && tier !== 'minimal') {
-      const comboRow = _festEl('div', 'idol-festival-combos', [
-        'display:flex', 'flex-wrap:wrap', 'gap:4px', 'margin-top:4px',
-      ].join(';'));
-      sd.combos.forEach(c => {
-        const chip = _festEl('span', 'idol-festival-combo-chip', [
-          'font-size:10px', 'padding:1px 6px',
-          'background:rgba(255,215,0,0.2)',
-          'border:1px solid rgba(255,215,0,0.4)',
-          'border-radius:8px', 'color:#ffd700',
-          'white-space:nowrap',
-        ].join(';'), escapeHTML(c.desc));
-        comboRow.appendChild(chip);
-      });
-      info.appendChild(comboRow);
-    }
-
-    card.appendChild(info);
-
-    // 점수 표시 (카운트업)
-    const scoreEl = _festEl('div', 'idol-festival-score-value', [
-      'font-size:24px', 'font-weight:900',
-      'color:#ffd700', 'text-align:right',
-      'min-width:48px', 'flex-shrink:0',
-    ].join(';'), '0');
-    card.appendChild(scoreEl);
-
-    container.appendChild(card);
-
-    // 슬라이드인 후 카운트업
-    await _festDelay(300);
-    card.style.opacity = '1';
-
-    if (tier !== 'minimal') {
-      await _festCountUp(scoreEl, sd.totalScore, 1200);
-    } else {
-      scoreEl.textContent = String(sd.totalScore);
-    }
-
-    await _festDelay(tier === 'full' ? 500 : 200);
-  }
-
-  await _festDelay(800);
-}
-
 /** 숫자 카운트업 애니메이션 */
 function _festCountUp(el, target, durationMs) {
   return new Promise(resolve => {
@@ -361,7 +719,6 @@ function _festCountUp(el, target, durationMs) {
     function tick(now) {
       const elapsed = now - start;
       const ratio = Math.min(1, elapsed / durationMs);
-      // Ease out cubic
       const eased = 1 - Math.pow(1 - ratio, 3);
       const current = Math.round(eased * target);
       el.textContent = String(current);
@@ -377,109 +734,14 @@ function _festCountUp(el, target, durationMs) {
   });
 }
 
-/** Step 3: 순위 발표 */
-async function _festShowRanking(overlay, scored, tier) {
-  overlay.innerHTML = '';
-
-  const container = _festEl('div', 'idol-festival-ranking', [
-    'width:100%', 'max-width:380px', 'padding:0 16px',
-    'text-align:center', 'z-index:1',
-  ].join(';'));
-  overlay.appendChild(container);
-
-  const title = _festEl('div', 'idol-festival-rank-title', [
-    'font-size:22px', 'font-weight:900', 'color:#fff',
-    'margin-bottom:16px',
-    'animation:idol-fest-slam 0.5s ease-out forwards',
-  ].join(';'), escapeHTML('🏆 순위 발표'));
-  container.appendChild(title);
-
-  // 점수 높은 순으로 재정렬 (발표는 역순)
-  const ranked = [...scored].sort((a, b) => b.scoreData.totalScore - a.scoreData.totalScore);
-
-  const RANK_MEDALS = ['🥇', '🥈', '🥉', '4️⃣'];
-  const RANK_COLORS = ['#ffd700', '#c0c0c0', '#cd7f32', '#8899aa'];
-
-  // 동점 그룹 → 같은 등수 부여
-  const rankIndices = [];
-  for (let i = 0; i < ranked.length; i++) {
-    let rIdx = i;
-    for (let j = 0; j < i; j++) {
-      if (ranked[j].scoreData.totalScore === ranked[i].scoreData.totalScore) {
-        rIdx = j;
-        break;
-      }
-    }
-    rankIndices.push(rIdx);
-  }
-
-  // 역순 공개 (4등→1등)
-  for (let i = ranked.length - 1; i >= 0; i--) {
-    const entry = ranked[i];
-    const p = entry.player;
-    const rIdx = rankIndices[i];
-    const rankNum = rIdx + 1;
-    const isFirst = (rIdx === 0);
-    const medal = RANK_MEDALS[rIdx] || `${rankNum}`;
-    const color = RANK_COLORS[rIdx] || '#8899aa';
-
-    const row = _festEl('div', 'idol-festival-rank-row', [
-      'display:flex', 'align-items:center', 'gap:10px',
-      'padding:10px 14px', 'margin-bottom:8px',
-      'border-radius:10px',
-      isFirst
-        ? 'background:linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,165,0,0.15));border:2px solid rgba(255,215,0,0.6)'
-        : 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1)',
-      'animation:idol-fest-slidein-right 0.4s ease-out forwards',
-      'opacity:0',
-    ].join(';'));
-
-    const medalEl = _festEl('span', 'idol-festival-rank-medal', [
-      'font-size:24px', 'flex-shrink:0',
-    ].join(';'), medal);
-    row.appendChild(medalEl);
-
-    const name = _festEl('span', 'idol-festival-rank-name', [
-      'flex:1', 'font-size:16px', 'font-weight:700',
-      `color:${color}`,
-      'text-align:left',
-      'white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis',
-    ].join(';'), escapeHTML(p.idolName || p.name));
-    row.appendChild(name);
-
-    const score = _festEl('span', 'idol-festival-rank-score', [
-      'font-size:18px', 'font-weight:900',
-      `color:${color}`,
-    ].join(';'), String(entry.scoreData.totalScore));
-    row.appendChild(score);
-
-    container.appendChild(row);
-
-    await _festDelay(200);
-    row.style.opacity = '1';
-
-    // 1등 금빛 하이라이트 + 글로우
-    if (isFirst && tier !== 'minimal') {
-      row.style.animation = 'idol-fest-glow 2s ease-in-out infinite';
-    }
-
-    await _festDelay(tier === 'full' ? 500 : 300);
-  }
-
-  await _festDelay(tier === 'full' ? 1000 : 500);
-}
-
-/** Step 4: 보상 적용 (실제 스탯 변경) — 동점자는 같은 보상 */
+/** 보상 적용 (실제 스탯 변경) — 동점자는 같은 보상 */
 function _festApplyRewards(scored) {
   if (!idolState) return;
 
-  // 점수 높은 순으로 정렬
   const ranked = [...scored].sort((a, b) => b.scoreData.totalScore - a.scoreData.totalScore);
 
-  // 동점 그룹별 같은 등수(=같은 보상) 부여
   ranked.forEach((entry, i) => {
     const p = entry.player;
-    // 동점자는 그룹 내 첫 번째 인덱스의 보상을 받음
     let rankIdx = i;
     for (let j = 0; j < i; j++) {
       if (ranked[j].scoreData.totalScore === entry.scoreData.totalScore) {
@@ -491,13 +753,11 @@ function _festApplyRewards(scored) {
       ? FESTIVAL_REWARDS[rankIdx]
       : { fame: 1, money: 100, talent: 0, looks: 0 };
 
-    // 실제 스탯 반영
     p.fame   += rewardDef.fame   || 0;
     p.money  += rewardDef.money  || 0;
     p.talent += rewardDef.talent || 0;
     p.looks  += rewardDef.looks  || 0;
 
-    // 콤보 보너스도 실제 반영
     const cs = entry.scoreData.comboStats;
     if (cs) {
       p.talent += cs.talent || 0;
@@ -507,110 +767,10 @@ function _festApplyRewards(scored) {
     }
 
     entry.rewardDef = rewardDef;
-    entry.rankIdx = rankIdx; // 순위 표시용 저장
+    entry.rankIdx = rankIdx;
   });
 
-  // P2P 동기화
   if (typeof broadcastIdolState === 'function') broadcastIdolState();
-}
-
-/** Step 4: 보상 표시 */
-async function _festShowRewards(overlay, scored, tier) {
-  overlay.innerHTML = '';
-
-  const container = _festEl('div', 'idol-festival-rewards', [
-    'width:100%', 'max-width:380px', 'padding:0 16px',
-    'text-align:center', 'z-index:1',
-  ].join(';'));
-  overlay.appendChild(container);
-
-  const title = _festEl('div', 'idol-festival-reward-title', [
-    'font-size:18px', 'font-weight:700', 'color:#fff',
-    'margin-bottom:12px',
-    'animation:idol-fest-fadeup 0.4s ease-out forwards',
-  ].join(';'), escapeHTML('🎁 보상 지급'));
-  container.appendChild(title);
-
-  const ranked = [...scored].sort((a, b) => b.scoreData.totalScore - a.scoreData.totalScore);
-
-  const STAT_EMOJIS = { fame: '⭐', money: '💰', talent: '🎵', looks: '💎' };
-
-  ranked.forEach((entry, i) => {
-    const p = entry.player;
-    const rw = entry.rewardDef || {};
-    const accent = typeof idolUxGetPlayerAccent === 'function'
-      ? idolUxGetPlayerAccent(p.id) : '#ffffff';
-
-    const row = _festEl('div', 'idol-festival-reward-row', [
-      'display:flex', 'align-items:center', 'gap:8px',
-      'padding:8px 12px', 'margin-bottom:6px',
-      'background:rgba(255,255,255,0.06)',
-      'border-radius:8px',
-      `border-left:3px solid ${accent}`,
-      'animation:idol-fest-fadeup 0.4s ease-out forwards',
-    ].join(';'));
-
-    const name = _festEl('span', '', [
-      'flex:1', 'font-size:13px', 'font-weight:600', 'color:#fff',
-      'text-align:left', 'white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis',
-    ].join(';'), escapeHTML(p.idolName || p.name));
-    row.appendChild(name);
-
-    const rewards = _festEl('span', '', [
-      'font-size:12px', 'color:rgba(255,255,255,0.8)',
-      'display:flex', 'gap:6px', 'flex-shrink:0',
-    ].join(';'));
-
-    ['fame', 'money', 'talent', 'looks'].forEach(key => {
-      if (rw[key]) {
-        const chip = _festEl('span', '', [
-          'background:rgba(255,255,255,0.1)',
-          'padding:1px 5px', 'border-radius:4px',
-          'white-space:nowrap',
-        ].join(';'), `${STAT_EMOJIS[key] || ''}+${rw[key]}`);
-        rewards.appendChild(chip);
-      }
-    });
-
-    row.appendChild(rewards);
-    container.appendChild(row);
-  });
-
-  await _festDelay(2000);
-}
-
-/** Step 5: 닫기 (버튼 클릭 or 자동) */
-async function _festClosing(overlay, tier) {
-  // 닫기 버튼 추가
-  const btnWrap = _festEl('div', 'idol-festival-close-wrap', [
-    'position:absolute', 'bottom:40px', 'left:0', 'right:0',
-    'text-align:center', 'z-index:2',
-    'animation:idol-fest-fadeup 0.4s ease-out forwards',
-  ].join(';'));
-
-  const btn = _festEl('button', 'idol-festival-close-btn', [
-    'padding:10px 32px', 'font-size:16px', 'font-weight:700',
-    'color:#fff', 'background:rgba(255,215,0,0.3)',
-    'border:2px solid rgba(255,215,0,0.6)',
-    'border-radius:24px', 'cursor:pointer',
-    'transition:all 0.2s ease',
-  ].join(';'), escapeHTML('확인'));
-  btnWrap.appendChild(btn);
-  overlay.appendChild(btnWrap);
-
-  // 버튼 클릭 or 3초 자동 닫기
-  await new Promise(resolve => {
-    let done = false;
-    const finish = () => {
-      if (done) return;
-      done = true;
-      resolve();
-    };
-    btn.addEventListener('click', finish);
-    setTimeout(finish, 3000);
-  });
-
-  await _festRemoveOverlay(overlay);
 }
 
 /** 무대 파티클 생성 (full 티어용) */
