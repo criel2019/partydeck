@@ -2166,15 +2166,16 @@
   #idolGame .idol-action-panel {
     grid-column: 2;
     grid-row: 3;
-    max-height: none;
+    align-self: start;
+    max-height: 100%;
     padding: 8px 12px 12px 8px;
     border-top: none;
     border-left: 1px solid rgba(255,255,255,0.07);
     background: transparent;
+    overflow-y: auto;
   }
 
   #idolGame .idol-action-shell {
-    height: 100%;
     min-height: 0;
   }
 
@@ -2185,7 +2186,6 @@
   #idolGame .idol-task-card {
     flex: 1 1 auto;
     min-height: 0;
-    overflow: auto;
   }
 
   #idolGame.idol-select-mode.active {
