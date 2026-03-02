@@ -1148,25 +1148,18 @@
   }
 
   /* ───────────────────────────────────────────────
-     UP/DOWN — Casino felt, cards LEFT, actions RIGHT
+     UP/DOWN — Landscape: column layout with compact sizes
      ─────────────────────────────────────────────── */
   #updownGame .ud-content {
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
+    flex-direction: column !important;
   }
   #updownGame .ud-top-bar {
-    width: 100% !important;
-    flex-shrink: 0 !important;
     padding: 3px 10px !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 2px !important;
   }
-  /* LEFT: cards area */
   #updownGame .ud-cards-area {
-    flex: 2 !important;
-    flex-direction: column !important;
+    flex: 1 !important;
     gap: 10px !important;
-    min-width: 0 !important;
-    width: auto !important;
   }
   #updownGame .ud-hero-card {
     width: min(32vh, 140px) !important;
@@ -1190,19 +1183,11 @@
   #updownGame .ud-result {
     display: none !important;
   }
-  /* RIGHT: bottom panel becomes right panel */
   #updownGame .ud-bottom-panel {
-    flex: 3 !important;
-    justify-content: center !important;
-    padding: 0 8px !important;
     gap: 6px !important;
-  }
-  #updownGame .ud-choice-buttons {
-    display: flex !important;
-    gap: 8px !important;
+    padding: 0 4px !important;
   }
   #updownGame .ud-btn {
-    flex: 1 !important;
     padding: min(4vh, 14px) !important;
   }
   #updownGame .ud-btn-arrow { font-size: min(5vh, 22px) !important; }
