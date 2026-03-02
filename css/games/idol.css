@@ -2177,6 +2177,7 @@
   }
 
   #idolGame .idol-action-shell {
+    height: 100%;
     min-height: 0;
   }
 
