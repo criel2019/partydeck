@@ -1021,24 +1021,6 @@ function idolOpenItemShop(shopId) {
   idolRenderAll();
 }
 
-// 아이템 구매 화면에서 뒤로가기 → 이전 선택 화면 복원
-function idolItemShopBack() {
-  if (!state.isHost) return;
-  const action = idolState.pendingAction;
-  if (!action) return;
-  const p = idolCurrentPlayer();
-  const ownerId = action.landOwnerId;
-  const isOwn = ownerId && p && ownerId === p.id;
-  idolState.pendingAction = {
-    type: isOwn ? 'own-land-choice' : 'land-choice',
-    shopId: action.shopId, playerId: action.playerId,
-    isDouble: action.isDouble,
-    ...(isOwn ? {} : { landOwnerId: ownerId, rentPaid: action.rentPaid }),
-  };
-  broadcastIdolState();
-  idolRenderAll();
-}
-
 function idolTrainAtShop(shopId, isOwned) {
   if (!state.isHost) return;
   const p = idolCurrentPlayer();
@@ -3500,10 +3482,7 @@ function idolRenderItemShopPanel(action) {
   return `
     <div class="idol-action-title">🛒 아이템 구매</div>
     ${ownerNote}
-    <div class="idol-item-grid">${itemsHTML}</div>
-    <div class="idol-action-buttons" style="margin-top:8px;">
-      <button class="idol-btn" onclick="idolItemShopBack()">↩ 돌아가기</button>
-    </div>`;
+    <div class="idol-item-grid">${itemsHTML}</div>`;
 }
 
 // ─── 아이템 교체 패널 ─────────────────────────
