@@ -430,16 +430,43 @@ function idolFestivalStart() {
         const cardArea = _festEl('div', 'fest-card-area', '');
         const card = _festEl('div', `fest-player-card${isMe ? ' fest-my-card' : ''}`, '');
 
-        const avatarEl = _festEl('div', 'fest-avatar', `background:linear-gradient(135deg,${accent}40,${accent}20);border:2px solid ${accent};`,
-          idolType ? idolType.emoji : '🌟');
-        card.appendChild(avatarEl);
+        // 아이돌 이미지 (실제 PNG/JPG)
+        const imgSrc = idolType?.img || '';
+        if (imgSrc) {
+          const imgEl = _festEl('img', 'fest-idol-img', '');
+          imgEl.src = imgSrc;
+          imgEl.alt = idolType?.name || '';
+          imgEl.style.borderColor = accent;
+          card.appendChild(imgEl);
+        } else {
+          const avatarEl = _festEl('div', 'fest-avatar', `background:linear-gradient(135deg,${accent}40,${accent}20);border:2px solid ${accent};`,
+            idolType ? idolType.emoji : '🌟');
+          card.appendChild(avatarEl);
+        }
 
+        // 이름 + 타입
         const nameEl = _festEl('div', 'fest-idol-name', '', escapeHTML(p.idolName || p.name));
         card.appendChild(nameEl);
+        if (idolType) {
+          const typeEl = _festEl('div', 'fest-idol-type', `color:${accent}`, `${idolType.emoji} ${idolType.type}`);
+          card.appendChild(typeEl);
+        }
 
-        // 스탯 표시
-        const statsEl = _festEl('div', 'fest-stats', '',
-          `⭐${p.fame} 🎵${p.talent} 💎${p.looks}`);
+        // 성장 단계
+        const stage = _festGetStage(p);
+        if (stage) {
+          const stageEl = _festEl('div', 'fest-idol-stage', `color:${stage.color}`, `${stage.emoji} ${stage.name}`);
+          card.appendChild(stageEl);
+        }
+
+        // 스탯 (개별 줄로 표시)
+        const statsEl = _festEl('div', 'fest-stats', '');
+        statsEl.innerHTML = `
+          <div class="fest-stat-row"><span class="fest-stat-label">⭐ 인기도</span><span class="fest-stat-val">${p.fame}</span></div>
+          <div class="fest-stat-row"><span class="fest-stat-label">🎵 재능</span><span class="fest-stat-val">${p.talent}</span></div>
+          <div class="fest-stat-row"><span class="fest-stat-label">💎 외모</span><span class="fest-stat-val">${p.looks}</span></div>
+          <div class="fest-stat-row"><span class="fest-stat-label">💰 자금</span><span class="fest-stat-val">${p.money}만</span></div>
+          <div class="fest-stat-row"><span class="fest-stat-label">🏠 보유 땅</span><span class="fest-stat-val">${(p.ownedShops || []).length}개</span></div>`;
         card.appendChild(statsEl);
 
         // 호감도 (페스티벌에서 최초 공개)
@@ -447,14 +474,22 @@ function idolFestivalStart() {
         const favorEl = _festEl('div', 'fest-favor', '', `💕 호감도: ${favorVal}`);
         card.appendChild(favorEl);
 
-        // 아이템 행
+        // 아이템 상세 (이름 + 효과)
         if (p.items && p.items.length > 0) {
-          const itemsRow = _festEl('div', 'fest-items-row', '');
+          const itemsWrap = _festEl('div', 'fest-items-detail', '');
+          const itemsTitle = _festEl('div', 'fest-items-title', '', `🎒 보유 아이템 (${p.items.length}/${typeof IDOL_MAX_ITEMS !== 'undefined' ? IDOL_MAX_ITEMS : 5})`);
+          itemsWrap.appendChild(itemsTitle);
           p.items.forEach(item => {
             const def = typeof IDOL_ITEMS !== 'undefined' ? IDOL_ITEMS.find(d => d.id === item.id) : null;
-            if (def) itemsRow.appendChild(_festEl('span', '', '', def.emoji));
+            if (def) {
+              const row = _festEl('div', 'fest-item-row', '');
+              row.innerHTML = `<span>${def.emoji}</span><span class="fest-item-name">${escapeHTML(def.name)}</span><span class="fest-item-combo">${escapeHTML(def.comboDesc)}</span>`;
+              itemsWrap.appendChild(row);
+            }
           });
-          card.appendChild(itemsRow);
+          card.appendChild(itemsWrap);
+        } else {
+          card.appendChild(_festEl('div', 'fest-items-empty', '', '🎒 아이템 없음'));
         }
 
         cardArea.appendChild(card);
