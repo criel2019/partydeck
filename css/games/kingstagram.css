@@ -613,6 +613,45 @@
   text-shadow: 0 0 6px rgba(255, 255, 255, 0.1);
 }
 
+/* ===== LAND SELECTABLE (choosing phase, dice group selected) ===== */
+.king-land-card.king-land-selectable {
+  border-color: rgba(0, 230, 118, 0.5) !important;
+  cursor: pointer;
+  animation: kingLandSelectable 1.2s ease-in-out infinite;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.king-land-card.king-land-selectable:active {
+  transform: scale(0.96);
+}
+@keyframes kingLandSelectable {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(0, 230, 118, 0.15), inset 0 0 8px rgba(0, 230, 118, 0.03);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(0, 230, 118, 0.35), inset 0 0 14px rgba(0, 230, 118, 0.06);
+  }
+}
+
+.king-land-tap-hint {
+  font-size: 12px;
+  margin-left: auto;
+  animation: kingTapBounce 0.8s ease-in-out infinite;
+}
+@keyframes kingTapBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* ===== CHOOSE HINT TEXT ===== */
+.king-choose-hint {
+  font-size: 13px;
+  font-weight: 700;
+  color: #00e676;
+  text-align: center;
+  padding: 4px 0;
+  animation: kingPulseText 1.2s ease-in-out infinite;
+}
+
 /* ===== LAND HIGHLIGHT (just placed) ===== */
 .king-land-card.king-land-highlight {
   border-color: rgba(255, 215, 0, 0.6) !important;

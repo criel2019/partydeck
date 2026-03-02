@@ -1663,7 +1663,6 @@ function aiKingstagram() {
   var currentPlayer = ks.players[ks.turnIdx];
   if (!currentPlayer || !currentPlayer.id.startsWith('ai-')) return;
 
-  // 1 die per turn: just auto-roll
   if (ks.phase === 'rolling') {
     var rollPlayerId = currentPlayer.id;
     var rollTurnIdx = ks.turnIdx;
@@ -1673,5 +1672,51 @@ function aiKingstagram() {
       processKingRoll(rollPlayerId);
     }, 400 + Math.random() * 400);
     _aiTimers.push(t);
+  } else if (ks.phase === 'choosing') {
+    var cpId = currentPlayer.id;
+    var cpTurnIdx = ks.turnIdx;
+    var t2 = setTimeout(function() {
+      if (!kingState || kingState.phase !== 'choosing') return;
+      if (kingState.turnIdx !== cpTurnIdx) return;
+      var cp = kingState.players[kingState.turnIdx];
+      if (!cp || cp.id !== cpId) return;
+      var groups = kingState.rollGroups;
+      if (!groups) return;
+
+      // Pick the largest dice group
+      var bestValue = null;
+      var bestCount = 0;
+      var keys = Object.keys(groups);
+      for (var i = 0; i < keys.length; i++) {
+        var v = parseInt(keys[i]);
+        if (groups[v] > bestCount) {
+          bestCount = groups[v];
+          bestValue = v;
+        }
+      }
+      if (bestValue === null) return;
+
+      // Pick land: prefer high card value, own presence, low enemy competition
+      var bestLandId = 1;
+      var bestScore = -Infinity;
+      for (var l = 0; l < kingState.lands.length; l++) {
+        var land = kingState.lands[l];
+        var cardSum = 0;
+        for (var c = 0; c < land.cards.length; c++) cardSum += land.cards[c];
+        var myDice = land.dice[cp.id] || 0;
+        var enemyDice = 0;
+        var dKeys = Object.keys(land.dice);
+        for (var d = 0; d < dKeys.length; d++) {
+          if (dKeys[d] !== cp.id) enemyDice += land.dice[dKeys[d]];
+        }
+        var score = cardSum - (enemyDice * 8000) + (myDice * 5000) + Math.random() * 5000;
+        if (score > bestScore) {
+          bestScore = score;
+          bestLandId = land.id;
+        }
+      }
+      processKingPlace(cpId, bestValue, bestLandId);
+    }, 600 + Math.random() * 600);
+    _aiTimers.push(t2);
   }
 }

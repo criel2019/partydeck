@@ -602,7 +602,7 @@ function handleMessage(peerId, raw) {
     // Kingstagram handlers
     'king-state': () => { showScreen('kingstagramGame'); renderKingView(msg.state || msg); },
     'king-roll': () => { if(state.isHost) processKingRoll(peerId); },
-    // king-choose removed: 1 die per turn, auto-placed
+    'king-place': () => { if(state.isHost) processKingPlace(peerId, msg.diceValue, msg.landId); },
     'king-scoring': () => { if(typeof kingShowScoring === 'function') kingShowScoring(msg.results); },
     'player-left': () => {
       state.players = state.players.filter(p => p.id !== msg.playerId);

@@ -1,7 +1,7 @@
 // =============================================
 // KINGSTAGRAM (킹스타그램) — Las Vegas Dice Variant
 // 6 lands, follower cards, dice placement
-// 1 die per turn, auto-place on corresponding land
+// Roll ALL dice → choose a same-number group → place on any land
 // =============================================
 
 // ===== CONSTANTS =====
@@ -27,12 +27,16 @@ var KING_DECK_TEMPLATE = [
   { value: 100000, count: 3 }
 ];
 
+// ===== DICE FACE UNICODE =====
+var KING_DICE_FACES = ['\u2680', '\u2681', '\u2682', '\u2683', '\u2684', '\u2685'];
+
 // ===== STATE =====
 var kingState = null; // host-only full state
 var _kingView = null; // client-side last received view
 var _kingTimers = [];
 var _kingShowRankings = false; // toggle rankings overlay
 var _kingRecorded = false; // prevent duplicate recordGame calls
+var _kingSelectedDice = null; // client-side: selected dice value (1-6) or null
 
 // ===== DECK HELPERS =====
 function kingCreateDeck() {
@@ -152,8 +156,10 @@ function startKingstagram() {
     round: 1,
     maxRounds: 4,
     turnIdx: 0,
-    lastRoll: null, // { value, landName, landEmoji, playerId, playerName }
-    phase: 'rolling', // rolling | placed | scoring | round-end | gameover
+    lastRoll: null,
+    currentRoll: null, // array of all rolled values
+    rollGroups: null,   // { value: count } grouped dice
+    phase: 'rolling', // rolling | choosing | placed | scoring | round-end | gameover
     startPlayerIdx: 0
   };
 
@@ -190,6 +196,8 @@ function getKingView() {
     maxRounds: ks.maxRounds,
     turnIdx: ks.turnIdx,
     lastRoll: ks.lastRoll,
+    currentRoll: ks.currentRoll,
+    rollGroups: ks.rollGroups,
     phase: ks.phase,
     startPlayerIdx: ks.startPlayerIdx,
     rankings: ks.phase === 'gameover' ? getKingRankings() : null
@@ -205,7 +213,7 @@ function broadcastKingState() {
   renderKingView(view);
 }
 
-// ===== HOST: PROCESS ROLL (1 die per turn) =====
+// ===== HOST: PROCESS ROLL (all remaining dice at once) =====
 function processKingRoll(fromId) {
   if (!state.isHost || !kingState) return;
   if (kingState.phase !== 'rolling') return;
@@ -215,25 +223,62 @@ function processKingRoll(fromId) {
   if (!player || player.id !== fromId) return;
   if (player.diceLeft <= 0) return;
 
-  // Roll 1 die (1-6)
-  var value = Math.floor(Math.random() * 6) + 1;
+  // Roll ALL remaining dice
+  var results = [];
+  for (var i = 0; i < player.diceLeft; i++) {
+    results.push(Math.floor(Math.random() * 6) + 1);
+  }
+  results.sort(function(a, b) { return a - b; });
 
-  // Place on corresponding land
-  var landIdx = value - 1;
+  // Group by value
+  var groups = {};
+  for (var j = 0; j < results.length; j++) {
+    var v = results[j];
+    if (!groups[v]) groups[v] = 0;
+    groups[v]++;
+  }
+
+  ks.currentRoll = results;
+  ks.rollGroups = groups;
+  ks.phase = 'choosing';
+  broadcastKingState();
+}
+
+// ===== HOST: PROCESS PLACE (place chosen dice group on chosen land) =====
+function processKingPlace(fromId, diceValue, landId) {
+  if (!state.isHost || !kingState) return;
+  if (kingState.phase !== 'choosing') return;
+
+  var ks = kingState;
+  var player = ks.players[ks.turnIdx];
+  if (!player || player.id !== fromId) return;
+
+  diceValue = parseInt(diceValue);
+  landId = parseInt(landId);
+  if (!ks.rollGroups || !ks.rollGroups[diceValue] || ks.rollGroups[diceValue] <= 0) return;
+  if (landId < 1 || landId > 6) return;
+
+  var count = ks.rollGroups[diceValue];
+  var landIdx = landId - 1;
   var land = ks.lands[landIdx];
+
+  // Place dice on land
   if (!land.dice[player.id]) land.dice[player.id] = 0;
-  land.dice[player.id]++;
-  player.diceLeft--;
+  land.dice[player.id] += count;
+  player.diceLeft -= count;
 
   // Set display info
-  var landInfo = KING_LANDS[landIdx];
   ks.lastRoll = {
-    value: value,
-    landName: landInfo.name,
-    landEmoji: landInfo.emoji,
+    value: diceValue,
+    count: count,
+    landId: landId,
+    landName: KING_LANDS[landIdx].name,
+    landEmoji: KING_LANDS[landIdx].emoji,
     playerId: player.id,
     playerName: player.name
   };
+  ks.currentRoll = null;
+  ks.rollGroups = null;
   ks.phase = 'placed';
   broadcastKingState();
 
@@ -242,7 +287,7 @@ function processKingRoll(fromId) {
     if (!kingState || kingState.phase !== 'placed') return;
     kingState.lastRoll = null;
     advanceKingTurn();
-  }, 1200);
+  }, 1400);
   _kingTimers.push(t);
 }
 
@@ -274,6 +319,8 @@ function processKingScoring() {
   var ks = kingState;
   ks.phase = 'scoring';
   ks.lastRoll = null;
+  ks.currentRoll = null;
+  ks.rollGroups = null;
 
   var scoringResults = [];
 
@@ -390,6 +437,8 @@ function processKingRoundEnd() {
   }
 
   ks.lastRoll = null;
+  ks.currentRoll = null;
+  ks.rollGroups = null;
   ks.phase = 'rolling';
   broadcastKingState();
 }
@@ -423,10 +472,47 @@ function kingRoll() {
     return;
   }
 
+  _kingSelectedDice = null;
+
   if (state.isHost) {
     processKingRoll(state.myId);
   } else {
     sendToHost({ type: 'king-roll' });
+  }
+}
+
+// ===== CLIENT: SELECT DICE GROUP =====
+function kingSelectDice(value) {
+  if (!_kingView || _kingView.phase !== 'choosing') return;
+  var currentPlayer = _kingView.players[_kingView.turnIdx];
+  if (!currentPlayer || currentPlayer.id !== state.myId) return;
+
+  value = parseInt(value);
+  if (_kingSelectedDice === value) {
+    _kingSelectedDice = null; // deselect
+  } else {
+    _kingSelectedDice = value;
+  }
+  renderKingView(_kingView);
+}
+
+// ===== CLIENT: PLACE ON LAND =====
+function kingPlaceOnLand(landId) {
+  if (!_kingView || _kingView.phase !== 'choosing') return;
+  var currentPlayer = _kingView.players[_kingView.turnIdx];
+  if (!currentPlayer || currentPlayer.id !== state.myId) return;
+  if (_kingSelectedDice === null) {
+    showToast('\uba3c\uc800 \uc8fc\uc0ac\uc704 \uadf8\ub8f9\uc744 \uc120\ud0dd\ud558\uc138\uc694');
+    return;
+  }
+
+  var diceValue = _kingSelectedDice;
+  _kingSelectedDice = null;
+
+  if (state.isHost) {
+    processKingPlace(state.myId, diceValue, landId);
+  } else {
+    sendToHost({ type: 'king-place', diceValue: diceValue, landId: landId });
   }
 }
 
@@ -457,6 +543,11 @@ function renderKingView(view) {
     }
   }
 
+  // Reset selected dice when phase changes away from choosing
+  if (view.phase !== 'choosing') {
+    _kingSelectedDice = null;
+  }
+
   var html = '';
 
   // === Top bar ===
@@ -473,9 +564,19 @@ function renderKingView(view) {
   } else if (view.phase === 'scoring') {
     html += '<span class="king-turn-text">\uacb0\uc0b0 \uc911...</span>';
   } else if (view.phase === 'placed' && view.lastRoll) {
-    // Show who placed what
-    html += '<span class="king-turn-text">' + escapeHTML(view.lastRoll.playerName) + ': \ud83c\udfb2 ' +
-      view.lastRoll.value + ' \u2192 ' + view.lastRoll.landEmoji + ' ' + view.lastRoll.landName + '</span>';
+    html += '<span class="king-turn-text">' + escapeHTML(view.lastRoll.playerName) + ': ' +
+      KING_DICE_FACES[view.lastRoll.value - 1] + '\xd7' + view.lastRoll.count +
+      ' \u2192 ' + view.lastRoll.landEmoji + ' ' + view.lastRoll.landName + '</span>';
+  } else if (view.phase === 'choosing') {
+    if (isMyTurn) {
+      if (_kingSelectedDice !== null) {
+        html += '<span class="king-turn-text">\ud83c\udfaf \ub545\uc744 \uc120\ud0dd\ud558\uc138\uc694!</span>';
+      } else {
+        html += '<span class="king-turn-text">\ud83c\udfb2 \uc8fc\uc0ac\uc704 \uadf8\ub8f9\uc744 \uc120\ud0dd\ud558\uc138\uc694</span>';
+      }
+    } else if (currentPlayer) {
+      html += '<span class="king-turn-text">' + escapeHTML(currentPlayer.name) + '\uc774(\uac00) \ubc30\uce58 \uc911...</span>';
+    }
   } else if (currentPlayer) {
     var turnName = currentPlayer.id === state.myId ? '\ub0b4' : escapeHTML(currentPlayer.name) + '\uc758';
     html += '<span class="king-turn-text">' + turnName + ' \ucc28\ub840</span>';
@@ -503,18 +604,24 @@ function renderKingView(view) {
   html += '</div>';
 
   // === Lands grid (3x2) ===
+  var landsSelectable = view.phase === 'choosing' && isMyTurn && _kingSelectedDice !== null;
   html += '<div class="king-lands-grid">';
   for (var li = 0; li < KING_LANDS.length; li++) {
     var land = view.lands[li];
     if (!land) continue;
 
     // Highlight the land that was just placed on
-    var justPlaced = view.phase === 'placed' && view.lastRoll && view.lastRoll.value === (li + 1);
+    var justPlaced = view.phase === 'placed' && view.lastRoll && view.lastRoll.landId === land.id;
+    var selectableClass = landsSelectable ? ' king-land-selectable' : '';
+    var landClick = landsSelectable ? ' onclick="kingPlaceOnLand(' + land.id + ')"' : '';
 
-    html += '<div class="king-land-card' + (justPlaced ? ' king-land-highlight' : '') + '">';
+    html += '<div class="king-land-card' + (justPlaced ? ' king-land-highlight' : '') + selectableClass + '"' + landClick + '>';
     html += '<div class="king-land-header">';
     html += '<span class="king-land-emoji">' + land.emoji + '</span>';
     html += '<span class="king-land-name">' + land.name + '</span>';
+    if (landsSelectable) {
+      html += '<span class="king-land-tap-hint">\ud83d\udc46</span>';
+    }
     html += '</div>';
 
     // Cards in land
@@ -559,19 +666,67 @@ function renderKingView(view) {
   html += '<div class="king-action-area">';
 
   if (view.phase === 'rolling' && isMyTurn) {
+    // Roll button
     html += '<div class="king-dice-info">';
     html += '\ud83c\udfb2 \xd7' + (myPlayer ? myPlayer.diceLeft : 0) + ' \ub0a8\uc74c';
     html += '</div>';
-    html += '<button class="king-roll-btn" onclick="kingRoll()">\ud83c\udfb2 \uad74\ub9ac\uae30</button>';
+    html += '<button class="king-roll-btn" onclick="kingRoll()">\ud83c\udfb2 \uc804\ubd80 \uad74\ub9ac\uae30!</button>';
+
+  } else if (view.phase === 'choosing' && view.rollGroups) {
+    // Dice groups display
+    var myColor = myIdx >= 0 ? PLAYER_COLORS[myIdx % PLAYER_COLORS.length] : 'linear-gradient(135deg, #888, #666)';
+    var turnPlayerIdx = view.turnIdx;
+    var turnColor = PLAYER_COLORS[turnPlayerIdx % PLAYER_COLORS.length];
+
+    html += '<div class="king-roll-results">';
+    if (isMyTurn) {
+      html += '<div class="king-roll-title">\ud83c\udfb2 \uadf8\ub8f9\uc744 \uace8\ub77c \ub545\uc5d0 \ubc30\uce58\ud558\uc138\uc694!</div>';
+    } else {
+      html += '<div class="king-roll-title">' + escapeHTML(currentPlayer ? currentPlayer.name : '') + '\uc758 \uc8fc\uc0ac\uc704 \uacb0\uacfc</div>';
+    }
+    html += '<div class="king-dice-groups">';
+
+    var groupKeys = Object.keys(view.rollGroups).sort(function(a, b) { return parseInt(a) - parseInt(b); });
+    for (var gi = 0; gi < groupKeys.length; gi++) {
+      var gValue = parseInt(groupKeys[gi]);
+      var gCount = view.rollGroups[gValue];
+      var isSelected = _kingSelectedDice === gValue;
+      var clickable = isMyTurn ? ' clickable' : '';
+      var selected = isSelected ? ' selected' : '';
+      var groupClick = isMyTurn ? ' onclick="kingSelectDice(' + gValue + ')"' : '';
+
+      html += '<div class="king-dice-group' + clickable + selected + '"' + groupClick + '>';
+      html += '<div class="king-dice-group-land">' + KING_DICE_FACES[gValue - 1] + '</div>';
+      html += '<div class="king-dice-group-count">';
+      for (var gd = 0; gd < gCount; gd++) {
+        html += '<div class="king-die-mini" style="background:' + (isMyTurn ? myColor : turnColor) + ';">' + gValue + '</div>';
+      }
+      html += '</div>';
+      html += '<div class="king-dice-group-label">' + gCount + '\uac1c</div>';
+      html += '</div>';
+    }
+
+    html += '</div>'; // .king-dice-groups
+
+    if (isMyTurn && _kingSelectedDice !== null) {
+      html += '<div class="king-choose-hint">\ud83d\udc46 \uc704\uc758 \ub545\uc744 \ud0ed\ud558\uc5ec \ubc30\uce58!</div>';
+    } else if (!isMyTurn) {
+      html += '<div class="king-waiting-text">\ubc30\uce58 \uc911...</div>';
+    }
+
+    html += '</div>'; // .king-roll-results
+
   } else if (view.phase === 'placed' && view.lastRoll) {
     // Show placement result
     html += '<div class="king-placed-result">';
-    html += '<span class="king-placed-die">' + view.lastRoll.value + '</span>';
+    html += '<span class="king-placed-die">' + KING_DICE_FACES[view.lastRoll.value - 1] + '\xd7' + view.lastRoll.count + '</span>';
     html += '<span class="king-placed-arrow">\u2192</span>';
     html += '<span class="king-placed-land">' + view.lastRoll.landEmoji + ' ' + view.lastRoll.landName + '</span>';
     html += '</div>';
+
   } else if (view.phase === 'rolling' && !isMyTurn) {
     html += '<div class="king-waiting-text">' + escapeHTML(currentPlayer ? currentPlayer.name : '') + '\uc774(\uac00) \uc8fc\uc0ac\uc704\ub97c \uad74\ub9ac\ub294 \uc911...</div>';
+
   } else if (view.phase === 'scoring') {
     html += '<div class="king-scoring-text">\ud83d\udcca \uacb0\uc0b0 \uc911...</div>';
   }
@@ -751,6 +906,7 @@ function closeKingstagramCleanup() {
   _kingView = null;
   _kingShowRankings = false;
   _kingRecorded = false;
+  _kingSelectedDice = null;
   kingState = null;
 
   var overlay = document.getElementById('kingScoringOverlay');
@@ -768,5 +924,7 @@ function handleKingAction(peerId, msg) {
 
   if (msg.type === 'king-roll') {
     processKingRoll(peerId);
+  } else if (msg.type === 'king-place') {
+    processKingPlace(peerId, msg.diceValue, msg.landId);
   }
 }
