@@ -490,7 +490,14 @@ function idolBuyItem(itemId) {
   }
 
   // 구매 실행
+  const isDouble = idolState.pendingAction?.isDouble ?? false;
   _idolExecuteItemBuy(p, def);
+
+  // 구매 완료 → 턴 종료
+  idolState.pendingAction = { type: 'turn-end-auto' };
+  broadcastIdolState();
+  idolRenderAll();
+  setTimeout(() => idolOnTurnEnd(isDouble), 800);
 }
 
 function _idolExecuteItemBuy(p, def) {
