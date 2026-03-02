@@ -303,6 +303,23 @@
 .king-land-card:nth-child(6)::before { background: radial-gradient(ellipse at 50% 0%, rgba(244,67,54,0.1) 0%, transparent 70%); }
 
 
+/* ===== LAND WATERMARK (big dice number) ===== */
+.king-land-watermark {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 64px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.06);
+  line-height: 1;
+  pointer-events: none;
+  z-index: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 /* ===== LAND HEADER ===== */
 .king-land-header {
   display: flex;
@@ -1253,6 +1270,10 @@
 }
 
 @media (max-height: 600px) {
+  .king-land-watermark {
+    font-size: 44px;
+  }
+
   .king-land-emoji {
     font-size: 12px;
   }

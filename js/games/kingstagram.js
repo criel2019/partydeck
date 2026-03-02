@@ -580,6 +580,7 @@ function renderKingView(view) {
     var justPlaced = view.phase === 'placed' && view.lastRoll && view.lastRoll.landId === land.id;
 
     html += '<div class="king-land-card' + (justPlaced ? ' king-land-highlight' : '') + '">';
+    html += '<div class="king-land-watermark">' + (li + 1) + '</div>';
     html += '<div class="king-land-header">';
     html += '<span class="king-land-emoji">' + land.emoji + '</span>';
     html += '<span class="king-land-name">' + land.name + '</span>';
