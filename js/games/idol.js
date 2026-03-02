@@ -3407,7 +3407,7 @@ function idolRenderCornerCards() {
   container.innerHTML = cards;
 }
 
-// ─── 타인 땅 선택 패널 ───────────────────────
+// ─── 타인 땅 선택 패널 (아이템 인라인 통합) ───
 function idolRenderLandChoicePanel(action) {
   const shop = SHOPS.find(s => s.id === action.shopId);
   const cat = SHOP_CATEGORIES[shop.cat];
@@ -3415,22 +3415,38 @@ function idolRenderLandChoicePanel(action) {
   const p = idolCurrentPlayer();
   const canTrain = p && p.money >= trainCost;
   const availableItems = getItemsForShopCat(shop.cat);
-  const hasItems = availableItems.length > 0;
+  const sorted = getItemsSortedByPrice(availableItems);
+
+  const itemsHTML = sorted.length > 0 ? sorted.map(item => {
+    const canAfford = p && p.money >= item.price;
+    const statText = Object.entries(item.baseStat)
+      .filter(([, v]) => v > 0)
+      .map(([k, v]) => {
+        const labels = { talent: '재능', looks: '외모', fame: '인기도', favor: '호감도', money: '돈' };
+        return `${labels[k] || k}+${v}`;
+      }).join(' ');
+    return `<div class="idol-item-option ${canAfford ? '' : 'disabled'}" onclick="${canAfford ? `idolBuyItem('${item.id}')` : ''}">
+      <div style="font-size:24px;margin-bottom:4px;">${item.emoji}</div>
+      <div style="font-weight:bold;font-size:13px;">${escapeHTML(item.name)}</div>
+      <div style="font-size:11px;color:#aaa;">${statText}</div>
+      <div style="font-size:12px;color:#ffd700;margin-top:4px;">💰 ${item.price}만</div>
+      <div style="font-size:10px;color:#69f0ae;">${escapeHTML(item.comboDesc)}</div>
+    </div>`;
+  }).join('') : '';
+
+  const ownerCutNote = `<div class="idol-popup-sub" style="font-size:11px;color:#ff9500;">아이템 구매 시 구매액의 ${Math.round(IDOL_ITEM_OWNER_CUT * 100)}%가 땅 주인에게 지급됩니다</div>`;
 
   return `
     <div class="idol-action-title">${cat.emoji} ${escapeHTML(shop.name)}</div>
     <div class="idol-land-fee-notice">💰 수수료 ${action.rentPaid || 0}만원 자동 차감됨</div>
     <div class="idol-popup-sub">아이템 구매 또는 훈련 중 하나를 선택하세요</div>
-    <div class="idol-land-choice-wrap">
-      <div class="idol-action-buttons">
-        ${hasItems ? `<button class="idol-btn idol-btn-gold" onclick="idolOpenItemShop('${action.shopId}')">
-          🛒 아이템 구매
-        </button>` : ''}
-        <button class="idol-btn idol-btn-primary" onclick="idolTrainAtOtherLand('${action.shopId}')" ${canTrain ? '' : 'disabled'}>
-          🎓 훈련 (${trainCost}만원)
-        </button>
-        <button class="idol-btn" onclick="idolPassShop()">그냥 지나가기</button>
-      </div>
+    ${sorted.length > 0 ? ownerCutNote : ''}
+    ${sorted.length > 0 ? `<div class="idol-item-grid">${itemsHTML}</div>` : ''}
+    <div class="idol-action-buttons" style="margin-top:8px;">
+      <button class="idol-btn idol-btn-primary" onclick="idolTrainAtOtherLand('${action.shopId}')" ${canTrain ? '' : 'disabled'}>
+        🎓 훈련 (${trainCost}만원)
+      </button>
+      <button class="idol-btn" onclick="idolPassShop()">그냥 지나가기</button>
     </div>`;
 }
 
@@ -3503,7 +3519,10 @@ function idolRenderItemShopPanel(action) {
   return `
     <div class="idol-action-title">🛒 아이템 구매</div>
     ${ownerNote}
-    <div class="idol-item-grid">${itemsHTML}</div>`;
+    <div class="idol-item-grid">${itemsHTML}</div>
+    <div class="idol-action-buttons" style="margin-top:8px;">
+      <button class="idol-btn" onclick="idolPassShop()">그냥 지나가기</button>
+    </div>`;
 }
 
 // ─── 아이템 교체 패널 ─────────────────────────
