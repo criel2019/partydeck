@@ -1683,39 +1683,34 @@ function aiKingstagram() {
       var groups = kingState.rollGroups;
       if (!groups) return;
 
-      // Pick the largest dice group
+      // Pick the best dice group: dice value = land number, so evaluate each land
       var bestValue = null;
-      var bestCount = 0;
+      var bestScore = -Infinity;
       var keys = Object.keys(groups);
       for (var i = 0; i < keys.length; i++) {
         var v = parseInt(keys[i]);
-        if (groups[v] > bestCount) {
-          bestCount = groups[v];
-          bestValue = v;
-        }
-      }
-      if (bestValue === null) return;
-
-      // Pick land: prefer high card value, own presence, low enemy competition
-      var bestLandId = 1;
-      var bestScore = -Infinity;
-      for (var l = 0; l < kingState.lands.length; l++) {
-        var land = kingState.lands[l];
+        var landIdx = v - 1;
+        var land = kingState.lands[landIdx];
+        if (!land) continue;
         var cardSum = 0;
         for (var c = 0; c < land.cards.length; c++) cardSum += land.cards[c];
         var myDice = land.dice[cp.id] || 0;
+        var newTotal = myDice + groups[v];
         var enemyDice = 0;
         var dKeys = Object.keys(land.dice);
         for (var d = 0; d < dKeys.length; d++) {
           if (dKeys[d] !== cp.id) enemyDice += land.dice[dKeys[d]];
         }
-        var score = cardSum - (enemyDice * 8000) + (myDice * 5000) + Math.random() * 5000;
+        // Score: value of winning this land, adjusted by competition
+        var winChance = newTotal > enemyDice ? 1 : (newTotal === enemyDice ? -0.5 : 0.2);
+        var score = cardSum * winChance + Math.random() * 3000;
         if (score > bestScore) {
           bestScore = score;
-          bestLandId = land.id;
+          bestValue = v;
         }
       }
-      processKingPlace(cpId, bestValue, bestLandId);
+      if (bestValue === null) return;
+      processKingPlace(cpId, bestValue);
     }, 600 + Math.random() * 600);
     _aiTimers.push(t2);
   }

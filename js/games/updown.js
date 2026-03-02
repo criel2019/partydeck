@@ -1,18 +1,20 @@
 // ===== UP DOWN ENGINE =====
-// Draw from deck mechanic with submit/reveal tension
+// Classic Up/Down card guessing game
+// See current card → guess UP or DOWN → reveal → penalty if wrong
 
 let udState = {
   deck: [],
   deckIdx: 0,
   currentCard: null,
   previousCard: null,
-  drawnCard: null,
+  revealCard: null,   // the newly drawn card during reveal
   turnIdx: 0,
   players: [],
-  phase: 'drawing', // drawing | drawn | reveal | result | special_jq | special_k | penalty
+  phase: 'guessing', // guessing | reveal | result | special_jq | special_k | penalty
   penalties: [],
   currentBet: null,
   specialData: null,
+  guess: null,        // 'up' or 'down'
 };
 
 function startUpDown() {
@@ -38,17 +40,18 @@ function startUpDown() {
     deckIdx: 1,
     currentCard: deck[0],
     previousCard: null,
-    drawnCard: null,
+    revealCard: null,
     turnIdx: 0,
     players: state.players.map(p => ({
       id: p.id,
       name: p.name,
       avatar: p.avatar,
     })),
-    phase: 'drawing',
+    phase: 'guessing',
     penalties: ['\uc18c\uc8fc 1\uc794', '\ub9c9\uac78\ub9ac 1\uc794', '\ud3ed\ud0c4\uc8fc 1\uc794'],
     currentBet: null,
     specialData: null,
+    guess: null,
   };
 
   broadcast({ type: 'game-start', game: 'updown', state: getUpDownView() });
@@ -60,7 +63,7 @@ function getUpDownView() {
   return {
     currentCard: udState.currentCard,
     previousCard: udState.previousCard,
-    drawnCard: udState.drawnCard,
+    revealCard: udState.revealCard,
     deckRemaining: udState.deck.length - udState.deckIdx,
     turnIdx: udState.turnIdx,
     players: udState.players,
@@ -68,33 +71,15 @@ function getUpDownView() {
     penalties: udState.penalties,
     currentBet: udState.currentBet,
     specialData: udState.specialData,
+    guess: udState.guess,
   };
 }
 
 function broadcastUpDownState() {
   if(!state.isHost) return;
   const view = getUpDownView();
-
-  // During 'drawn' phase, only send drawnCard to the drawing player for secrecy
-  if(udState.phase === 'drawn' && udState.drawnCard) {
-    const drawerId = udState.players[udState.turnIdx].id;
-    const viewWithCard = Object.assign({}, view, { drawnCard: udState.drawnCard });
-    const viewNoCard = Object.assign({}, view, { drawnCard: null });
-
-    state.players.forEach(function(p) {
-      if(p.id === state.myId) return;
-      if(p.id === drawerId) {
-        sendTo(p.id, { type: 'ud-state', state: viewWithCard });
-      } else {
-        sendTo(p.id, { type: 'ud-state', state: viewNoCard });
-      }
-    });
-
-    renderUpDownView(drawerId === state.myId ? viewWithCard : viewNoCard);
-  } else {
-    broadcast({ type: 'ud-state', state: view });
-    renderUpDownView(view);
-  }
+  broadcast({ type: 'ud-state', state: view });
+  renderUpDownView(view);
 }
 
 var _lastUdView = null;
@@ -111,43 +96,27 @@ function renderUpDownView(view) {
     isMyTurn ? '\ub0b4 \ucc28\ub840!' : (currentPlayer ? currentPlayer.name + '\uc758 \ucc28\ub840' : '');
   document.getElementById('updownDeckCount').textContent = '\ub0a8\uc740 \uce74\ub4dc: ' + view.deckRemaining;
 
-  // Previous/Reference card (small slot)
+  // Previous card slot (small, left)
   var prevSlot = document.getElementById('updownPrevCard');
-  if(view.phase === 'drawn') {
-    // Show currentCard as "기준" so players see what to compare against
-    prevSlot.innerHTML = '<div class="ud-card-label">\uae30\uc900</div>' +
-      (view.currentCard ? updownCardHTML(view.currentCard, false) : '<div class="ud-prev-placeholder"></div>');
-  } else if(view.phase === 'reveal' || view.phase === 'result') {
-    prevSlot.innerHTML = '<div class="ud-card-label">\uae30\uc900</div>' +
-      (view.previousCard ? updownCardHTML(view.previousCard, false) : '<div class="ud-prev-placeholder"></div>');
+  if(view.previousCard) {
+    prevSlot.innerHTML = '<div class="ud-card-label">\uc774\uc804</div>' + updownCardHTML(view.previousCard, false);
   } else {
-    prevSlot.innerHTML = '<div class="ud-card-label">\uc774\uc804</div>' +
-      (view.previousCard ? updownCardHTML(view.previousCard, false) : '<div class="ud-prev-placeholder"></div>');
+    prevSlot.innerHTML = '<div class="ud-card-label">\uc774\uc804</div><div class="ud-prev-placeholder"></div>';
   }
 
-  // Hero card (center)
+  // Hero card (center) — shows currentCard or revealCard
   var currSlot = document.getElementById('updownCurrentCard');
-  if(view.phase === 'drawing') {
+  if(view.phase === 'guessing') {
+    // Show current card as the reference
     currSlot.innerHTML = '<div class="ud-card-label">\ud604\uc7ac \uce74\ub4dc</div>' + updownCardHTML(view.currentCard, true);
-  } else if(view.phase === 'drawn') {
-    if(isMyTurn && view.drawnCard) {
-      currSlot.innerHTML = '<div class="ud-card-label">\ub0b4\uac00 \ubf51\uc740 \uce74\ub4dc</div>' + updownCardHTML(view.drawnCard, true);
-      setTimeout(function() {
-        var card = currSlot.querySelector('.ud-hero-card');
-        if(card) card.classList.add('ud-flipping');
-      }, 100);
-    } else {
-      var drawerName = currentPlayer ? escapeHTML(currentPlayer.name) : '';
-      currSlot.innerHTML = '<div class="ud-card-label">' + drawerName + '\uc758 \uce74\ub4dc</div>' +
-        '<div class="ud-hero-card ud-card-back"><div class="ud-hero-inner"><div class="ud-hero-back-pattern"></div></div></div>';
-    }
   } else if(view.phase === 'reveal' || view.phase === 'result') {
-    currSlot.innerHTML = '<div class="ud-card-label">\uacf5\uac1c!</div>' + updownCardHTML(view.currentCard, true);
+    // Show the newly drawn card
+    currSlot.innerHTML = '<div class="ud-card-label">\uacf5\uac1c!</div>' + updownCardHTML(view.revealCard || view.currentCard, true);
     if(view.phase === 'reveal') {
       setTimeout(function() {
         var card = currSlot.querySelector('.ud-hero-card');
         if(card) card.classList.add('ud-flipping');
-      }, 100);
+      }, 50);
     }
   } else {
     currSlot.innerHTML = '<div class="ud-card-label">\ud604\uc7ac \uce74\ub4dc</div>' + updownCardHTML(view.currentCard, true);
@@ -155,27 +124,33 @@ function renderUpDownView(view) {
 
   // Action area (dynamic buttons)
   var actionArea = document.getElementById('updownChoiceButtons');
-  if(view.phase === 'drawing') {
+
+  if(view.phase === 'guessing') {
     if(isMyTurn) {
       actionArea.innerHTML =
-        '<button class="ud-btn ud-btn-draw" onclick="udDraw()">' +
-          '<span class="ud-btn-arrow">\ud83c\udccf</span>' +
-          '<span class="ud-btn-label">\uce74\ub4dc \ubf51\uae30</span>' +
-        '</button>';
+        '<div class="ud-guess-buttons">' +
+          '<button class="ud-btn ud-btn-up" onclick="udGuess(\'up\')">' +
+            '<span class="ud-btn-arrow">\u2b06\ufe0f</span>' +
+            '<span class="ud-btn-label">UP</span>' +
+          '</button>' +
+          '<button class="ud-btn ud-btn-down" onclick="udGuess(\'down\')">' +
+            '<span class="ud-btn-arrow">\u2b07\ufe0f</span>' +
+            '<span class="ud-btn-label">DOWN</span>' +
+          '</button>' +
+        '</div>';
     } else {
       actionArea.innerHTML = '<div class="ud-waiting-text">' +
-        escapeHTML(currentPlayer ? currentPlayer.name : '') + '\uc774(\uac00) \ubf51\ub294 \uc911...</div>';
+        escapeHTML(currentPlayer ? currentPlayer.name : '') + '\uc774(\uac00) \uc608\uce21 \uc911...</div>';
     }
-  } else if(view.phase === 'drawn') {
-    if(isMyTurn) {
-      actionArea.innerHTML =
-        '<button class="ud-btn ud-btn-submit" onclick="udSubmit()">' +
-          '<span class="ud-btn-arrow">\ud83d\udce4</span>' +
-          '<span class="ud-btn-label">\uc81c\ucd9c\ud558\uae30</span>' +
-        '</button>';
-    } else {
-      actionArea.innerHTML = '<div class="ud-waiting-text">\uce74\ub4dc \ud655\uc778 \uc911... \ud83e\udd14</div>';
-    }
+  } else if(view.phase === 'reveal' || view.phase === 'result') {
+    var guessLabel = view.guess === 'up' ? '\u2b06 UP' : '\u2b07 DOWN';
+    var resultText = view.specialData ? view.specialData.result : '';
+    var isCorrect = view.specialData ? view.specialData.correct : false;
+    actionArea.innerHTML =
+      '<div class="ud-result-display">' +
+        '<span class="ud-guess-badge ' + (view.guess === 'up' ? 'up' : 'down') + '">' + guessLabel + '</span>' +
+        '<span class="ud-result-text ' + (isCorrect ? 'correct' : 'wrong') + '">' + escapeHTML(resultText) + '</span>' +
+      '</div>';
   } else {
     actionArea.innerHTML = '';
   }
@@ -195,14 +170,9 @@ function renderUpDownView(view) {
     showUpDownKArea(view);
   }
 
-  // Result text
+  // Result text (legacy element)
   var resultDiv = document.getElementById('updownResult');
-  if((view.phase === 'reveal' || view.phase === 'result') && view.specialData && view.specialData.result) {
-    resultDiv.textContent = view.specialData.result;
-    resultDiv.style.color = view.specialData.correct ? 'var(--success)' : 'var(--danger)';
-  } else {
-    resultDiv.textContent = '';
-  }
+  resultDiv.textContent = '';
 }
 
 function updownCardHTML(card, isCurrent) {
@@ -240,74 +210,72 @@ function updownCardHTML(card, isCurrent) {
   }
 }
 
-// ===== DRAW =====
-function udDraw() {
+// ===== GUESS (UP or DOWN) =====
+function udGuess(guess) {
   if(state.isHost) {
-    processUpDownDraw(state.myId);
+    processUpDownGuess(state.myId, guess);
   } else {
-    sendToHost({ type: 'ud-draw' });
+    sendToHost({ type: 'ud-guess', guess: guess });
   }
 }
 
-function processUpDownDraw(playerId) {
-  if(!state.isHost || udState.phase !== 'drawing') return;
+function processUpDownGuess(playerId, guess) {
+  if(!state.isHost || udState.phase !== 'guessing') return;
 
   var playerIdx = udState.players.findIndex(function(p) { return p.id === playerId; });
   if(playerIdx !== udState.turnIdx) return;
+
+  if(guess !== 'up' && guess !== 'down') return;
 
   if(udState.deckIdx >= udState.deck.length) {
     showToast('\uce74\ub4dc\uac00 \ubaa8\ub450 \uc18c\uc9c4\ub418\uc5c8\uc2b5\ub2c8\ub2e4!');
     return;
   }
 
-  udState.drawnCard = udState.deck[udState.deckIdx];
+  // Draw next card
+  var drawnCard = udState.deck[udState.deckIdx];
   udState.deckIdx++;
-  udState.phase = 'drawn';
-  broadcastUpDownState();
-}
+  udState.guess = guess;
 
-// ===== SUBMIT =====
-function udSubmit() {
-  if(state.isHost) {
-    processUpDownSubmit(state.myId);
-  } else {
-    sendToHost({ type: 'ud-submit' });
-  }
-}
-
-function processUpDownSubmit(playerId) {
-  if(!state.isHost || udState.phase !== 'drawn') return;
-
-  var playerIdx = udState.players.findIndex(function(p) { return p.id === playerId; });
-  if(playerIdx !== udState.turnIdx) return;
-
-  var drawnValue = getCardValue(udState.drawnCard);
+  var drawnValue = getCardValue(drawnCard);
   var currentValue = getCardValue(udState.currentCard);
 
-  // Higher = safe, equal or lower = penalty
-  var correct = drawnValue > currentValue;
+  // Determine correctness
+  var correct;
+  if(drawnValue === currentValue) {
+    // Same value = always wrong
+    correct = false;
+  } else if(guess === 'up') {
+    correct = drawnValue > currentValue;
+  } else {
+    correct = drawnValue < currentValue;
+  }
 
-  // Shift cards: old current -> previous, drawn -> current
+  // Shift cards
   udState.previousCard = udState.currentCard;
-  udState.currentCard = udState.drawnCard;
+  udState.revealCard = drawnCard;
 
   if(correct) {
-    udState.specialData = { result: '\uc548\uc804!', correct: true };
+    udState.specialData = { result: '\uc815\ub2f5! \uc548\uc804!', correct: true };
     udState.phase = 'reveal';
     broadcastUpDownState();
 
     setTimeout(function() {
       if(!state.isHost || !udState) return;
-      udState.drawnCard = null;
+      // Move revealed card to current
+      udState.currentCard = udState.revealCard;
+      udState.revealCard = null;
       udState.turnIdx = (udState.turnIdx + 1) % udState.players.length;
-      udState.phase = 'drawing';
+      udState.phase = 'guessing';
       udState.specialData = null;
+      udState.guess = null;
       broadcastUpDownState();
     }, 2000);
   } else {
-    udState.specialData = { result: '\uac78\ub838\ub2e4!', correct: false };
+    udState.currentCard = drawnCard;
+    udState.specialData = { result: '\ud2c0\ub838\ub2e4! \ubc8c\uce59!', correct: false };
 
-    var rank = udState.currentCard.rank; // drawn card is now currentCard
+    var rank = drawnCard.rank;
     if(rank === 'J' || rank === 'Q') {
       udState.phase = 'special_jq';
       udState.specialData.type = 'jq';
@@ -328,10 +296,14 @@ function processUpDownSubmit(playerId) {
         udState.phase = 'penalty';
         var penaltyText = udState.currentBet || udState.penalties[Math.floor(Math.random() * udState.penalties.length)];
         showUpDownPenalty(playerId, penaltyText);
-      }, 1500);
+      }, 1800);
     }
   }
 }
+
+// Legacy: keep processUpDownDraw/processUpDownSubmit as no-ops for safety
+function processUpDownDraw() {}
+function processUpDownSubmit() {}
 
 function getCardValue(card) {
   var values = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
@@ -558,11 +530,12 @@ function processKingPenalty(kingId, targets) {
 
   setTimeout(function() {
     if(!state.isHost || !udState) return;
-    udState.drawnCard = null;
+    udState.revealCard = null;
     udState.turnIdx = (udState.turnIdx + 1) % udState.players.length;
-    udState.phase = 'drawing';
+    udState.phase = 'guessing';
     udState.specialData = null;
     udState.currentBet = null;
+    udState.guess = null;
     broadcastUpDownState();
   }, 2000);
 }
@@ -621,13 +594,13 @@ function udRejectPenalty() {
 
 function continueUpDown() {
   if(!state.isHost) return;
-  // Guard: prevent double advance
-  if(udState.phase === 'drawing') return;
+  if(udState.phase === 'guessing') return;
 
-  udState.drawnCard = null;
+  udState.revealCard = null;
   udState.turnIdx = (udState.turnIdx + 1) % udState.players.length;
-  udState.phase = 'drawing';
+  udState.phase = 'guessing';
   udState.specialData = null;
   udState.currentBet = null;
+  udState.guess = null;
   broadcastUpDownState();
 }

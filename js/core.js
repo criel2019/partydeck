@@ -518,6 +518,7 @@ function handleMessage(peerId, raw) {
     'roulette-spin': () => handleLotteryMessage(peerId, msg),
     // UpDown handlers
     'ud-state': () => { showScreen('updownGame'); renderUpDownView(msg.state); },
+    'ud-guess': () => { if(state.isHost) processUpDownGuess(peerId, msg.guess); },
     'ud-draw': () => { if(state.isHost) processUpDownDraw(peerId); },
     'ud-submit': () => { if(state.isHost) processUpDownSubmit(peerId); },
     'ud-addbet': () => {
@@ -602,7 +603,7 @@ function handleMessage(peerId, raw) {
     // Kingstagram handlers
     'king-state': () => { showScreen('kingstagramGame'); renderKingView(msg.state || msg); },
     'king-roll': () => { if(state.isHost) processKingRoll(peerId); },
-    'king-place': () => { if(state.isHost) processKingPlace(peerId, msg.diceValue, msg.landId); },
+    'king-place': () => { if(state.isHost) processKingPlace(peerId, msg.diceValue); },
     'king-scoring': () => { if(typeof kingShowScoring === 'function') kingShowScoring(msg.results); },
     'player-left': () => {
       state.players = state.players.filter(p => p.id !== msg.playerId);
