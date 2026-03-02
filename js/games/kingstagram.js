@@ -15,16 +15,16 @@ var KING_LANDS = [
 ];
 
 var KING_DECK_TEMPLATE = [
-  { value: 10000, count: 8 },
-  { value: 20000, count: 8 },
-  { value: 30000, count: 8 },
-  { value: 40000, count: 7 },
+  { value: 10000, count: 6 },
+  { value: 20000, count: 6 },
+  { value: 30000, count: 6 },
+  { value: 40000, count: 6 },
   { value: 50000, count: 6 },
   { value: 60000, count: 6 },
-  { value: 70000, count: 5 },
-  { value: 80000, count: 5 },
-  { value: 90000, count: 4 },
-  { value: 100000, count: 3 }
+  { value: 70000, count: 6 },
+  { value: 80000, count: 6 },
+  { value: 90000, count: 6 },
+  { value: 0, count: 3 }  // 벌칙카드 (0원, 춤 벌칙)
 ];
 
 // ===== DICE FACE UNICODE =====
@@ -87,6 +87,7 @@ function dealCardsToLands(deck, lands) {
 
 // ===== FORMAT HELPERS =====
 function kingFormatFollowers(n) {
+  if (n === 0) return '\ud83d\udc83\ubc8c\uce59';
   if (n >= 10000) {
     var man = n / 10000;
     if (man === Math.floor(man)) return Math.floor(man) + '\ub9cc';
@@ -440,13 +441,18 @@ function getKingRankings() {
     return b.cards.length - a.cards.length;
   });
   return sorted.map(function(p, idx) {
+    var penaltyCount = 0;
+    for (var pc = 0; pc < p.cards.length; pc++) {
+      if (p.cards[pc] === 0) penaltyCount++;
+    }
     return {
       rank: idx + 1,
       id: p.id,
       name: p.name,
       avatar: p.avatar,
       totalFollowers: p.totalFollowers,
-      cardCount: p.cards.length
+      cardCount: p.cards.length,
+      penaltyCount: penaltyCount
     };
   });
 }
@@ -588,7 +594,8 @@ function renderKingView(view) {
       html += '<div class="king-land-total">' + kingFormatFollowers(landSum) + '</div>';
       html += '<div class="king-land-card-badges">';
       for (var lc2 = 0; lc2 < land.cards.length; lc2++) {
-        html += '<span class="king-card-badge">' + kingFormatFollowers(land.cards[lc2]) + '</span>';
+        var badgeClass = land.cards[lc2] === 0 ? 'king-card-badge penalty' : 'king-card-badge';
+        html += '<span class="' + badgeClass + '">' + kingFormatFollowers(land.cards[lc2]) + '</span>';
       }
       html += '</div>';
     } else {
@@ -722,7 +729,9 @@ function kingBuildGameOverHTML(rankings, players) {
     html += '<div class="king-rank-avatar" style="background:' + PLAYER_COLORS[pIdx >= 0 ? pIdx % PLAYER_COLORS.length : 0] + ';">' + r.avatar + '</div>';
     html += '<div class="king-rank-info">';
     html += '<div class="king-rank-name">' + escapeHTML(r.name) + (r.id === state.myId ? ' (\ub098)' : '') + '</div>';
-    html += '<div class="king-rank-detail">\uce74\ub4dc ' + r.cardCount + '\uc7a5</div>';
+    var detailText = '\uce74\ub4dc ' + r.cardCount + '\uc7a5';
+    if (r.penaltyCount > 0) detailText += ' \u00b7 \ud83d\udc83\ubc8c\uce59 ' + r.penaltyCount + '\ud68c';
+    html += '<div class="king-rank-detail">' + detailText + '</div>';
     html += '</div>';
     html += '<div class="king-rank-score">' + kingFormatTotal(r.totalFollowers) + '</div>';
     html += '</div>';
@@ -829,6 +838,8 @@ function kingShowScoring(results) {
             awardsHtml += '<span class="king-scoring-player">' + escapeHTML(award.playerName) + '</span>';
             if (award.cancelled) {
               awardsHtml += '<span class="king-scoring-result">\ub3d9\ub960 \uc0c1\uc1c4! \u274c</span>';
+            } else if (award.card === 0) {
+              awardsHtml += '<span class="king-scoring-result penalty">\u2192 \ud83d\udc83 \ubc8c\uce59 \ub2f9\ucca8! \ucda4\ucdb0! \ud83d\udd7a</span>';
             } else {
               awardsHtml += '<span class="king-scoring-result">\u2192 ' + kingFormatFollowers(award.card) + ' \ud68d\ub4dd! \u2705</span>';
             }

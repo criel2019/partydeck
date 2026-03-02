@@ -377,6 +377,18 @@
   white-space: nowrap;
 }
 
+.king-card-badge.penalty {
+  color: #fff;
+  background: linear-gradient(135deg, #ff4081, #e91e63);
+  box-shadow: 0 1px 4px rgba(233, 30, 99, 0.4);
+  animation: kingPenaltyPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes kingPenaltyPulse {
+  0%, 100% { box-shadow: 0 1px 4px rgba(233, 30, 99, 0.4); }
+  50% { box-shadow: 0 1px 8px rgba(233, 30, 99, 0.7); }
+}
+
 .king-land-empty {
   font-size: 12px;
   color: var(--king-text-dim);
@@ -1104,6 +1116,11 @@
 
 .king-scoring-award.cancelled .king-scoring-result {
   color: var(--king-red);
+}
+
+.king-scoring-result.penalty {
+  color: var(--king-pink);
+  animation: kingPenaltyPulse 1.5s ease-in-out infinite;
 }
 
 .king-scoring-award.neutral .king-scoring-result {
