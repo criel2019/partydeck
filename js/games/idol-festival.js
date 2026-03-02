@@ -258,7 +258,10 @@ function _festGetTotalPlayers() {
 }
 
 function _festCheckAllVoted(action) {
-  if (_festIsSolo()) return true;
+  if (_festIsSolo()) {
+    // 솔로: 유저가 실제로 버튼을 눌렀을 때만 true
+    return action === 'skip' ? _festSkipped : _festClosed;
+  }
   return _festGetVoteCount(action) >= _festGetTotalPlayers();
 }
 
@@ -311,11 +314,11 @@ function idolFestivalStart() {
 
     // ── Phase 1: 진입 ──
     if (!_festSkipped) {
-      overlay.style.background = 'rgba(0,0,0,0)';
-      await _festDelay(50);
-      overlay.style.transition = 'background 0.4s ease';
-      overlay.style.background = 'rgba(0,0,0,0.88)';
-      await _festDelay(400);
+      // opacity fade-in이 완료될 때까지 대기 후 배경 전환
+      await _festDelay(450);
+      overlay.style.transition = 'background 0.4s ease, opacity 0.4s ease';
+      overlay.style.background = 'rgba(0,0,0,0.92)';
+      await _festDelay(200);
 
       if (tier === 'full') _festSpawnStageParticles(overlay, 15);
 
@@ -556,10 +559,6 @@ function idolFestivalStart() {
 
         const medalEl = _festEl('span', 'fest-rank-medal', '', medal);
         rankCard.appendChild(medalEl);
-
-        if (isFirst) {
-          const crownEl = _festEl('span', 'fest-rank-crown', '', '');
-        }
 
         const infoEl = _festEl('div', 'fest-rank-info', '');
         const nameEl = _festEl('div', 'fest-rank-name', `color:${color}`, escapeHTML(p.idolName || p.name));
