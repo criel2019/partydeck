@@ -1166,6 +1166,7 @@
     flex-direction: column !important;
     gap: 10px !important;
     min-width: 0 !important;
+    width: auto !important;
   }
   #updownGame .ud-hero-card {
     width: min(32vh, 140px) !important;
@@ -1187,9 +1188,7 @@
     height: min(14vh, 64px) !important;
   }
   #updownGame .ud-result {
-    font-size: 18px !important;
-    min-height: 20px !important;
-    padding: 0 !important;
+    display: none !important;
   }
   /* RIGHT: bottom panel becomes right panel */
   #updownGame .ud-bottom-panel {
@@ -1611,7 +1610,7 @@
   #updownGame .ud-top-bar { padding: 2px 8px !important; }
   #updownGame .ud-turn-name { font-size: 12px !important; }
   #updownGame .ud-deck-count { font-size: 9px !important; }
-  #updownGame .ud-result { font-size: 16px !important; min-height: 18px !important; }
+  #updownGame .ud-result { display: none !important; }
   #updownGame .ud-btn {
     padding: min(3vh, 10px) !important;
     border-radius: 10px !important;
