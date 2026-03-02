@@ -625,19 +625,12 @@ function aiUpDown() {
     return;
   }
 
-  // Phase: drawing -> auto-draw
-  if (udState.phase === 'drawing') {
+  // Phase: guessing -> AI picks UP or DOWN
+  if (udState.phase === 'guessing') {
     const currentPlayer = udState.players[udState.turnIdx];
     if (!currentPlayer || !currentPlayer.id.startsWith('ai-')) return;
-    processUpDownDraw(currentPlayer.id);
-    return;
-  }
-
-  // Phase: drawn -> auto-submit (scheduling delay provides natural tension)
-  if (udState.phase === 'drawn') {
-    const currentPlayer = udState.players[udState.turnIdx];
-    if (!currentPlayer || !currentPlayer.id.startsWith('ai-')) return;
-    processUpDownSubmit(currentPlayer.id);
+    const guess = Math.random() < 0.5 ? 'up' : 'down';
+    processUpDownGuess(currentPlayer.id, guess);
     return;
   }
 }
