@@ -3428,26 +3428,40 @@ function idolRenderLandChoicePanel(action) {
 }
 
 // ─── 내 땅 선택 패널 (구매/업그레이드 직후) ───
+// 아이템 목록 + 훈련 + 패스를 한 화면에 표시
 function idolRenderOwnLandChoicePanel(action) {
   const shop = SHOPS.find(s => s.id === action.shopId);
   const cat = SHOP_CATEGORIES[shop.cat];
   const p = idolCurrentPlayer();
   const availableItems = getItemsForShopCat(shop.cat);
-  const hasItems = availableItems.length > 0;
+  const sorted = getItemsSortedByPrice(availableItems);
+
+  const itemsHTML = sorted.length > 0 ? sorted.map(item => {
+    const canAfford = p && p.money >= item.price;
+    const statText = Object.entries(item.baseStat)
+      .filter(([, v]) => v > 0)
+      .map(([k, v]) => {
+        const labels = { talent: '재능', looks: '외모', fame: '인기도', favor: '호감도', money: '돈' };
+        return `${labels[k] || k}+${v}`;
+      }).join(' ');
+    return `<div class="idol-item-option ${canAfford ? '' : 'disabled'}" onclick="${canAfford ? `idolBuyItem('${item.id}')` : ''}">
+      <div style="font-size:24px;margin-bottom:4px;">${item.emoji}</div>
+      <div style="font-weight:bold;font-size:13px;">${escapeHTML(item.name)}</div>
+      <div style="font-size:11px;color:#aaa;">${statText}</div>
+      <div style="font-size:12px;color:#ffd700;margin-top:4px;">💰 ${item.price}만</div>
+      <div style="font-size:10px;color:#69f0ae;">${escapeHTML(item.comboDesc)}</div>
+    </div>`;
+  }).join('') : '';
 
   return `
     <div class="idol-action-title">${cat.emoji} ${escapeHTML(shop.name)}</div>
-    <div class="idol-popup-sub">내 시설에서 아이템 구매 또는 무료 훈련을 선택하세요</div>
-    <div class="idol-land-choice-wrap">
-      <div class="idol-action-buttons">
-        ${hasItems ? `<button class="idol-btn idol-btn-gold" onclick="idolOpenItemShop('${action.shopId}')">
-          🛒 아이템 구매
-        </button>` : ''}
-        <button class="idol-btn idol-btn-primary" onclick="idolTrainAtShop('${action.shopId}', true)">
-          🎓 무료 훈련 (+보너스)
-        </button>
-        <button class="idol-btn" onclick="idolPassShop()">그냥 지나가기</button>
-      </div>
+    <div class="idol-popup-sub">아이템 구매 또는 무료 훈련 중 하나를 선택하세요</div>
+    ${sorted.length > 0 ? `<div class="idol-item-grid">${itemsHTML}</div>` : ''}
+    <div class="idol-action-buttons" style="margin-top:8px;">
+      <button class="idol-btn idol-btn-primary" onclick="idolTrainAtShop('${action.shopId}', true)">
+        🎓 무료 훈련 (+보너스)
+      </button>
+      <button class="idol-btn" onclick="idolPassShop()">그냥 지나가기</button>
     </div>`;
 }
 
