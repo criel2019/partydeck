@@ -5302,6 +5302,14 @@
   margin-bottom: 12px;
   text-align: center;
 }
+.fest-score-counter {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffd700;
+  margin-bottom: 12px;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+}
 .fest-combo-item {
   display: flex;
   align-items: center;

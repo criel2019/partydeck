@@ -430,15 +430,50 @@ function idolFestivalStart() {
         await _festDelay(600);
 
         // 콤보 조건 순차 등장
-        comboTitle.textContent = '🎯 콤보 결과';
-        let runningScore = sd.baseBonus;
+        comboTitle.textContent = '🎯 점수 계산';
+        let runningScore = 0;
         const allCombos = sd.combos || [];
 
-        // 스코어 카운터
-        const scoreCounter = _festEl('div', '', 'text-align:center;font-size:18px;font-weight:700;color:rgba(255,255,255,0.6);margin-bottom:8px;',
-          `기본 점수: ${sd.baseBonus}`);
+        // 스코어 카운터 (0부터 시작)
+        const scoreCounter = _festEl('div', 'fest-score-counter', '', '0');
         comboArea.insertBefore(scoreCounter, comboTitle.nextSibling);
 
+        // 1) 기본 점수 등장
+        if (!_festSkipped) {
+          await _festDelay(500);
+          const baseItem = _festEl('div', 'fest-combo-item', '');
+          baseItem.appendChild(_festEl('span', 'fest-combo-emoji', '', '📊'));
+          baseItem.appendChild(_festEl('span', 'fest-combo-desc', '', '기본 실력 점수'));
+          baseItem.appendChild(_festEl('span', 'fest-combo-value', '', sd.baseBonus > 0 ? `+${sd.baseBonus}` : '0'));
+          comboArea.appendChild(baseItem);
+          void baseItem.offsetWidth;
+          baseItem.style.opacity = '1';
+          if (sd.baseBonus > 0) {
+            _festSfx('sharang');
+            _festHaptic('light');
+          }
+          const prevScore = runningScore;
+          runningScore += sd.baseBonus;
+          await _festCountUp(scoreCounter, runningScore, 400);
+        }
+
+        // 2) 아이템 fame 보너스
+        if (!_festSkipped && sd.itemStats && sd.itemStats.fame > 0) {
+          await _festDelay(400);
+          const fameItem = _festEl('div', 'fest-combo-item', '');
+          fameItem.appendChild(_festEl('span', 'fest-combo-emoji', '', '🎁'));
+          fameItem.appendChild(_festEl('span', 'fest-combo-desc', '', `아이템 인기도 보너스`));
+          fameItem.appendChild(_festEl('span', 'fest-combo-value', '', `+${sd.itemStats.fame}`));
+          comboArea.appendChild(fameItem);
+          void fameItem.offsetWidth;
+          fameItem.style.opacity = '1';
+          _festSfx('sharang');
+          _festHaptic('light');
+          runningScore += sd.itemStats.fame;
+          await _festCountUp(scoreCounter, runningScore, 400);
+        }
+
+        // 3) 콤보 조건 순차 등장
         for (let ci = 0; ci < allCombos.length; ci++) {
           if (_festSkipped) break;
           const c = allCombos[ci];
@@ -469,12 +504,29 @@ function idolFestivalStart() {
           }
 
           comboArea.appendChild(comboItem);
-          // Force visible
           void comboItem.offsetWidth;
           comboItem.style.opacity = '1';
 
+          // 점수 카운터 업데이트 (콤보 fame만 totalScore에 포함)
+          if (!isZero && c.type === 'fame') {
+            runningScore += c.value;
+            await _festCountUp(scoreCounter, runningScore, 300);
+          }
+
           // 스크롤 (6개 초과 시)
           if (ci >= 5) comboArea.scrollTop = comboArea.scrollHeight;
+        }
+
+        // 4) 콤보가 하나도 없으면 표시
+        if (!_festSkipped && allCombos.length === 0 && (!sd.itemStats || sd.itemStats.fame <= 0)) {
+          await _festDelay(400);
+          const noneItem = _festEl('div', 'fest-combo-item fest-combo-zero', '');
+          noneItem.appendChild(_festEl('span', 'fest-combo-emoji', '', '💤'));
+          noneItem.appendChild(_festEl('span', 'fest-combo-desc', '', '추가 보너스 없음'));
+          noneItem.appendChild(_festEl('span', 'fest-combo-value', '', '-'));
+          comboArea.appendChild(noneItem);
+          void noneItem.offsetWidth;
+          noneItem.style.opacity = '1';
         }
 
         if (!_festSkipped) {
@@ -483,6 +535,10 @@ function idolFestivalStart() {
           // 최종 점수 중앙 확대
           const totalEl = _festEl('div', 'fest-total-score', '', String(sd.totalScore));
           comboArea.appendChild(totalEl);
+          // 최종 점수가 카운터와 다르면 보정 카운트업
+          if (runningScore !== sd.totalScore) {
+            await _festCountUp(scoreCounter, sd.totalScore, 300);
+          }
           _festSfx('shararaRang');
           _festHaptic('medium');
           if (tier === 'full') _festSpawnStageParticles(overlay, 8);
