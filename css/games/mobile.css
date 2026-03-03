@@ -2919,6 +2919,41 @@
    Keep mafia/spy/lover chat fully visible and scrollable.
    ================================================================= */
 @media (max-width: 430px) and (orientation: portrait) {
+  #mafiaGame .mf-topbar {
+    padding: 6px 10px !important;
+  }
+
+  #mafiaGame .mf-role-banner {
+    margin: 6px 10px 4px !important;
+    padding: 8px 10px !important;
+    gap: 8px !important;
+  }
+
+  #mafiaGame .mf-role-emoji {
+    font-size: 30px !important;
+  }
+
+  #mafiaGame .mf-role-name {
+    font-size: 16px !important;
+  }
+
+  #mafiaGame .mf-role-desc {
+    font-size: 12px !important;
+  }
+
+  #mafiaGame .mf-content {
+    padding: 6px 10px !important;
+    gap: 8px !important;
+  }
+
+  #mafiaGame .mf-content > .mf-chat-panel {
+    order: 3 !important;
+  }
+
+  #mafiaGame .mf-content > .mf-player-grid {
+    order: 5 !important;
+  }
+
   #mafiaGame .mf-chat-panel {
     min-height: 0 !important;
     max-height: clamp(220px, 44dvh, 360px) !important;
@@ -2954,6 +2989,25 @@
 
   #mafiaGame .mf-chat-send-btn {
     padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+
+  #mafiaGame .mf-action-area {
+    padding: 6px 10px 8px !important;
+    padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    gap: 6px !important;
+  }
+
+  #mafiaGame .mf-message-box {
+    font-size: 13px !important;
+    line-height: 1.35 !important;
+    min-height: 20px !important;
+    padding: 2px !important;
+  }
+
+  #mafiaGame .mf-btn-row button {
+    min-height: 40px !important;
+    padding: 8px 10px !important;
     font-size: 13px !important;
   }
 }
