@@ -2914,3 +2914,61 @@
   }
 }
 
+/* =================================================================
+   MAFIA CHAT - portrait mobile overflow/cropping fix
+   Keep mafia/spy/lover chat fully visible and scrollable.
+   ================================================================= */
+@media (max-width: 430px) and (orientation: portrait) {
+  #mafiaGame .mf-chat-panel {
+    min-height: 0 !important;
+    max-height: clamp(220px, 44dvh, 360px) !important;
+    overflow: hidden !important;
+  }
+
+  #mafiaGame .mf-chat-tabs {
+    flex: 0 0 auto !important;
+  }
+
+  #mafiaGame .mf-chat-tab {
+    max-width: 68vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #mafiaGame .mf-chat-messages {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  #mafiaGame .mf-chat-input-row {
+    flex: 0 0 auto !important;
+    gap: 6px !important;
+    padding: 8px 10px !important;
+  }
+
+  #mafiaGame .mf-chat-input {
+    min-width: 0;
+    padding: 8px 10px !important;
+  }
+
+  #mafiaGame .mf-chat-send-btn {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 360px) and (orientation: portrait) {
+  #mafiaGame .mf-chat-panel {
+    max-height: clamp(200px, 42dvh, 320px) !important;
+  }
+
+  #mafiaGame .mf-chat-tab {
+    max-width: 62vw;
+    padding: 8px 10px;
+  }
+
+  #mafiaGame .mf-chat-input {
+    font-size: 14px !important;
+  }
+}
