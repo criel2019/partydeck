@@ -3011,6 +3011,26 @@
     padding: 8px 10px !important;
     font-size: 13px !important;
   }
+
+  #mafiaGame .mf-skip-vote-panel {
+    padding: 10px 12px !important;
+  }
+
+  #mafiaGame .mf-skip-vote-header {
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  #mafiaGame .mf-skip-vote-count {
+    font-size: 11px;
+  }
+
+  #mafiaGame .mf-skip-vote-status {
+    margin-top: 6px;
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 360px) and (orientation: portrait) {
@@ -3026,5 +3046,17 @@
 
   #mafiaGame .mf-chat-input {
     font-size: 14px !important;
+  }
+
+  #mafiaGame .mf-skip-vote-panel {
+    padding: 8px 10px !important;
+  }
+
+  #mafiaGame .mf-skip-vote-header {
+    font-size: 11px;
+  }
+
+  #mafiaGame .mf-skip-vote-count {
+    font-size: 10px;
   }
 }

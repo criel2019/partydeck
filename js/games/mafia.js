@@ -466,6 +466,9 @@ function mfAdvancePhase() {
   else if (phase === 'day-discuss') {
     // Votes carry over from discuss phase (don't reset)
     mfState._discussToVoteScheduled = false;
+    // Discuss-skip votes are not carried into vote-skip stage
+    mfState.voteSkipVotes = {};
+    mfState.voteSkipPassed = false;
     mfState.phase = 'day-vote';
     mfSetPhaseTimer(MF_VOTE_DURATION);
   }
@@ -1217,6 +1220,9 @@ function mfProcessAction(senderId, data) {
         setTimeout(() => {
           if (!mfState || mfState.phase !== 'day-discuss') return;
           ms._discussToVoteScheduled = false;
+          // Discuss-skip votes are not carried into vote-skip stage
+          ms.voteSkipVotes = {};
+          ms.voteSkipPassed = false;
           // Carry over existing votes (don't reset)
           ms.phase = 'day-vote';
           mfSetPhaseTimer(MF_VOTE_DURATION);
@@ -1276,7 +1282,7 @@ function mfProcessAction(senderId, data) {
     // Broadcast will update timer display
   }
   else if (data.action === 'vote-skip') {
-    if (ms.phase !== 'day-vote') return;
+    if (ms.phase !== 'day-vote' && ms.phase !== 'day-discuss') return;
     if (ms.voteSkipPassed) return; // Already passed, transitioning
     const player = ms.players.find(p => p.id === senderId && p.alive);
     if (!player) return;
@@ -1293,23 +1299,37 @@ function mfProcessAction(senderId, data) {
     const skipCount = Object.keys(ms.voteSkipVotes).length;
 
     if (skipCount > aliveCount / 2) {
-      // Majority vote-skip — cancel vote, go to night
       ms.voteSkipPassed = true;
       mfBroadcastState();
       clearInterval(mfTimer);
-      setTimeout(() => {
-        if (!mfState || mfState.phase !== 'day-vote') return;
-        ms.announcements = [{
-          type: 'safe',
-          icon: '⏭️',
-          text: '투표가 스킵되었습니다. 밤으로 넘어갑니다.'
-        }];
-        ms._nightResults = null;
-        ms.votes = {};
-        ms.phase = 'vote-result';
-        mfSetPhaseTimer(MF_VOTE_RESULT_DURATION);
-        mfBroadcastState();
-      }, 1500);
+
+      if (ms.phase === 'day-discuss') {
+        // Majority discuss-skip — move immediately to vote phase
+        setTimeout(() => {
+          if (!mfState || mfState.phase !== 'day-discuss') return;
+          ms._discussToVoteScheduled = false;
+          ms.voteSkipVotes = {};
+          ms.voteSkipPassed = false;
+          ms.phase = 'day-vote';
+          mfSetPhaseTimer(MF_VOTE_DURATION);
+          mfBroadcastState();
+        }, 1200);
+      } else {
+        // Majority vote-skip — cancel vote, go to night
+        setTimeout(() => {
+          if (!mfState || mfState.phase !== 'day-vote') return;
+          ms.announcements = [{
+            type: 'safe',
+            icon: '⏭️',
+            text: '투표가 스킵되었습니다. 밤으로 넘어갑니다.'
+          }];
+          ms._nightResults = null;
+          ms.votes = {};
+          ms.phase = 'vote-result';
+          mfSetPhaseTimer(MF_VOTE_RESULT_DURATION);
+          mfBroadcastState();
+        }, 1500);
+      }
     } else {
       mfBroadcastState();
     }
@@ -1629,6 +1649,9 @@ function mfRenderView() {
     }
     html += mfRenderPlayerGrid(v, v.isAlive && !v.votes[v.myId]);
 
+    // Discuss skip panel
+    html += mfRenderVoteSkipPanel(v);
+
     // Show vote panel if someone has voted
     if (Object.keys(v.votes).length > 0) {
       html += mfRenderVotePanel(v);
@@ -1879,14 +1902,20 @@ function mfRenderVoteSkipPanel(v) {
   const majority = Math.floor(aliveCount / 2) + 1;
   const pct = aliveCount > 0 ? Math.round((skipCount / aliveCount) * 100) : 0;
   const passed = v.voteSkipPassed;
+  const isDiscussPhase = v.phase === 'day-discuss';
+  const skipTitle = isDiscussPhase ? '⏭️ 토론 스킵' : '⏭️ 투표 스킵';
 
   const passedClass = passed ? ' passed' : '';
-  const statusText = passed ? '✅ 투표 스킵 통과! 밤으로 넘어갑니다...' : '';
+  const statusText = passed
+    ? (isDiscussPhase
+      ? '✅ 토론 스킵 통과! 투표 단계로 이동합니다...'
+      : '✅ 투표 스킵 통과! 밤으로 넘어갑니다...')
+    : '';
 
   return `
     <div class="mf-skip-vote-panel${passedClass}">
       <div class="mf-skip-vote-header">
-        <span>⏭️ 투표 스킵</span>
+        <span>${skipTitle}</span>
         <span class="mf-skip-vote-count">${skipCount} / ${majority} (과반수)</span>
       </div>
       <div class="mf-skip-vote-bar-track">
@@ -1946,6 +1975,12 @@ function mfRenderActionArea(v) {
       msg = '☀️ 의심되는 사람에 대해 토론하세요! 투표하면 토론이 즉시 종료됩니다.';
       btns += `<button class="mf-action-btn primary" id="mfVoteBtn" onclick="mfConfirmVote()" disabled>🗳️ 투표</button>`;
       btns += `<button class="mf-action-btn extend" onclick="mfRequestExtend()">⏰ 연장</button>`;
+      if (!v.voteSkipPassed) {
+        const mySkipped = v.voteSkipVotes && v.voteSkipVotes[v.myId];
+        const skipLabel = mySkipped ? '⏭️ 스킵 취소' : '⏭️ 토론 스킵';
+        const skipClass = mySkipped ? 'danger' : 'secondary';
+        btns += `<button class="mf-action-btn ${skipClass}" onclick="mfToggleVoteSkip()">${skipLabel}</button>`;
+      }
     }
   }
   else if (v.phase === 'day-vote') {
@@ -2219,4 +2254,3 @@ function mfRenderRolesPanel() {
 // ===== GAME STUBS =====
 // startSutda - 아래 엔진 코드에서 정의됨
 // startECard, startYahtzee, startUpDown - 아래 엔진 코드에서 정의됨
-
