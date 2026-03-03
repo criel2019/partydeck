@@ -2955,8 +2955,9 @@
   }
 
   #mafiaGame .mf-chat-panel {
-    min-height: 0 !important;
-    max-height: clamp(220px, 44dvh, 360px) !important;
+    flex: 0 0 auto !important;
+    min-height: clamp(170px, 34dvh, 250px) !important;
+    max-height: clamp(220px, 46dvh, 360px) !important;
     overflow: hidden !important;
   }
 
@@ -3014,7 +3015,8 @@
 
 @media (max-width: 360px) and (orientation: portrait) {
   #mafiaGame .mf-chat-panel {
-    max-height: clamp(200px, 42dvh, 320px) !important;
+    min-height: clamp(160px, 32dvh, 220px) !important;
+    max-height: clamp(200px, 42dvh, 300px) !important;
   }
 
   #mafiaGame .mf-chat-tab {
