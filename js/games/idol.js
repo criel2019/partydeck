@@ -746,6 +746,24 @@ function idolCurrentPlayer() {
   return idolState.players.find(p => p.id === id);
 }
 
+function idolApplyGoldCheat(amount) {
+  const safeAmount = Math.max(0, Number(amount) || 0);
+  if (!safeAmount) return false;
+  if (!idolState || idolState.phase !== 'playing') return false;
+  if (!state.isHost) return false;
+
+  let target = idolState.players.find(p => p.id === state.myId);
+  if (!target) target = idolCurrentPlayer();
+  if (!target) return false;
+
+  target.money = Math.max(0, (target.money || 0) + safeAmount);
+  _idolInvalidateRenderCache();
+  broadcastIdolState();
+  idolRenderAll();
+  showToast(`💰 아이돌 자금 +${safeAmount.toLocaleString()}만`);
+  return true;
+}
+
 function idolIsMyTurn() {
   return idolCurrentPlayer()?.id === state.myId;
 }
@@ -2555,6 +2573,13 @@ let _idolSelectionLocked = false;
 function idolIsCpuPlayerId(pid) {
   const s = String(pid ?? '');
   return /^cpu\d+$/.test(s) || /^ai-\d+$/.test(s);
+}
+
+function idolCanUseGoldCheat() {
+  if (!idolState || idolState.phase !== 'playing') return false;
+  if (!state.isHost) return false;
+  const players = idolState.players || [];
+  return players.some(p => idolIsCpuPlayerId(p.id));
 }
 
 // ─── 플레이어 연결 끊김 처리 ──────────────────

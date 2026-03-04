@@ -275,13 +275,34 @@ function getDiamond() {
   return _economy.diamond || 0;
 }
 
+function canUseGoldCheat() {
+  if (typeof idolCanUseGoldCheat === 'function') {
+    try { return !!idolCanUseGoldCheat(); } catch (e) { return false; }
+  }
+  return false;
+}
+
+function updateGoldCheatUI() {
+  const btn = document.getElementById('diamondShopGoldCheatBtn');
+  const hint = document.getElementById('diamondShopGoldCheatHint');
+  if (!btn) return;
+
+  const enabled = canUseGoldCheat();
+  btn.disabled = !enabled;
+  btn.style.opacity = enabled ? '1' : '0.45';
+  btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+  btn.title = enabled ? '' : '아이돌 AI전(호스트)에서만 사용 가능합니다.';
+  if (hint) hint.style.opacity = enabled ? '0.55' : '1';
+}
+
 function openDiamondShop() {
   const ovl = document.getElementById('diamondShopOverlay');
   if (!ovl) return;
   const bal = document.getElementById('diamondShopBalance');
   if (bal) bal.textContent = getDiamond();
   const goldBal = document.getElementById('diamondShopGoldBalance');
-  if (goldBal) goldBal.textContent = getEconomy().gold || 0;
+  if (goldBal) goldBal.textContent = (getEconomy().gold || 0).toLocaleString();
+  updateGoldCheatUI();
   ovl.style.display = 'block';
 }
 
@@ -302,9 +323,18 @@ function buyDiamond(amount) {
 function buyGoldCheat(amount) {
   const safeAmount = Math.max(0, Number(amount) || 0);
   if (!safeAmount) return;
+  if (!canUseGoldCheat()) {
+    showToast('🤖 아이돌 AI전(호스트)에서만 치트를 사용할 수 있습니다.');
+    updateGoldCheatUI();
+    return;
+  }
   addGold(safeAmount);
+  // Idol game uses its own per-player money. Mirror cheat there when available.
+  if (typeof idolApplyGoldCheat === 'function') {
+    try { idolApplyGoldCheat(safeAmount); } catch (e) {}
+  }
   const goldBal = document.getElementById('diamondShopGoldBalance');
-  if (goldBal) goldBal.textContent = getEconomy().gold || 0;
+  if (goldBal) goldBal.textContent = (getEconomy().gold || 0).toLocaleString();
 }
 
 function startEnergyTimer() {
