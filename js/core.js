@@ -280,6 +280,8 @@ function openDiamondShop() {
   if (!ovl) return;
   const bal = document.getElementById('diamondShopBalance');
   if (bal) bal.textContent = getDiamond();
+  const goldBal = document.getElementById('diamondShopGoldBalance');
+  if (goldBal) goldBal.textContent = getEconomy().gold || 0;
   ovl.style.display = 'block';
 }
 
@@ -295,6 +297,14 @@ function buyDiamond(amount) {
   if (bal) bal.textContent = getDiamond();
   const mmDiamond = document.getElementById('mmDiamond');
   if (mmDiamond) mmDiamond.textContent = getDiamond();
+}
+
+function buyGoldCheat(amount) {
+  const safeAmount = Math.max(0, Number(amount) || 0);
+  if (!safeAmount) return;
+  addGold(safeAmount);
+  const goldBal = document.getElementById('diamondShopGoldBalance');
+  if (goldBal) goldBal.textContent = getEconomy().gold || 0;
 }
 
 function startEnergyTimer() {
