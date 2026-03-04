@@ -30,6 +30,88 @@
   height: 100%;
 }
 
+#idolEventVideo {
+  position: absolute;
+  inset: 0;
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(1.08) contrast(1.04);
+}
+
+#idolEventScreen.ies-video-mode #idolEventCanvas {
+  display: none;
+}
+
+#idolEventScreen.ies-video-mode #idolEventVideo {
+  display: block;
+}
+
+.ies-train-overlay {
+  position: absolute;
+  left: 50%;
+  bottom: 16%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(8, 8, 16, 0.68), rgba(0, 0, 0, 0.85));
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  transform: translate(-50%, 8px) scale(0.94);
+  opacity: 0;
+  transition: opacity 0.14s ease, transform 0.18s cubic-bezier(.2,.9,.2,1.1);
+}
+
+.ies-train-overlay.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.ies-train-overlay.tone-talent {
+  border-color: rgba(0, 238, 255, 0.78);
+  box-shadow: 0 0 16px rgba(0, 238, 255, 0.45), 0 8px 22px rgba(0, 0, 0, 0.55);
+}
+
+.ies-train-overlay.tone-looks {
+  border-color: rgba(255, 117, 189, 0.82);
+  box-shadow: 0 0 16px rgba(255, 117, 189, 0.45), 0 8px 22px rgba(0, 0, 0, 0.55);
+}
+
+.ies-train-overlay.tone-fame {
+  border-color: rgba(255, 214, 84, 0.84);
+  box-shadow: 0 0 16px rgba(255, 214, 84, 0.48), 0 8px 22px rgba(0, 0, 0, 0.55);
+}
+
+.ies-train-overlay.tone-money {
+  border-color: rgba(126, 255, 166, 0.82);
+}
+
+.ies-train-overlay.tone-favor {
+  border-color: rgba(255, 120, 199, 0.82);
+}
+
+.ies-train-overlay-emoji {
+  font-size: 12px;
+}
+
+.ies-train-overlay-label {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.ies-train-overlay-gain {
+  font-size: 13px;
+  color: #fff7b5;
+  text-shadow: 0 0 10px rgba(255, 223, 117, 0.78);
+}
+
 /* LED 도트 매트릭스 텍스처 */
 .ies-led {
   position: absolute;

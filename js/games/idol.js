@@ -110,6 +110,7 @@ function _idolApplyFxClass() {
 
 // ─── 렌더 캐시 (dirty-flag) ─────────────────
 const _idolRenderCache = { resourceBar: null, centerPanel: null, actionPanel: null, cornerCards: null };
+let _idolTrainBillboardKey = '';
 
 function _idolInvalidateRenderCache() {
   _idolRenderCache.resourceBar = null;
@@ -603,6 +604,7 @@ function startIdolManagement() {
 function idolInitGame(selections) {
   _idolDetectFxTier();
   _idolInvalidateRenderCache();
+  _idolTrainBillboardKey = '';
   // Three.js 미리 로드 (첫 주사위 전에 완료되도록)
   loadIdolDiceThree();
   // selections: [{ playerId, idolTypeId, idolName }]
@@ -1075,6 +1077,7 @@ function idolConfirmTrainResult() {
   if (!state.isHost) return;
   const action = idolState.pendingAction;
   if (!action || action.type !== 'train-result') return;
+  if (typeof idolEventScreenHide === 'function') idolEventScreenHide();
   idolOnTurnEnd(action.isDouble ?? false);
 }
 
@@ -3183,6 +3186,47 @@ function idolUxWrapActionPanelHTML(contentHtml, currentP, action, isMyTurn) {
   `;
 }
 
+function idolGetTrainBillboardVideo(player, statName) {
+  if (!player || !statName) return null;
+  if (typeof IDOL_TRAIN_BILLBOARD_VIDEOS === 'undefined') return null;
+
+  const byType = IDOL_TRAIN_BILLBOARD_VIDEOS[player.idolType];
+  if (!byType) return null;
+
+  return byType[statName] || null;
+}
+
+function idolMaybePlayTrainBillboard(action) {
+  if (!action || action.type !== 'train-result' || !idolState) return;
+  if (typeof idolEventScreenPlayTraining !== 'function') return;
+
+  const player = idolState.players.find(p => p.id === action.playerId);
+  if (!player) return;
+
+  const key = [
+    idolState.turnNum || 0,
+    idolState.currentIdx || 0,
+    action.playerId || '',
+    action.stat || '',
+    action.gain ?? '',
+    action.die ?? '',
+  ].join(':');
+
+  if (_idolTrainBillboardKey === key) return;
+  _idolTrainBillboardKey = key;
+
+  const videoSrc = idolGetTrainBillboardVideo(player, action.stat);
+  if (!videoSrc) return;
+
+  idolEventScreenPlayTraining({
+    videoSrc,
+    statName: action.stat,
+    gain: action.gain,
+    overlayLeadMs: 280,
+    holdMs: 500,
+  });
+}
+
 function idolRenderActionPanel() {
   const panel = document.getElementById('idolActionPanel');
   if (!panel || !idolState) return;
@@ -3226,6 +3270,13 @@ function idolRenderActionPanel() {
     return;
   }
 
+  if (action.type !== 'train-result' && typeof idolEventScreenHide === 'function') {
+    const screen = document.getElementById('idolEventScreen');
+    if (screen && screen.classList.contains('ies-video-mode')) {
+      idolEventScreenHide();
+    }
+  }
+
   switch (action.type) {
     case 'rolling':
       contentHtml = idolRenderDicePanel(action.dice, action.isDouble);
@@ -3242,6 +3293,7 @@ function idolRenderActionPanel() {
       break;
     case 'train-result':
       contentHtml = idolRenderTrainResult(action);
+      idolMaybePlayTrainBillboard(action);
       break;
     case 'shop-takeover-offer':
       contentHtml = idolRenderTakeoverPanel(action);

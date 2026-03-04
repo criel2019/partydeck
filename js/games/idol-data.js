@@ -595,3 +595,27 @@ const IDOL_BILLBOARD_SPRITES = {
   el:     null,
   ai:     null,
 };
+
+// Training billboard videos by idol type and stat.
+const IDOL_TRAIN_BILLBOARD_VIDEOS = {
+  luna: {
+    talent: 'img/games/idol/train/luna_talent.mp4',
+    looks:  'img/games/idol/train/luna_looks.mp4',
+    fame:   'img/games/idol/train/luna_fame.mp4',
+  },
+  ddyobi: {
+    talent: 'img/games/idol/train/ddyobi_talent.mp4',
+    looks:  'img/games/idol/train/ddyobi_looks.mp4',
+    fame:   'img/games/idol/train/ddyobi_fame.mp4',
+  },
+  el: {
+    talent: 'img/games/idol/train/el_talent.mp4',
+    looks:  'img/games/idol/train/el_looks.mp4',
+    fame:   'img/games/idol/train/el_fame.mp4',
+  },
+  ai: {
+    talent: 'img/games/idol/train/ai_talent.mp4',
+    looks:  'img/games/idol/train/ai_looks.mp4',
+    fame:   'img/games/idol/train/ai_fame.mp4',
+  },
+};
