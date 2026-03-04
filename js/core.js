@@ -953,22 +953,23 @@ const HAND_RANKINGS = {
   },
   sutda: {
     title: '🎴 섯다 족보',
-    content: `<div style="display:flex;flex-direction:column;gap:4px;">
-<div style="color:#ffd700;font-weight:700;margin-bottom:4px;">[ 땡 ]</div>
-<div><b>장땡</b> 10+10 (최강)</div>
-<div><b>38광땡</b> 3광+8광</div>
-<div><b>18광땡</b> 1광+8광</div>
-<div><b>13광땡</b> 1광+3광</div>
-<div><b>9땡~1땡</b> 같은 숫자 페어</div>
-<div style="color:#ff6b35;font-weight:700;margin:8px 0 4px;">[ 특수패 ]</div>
-<div><b>세륙 (4+6)</b> — 콜 받으면 밀기(10끗) or 깽판(패 재분배, 9땡이하만)</div>
-<div><b>암행어사 (4+7)</b> — 13광땡·18광땡만 잡음</div>
-<div><b>땡잡이 (3+7)</b> — 땡만 잡음, 일반패에겐 짐</div>
-<div style="color:#4fc3f7;font-weight:700;margin:8px 0 4px;">[ 끗 ]</div>
-<div><b>갑오 (9끗)</b> — 두 패 합 끝자리 9</div>
-<div><b>8끗~1끗</b></div>
-<div><b>망통 (0끗)</b> — 최하</div>
-<div style="font-size:11px;color:#aaa;margin-top:6px;">※ 같은 끗: 두 수의 곱이 큰 쪽 승리 (비김 없음)</div>
+    content: `<div style="display:flex;flex-direction:column;gap:5px;">
+<div style="color:#ffd700;font-weight:700;">[ 기본 서열 (강 → 약) ]</div>
+<div><b>1위</b> 장땡 (10+10)</div>
+<div><b>2위</b> 38광땡 (3광+8광)</div>
+<div><b>3위</b> 18광땡 (1광+8광)</div>
+<div><b>4위</b> 13광땡 (1광+3광)</div>
+<div><b>5~13위</b> 9땡 ~ 1땡 (같은 숫자 페어)</div>
+<div><b>14위</b> 세륙밀기 (4+6 선택 시 10끗)</div>
+<div><b>15위</b> 갑오 (9끗)</div>
+<div><b>16~22위</b> 8끗 ~ 2끗</div>
+<div><b>23위</b> 1끗</div>
+<div><b>24위</b> 망통 (0끗)</div>
+<div style="color:#ff6b35;font-weight:700;margin-top:8px;">[ 특수 룰 ]</div>
+<div><b>땡잡이 (3+7)</b> — 모든 땡(장땡 포함)을 잡지만, 일반패에는 짐</div>
+<div><b>암행어사 (4+7)</b> — 13광땡/18광땡만 잡음 (그 외엔 1끗 취급)</div>
+<div><b>세륙 (4+6)</b> — 밀기(10끗) 또는 깽판(패 재분배)</div>
+<div style="font-size:11px;color:#aaa;margin-top:6px;">※ 같은 끗이면 두 수의 곱이 큰 쪽 승리 (비김 없음)</div>
 <div style="font-size:11px;color:#aaa;">※ 콜 받는 사람이 패를 먼저 공개</div>
 </div>`
   },

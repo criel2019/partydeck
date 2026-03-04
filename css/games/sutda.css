@@ -678,14 +678,26 @@
 }
 
 /* ===== Responsive ===== */
-@media (max-width: 400px) {
-  .hwatu-card-big { width: 110px; height: 165px; }
-  .hwatu-card-big .hwatu-num { font-size: 38px; }
+@media (max-width: 600px) {
+  /* 모바일에서 내 패는 실물 화투패 체감 크기에 가깝게 유지 */
+  .sutda-my-cards { gap: 12px; }
+  .sutda-my-cards .hwatu-card-big {
+    width: 3.2cm;
+    height: 5.0cm;
+    border-radius: 12px;
+  }
+  .sutda-my-cards .hwatu-card-big .hwatu-num { font-size: 44px; }
+  .sutda-my-cards .hwatu-card-big .hwatu-month { font-size: 12px; padding-top: 5px; margin-top: 3px; }
+  .sutda-my-cards .hwatu-card-big .hwatu-gwang-text { font-size: 11px; bottom: 6px; }
   .sutda-bet-btn { padding: 10px 3px; font-size: 11px; min-height: 38px; }
   .sutda-my-rank { font-size: 24px; letter-spacing: 4px; }
 }
 @media (max-width: 340px) {
-  .hwatu-card-big { width: 90px; height: 135px; }
-  .hwatu-card-big .hwatu-num { font-size: 32px; }
+  .sutda-my-cards { gap: 8px; }
+  .sutda-my-cards .hwatu-card-big {
+    width: 3.0cm;
+    height: 4.7cm;
+  }
+  .sutda-my-cards .hwatu-card-big .hwatu-num { font-size: 40px; }
   .sutda-bet-btn { padding: 8px 2px; font-size: 10px; min-height: 34px; }
 }
