@@ -22,7 +22,7 @@
 3. Repository name: `partydeck` 입력
 4. `Public` 선택 → `Create repository`
 5. `uploading an existing file` 클릭
-6. `index.html`과 `manifest.json` 파일을 드래그 & 드롭
+6. 프로젝트 전체(`index.html`, `manifest.json`, `css/`, `js/`, `img/` 포함)를 드래그 & 드롭
 7. `Commit changes` 클릭
 8. 레포지토리 → `Settings` → 좌측 `Pages`
 9. Source: `Deploy from a branch` 선택
