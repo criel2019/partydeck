@@ -17,10 +17,10 @@ const TAMA_TRIBES = {
 };
 
 const TAMA_STAGES = [
-  { name:'하', minLv:0  },
-  { name:'하+', minLv:1  },
-  { name:'중', minLv:5  },
-  { name:'중+', minLv:10 },
+  { name:'하', minLv:1  },
+  { name:'하+', minLv:5  },
+  { name:'중', minLv:10 },
+  { name:'중+', minLv:15 },
   { name:'상', minLv:20 }
 ];
 
@@ -198,7 +198,7 @@ function tamaCacheDom() {
 
 // ── Helpers ────────────────────────────────────────────
 function tamaClamp(v,mn,mx){return Math.max(mn,Math.min(mx,v));}
-function tamaExpReq(lv){return Math.floor(100*Math.pow(lv,1.5));}
+function tamaExpReq(lv){return Math.max(1,Math.floor((100*Math.pow(lv,1.5))/3));}
 function tamaFoodCost(f,lv){return Math.floor(f.costBase*Math.pow(1.15,lv-1));}
 function tamaVibrate(ms){try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}}
 
@@ -496,10 +496,10 @@ function tamaAddExp(amount){
 function tamaOnLevelUp(){
   tamaShowFlash('Lv.'+tamaPet.level+' 달성!',tamaPick('levelup'));
   tamaVibrate([50,30,50]);
-  const oldStg=tamaStageIdx();
+  const prevStg=tamaStageIdx({ ...tamaPet, level:Math.max(1,(tamaPet.level||1)-1) });
   // Stage change sprite update (delayed so flash shows first)
   setTimeout(()=>{
-    if(tamaStageIdx()!==oldStg) tamaRenderSprite();
+    if(tamaStageIdx()!==prevStg) tamaRenderSprite();
   },1600);
   // Evolution triggers
   if(tamaPet.level===15&&!tamaPet.evolution1) setTimeout(()=>tamaShowEvo1(),2200);
