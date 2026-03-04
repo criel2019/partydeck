@@ -282,6 +282,57 @@ function canUseGoldCheat() {
   return false;
 }
 
+function ensureDiamondShopCheatUI() {
+  const ovl = document.getElementById('diamondShopOverlay');
+  if (!ovl) return;
+  const card = ovl.firstElementChild;
+  if (!card) return;
+
+  // Gold balance line (fallback for stale cached HTML).
+  if (!document.getElementById('diamondShopGoldBalance')) {
+    const diaBalance = card.querySelector('#diamondShopBalance');
+    const diaLine = diaBalance ? diaBalance.closest('div') : null;
+    const goldLine = document.createElement('div');
+    goldLine.style.fontSize = '14px';
+    goldLine.style.color = '#aaa';
+    goldLine.style.marginBottom = '16px';
+    goldLine.innerHTML = '현재 보유: 🪙 <span id="diamondShopGoldBalance">0</span>';
+    if (diaLine && diaLine.parentNode) diaLine.insertAdjacentElement('afterend', goldLine);
+  }
+
+  const diamondBtn = card.querySelector('button[onclick^="buyDiamond"]');
+  const actions = diamondBtn ? diamondBtn.parentElement : null;
+  if (!actions) return;
+
+  // Cheat button (fallback for stale cached HTML).
+  if (!document.getElementById('diamondShopGoldCheatBtn')) {
+    const cheatBtn = document.createElement('button');
+    cheatBtn.id = 'diamondShopGoldCheatBtn';
+    cheatBtn.className = 'btn btn-primary';
+    cheatBtn.setAttribute('onclick', 'buyGoldCheat(10000)');
+    cheatBtn.style.width = '100%';
+    cheatBtn.style.background = 'linear-gradient(135deg,#ffd54f,#ffb300)';
+    cheatBtn.style.color = '#1a1a1a';
+    cheatBtn.textContent = '🪙 골드 +10,000 (치트)';
+    actions.appendChild(cheatBtn);
+  }
+
+  // Cheat hint.
+  if (!document.getElementById('diamondShopGoldCheatHint')) {
+    const hint = document.createElement('div');
+    hint.id = 'diamondShopGoldCheatHint';
+    hint.style.fontSize = '11px';
+    hint.style.color = '#666';
+    hint.style.marginTop = '8px';
+    hint.textContent = '* 아이돌 AI전에서만 사용 가능';
+    const legalText = Array.from(card.querySelectorAll('div')).find(el =>
+      (el.textContent || '').includes('결제 시스템 연동 전 테스트 버전')
+    );
+    if (legalText && legalText.parentNode) legalText.insertAdjacentElement('beforebegin', hint);
+    else card.appendChild(hint);
+  }
+}
+
 function updateGoldCheatUI() {
   const btn = document.getElementById('diamondShopGoldCheatBtn');
   const hint = document.getElementById('diamondShopGoldCheatHint');
@@ -298,6 +349,7 @@ function updateGoldCheatUI() {
 function openDiamondShop() {
   const ovl = document.getElementById('diamondShopOverlay');
   if (!ovl) return;
+  ensureDiamondShopCheatUI();
   const bal = document.getElementById('diamondShopBalance');
   if (bal) bal.textContent = getDiamond();
   const goldBal = document.getElementById('diamondShopGoldBalance');
