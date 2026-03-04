@@ -1358,11 +1358,22 @@ function aiIdol() {
     // ── 훈련 결과 확인 (CPU는 결과 표시 후 확인) ─────
     case 'train-result':
       if (idolIsCpuPlayerId(currentP.id) && typeof idolConfirmTrainResult === 'function') {
-        setTimeout(() => {
-          if (idolState?.pendingAction?.type === 'train-result') {
+        const trIdx = idolState.currentIdx;
+        const trTurn = idolState.turnNum;
+        let tries = 0;
+        const tryConfirm = () => {
+          if (!idolState || idolState.phase !== 'playing') return;
+          if (idolState.currentIdx !== trIdx || idolState.turnNum !== trTurn) return;
+          const a = idolState.pendingAction;
+          if (!a || a.type !== 'train-result') return;
+          if (a.confirmReady) {
             idolConfirmTrainResult();
+            return;
           }
-        }, 1200);
+          tries++;
+          if (tries < 20) setTimeout(tryConfirm, 250);
+        };
+        setTimeout(tryConfirm, 450);
       }
       break;
 

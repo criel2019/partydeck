@@ -1067,6 +1067,8 @@ function idolTrainAtShop(shopId, isOwned) {
   idolState.pendingAction = {
     type: 'train-result',
     die, gain, stat, playerId: p.id,
+    confirmReady: false,
+    confirming: false,
     isDouble,
   };
   broadcastIdolState();
@@ -1077,8 +1079,23 @@ function idolConfirmTrainResult() {
   if (!state.isHost) return;
   const action = idolState.pendingAction;
   if (!action || action.type !== 'train-result') return;
-  if (typeof idolEventScreenHide === 'function') idolEventScreenHide();
-  idolOnTurnEnd(action.isDouble ?? false);
+  if (!action.confirmReady) {
+    showToast('연출이 끝난 뒤에 넘길 수 있습니다.');
+    return;
+  }
+  if (action.confirming) return;
+
+  const key = idolGetTrainResultActionKey(action);
+  action.confirming = true;
+  broadcastIdolState();
+  idolRenderAll();
+
+  setTimeout(() => {
+    if (!idolState || idolState.pendingAction?.type !== 'train-result') return;
+    if (idolGetTrainResultActionKey(idolState.pendingAction) !== key) return;
+    if (typeof idolEventScreenHide === 'function') idolEventScreenHide();
+    idolOnTurnEnd(action.isDouble ?? false);
+  }, 500);
 }
 
 function idolSkipTrain() {
@@ -2192,20 +2209,39 @@ function idolRenderTrainPanel(shopId, isOwned) {
 }
 
 function idolRenderTrainResult(action) {
-  const DICE_EMOJIS = ['','⚀','⚁','⚂','⚃','⚄','⚅'];
+  const DICE_EMOJIS = ['','🎲','⚁','⚂','⚃','⚄','⚅'];
   const statLabel = action.stat === 'talent' ? '재능' : action.stat === 'looks' ? '외모' : '인기도';
-  const confirmBtn = state.isHost
-    ? `<div class="idol-action-buttons"><button class="idol-btn idol-btn-primary" onclick="idolConfirmTrainResult()">확인</button></div>`
-    : `<div class="idol-popup-sub" style="opacity:.6;">결과 확인 대기 중...</div>`;
+  const gainText = `${action.gain >= 0 ? '+' : ''}${action.gain}`;
+  const isReady = !!action.confirmReady;
+  const isConfirming = !!action.confirming;
+  let confirmBtn = '';
+
+  if (state.isHost) {
+    if (isConfirming) {
+      confirmBtn = `<div class="idol-popup-sub" style="opacity:.78;">적용 중...</div>`;
+    } else if (isReady) {
+      confirmBtn = `<div class="idol-action-buttons"><button class="idol-btn idol-btn-primary" onclick="idolConfirmTrainResult()">다음으로</button></div>`;
+    } else {
+      confirmBtn = `<div class="idol-popup-sub" style="opacity:.78;">연출 재생 중... 끝나면 버튼이 열립니다.</div>`;
+    }
+  } else {
+    if (isConfirming) {
+      confirmBtn = `<div class="idol-popup-sub" style="opacity:.78;">결과 적용 중...</div>`;
+    } else if (isReady) {
+      confirmBtn = `<div class="idol-popup-sub" style="opacity:.78;">호스트 확인 대기 중...</div>`;
+    } else {
+      confirmBtn = `<div class="idol-popup-sub" style="opacity:.78;">연출 재생 중...</div>`;
+    }
+  }
+
   return `
     <div class="idol-train-result">
       <div class="idol-action-title">훈련 결과!</div>
       <div class="idol-train-die">${DICE_EMOJIS[action.die]}</div>
-      <div class="idol-train-gain">+${action.gain} ${statLabel}</div>
+      <div class="idol-train-gain">${gainText} ${statLabel}</div>
       ${confirmBtn}
     </div>`;
 }
-
 function idolRenderEventPanel(card) {
   if (!card) return '';
   if (card.type === 'reversal') {
@@ -3196,14 +3232,9 @@ function idolGetTrainBillboardVideo(player, statName) {
   return byType[statName] || null;
 }
 
-function idolMaybePlayTrainBillboard(action) {
-  if (!action || action.type !== 'train-result' || !idolState) return;
-  if (typeof idolEventScreenPlayTraining !== 'function') return;
-
-  const player = idolState.players.find(p => p.id === action.playerId);
-  if (!player) return;
-
-  const key = [
+function idolGetTrainResultActionKey(action) {
+  if (!action || action.type !== 'train-result' || !idolState) return '';
+  return [
     idolState.turnNum || 0,
     idolState.currentIdx || 0,
     action.playerId || '',
@@ -3211,12 +3242,42 @@ function idolMaybePlayTrainBillboard(action) {
     action.gain ?? '',
     action.die ?? '',
   ].join(':');
+}
+
+function idolMarkTrainResultReady(actionKey) {
+  if (!state.isHost || !idolState) return;
+
+  const cur = idolState.pendingAction;
+  if (!cur || cur.type !== 'train-result') return;
+  if (idolGetTrainResultActionKey(cur) !== actionKey) return;
+  if (cur.confirmReady) return;
+
+  cur.confirmReady = true;
+  cur.confirming = false;
+  broadcastIdolState();
+  idolRenderAll();
+}
+
+function idolMaybePlayTrainBillboard(action) {
+  if (!action || action.type !== 'train-result' || !idolState) return;
+  if (typeof idolEventScreenPlayTraining !== 'function') return;
+
+  const player = idolState.players.find(p => p.id === action.playerId);
+  if (!player) return;
+
+  const key = idolGetTrainResultActionKey(action);
+  if (!key) return;
 
   if (_idolTrainBillboardKey === key) return;
   _idolTrainBillboardKey = key;
 
   const videoSrc = idolGetTrainBillboardVideo(player, action.stat);
-  if (!videoSrc) return;
+  if (!videoSrc) {
+    if (state.isHost) {
+      setTimeout(() => idolMarkTrainResultReady(key), 350);
+    }
+    return;
+  }
 
   idolEventScreenPlayTraining({
     videoSrc,
@@ -3224,6 +3285,8 @@ function idolMaybePlayTrainBillboard(action) {
     gain: action.gain,
     overlayLeadMs: 280,
     holdMs: 500,
+  }).finally(() => {
+    idolMarkTrainResultReady(key);
   });
 }
 
