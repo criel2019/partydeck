@@ -132,7 +132,19 @@ function startLotteryGame() {
   };
 
   broadcast({ type: 'lottery-state', state: stateToSend });
-  renderLotteryGame(stateToSend);
+  // Host keeps full grid items locally so picked result text is available.
+  renderLotteryGame({
+    mode: 'lottery',
+    phase: 'playing',
+    gridSize: gridSize,
+    grid: lotteryState.grid.map(c => ({
+      index: c.index,
+      item: c.item,
+      revealed: c.revealed,
+      revealedBy: c.revealedBy
+    })),
+    items: items
+  });
 }
 
 function startRouletteGame() {
@@ -378,7 +390,16 @@ function renderRouletteSetup() {
 }
 
 function renderLotteryGame(stateData) {
-  lotteryState.grid = stateData.grid;
+  const prevGrid = Array.isArray(lotteryState.grid) ? lotteryState.grid : [];
+  lotteryState.grid = (stateData.grid || []).map((cell, i) => {
+    const prev = prevGrid[i];
+    return {
+      index: typeof cell.index === 'number' ? cell.index : i,
+      item: typeof cell.item === 'string' ? cell.item : (typeof prev?.item === 'string' ? prev.item : ''),
+      revealed: !!cell.revealed,
+      revealedBy: cell.revealedBy ?? null
+    };
+  });
   lotteryState.gridSize = stateData.gridSize;
   lotteryState.items = stateData.items;
   lotteryState.phase = 'playing';
@@ -512,4 +533,3 @@ function handleLotteryMessage(peerId, msg) {
     handleRouletteSpin(msg);
   }
 }
-
