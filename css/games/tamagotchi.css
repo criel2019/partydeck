@@ -155,6 +155,18 @@
   font-size: 80px;
   margin: 16px 0;
 }
+.tama-ftue-pet-img {
+  width: min(48vw, 180px);
+  max-width: 180px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center 58%;
+  border-radius: 50%;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.38);
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
 
 /* --- Home Screen --- */
 .tama-home {
@@ -828,6 +840,10 @@
 }
 .tama-hatch-baby {
   font-size: 100px;
+}
+.tama-hatch-baby .tama-ftue-pet-img {
+  width: min(55vw, 210px);
+  max-width: 210px;
 }
 
 /* --- Common Buttons --- */

@@ -235,6 +235,19 @@ function tamaStageVisual(pet){
     img:tribeMap?tribeMap[base]:null
   };
 }
+function tamaTribeImage(tribe,grade){
+  const map=TAMA_STAGE_IMAGE_MAP[tribe]||null;
+  return map?map[grade]||null:null;
+}
+function tamaSetFtueAvatar(el,tribe,grade,fallbackEmoji){
+  if(!el)return;
+  const src=tamaTribeImage(tribe,grade);
+  if(src){
+    el.innerHTML='<img class=\"tama-ftue-pet-img\" src=\"'+src+'\" alt=\"pet\" draggable=\"false\">';
+  }else{
+    el.textContent=fallbackEmoji||'🥚';
+  }
+}
 function tamaAffTier(pet){
   const p=pet||tamaPet; if(!p)return TAMA_AFF_TIERS[0];
   for(let i=TAMA_AFF_TIERS.length-1;i>=0;i--) if(p.affinity>=TAMA_AFF_TIERS[i].min) return TAMA_AFF_TIERS[i];
@@ -940,7 +953,7 @@ function tamaTapEgg(){
 function tamaHatch(){
   const flash=document.getElementById('tamaHatchFlash');if(!flash)return;
   const baby=TAMA_SPRITE_MAP[tamaSelectedTribe][1];
-  flash.querySelector('.tama-hatch-baby').textContent=baby;
+  tamaSetFtueAvatar(flash.querySelector('.tama-hatch-baby'),tamaSelectedTribe,'low',baby);
   // Reset animation by removing and re-adding active
   flash.classList.remove('active');void flash.offsetWidth;
   flash.classList.add('active');
@@ -948,7 +961,7 @@ function tamaHatch(){
 
   setTimeout(()=>{
     flash.classList.remove('active');
-    const np=document.getElementById('tamaNamePreview');if(np)np.textContent=baby;
+    const np=document.getElementById('tamaNamePreview');if(np)tamaSetFtueAvatar(np,tamaSelectedTribe,'low',baby);
     const ni=document.getElementById('tamaNameInput');
     if(ni)ni.value={fire:'불꽃이',rock:'돌돌이',wind:'바람이',thunder:'번개',spirit:'요정이'}[tamaSelectedTribe]||'다마';
     tamaShowScreen('tamaNameScreen');
@@ -959,7 +972,12 @@ function tamaConfirmName(){
   const inp=document.getElementById('tamaNameInput');
   const name=(inp&&inp.value.trim())||'다마';
   tamaCreatePet(tamaSelectedTribe,name.substring(0,8));
-  const tp=document.getElementById('tamaFtueFeedPet');if(tp)tp.textContent=tamaSprite();
+  const tp=document.getElementById('tamaFtueFeedPet');
+  if(tp){
+    const v=tamaStageVisual();
+    if(v&&v.img) tp.innerHTML='<img class=\"tama-ftue-pet-img\" src=\"'+v.img+'\" alt=\"pet\" draggable=\"false\">';
+    else tp.textContent=tamaSprite();
+  }
   tamaShowScreen('tamaFtueFeed');
 }
 
