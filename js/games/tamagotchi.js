@@ -17,19 +17,57 @@ const TAMA_TRIBES = {
 };
 
 const TAMA_STAGES = [
-  { name:'알',   minLv:0  },
-  { name:'유아', minLv:1  },
-  { name:'소년', minLv:5  },
-  { name:'청년', minLv:10 },
-  { name:'전사', minLv:20 }
+  { name:'하', minLv:0  },
+  { name:'하+', minLv:1  },
+  { name:'중', minLv:5  },
+  { name:'중+', minLv:10 },
+  { name:'상', minLv:20 }
 ];
 
 const TAMA_SPRITE_MAP = {
-  fire:   ['🥚','🔥','🦎','🐲','🐉'],
-  rock:   ['🥚','🪨','🐢','🦏','🗿'],
-  wind:   ['🥚','🍃','🐤','🦅','🦚'],
-  thunder:['🥚','⚡','🐱','🐯','🐅'],
-  spirit: ['🥚','✨','👻','🔮','🌀']
+  fire:   ['🥚','🐣','🐤','🐲','🐉'],
+  rock:   ['🥚','🐣','🐥','🪨','🗿'],
+  wind:   ['🥚','🐣','🐤','🕊️','🦅'],
+  thunder:['🥚','🐣','🐤','⚡','🐯'],
+  spirit: ['🥚','🐣','🐤','🔮','✨']
+};
+
+const TAMA_STAGE_VISUAL_FLOW = ['low', 'low_fx', 'mid', 'mid_fx', 'high'];
+
+const TAMA_STAGE_IMAGE_MAP = {
+  fire: {
+    low:  'img/games/tamagotchi/goose/fire_low.png',
+    mid:  'img/games/tamagotchi/goose/fire_mid.png',
+    high: 'img/games/tamagotchi/goose/fire_high.png',
+  },
+  rock: {
+    low:  'img/games/tamagotchi/goose/rock_low.png',
+    mid:  'img/games/tamagotchi/goose/rock_mid.jpg',
+    high: 'img/games/tamagotchi/goose/rock_high.png',
+  },
+  wind: {
+    low:  'img/games/tamagotchi/goose/wind_low.png',
+    mid:  'img/games/tamagotchi/goose/wind_mid.png',
+    high: 'img/games/tamagotchi/goose/wind_high.jpg',
+  },
+  thunder: {
+    low:  'img/games/tamagotchi/goose/thunder_low.png',
+    mid:  'img/games/tamagotchi/goose/thunder_mid.png',
+    high: 'img/games/tamagotchi/goose/thunder_high.png',
+  },
+  spirit: {
+    low:  'img/games/tamagotchi/goose/spirit_low.png',
+    mid:  'img/games/tamagotchi/goose/spirit_mid.png',
+    high: 'img/games/tamagotchi/goose/spirit_high.jpg',
+  },
+};
+
+const TAMA_STAGE_FX_CLASS_MAP = {
+  low: '',
+  low_fx: 'stage-fx-a',
+  mid: '',
+  mid_fx: 'stage-fx-b',
+  high: '',
 };
 
 const TAMA_PERSONALITIES = ['active','calm','playful'];
@@ -183,6 +221,19 @@ function tamaStageIdx(pet){
 function tamaSprite(pet){
   const p=pet||tamaPet; if(!p)return '🥚';
   return (TAMA_SPRITE_MAP[p.tribe]||[])[tamaStageIdx(p)]||'🥚';
+}
+function tamaStageVisual(pet){
+  const p=pet||tamaPet; if(!p)return { idx:0, flow:'low', fxClass:'', img:null };
+  const idx=tamaStageIdx(p);
+  const flow=TAMA_STAGE_VISUAL_FLOW[Math.min(idx,TAMA_STAGE_VISUAL_FLOW.length-1)]||'low';
+  const base=flow.indexOf('mid')===0?'mid':flow.indexOf('high')===0?'high':'low';
+  const tribeMap=TAMA_STAGE_IMAGE_MAP[p.tribe]||null;
+  return {
+    idx,
+    flow,
+    fxClass:TAMA_STAGE_FX_CLASS_MAP[flow]||'',
+    img:tribeMap?tribeMap[base]:null
+  };
 }
 function tamaAffTier(pet){
   const p=pet||tamaPet; if(!p)return TAMA_AFF_TIERS[0];
@@ -767,8 +818,16 @@ function tamaRenderLevel(){
 function tamaRenderSprite(){
   if(!tamaPet||tamaAnimLock)return;
   const el=_td.tamaSpriteMain;if(!el)return;
-  el.textContent=tamaSprite();
-  el.className='tama-sprite idle-bounce tribe-'+tamaPet.tribe;
+  const visual=tamaStageVisual(tamaPet);
+  const fxCls=visual.fxClass?(' '+visual.fxClass):'';
+  if(visual.img){
+    const alt=(tamaPet.name||'pet').replace(/\"/g,'');
+    el.innerHTML='<img class=\"tama-sprite-img\" src=\"'+visual.img+'\" alt=\"'+alt+'\" draggable=\"false\">';
+    el.className='tama-sprite has-image idle-bounce tribe-'+tamaPet.tribe+fxCls;
+  }else{
+    el.textContent=tamaSprite();
+    el.className='tama-sprite idle-bounce tribe-'+tamaPet.tribe+fxCls;
+  }
 }
 
 function tamaRenderNeeds(){
