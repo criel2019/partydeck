@@ -1,25 +1,16 @@
-// ===== BUILD INFO (auto-fetch from GitHub API) =====
+// ===== BUILD INFO (local build id) =====
 (function() {
-  var REPO = 'criel2019/partydeck';
-  var BRANCH = 'master';
+  function getLocalBuildId() {
+    var meta = document.querySelector('meta[name="pd-build-id"]');
+    return (meta && meta.content) ? meta.content : 'dev';
+  }
 
   document.addEventListener('DOMContentLoaded', function() {
     var el = document.getElementById('buildFooter');
     if (!el) return;
-    el.textContent = 'build info loading...';
-
-    fetch('https://api.github.com/repos/' + REPO + '/commits/' + BRANCH)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        var hash = data.sha ? data.sha.substring(0, 7) : '?';
-        var msg = data.commit && data.commit.message ? data.commit.message.split('\n')[0] : '';
-        var date = data.commit && data.commit.committer && data.commit.committer.date
-          ? new Date(data.commit.committer.date).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
-          : '';
-        el.textContent = hash + ' · ' + date;
-        el.title = msg;
-      })
-      .catch(function() { el.textContent = 'build info unavailable'; });
+    var buildId = getLocalBuildId();
+    el.textContent = 'build ' + buildId;
+    el.title = 'Loaded assets build: ' + buildId;
   });
 })();
 
