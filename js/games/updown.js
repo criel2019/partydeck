@@ -275,13 +275,15 @@ function processUpDownGuess(playerId, guess) {
     udState.currentCard = drawnCard;
     udState.specialData = { result: '\ud2c0\ub838\ub2e4! \ubc8c\uce59!', correct: false };
 
+    var isSolo = (udState.players.length <= 1);
+
     var rank = drawnCard.rank;
-    if(rank === 'J' || rank === 'Q') {
+    if(!isSolo && (rank === 'J' || rank === 'Q')) {
       udState.phase = 'special_jq';
       udState.specialData.type = 'jq';
       udState.specialData.requesterId = playerId;
       broadcastUpDownState();
-    } else if(rank === 'K') {
+    } else if(!isSolo && rank === 'K') {
       udState.phase = 'special_k';
       udState.specialData.type = 'k';
       udState.specialData.kingId = playerId;

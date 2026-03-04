@@ -702,38 +702,43 @@ function aiECard() {
   const ec = state.ecard;
   if (!ec) return;
 
-  // Find the AI player
   const aiPlayer = ec.player1.id.startsWith('ai-') ? ec.player1 :
-                    (ec.player2.id.startsWith('ai-') ? ec.player2 : null);
+    (ec.player2.id.startsWith('ai-') ? ec.player2 : null);
   if (!aiPlayer) return;
 
+  const aiId = aiPlayer.id;
+  const isEmperor = ec.emperorPlayerId === aiId;
+  const isSlave = ec.slavePlayerId === aiId;
+
   if (ec.phase === 'betting') {
-    if (aiPlayer.role === 'slave' && !ec.betProposed) {
-      // AI proposes a bet (100-500)
-      const bet = 100 + Math.floor(Math.random() * 5) * 100;
-      processECardBet(aiPlayer.id, bet);
-    } else if (aiPlayer.role === 'emperor' && ec.betProposed && !ec.betAccepted) {
-      // AI accepts 80% of the time
-      if (Math.random() < 0.8) {
-        processECardBetResponse(aiPlayer.id, true);
-      } else {
-        processECardBetResponse(aiPlayer.id, false);
+    if (ec.betSetterId !== aiId) return;
+    const bet = 50 + Math.floor(Math.random() * 10) * 50;
+    processECardBet(aiId, bet);
+    return;
+  }
+
+  if (ec.phase === 'emperor-play' && isEmperor) {
+    const cards = Array.isArray(ec.emperorCards) ? ec.emperorCards : [];
+    if (!cards.length) return;
+    let cardIdx = Math.floor(Math.random() * cards.length);
+    if (cards.includes('citizen') && Math.random() < 0.6) {
+      cardIdx = cards.indexOf('citizen');
+    }
+    processECardPlay(aiId, cards[cardIdx], cardIdx);
+    return;
+  }
+
+  if (ec.phase === 'slave-play' && isSlave) {
+    const cards = Array.isArray(ec.slaveCards) ? ec.slaveCards : [];
+    if (!cards.length) return;
+    let cardIdx = Math.floor(Math.random() * cards.length);
+    if (ec.emperorPlayed === 'emperor') {
+      const slaveIdx = cards.indexOf('slave');
+      if (slaveIdx >= 0 && Math.random() < 0.75) {
+        cardIdx = slaveIdx;
       }
     }
-  } else if (ec.phase === 'slave-play' && aiPlayer.role === 'slave') {
-    if (!aiPlayer.cards || aiPlayer.cards.length === 0) return;
-    // Prefer non-dummy cards; use dummy only when nothing else remains
-    const nonDummy = [];
-    aiPlayer.cards.forEach((c, i) => { if (c !== 'dummy') nonDummy.push(i); });
-    const pool = nonDummy.length > 0 ? nonDummy : [aiPlayer.cards.indexOf('dummy')];
-    const cardIdx = pool[Math.floor(Math.random() * pool.length)];
-    const cardType = aiPlayer.cards[cardIdx];
-    processECardPlay(aiPlayer.id, cardType, cardIdx);
-  } else if (ec.phase === 'emperor-play' && aiPlayer.role === 'emperor') {
-    if (!aiPlayer.cards || aiPlayer.cards.length === 0) return;
-    const cardIdx = Math.floor(Math.random() * aiPlayer.cards.length);
-    const cardType = aiPlayer.cards[cardIdx];
-    processECardPlay(aiPlayer.id, cardType, cardIdx);
+    processECardPlay(aiId, cards[cardIdx], cardIdx);
   }
 }
 

@@ -59,6 +59,7 @@ function startDrinkPoker() {
     hands: hands,
     faceUp: faceUp,
     currentCard: null,
+    currentDraw: null,
     phase: 'send',
     turnPlayerId: state.players[0].id,
     loserId: null,
@@ -102,12 +103,24 @@ function buildDPView(forPlayerId) {
     }
   }
 
+  var drawView = null;
+  if (dp.currentDraw) {
+    drawView = {
+      ownerId: dp.currentDraw.ownerId
+    };
+    if (dp.currentDraw.ownerId === forPlayerId) {
+      drawView.card = dp.currentDraw.card;
+    }
+  }
+
   return {
     type: 'dp-state',
     phase: dp.phase,
     turnPlayerId: dp.turnPlayerId,
     players: playersView,
-    myHand: dp.hands[forPlayerId] ? dp.hands[forPlayerId].slice() : [],
+    myHand: dp.hands[forPlayerId] ? dp.hands[forPlayerId].map(function() { return 'hidden'; }) : [],
+    myHandCount: dp.hands[forPlayerId] ? dp.hands[forPlayerId].length : 0,
+    currentDraw: drawView,
     currentCard: cardView,
     loserId: dp.loserId
   };
@@ -127,13 +140,28 @@ function broadcastDPState() {
 }
 
 // ===== HOST: PROCESS SEND =====
-function processDPSend(fromId, cardIdx, targetId, claim) {
+function processDPDraw(playerId) {
   if (!state.isHost || !dpState) return;
   if (dpState.phase !== 'send') return;
-  if (dpState.turnPlayerId !== fromId) return;
+  if (dpState.turnPlayerId !== playerId) return;
 
-  var hand = dpState.hands[fromId];
-  if (!hand || cardIdx < 0 || cardIdx >= hand.length) return;
+  var hand = dpState.hands[playerId];
+  if (!hand || hand.length === 0) return;
+
+  var randomIdx = Math.floor(Math.random() * hand.length);
+  var card = hand.splice(randomIdx, 1)[0];
+
+  dpState.currentDraw = {
+    ownerId: playerId,
+    card: card
+  };
+  dpState.phase = 'draw-preview';
+  broadcastDPState();
+}
+
+function processDPSend(fromId, cardIdx, targetId, claim) {
+  if (!state.isHost || !dpState) return;
+  if (dpState.turnPlayerId !== fromId) return;
 
   // Validate target exists and is not sender
   var targetExists = dpState.players.some(function(p) { return p.id === targetId; });
@@ -142,8 +170,19 @@ function processDPSend(fromId, cardIdx, targetId, claim) {
   // Validate claim is a valid type
   if (DP_TYPES.indexOf(claim) === -1) return;
 
-  // Remove card from hand
-  var card = hand.splice(cardIdx, 1)[0];
+  var card = null;
+  if (dpState.phase === 'draw-preview') {
+    if (!dpState.currentDraw || dpState.currentDraw.ownerId !== fromId) return;
+    card = dpState.currentDraw.card;
+    dpState.currentDraw = null;
+  } else if (dpState.phase === 'send') {
+    // Legacy path (kept for compatibility)
+    var hand = dpState.hands[fromId];
+    if (!hand || cardIdx < 0 || cardIdx >= hand.length) return;
+    card = hand.splice(cardIdx, 1)[0];
+  } else {
+    return;
+  }
 
   dpState.currentCard = {
     card: card,
@@ -266,6 +305,7 @@ function resolveDPCall(callerId, calledTrue) {
       dpState.loserId = loserId;
       dpState.phase = 'gameover';
       dpState.currentCard = null;
+      dpState.currentDraw = null;
       broadcastDPState();
 
       // Send result after short delay
@@ -280,11 +320,13 @@ function resolveDPCall(callerId, calledTrue) {
     // Next turn: loser of the call becomes next sender
     dpState.turnPlayerId = loserId;
     dpState.currentCard = null;
+    dpState.currentDraw = null;
 
     // Check if next sender has empty hand → they lose
     if (!dpState.hands[loserId] || dpState.hands[loserId].length === 0) {
       dpState.loserId = loserId;
       dpState.phase = 'gameover';
+      dpState.currentDraw = null;
       broadcastDPState();
       var t3 = setTimeout(function() {
         if (!dpState) return;
@@ -366,107 +408,127 @@ function renderDPView(view) {
     if (view.players[pi].id === state.myId) { myPlayerView = view.players[pi]; break; }
   }
 
-  // ---- Top bar: turn indicator ----
   var turnEl = document.getElementById('dpTurnIndicator');
   if (turnEl) {
     if (view.phase === 'gameover') {
-      turnEl.textContent = '게임 종료!';
+      turnEl.textContent = 'Game Over';
       turnEl.className = 'dp-turn-indicator';
     } else if (view.phase === 'reveal') {
-      turnEl.textContent = '카드 공개 중...';
+      turnEl.textContent = 'Revealing card...';
       turnEl.className = 'dp-turn-indicator';
     } else if (view.phase === 'send') {
       var turnP = dpFindPlayer(view, view.turnPlayerId);
       if (isMyTurn) {
-        turnEl.textContent = '내 차례 — 카드를 보내세요!';
+        turnEl.textContent = 'Your turn: draw 1 random card from deck';
         turnEl.className = 'dp-turn-indicator my-turn';
       } else {
-        turnEl.textContent = escapeHTML((turnP ? turnP.name : '???')) + '의 차례';
+        turnEl.textContent = escapeHTML((turnP ? turnP.name : 'Opponent')) + ' turn';
+        turnEl.className = 'dp-turn-indicator';
+      }
+    } else if (view.phase === 'draw-preview') {
+      var drawOwner = dpFindPlayer(view, view.currentDraw ? view.currentDraw.ownerId : null);
+      var isDrawer = view.currentDraw && view.currentDraw.ownerId === state.myId;
+      if (isDrawer) {
+        turnEl.textContent = 'You checked the drawn card. Bluff and send it.';
+        turnEl.className = 'dp-turn-indicator my-turn';
+      } else {
+        turnEl.textContent = escapeHTML((drawOwner ? drawOwner.name : 'Opponent')) + ' is checking a card...';
         turnEl.className = 'dp-turn-indicator';
       }
     } else if (view.phase === 'respond') {
       var isTarget = view.currentCard && view.currentCard.targetId === state.myId;
       if (isTarget) {
-        turnEl.textContent = '카드가 도착! 판정하세요';
+        turnEl.textContent = 'Card received. Choose your response.';
         turnEl.className = 'dp-turn-indicator my-turn';
       } else {
         var target = dpFindPlayer(view, view.currentCard ? view.currentCard.targetId : null);
-        turnEl.textContent = escapeHTML((target ? target.name : '???')) + '이(가) 판정 중...';
+        turnEl.textContent = escapeHTML((target ? target.name : 'Opponent')) + ' is responding...';
         turnEl.className = 'dp-turn-indicator';
       }
     } else if (view.phase === 'peek-pass') {
       var isPeeker = view.currentCard && view.currentCard.fromId === state.myId;
       if (isPeeker) {
-        turnEl.textContent = '카드를 확인했습니다 — 다음 사람에게 넘기세요!';
+        turnEl.textContent = 'Card checked. Pick next target to pass.';
         turnEl.className = 'dp-turn-indicator my-turn';
       } else {
         var peeker = dpFindPlayer(view, view.currentCard ? view.currentCard.fromId : null);
-        turnEl.textContent = escapeHTML((peeker ? peeker.name : '???')) + '이(가) 카드를 넘기는 중...';
+        turnEl.textContent = escapeHTML((peeker ? peeker.name : 'Opponent')) + ' is passing the card...';
         turnEl.className = 'dp-turn-indicator';
       }
     }
   }
 
-  // ---- Opponents area ----
   var oppEl = document.getElementById('dpOpponents');
   if (oppEl) {
     var oppHtml = '';
     view.players.forEach(function(p) {
       if (p.id === state.myId) return;
       var isActive = (view.phase === 'send' && p.id === view.turnPlayerId) ||
-                     (view.phase === 'respond' && view.currentCard && p.id === view.currentCard.targetId) ||
-                     (view.phase === 'peek-pass' && view.currentCard && p.id === view.currentCard.fromId);
+        (view.phase === 'draw-preview' && view.currentDraw && p.id === view.currentDraw.ownerId) ||
+        (view.phase === 'respond' && view.currentCard && p.id === view.currentCard.targetId) ||
+        (view.phase === 'peek-pass' && view.currentCard && p.id === view.currentCard.fromId);
       var cls = 'dp-opp' + (isActive ? ' dp-opp-active' : '');
       var fuHtml = dpRenderFaceUpBadges(p.faceUp);
       oppHtml += '<div class="' + cls + '">' +
         '<div class="dp-opp-avatar">' + p.avatar + '</div>' +
         '<div class="dp-opp-name">' + escapeHTML(p.name) + '</div>' +
-        '<div class="dp-opp-hand-count">🃏 ' + p.handCount + '</div>' +
+        '<div class="dp-opp-hand-count">?? ' + p.handCount + '</div>' +
         '<div class="dp-opp-faceup">' + fuHtml + '</div>' +
         '</div>';
     });
     oppEl.innerHTML = oppHtml;
   }
 
-  // ---- Center: current card info ----
   var centerEl = document.getElementById('dpCenter');
   if (centerEl) {
-    if (view.currentCard && (view.phase === 'respond' || view.phase === 'peek-pass' || view.phase === 'reveal')) {
+    if (view.phase === 'draw-preview' && view.currentDraw) {
+      var drawOwnerView = dpFindPlayer(view, view.currentDraw.ownerId);
+      var isOwner = view.currentDraw.ownerId === state.myId;
+      var drawCardHtml = '';
+      if (isOwner && view.currentDraw.card) {
+        drawCardHtml = '<div class="dp-card dp-card-front dp-card-' + view.currentDraw.card + ' dp-card-drawn">' +
+          '<div class="dp-card-emoji">' + DP_EMOJI[view.currentDraw.card] + '</div>' +
+          '<div class="dp-card-name">' + DP_NAMES[view.currentDraw.card] + '</div>' +
+          '</div>';
+      } else {
+        drawCardHtml = '<div class="dp-card dp-card-back dp-card-drawn"><div class="dp-card-emoji">CARD</div></div>';
+      }
+      centerEl.innerHTML =
+        '<div class="dp-center-card">' + drawCardHtml + '</div>' +
+        '<div class="dp-center-claim">' + (isOwner ? 'Card checked. Pick target and claim.' : escapeHTML((drawOwnerView ? drawOwnerView.name : 'Opponent')) + ' is checking a hidden card') + '</div>' +
+        '<div class="dp-center-from">' + (isOwner ? 'Now bluff by showing your phone.' : 'Card detail is hidden') + '</div>';
+      centerEl.style.display = 'block';
+    } else if (view.currentCard && (view.phase === 'respond' || view.phase === 'peek-pass' || view.phase === 'reveal')) {
       var cc = view.currentCard;
       var fromPlayer = dpFindPlayer(view, cc.fromId);
       var targetPlayer = dpFindPlayer(view, cc.targetId);
-      var senderPlayer = dpFindPlayer(view, cc.senderId);
 
       var cardFaceHtml;
       if (view.phase === 'reveal' && cc.actualCard) {
-        // Show actual card
-        cardFaceHtml = '<div class="dp-card dp-card-front dp-card-' + cc.actualCard + '">' +
+        cardFaceHtml = '<div class="dp-card dp-card-front dp-card-' + cc.actualCard + ' dp-card-drawn">' +
           '<div class="dp-card-emoji">' + DP_EMOJI[cc.actualCard] + '</div>' +
           '<div class="dp-card-name">' + DP_NAMES[cc.actualCard] + '</div>' +
           '</div>';
       } else if (view.phase === 'peek-pass' && cc.fromId === state.myId && cc.actualCard) {
-        // Peeked: show actual card to peeker
-        cardFaceHtml = '<div class="dp-card dp-card-front dp-card-' + cc.actualCard + ' dp-card-peeked">' +
+        cardFaceHtml = '<div class="dp-card dp-card-front dp-card-' + cc.actualCard + ' dp-card-peeked dp-card-drawn">' +
           '<div class="dp-card-emoji">' + DP_EMOJI[cc.actualCard] + '</div>' +
           '<div class="dp-card-name">' + DP_NAMES[cc.actualCard] + '</div>' +
-          '<div class="dp-card-peek-label">몰래 확인!</div>' +
+          '<div class="dp-card-peek-label">Peeked</div>' +
           '</div>';
       } else {
-        // Card back
-        cardFaceHtml = '<div class="dp-card dp-card-back"><div class="dp-card-emoji">🎴</div></div>';
+        cardFaceHtml = '<div class="dp-card dp-card-back dp-card-drawn"><div class="dp-card-emoji">CARD</div></div>';
       }
 
-      var claimHtml = '"이건 <strong>' + DP_EMOJI[cc.claim] + ' ' + DP_NAMES[cc.claim] + '</strong>이다!"';
-      var fromHtml = escapeHTML(fromPlayer ? fromPlayer.name : '???') + ' → ' + escapeHTML(targetPlayer ? targetPlayer.name : '???');
+      var claimHtml = 'Claim: <strong>' + DP_EMOJI[cc.claim] + ' ' + DP_NAMES[cc.claim] + '</strong>';
+      var fromHtml = escapeHTML(fromPlayer ? fromPlayer.name : 'Opponent') + ' ? ' + escapeHTML(targetPlayer ? targetPlayer.name : 'Opponent');
 
-      // Peek trail
       var peekTrail = '';
       if (cc.peekHistory && cc.peekHistory.length > 0) {
-        peekTrail = '<div class="dp-peek-trail">👀 확인한 사람: ';
+        peekTrail = '<div class="dp-peek-trail">Peeked by: ';
         peekTrail += cc.peekHistory.map(function(pid) {
           var pp = dpFindPlayer(view, pid);
-          return escapeHTML(pp ? pp.name : '???');
-        }).join(' → ');
+          return escapeHTML(pp ? pp.name : 'Opponent');
+        }).join(', ');
         peekTrail += '</div>';
       }
 
@@ -474,7 +536,7 @@ function renderDPView(view) {
       if (view.phase === 'reveal' && cc.actualCard) {
         var matched = (cc.actualCard === cc.claim);
         revealResultHtml = '<div class="dp-reveal-result ' + (matched ? 'dp-reveal-true' : 'dp-reveal-false') + '">' +
-          (matched ? '✅ 진실이었다!' : '❌ 거짓이었다!') +
+          (matched ? 'Claim was TRUE' : 'Claim was FALSE') +
           '</div>';
       }
 
@@ -482,60 +544,52 @@ function renderDPView(view) {
         '<div class="dp-center-card">' + cardFaceHtml + '</div>' +
         '<div class="dp-center-claim">' + claimHtml + '</div>' +
         '<div class="dp-center-from">' + fromHtml + '</div>' +
-        peekTrail +
-        revealResultHtml;
+        peekTrail + revealResultHtml;
       centerEl.style.display = 'block';
     } else {
       centerEl.style.display = 'none';
     }
   }
 
-  // ---- My face-up cards ----
   var myFuEl = document.getElementById('dpMyFaceUp');
   if (myFuEl && myPlayerView) {
-    var myFuHtml = '<div class="dp-my-faceup-label">내 앞에 공개된 카드</div>';
+    var myFuHtml = '<div class="dp-my-faceup-label">My Face-up Cards</div>';
     myFuHtml += '<div class="dp-my-faceup-cards">' + dpRenderFaceUpBadges(myPlayerView.faceUp) + '</div>';
     myFuEl.innerHTML = myFuHtml;
   }
 
-  // ---- My hand ----
   var handEl = document.getElementById('dpMyHand');
   if (handEl) {
-    if (view.myHand && view.myHand.length > 0) {
+    var handCount = (typeof view.myHandCount === 'number') ? view.myHandCount : ((view.myHand || []).length);
+    if (handCount > 0) {
       var handHtml = '';
-      view.myHand.forEach(function(card, idx) {
-        var cls = 'dp-card dp-card-front dp-card-' + card;
-        // Only allow clicking in send phase when it's my turn
-        var clickable = (view.phase === 'send' && isMyTurn);
-        handHtml += '<div class="' + cls + (clickable ? ' dp-card-clickable' : '') + '"' +
-          (clickable ? ' onclick="dpSend(' + idx + ')"' : '') + '>' +
-          '<div class="dp-card-emoji">' + DP_EMOJI[card] + '</div>' +
-          '<div class="dp-card-name">' + DP_NAMES[card] + '</div>' +
-          '</div>';
-      });
+      for (var hi = 0; hi < handCount; hi++) {
+        handHtml += '<div class="dp-card dp-card-back dp-card-hand-back"><div class="dp-card-emoji">CARD</div></div>';
+      }
       handEl.innerHTML = handHtml;
     } else {
-      handEl.innerHTML = '<div class="dp-hand-empty">손에 카드가 없습니다</div>';
+      handEl.innerHTML = '<div class="dp-hand-empty">No cards left</div>';
     }
   }
 
-  // ---- Action bar ----
   var actionEl = document.getElementById('dpActions');
   if (actionEl) {
     var actionHtml = '';
 
     if (view.phase === 'send' && isMyTurn) {
-      actionHtml = '<div class="dp-action-hint">카드를 터치하여 보내세요</div>';
+      actionHtml = '<div class="dp-action-hint">Your hand stays hidden. Draw one random card.</div>' +
+        '<button class="dp-btn dp-btn-confirm" onclick="dpDrawFromDeck()">Draw Card</button>';
+    } else if (view.phase === 'draw-preview' && view.currentDraw && view.currentDraw.ownerId === state.myId) {
+      actionHtml = '<div class="dp-action-hint">Card checked. Choose target and claim to send.</div>' +
+        '<button class="dp-btn dp-btn-pass" onclick="dpSend()">Send Card</button>';
     } else if (view.phase === 'respond' && view.currentCard && view.currentCard.targetId === state.myId) {
-      // Determine if peek is allowed
       var canPeek = true;
       if (view.currentCard) {
-        // Build eligible targets list locally
         var eligibleCount = 0;
         view.players.forEach(function(p) {
           if (p.id === view.currentCard.senderId) return;
           if (p.id === view.currentCard.fromId) return;
-          if (p.id === state.myId) return; // can't pass to self (I am peeking)
+          if (p.id === state.myId) return;
           if (view.currentCard.peekHistory && view.currentCard.peekHistory.indexOf(p.id) !== -1) return;
           eligibleCount++;
         });
@@ -543,31 +597,28 @@ function renderDPView(view) {
       }
 
       actionHtml =
-        '<div class="dp-respond-label">"' + DP_EMOJI[view.currentCard.claim] + ' ' +
-        DP_NAMES[view.currentCard.claim] + '"이라고 합니다. 어떻게 하시겠습니까?</div>' +
+        '<div class="dp-respond-label">How do you respond?</div>' +
         '<div class="dp-respond-buttons">' +
-        '<button class="dp-btn dp-btn-true" onclick="dpRespond(\'true\')">⭕ 맞다!</button>' +
-        '<button class="dp-btn dp-btn-false" onclick="dpRespond(\'false\')">❌ 거짓!</button>' +
-        (canPeek ? '<button class="dp-btn dp-btn-peek" onclick="dpRespond(\'peek\')">👀 몰래 보기</button>' : '') +
+        '<button class="dp-btn dp-btn-true" onclick="dpRespond(\'true\')">⭕ True</button>' +
+        '<button class="dp-btn dp-btn-false" onclick="dpRespond(\'false\')">❌ False</button>' +
+        (canPeek ? '<button class="dp-btn dp-btn-peek" onclick="dpRespond(\'peek\')">👀 Peek</button>' : '') +
         '</div>';
     } else if (view.phase === 'peek-pass' && view.currentCard && view.currentCard.fromId === state.myId) {
-      actionHtml = '<div class="dp-action-hint">카드를 확인했습니다! 아래에서 넘길 대상을 선택하세요</div>' +
-        '<button class="dp-btn dp-btn-pass" onclick="dpPeekPass()">🔄 넘기기</button>';
+      actionHtml = '<div class="dp-action-hint">You peeked the card. Pick next target.</div>' +
+        '<button class="dp-btn dp-btn-pass" onclick="dpPeekPass()">?? Pass</button>';
     } else if (view.phase === 'gameover') {
       actionHtml = '';
     } else {
-      actionHtml = '<div class="dp-action-hint dp-waiting">대기 중...</div>';
+      actionHtml = '<div class="dp-action-hint dp-waiting">Waiting...</div>';
     }
     actionEl.innerHTML = actionHtml;
   }
 
-  // ---- Game over overlay ----
   var goEl = document.getElementById('dpGameOver');
   if (goEl) {
     goEl.style.display = view.phase === 'gameover' ? 'flex' : 'none';
   }
 
-  // ---- Tracker overlay (update if open) ----
   var trackerEl = document.getElementById('dpTrackerOverlay');
   if (trackerEl && trackerEl.style.display === 'flex') {
     dpUpdateTrackerContent(view);
@@ -602,23 +653,34 @@ function dpRenderFaceUpBadges(faceUp) {
 }
 
 // ===== CLIENT: SEND (open modal) =====
-function dpSend(cardIdx) {
+function dpDrawFromDeck() {
   if (!_dpView) return;
   if (_dpView.phase !== 'send') return;
   if (_dpView.turnPlayerId !== state.myId) return;
-  if (!_dpView.myHand || cardIdx < 0 || cardIdx >= _dpView.myHand.length) return;
 
-  var card = _dpView.myHand[cardIdx];
+  if (state.isHost) {
+    processDPDraw(state.myId);
+  } else {
+    sendToHost({ type: 'dp-draw' });
+  }
+}
 
-  // Build modal
+// ===== CLIENT: SEND (open modal) =====
+function dpSend() {
+  if (!_dpView) return;
+  if (_dpView.phase !== 'draw-preview') return;
+  if (!_dpView.currentDraw || _dpView.currentDraw.ownerId !== state.myId) return;
+  if (!_dpView.currentDraw.card) return;
+
+  var card = _dpView.currentDraw.card;
+
   var overlay = document.getElementById('dpSendModal');
   if (!overlay) return;
 
-  // Targets: all players except me
   var targets = _dpView.players.filter(function(p) { return p.id !== state.myId; });
 
   var html = '<div class="dp-modal-content">' +
-    '<div class="dp-modal-title">카드 보내기</div>' +
+    '<div class="dp-modal-title">Send Card</div>' +
     '<div class="dp-modal-card">' +
       '<div class="dp-card dp-card-front dp-card-' + card + '">' +
         '<div class="dp-card-emoji">' + DP_EMOJI[card] + '</div>' +
@@ -626,7 +688,7 @@ function dpSend(cardIdx) {
       '</div>' +
     '</div>' +
     '<div class="dp-modal-section">' +
-      '<div class="dp-modal-label">누구에게?</div>' +
+      '<div class="dp-modal-label">Target player</div>' +
       '<div class="dp-modal-targets" id="dpSendTargets">';
 
   targets.forEach(function(p) {
@@ -637,7 +699,7 @@ function dpSend(cardIdx) {
 
   html += '</div></div>' +
     '<div class="dp-modal-section">' +
-      '<div class="dp-modal-label">뭐라고 주장할까?</div>' +
+      '<div class="dp-modal-label">Claim type</div>' +
       '<div class="dp-modal-claims" id="dpSendClaims">';
 
   DP_TYPES.forEach(function(t) {
@@ -648,14 +710,13 @@ function dpSend(cardIdx) {
 
   html += '</div></div>' +
     '<div class="dp-modal-actions">' +
-      '<button class="dp-btn dp-btn-cancel" onclick="dpCloseSendModal()">취소</button>' +
-      '<button class="dp-btn dp-btn-confirm" id="dpSendConfirmBtn" onclick="dpConfirmSend()" disabled>보내기!</button>' +
+      '<button class="dp-btn dp-btn-cancel" onclick="dpCloseSendModal()">Cancel</button>' +
+      '<button class="dp-btn dp-btn-confirm" id="dpSendConfirmBtn" onclick="dpConfirmSend()" disabled>Send</button>' +
     '</div>' +
     '</div>';
 
   overlay.innerHTML = html;
   overlay.style.display = 'flex';
-  overlay.dataset.cardIdx = cardIdx;
   overlay.dataset.targetId = '';
   overlay.dataset.claim = '';
 }
@@ -693,18 +754,17 @@ function dpConfirmSend() {
   var overlay = document.getElementById('dpSendModal');
   if (!overlay) return;
 
-  var cardIdx = parseInt(overlay.dataset.cardIdx);
   var targetId = overlay.dataset.targetId;
   var claim = overlay.dataset.claim;
 
-  if (isNaN(cardIdx) || !targetId || !claim) return;
+  if (!targetId || !claim) return;
 
   dpCloseSendModal();
 
   if (state.isHost) {
-    processDPSend(state.myId, cardIdx, targetId, claim);
+    processDPSend(state.myId, -1, targetId, claim);
   } else {
-    sendToHost({ type: 'dp-send', cardIdx: cardIdx, targetId: targetId, claim: claim });
+    sendToHost({ type: 'dp-send', targetId: targetId, claim: claim });
   }
 }
 

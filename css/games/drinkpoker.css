@@ -298,6 +298,25 @@
   align-items: center;
 }
 
+.dp-center-card .dp-card-drawn {
+  width: calc(var(--dp-card-w) * 2);
+  height: calc(var(--dp-card-h) * 2);
+  margin: 0;
+  border-width: 3px;
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(0, 229, 255, 0.22);
+}
+
+.dp-center-card .dp-card-drawn .dp-card-emoji {
+  font-size: 56px;
+}
+
+.dp-center-card .dp-card-drawn .dp-card-name {
+  font-size: 15px;
+  margin-top: 8px;
+}
+
 .dp-center-claim {
   font-size: 15px;
   font-weight: 800;
@@ -400,6 +419,19 @@
 }
 .dp-card-clickable:active {
   transform: translateY(-16px) scale(1.06);
+}
+
+.dp-card-hand-back {
+  cursor: default !important;
+  transform: none !important;
+  margin: 0 -10px;
+}
+
+.dp-card-hand-back:hover {
+  transform: none !important;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset;
 }
 
 .dp-card-front {
@@ -505,13 +537,13 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 4px 12px;
+  padding: 6px 12px;
   flex-shrink: 0;
-  min-height: 32px;
+  min-height: 44px;
 }
 
 .dp-my-faceup-label {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-dim, #aaa);
   text-transform: uppercase;
@@ -520,10 +552,19 @@
 
 .dp-my-faceup-cards {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
   justify-content: center;
+}
+
+.dp-my-faceup .dp-faceup-badge,
+.dp-opp-faceup .dp-faceup-badge {
+  font-size: 15px;
+  font-weight: 900;
+  padding: 5px 10px;
+  border-radius: 14px;
+  border-width: 2px;
 }
 
 /* ===== MY HAND ===== */

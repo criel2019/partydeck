@@ -51,7 +51,7 @@ function loadPeerJS() {
 }
 
 // ===== CONSTANTS & STATE =====
-const SOLO_GAMES = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil', 'tamagotchi', 'blackjack', 'idol', 'kingstagram'];
+const SOLO_GAMES = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil', 'tamagotchi', 'blackjack', 'idol', 'kingstagram', 'updown'];
 const SOLO_ONLY_GAMES = ['pupil', 'tamagotchi']; // 1인 전용 (다인 시 비활성화)
 const AVATARS = ['😎','🤠','👻','🦊','🐱','🐼','🦁','🐸','🎃','🤖','👽','🦄'];
 const SUITS = ['♠','♥','♦','♣'];
@@ -666,6 +666,7 @@ function handleMessage(peerId, raw) {
     'idol-fest-action': () => { if(state.isHost && typeof handleIdolMsg === 'function') handleIdolMsg({ ...msg, from: peerId }); },
     // DrinkPoker handlers
     'dp-state': () => { showScreen('drinkpokerGame'); renderDPView(msg); },
+    'dp-draw': () => { if(state.isHost) processDPDraw(peerId); },
     'dp-send': () => { if(state.isHost) processDPSend(peerId, msg.cardIdx, msg.targetId, msg.claim); },
     'dp-respond': () => { if(state.isHost) processDPRespond(peerId, msg.choice); },
     'dp-peek-pass': () => { if(state.isHost) processDPPeekPass(peerId, msg.targetId, msg.claim); },
@@ -1041,17 +1042,18 @@ const HAND_RANKINGS = {
 </div>`
   },
   ecard: {
-    title: '👑 E카드 규칙',
+    title: '👑 황제를 잡아라! 규칙',
     content: `<div style="display:flex;flex-direction:column;gap:6px;">
-<div style="color:#ffd700;font-weight:700;">승패 관계</div>
-<div>👑 <b>황제</b> &gt; 🧑 <b>시민</b> &gt; ⛓️ <b>노예</b></div>
-<div>⛓️ <b>노예</b> &gt; 👑 <b>황제</b> (역전!)</div>
-<div>❓ <b>더미</b> — 항상 무승부</div>
-<div style="margin-top:8px;color:#aaa;">
-<div>황제 팀: 황제1 + 시민4</div>
-<div>노예 팀: 노예1 + 시민4</div>
-<div>5라운드 동안 진행, 많이 이긴 쪽 승리</div>
-</div>
+<div style="color:#ffd700;font-weight:700;">진행 방식</div>
+<div>총 <b>12판</b> 진행</div>
+<div><b>1~6판</b>: A 유저가 배팅 금액 설정</div>
+<div><b>7~12판</b>: B 유저가 배팅 금액 설정</div>
+<div>역할은 판마다 교대되어 각자 <b>황제 3회 / 노예 3회</b></div>
+<div style="color:#ffb74d;font-weight:700;margin-top:6px;">한 판 카드 순서</div>
+<div><b>황제 제출 → 노예 제출 → 황제 제출 → 노예 제출 → 남은 카드 결과 발표</b></div>
+<div style="color:#4fc3f7;font-weight:700;margin-top:6px;">승패 핵심</div>
+<div>노예가 황제를 잡으면 노예 승리</div>
+<div>황제가 노예를 회피하면 즉시 황제 승리</div>
 </div>`
   }
 };
@@ -1293,9 +1295,9 @@ const GAME_INFO = {
   quickdraw:{ emoji:'🤠', name:'총잡이', desc:'서부 결투! "Fire!" 신호에 가장 빠르게 반응하는 사람이 승리.', players:'2~14명', time:'2~5분', type:'반응속도' },
   roulette: { emoji:'🔫', name:'러시안 룰렛', desc:'스마트폰을 총처럼! 실린더를 돌리고 방아쇠를 당기는 스릴 게임.', players:'2~14명', time:'1~3분', type:'운' },
   lottery:  { emoji:'🎰', name:'뽑기', desc:'번호를 뽑아 운명을 결정! 랜덤 추첨으로 당첨자를 가려내세요.', players:'1~14명', time:'5~15분', type:'운' },
-  ecard:    { emoji:'👑', name:'E카드', desc:'황제 vs 노예의 심리전. 5장의 카드로 상대의 수를 읽어라!', players:'2명', time:'5~10분', type:'심리전' },
+  ecard:    { emoji:'👑', name:'황제를 잡아라!', desc:'황제 vs 노예 심리전. 12판 동안 배팅과 블러핑으로 승부!', players:'2명', time:'5~10분', type:'심리전' },
   yahtzee:  { emoji:'🎲', name:'야추', desc:'5개의 주사위로 최고 점수를 노려라! 3번의 기회로 족보 완성.', players:'1~14명', time:'10~15분', type:'주사위' },
-  updown:   { emoji:'🃏', name:'업다운', desc:'다음 카드가 높을까 낮을까? 연속 맞추기 도전!', players:'2~14명', time:'5~10분', type:'카드' },
+  updown:   { emoji:'🃏', name:'업다운', desc:'다음 카드가 높을까 낮을까? 연속 맞추기 도전!', players:'1~14명', time:'5~10분', type:'카드' },
   truth:    { emoji:'⭕', name:'진실게임', desc:'질문을 하고, 비밀투표를 통해 다른 사람의 속마음을 엿볼 수 있어요.', players:'3~14명', time:'10~20분', type:'파티' },
   fortress: { emoji:'🏰', name:'요새', desc:'탱크 포격전! 각도와 파워를 조절해서 상대 요새를 파괴하세요.', players:'2~14명', time:'5~10분', type:'전략' },
   bombshot: { emoji:'🍺', name:'폭탄주', desc:'거짓말로 술을 섞는 라이어를 찾아라. 거짓말을 간파하고 폭탄주 룰렛을 피하자!', players:'2~4명', time:'5~15분', type:'블러프' },
