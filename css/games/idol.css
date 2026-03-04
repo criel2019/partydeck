@@ -121,6 +121,34 @@
     radial-gradient(circle, rgba(0,0,0,0) 38%, rgba(0,0,0,0.60) 38%);
   background-size: 5px 5px;
 }
+
+/* Mobile: lower billboard effect intensity so the video remains readable */
+@media (hover: none) and (pointer: coarse), (max-width: 900px) {
+  #idolEventScreen {
+    box-shadow:
+      0 0 9px 2px rgba(255, 210, 70, 0.45),
+      0 0 20px 6px rgba(255, 140, 20, 0.28),
+      0 0 34px 11px rgba(180, 60, 255, 0.14);
+    border-color: rgba(255, 230, 100, 0.45);
+  }
+
+  .ies-led {
+    opacity: 0.32;
+    background-image:
+      radial-gradient(circle, rgba(0,0,0,0) 44%, rgba(0,0,0,0.34) 44%);
+    background-size: 6px 6px;
+  }
+
+  #idolEventScreen.ies-video-mode .ies-led {
+    opacity: 0.18;
+  }
+
+  .ies-train-overlay {
+    background: linear-gradient(135deg, rgba(8, 8, 16, 0.44), rgba(0, 0, 0, 0.62));
+    border-color: rgba(255, 255, 255, 0.28);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.3);
+  }
+}
 /* ─── 이벤트 스크린 끝 ─────────────────────────── */
 
 /* ─── 기본 레이아웃 ─────────────────────────── */
