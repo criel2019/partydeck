@@ -275,13 +275,6 @@ function getDiamond() {
   return _economy.diamond || 0;
 }
 
-function canUseGoldCheat() {
-  if (typeof idolCanUseGoldCheat === 'function') {
-    try { return !!idolCanUseGoldCheat(); } catch (e) { return false; }
-  }
-  return false;
-}
-
 function ensureDiamondShopCheatUI() {
   const ovl = document.getElementById('diamondShopOverlay');
   if (!ovl) return;
@@ -324,7 +317,7 @@ function ensureDiamondShopCheatUI() {
     hint.style.fontSize = '11px';
     hint.style.color = '#666';
     hint.style.marginTop = '8px';
-    hint.textContent = '* 아이돌 AI전에서만 사용 가능';
+    hint.textContent = '* 전역 골드 +10,000 치트';
     const legalText = Array.from(card.querySelectorAll('div')).find(el =>
       (el.textContent || '').includes('결제 시스템 연동 전 테스트 버전')
     );
@@ -338,12 +331,14 @@ function updateGoldCheatUI() {
   const hint = document.getElementById('diamondShopGoldCheatHint');
   if (!btn) return;
 
-  const enabled = canUseGoldCheat();
-  btn.disabled = !enabled;
-  btn.style.opacity = enabled ? '1' : '0.45';
-  btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
-  btn.title = enabled ? '' : '아이돌 AI전(호스트)에서만 사용 가능합니다.';
-  if (hint) hint.style.opacity = enabled ? '0.55' : '1';
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  btn.style.cursor = 'pointer';
+  btn.title = '';
+  if (hint) {
+    hint.textContent = '* 전역 골드 +10,000 치트';
+    hint.style.opacity = '0.85';
+  }
 }
 
 function openDiamondShop() {
@@ -375,16 +370,7 @@ function buyDiamond(amount) {
 function buyGoldCheat(amount) {
   const safeAmount = Math.max(0, Number(amount) || 0);
   if (!safeAmount) return;
-  if (!canUseGoldCheat()) {
-    showToast('🤖 아이돌 AI전(호스트)에서만 치트를 사용할 수 있습니다.');
-    updateGoldCheatUI();
-    return;
-  }
   addGold(safeAmount);
-  // Idol game uses its own per-player money. Mirror cheat there when available.
-  if (typeof idolApplyGoldCheat === 'function') {
-    try { idolApplyGoldCheat(safeAmount); } catch (e) {}
-  }
   const goldBal = document.getElementById('diamondShopGoldBalance');
   if (goldBal) goldBal.textContent = (getEconomy().gold || 0).toLocaleString();
 }
