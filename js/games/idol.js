@@ -111,6 +111,8 @@ function _idolApplyFxClass() {
 // ─── 렌더 캐시 (dirty-flag) ─────────────────
 const _idolRenderCache = { resourceBar: null, centerPanel: null, actionPanel: null, cornerCards: null };
 let _idolTrainBillboardKey = '';
+let _idolTrainResultOverlayKey = '';
+let _idolTrainResultOverlayHideTimer = null;
 
 function _idolInvalidateRenderCache() {
   _idolRenderCache.resourceBar = null;
@@ -588,6 +590,8 @@ function startIdolManagement() {
   if (!state.isHost) return;
 
   idolState = null;
+  _idolTrainResultOverlayKey = '';
+  idolHideTrainResultOverlay(true);
   idolResetSelectionState();
 
   // 비호스트도 선택 화면으로 진입할 수 있도록 표준 game-started 신호 전송
@@ -605,6 +609,8 @@ function idolInitGame(selections) {
   _idolDetectFxTier();
   _idolInvalidateRenderCache();
   _idolTrainBillboardKey = '';
+  _idolTrainResultOverlayKey = '';
+  idolHideTrainResultOverlay(true);
   // Three.js 미리 로드 (첫 주사위 전에 완료되도록)
   loadIdolDiceThree();
   // selections: [{ playerId, idolTypeId, idolName }]
@@ -2187,9 +2193,124 @@ function idolRenderShopUpgradePanel(shopId) {
     </div>`;
 }
 
+const IDOL_TRAIN_STAT_META = {
+  talent: { label: '재능', emoji: '🎤', tone: 'talent' },
+  looks: { label: '외모', emoji: '💄', tone: 'looks' },
+  fame: { label: '인기도', emoji: '🔥', tone: 'fame' },
+  money: { label: '자금', emoji: '💰', tone: 'money' },
+  favor: { label: '호감도', emoji: '💞', tone: 'favor' },
+};
+
+function idolGetTrainStatMeta(statKey) {
+  return IDOL_TRAIN_STAT_META[statKey] || { label: '스탯', emoji: '📈', tone: 'generic' };
+}
+
+function idolFormatTrainGain(gain) {
+  const n = Number(gain);
+  if (!Number.isFinite(n)) return '+0';
+  return n >= 0 ? `+${n}` : String(n);
+}
+
+function idolGetTrainResultOverlayEl() {
+  const game = document.getElementById('idolGame');
+  if (!game) return null;
+  let el = document.getElementById('idolTrainResultOverlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'idolTrainResultOverlay';
+    el.className = 'idol-train-stat-overlay';
+    el.style.display = 'none';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.setAttribute('aria-atomic', 'true');
+    game.appendChild(el);
+  }
+  return el;
+}
+
+function idolHideTrainResultOverlay(immediate = false) {
+  const el = document.getElementById('idolTrainResultOverlay');
+  if (!el) return;
+
+  if (_idolTrainResultOverlayHideTimer) {
+    clearTimeout(_idolTrainResultOverlayHideTimer);
+    _idolTrainResultOverlayHideTimer = null;
+  }
+
+  if (immediate) {
+    el.classList.remove('is-visible');
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+
+  el.classList.remove('is-visible');
+  _idolTrainResultOverlayHideTimer = setTimeout(() => {
+    if (!el.classList.contains('is-visible')) {
+      el.style.display = 'none';
+      el.innerHTML = '';
+    }
+    _idolTrainResultOverlayHideTimer = null;
+  }, 160);
+}
+
+function idolSyncTrainResultOverlay(action) {
+  if (!action || action.type !== 'train-result') {
+    _idolTrainResultOverlayKey = '';
+    idolHideTrainResultOverlay();
+    return;
+  }
+
+  const key = idolGetTrainResultActionKey(action);
+  if (!action.confirmReady && !action.confirming) {
+    if (_idolTrainResultOverlayKey !== key) _idolTrainResultOverlayKey = '';
+    idolHideTrainResultOverlay();
+    return;
+  }
+
+  const el = idolGetTrainResultOverlayEl();
+  if (!el) return;
+
+  if (_idolTrainResultOverlayHideTimer) {
+    clearTimeout(_idolTrainResultOverlayHideTimer);
+    _idolTrainResultOverlayHideTimer = null;
+  }
+
+  const meta = idolGetTrainStatMeta(action.stat);
+  const gainText = idolFormatTrainGain(action.gain);
+  const dieText = Number.isFinite(Number(action.die)) ? `🎲 ${action.die}` : '';
+  const progressText = action.confirming
+    ? '결과 적용 중...'
+    : (state.isHost ? '다음으로 버튼으로 진행하세요' : '호스트가 다음으로 진행합니다');
+
+  el.innerHTML = `
+    <div class="idol-train-stat-card tone-${meta.tone}">
+      <div class="idol-train-stat-title">훈련 결과</div>
+      <div class="idol-train-stat-main">
+        <span class="idol-train-stat-emoji">${meta.emoji}</span>
+        <span class="idol-train-stat-value">${gainText}</span>
+        <span class="idol-train-stat-label">${meta.label}</span>
+      </div>
+      <div class="idol-train-stat-sub">${dieText}${dieText ? ' · ' : ''}${progressText}</div>
+    </div>`;
+
+  if (el.style.display === 'none') {
+    el.style.display = 'flex';
+    el.classList.remove('is-visible');
+    requestAnimationFrame(() => el.classList.add('is-visible'));
+  } else if (key !== _idolTrainResultOverlayKey) {
+    el.classList.remove('is-visible');
+    requestAnimationFrame(() => el.classList.add('is-visible'));
+  } else {
+    el.classList.add('is-visible');
+  }
+
+  _idolTrainResultOverlayKey = key;
+}
+
 function idolRenderTrainPanel(shopId, isOwned) {
   const shop = SHOPS.find(s => s.id === shopId);
-  const stat = shop.trainStat === 'talent' ? '재능' : shop.trainStat === 'looks' ? '외모' : '인기도';
+  const stat = idolGetTrainStatMeta(shop.trainStat).label;
   const takeoverPrice = Math.floor(shop.price * 1.5);
   const currentP = idolCurrentPlayer();
   const canPropose = !isOwned && currentP && currentP.money >= takeoverPrice;
@@ -2210,8 +2331,8 @@ function idolRenderTrainPanel(shopId, isOwned) {
 
 function idolRenderTrainResult(action) {
   const DICE_EMOJIS = ['','🎲','⚁','⚂','⚃','⚄','⚅'];
-  const statLabel = action.stat === 'talent' ? '재능' : action.stat === 'looks' ? '외모' : '인기도';
-  const gainText = `${action.gain >= 0 ? '+' : ''}${action.gain}`;
+  const statLabel = idolGetTrainStatMeta(action.stat).label;
+  const gainText = idolFormatTrainGain(action.gain);
   const isReady = !!action.confirmReady;
   const isConfirming = !!action.confirming;
   let confirmBtn = '';
@@ -2863,6 +2984,8 @@ function idolStartPractice() {
   }
   state.isHost = true;
   idolState = null;
+  _idolTrainResultOverlayKey = '';
+  idolHideTrainResultOverlay(true);
   idolResetSelectionState();
   showScreen('idolGame');
   idolShowSelectPhase();
@@ -3311,12 +3434,14 @@ function idolRenderActionPanel() {
   let contentHtml = '';
 
   if (idolState.phase === 'ending') {
+    idolSyncTrainResultOverlay(null);
     contentHtml = idolRenderEndingPanel();
     panel.innerHTML = idolUxWrapActionPanelHTML(contentHtml, currentP, action, isMyTurn);
     return;
   }
 
   if (!action || action.type === 'waiting-roll') {
+    idolSyncTrainResultOverlay(null);
     contentHtml = isMyTurn
       ? `
         <div class="idol-action-title">다음 행동: 주사위를 굴리세요</div>
@@ -3339,6 +3464,7 @@ function idolRenderActionPanel() {
       idolEventScreenHide();
     }
   }
+  if (action.type !== 'train-result') idolSyncTrainResultOverlay(null);
 
   switch (action.type) {
     case 'rolling':
@@ -3356,6 +3482,7 @@ function idolRenderActionPanel() {
       break;
     case 'train-result':
       contentHtml = idolRenderTrainResult(action);
+      idolSyncTrainResultOverlay(action);
       idolMaybePlayTrainBillboard(action);
       break;
     case 'shop-takeover-offer':
