@@ -113,6 +113,8 @@ const _idolRenderCache = { resourceBar: null, centerPanel: null, actionPanel: nu
 let _idolTrainBillboardKey = '';
 let _idolTrainResultOverlayKey = '';
 let _idolTrainResultOverlayHideTimer = null;
+let _idolBillboardFramingLoaded = false;
+const IDOL_BILLBOARD_FRAMING_STORAGE_KEY = 'idol.billboardFraming.v1';
 
 function _idolInvalidateRenderCache() {
   _idolRenderCache.resourceBar = null;
@@ -592,6 +594,7 @@ function startIdolManagement() {
   idolState = null;
   _idolTrainResultOverlayKey = '';
   idolHideTrainResultOverlay(true);
+  idolCloseBillboardTuner();
   idolResetSelectionState();
 
   // 비호스트도 선택 화면으로 진입할 수 있도록 표준 game-started 신호 전송
@@ -611,6 +614,7 @@ function idolInitGame(selections) {
   _idolTrainBillboardKey = '';
   _idolTrainResultOverlayKey = '';
   idolHideTrainResultOverlay(true);
+  idolCloseBillboardTuner();
   // Three.js 미리 로드 (첫 주사위 전에 완료되도록)
   loadIdolDiceThree();
   // selections: [{ playerId, idolTypeId, idolName }]
@@ -2986,6 +2990,7 @@ function idolStartPractice() {
   idolState = null;
   _idolTrainResultOverlayKey = '';
   idolHideTrainResultOverlay(true);
+  idolCloseBillboardTuner();
   idolResetSelectionState();
   showScreen('idolGame');
   idolShowSelectPhase();
@@ -3345,14 +3350,291 @@ function idolUxWrapActionPanelHTML(contentHtml, currentP, action, isMyTurn) {
   `;
 }
 
+function idolClampBillboardNum(v, min, max, fallback) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+function idolNormalizeBillboardFrame(frame) {
+  const defaults = (typeof IDOL_TRAIN_BILLBOARD_FRAME_DEFAULTS !== 'undefined' && IDOL_TRAIN_BILLBOARD_FRAME_DEFAULTS)
+    ? IDOL_TRAIN_BILLBOARD_FRAME_DEFAULTS
+    : {};
+  const src = (frame && typeof frame === 'object') ? frame : {};
+  return {
+    fit: src.fit === 'cover' ? 'cover' : (defaults.fit === 'cover' ? 'cover' : 'contain'),
+    x: idolClampBillboardNum(src.x, 0, 100, idolClampBillboardNum(defaults.x, 0, 100, 50)),
+    y: idolClampBillboardNum(src.y, 0, 100, idolClampBillboardNum(defaults.y, 0, 100, 50)),
+    scale: idolClampBillboardNum(src.scale, 0.7, 1.8, idolClampBillboardNum(defaults.scale, 0.7, 1.8, 1)),
+  };
+}
+
+function idolLoadBillboardFramingOverrides() {
+  if (_idolBillboardFramingLoaded) return;
+  _idolBillboardFramingLoaded = true;
+  if (typeof localStorage === 'undefined') return;
+  if (typeof IDOL_TRAIN_BILLBOARD_FRAMING === 'undefined' || !IDOL_TRAIN_BILLBOARD_FRAMING) return;
+
+  try {
+    const raw = localStorage.getItem(IDOL_BILLBOARD_FRAMING_STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (!saved || typeof saved !== 'object') return;
+
+    Object.entries(saved).forEach(([typeId, byStat]) => {
+      if (!byStat || typeof byStat !== 'object') return;
+      if (!IDOL_TRAIN_BILLBOARD_FRAMING[typeId]) IDOL_TRAIN_BILLBOARD_FRAMING[typeId] = {};
+      Object.entries(byStat).forEach(([statName, frame]) => {
+        IDOL_TRAIN_BILLBOARD_FRAMING[typeId][statName] = idolNormalizeBillboardFrame(frame);
+      });
+    });
+  } catch (e) {}
+}
+
+function idolSaveBillboardFramingOverrides() {
+  if (typeof localStorage === 'undefined') return;
+  if (typeof IDOL_TRAIN_BILLBOARD_FRAMING === 'undefined' || !IDOL_TRAIN_BILLBOARD_FRAMING) return;
+  try {
+    localStorage.setItem(IDOL_BILLBOARD_FRAMING_STORAGE_KEY, JSON.stringify(IDOL_TRAIN_BILLBOARD_FRAMING));
+  } catch (e) {}
+}
+
+function idolListBillboardStatsForType(typeId) {
+  if (typeof IDOL_TRAIN_BILLBOARD_VIDEOS === 'undefined' || !IDOL_TRAIN_BILLBOARD_VIDEOS) return [];
+  const byType = IDOL_TRAIN_BILLBOARD_VIDEOS[typeId];
+  if (!byType || typeof byType !== 'object') return [];
+  return Object.keys(byType).filter(k => !!byType[k]);
+}
+
+function idolGetTrainBillboardFrame(typeId, statName) {
+  idolLoadBillboardFramingOverrides();
+
+  const framing = (typeof IDOL_TRAIN_BILLBOARD_FRAMING !== 'undefined' && IDOL_TRAIN_BILLBOARD_FRAMING)
+    ? IDOL_TRAIN_BILLBOARD_FRAMING[typeId]
+    : null;
+  const perStat = framing && framing[statName] ? framing[statName] : {};
+  return idolNormalizeBillboardFrame(perStat);
+}
+
+function idolSetTrainBillboardFrame(typeId, statName, patch, persist = true) {
+  idolLoadBillboardFramingOverrides();
+  if (typeof IDOL_TRAIN_BILLBOARD_FRAMING === 'undefined' || !IDOL_TRAIN_BILLBOARD_FRAMING) return null;
+  if (!typeId || !statName || typeof patch !== 'object' || !patch) return null;
+
+  if (!IDOL_TRAIN_BILLBOARD_FRAMING[typeId]) IDOL_TRAIN_BILLBOARD_FRAMING[typeId] = {};
+  const current = IDOL_TRAIN_BILLBOARD_FRAMING[typeId][statName] || {};
+  IDOL_TRAIN_BILLBOARD_FRAMING[typeId][statName] = idolNormalizeBillboardFrame({ ...current, ...patch });
+  if (persist) idolSaveBillboardFramingOverrides();
+  return idolGetTrainBillboardFrame(typeId, statName);
+}
+
+function idolResetTrainBillboardFrame(typeId, statName, persist = true) {
+  idolLoadBillboardFramingOverrides();
+  if (typeof IDOL_TRAIN_BILLBOARD_FRAMING === 'undefined' || !IDOL_TRAIN_BILLBOARD_FRAMING) return null;
+  if (!typeId || !statName) return null;
+  if (!IDOL_TRAIN_BILLBOARD_FRAMING[typeId]) IDOL_TRAIN_BILLBOARD_FRAMING[typeId] = {};
+  IDOL_TRAIN_BILLBOARD_FRAMING[typeId][statName] = {};
+  if (persist) idolSaveBillboardFramingOverrides();
+  return idolGetTrainBillboardFrame(typeId, statName);
+}
+
 function idolGetTrainBillboardVideo(player, statName) {
   if (!player || !statName) return null;
   if (typeof IDOL_TRAIN_BILLBOARD_VIDEOS === 'undefined') return null;
 
   const byType = IDOL_TRAIN_BILLBOARD_VIDEOS[player.idolType];
   if (!byType) return null;
+  const raw = byType[statName];
+  if (!raw) return null;
+  idolLoadBillboardFramingOverrides();
+  const byTypeFraming = (typeof IDOL_TRAIN_BILLBOARD_FRAMING !== 'undefined' && IDOL_TRAIN_BILLBOARD_FRAMING)
+    ? IDOL_TRAIN_BILLBOARD_FRAMING[player.idolType]
+    : null;
+  const perStatOverride = byTypeFraming && byTypeFraming[statName] ? byTypeFraming[statName] : {};
 
-  return byType[statName] || null;
+  if (typeof raw === 'string') {
+    return { src: raw, frame: idolNormalizeBillboardFrame(perStatOverride) };
+  }
+
+  if (typeof raw === 'object') {
+    const src = raw.src || raw.videoSrc || '';
+    if (!src) return null;
+    const rawFrame = raw.frame && typeof raw.frame === 'object' ? raw.frame : {};
+    return {
+      src,
+      holdMs: Number.isFinite(Number(raw.holdMs)) ? Number(raw.holdMs) : undefined,
+      frame: idolNormalizeBillboardFrame({ ...rawFrame, ...perStatOverride }),
+    };
+  }
+
+  return null;
+}
+
+function idolPreviewTrainBillboard(typeId, statName) {
+  if (typeof idolEventScreenPlayTraining !== 'function') return false;
+  if (!typeId || !statName) return false;
+  const profile = idolGetTrainBillboardVideo({ idolType: typeId }, statName);
+  if (!profile || !profile.src) return false;
+  idolEventScreenPlayTraining({
+    videoSrc: profile.src,
+    videoFrame: profile.frame || null,
+    holdMs: Number.isFinite(Number(profile.holdMs)) ? Number(profile.holdMs) : 500,
+  });
+  return true;
+}
+
+function idolGetBillboardTunerElements() {
+  return {
+    overlay: document.getElementById('idolBillboardTuner'),
+    type: document.getElementById('idolBtType'),
+    stat: document.getElementById('idolBtStat'),
+    fit: document.getElementById('idolBtFit'),
+    x: document.getElementById('idolBtX'),
+    y: document.getElementById('idolBtY'),
+    scale: document.getElementById('idolBtScale'),
+    xv: document.getElementById('idolBtXVal'),
+    yv: document.getElementById('idolBtYVal'),
+    sv: document.getElementById('idolBtScaleVal'),
+  };
+}
+
+function idolBillboardTunerLoadTypeOptions(selectedTypeId) {
+  const { type } = idolGetBillboardTunerElements();
+  if (!type) return;
+  const typeIds = Array.isArray(IDOL_TYPES) && IDOL_TYPES.length > 0
+    ? IDOL_TYPES.map(t => t.id)
+    : Object.keys(IDOL_TRAIN_BILLBOARD_VIDEOS || {});
+
+  type.innerHTML = typeIds.map(id => {
+    const t = (IDOL_TYPES || []).find(v => v.id === id);
+    const label = t ? `${t.emoji} ${t.name}` : id;
+    return `<option value="${id}">${escapeHTML(label)}</option>`;
+  }).join('');
+
+  if (selectedTypeId && typeIds.includes(selectedTypeId)) type.value = selectedTypeId;
+  else if (typeIds.length > 0) type.value = typeIds[0];
+}
+
+function idolBillboardTunerLoadStatOptions(selectedStat) {
+  const { type, stat } = idolGetBillboardTunerElements();
+  if (!type || !stat) return;
+  const stats = idolListBillboardStatsForType(type.value);
+  const labels = { talent: '재능', looks: '외모', fame: '인기도' };
+  stat.innerHTML = stats.map(s => `<option value="${s}">${labels[s] || s}</option>`).join('');
+  if (selectedStat && stats.includes(selectedStat)) stat.value = selectedStat;
+  else if (stats.length > 0) stat.value = stats[0];
+}
+
+function idolBillboardTunerLoadFrame() {
+  const el = idolGetBillboardTunerElements();
+  if (!el.type || !el.stat || !el.fit || !el.x || !el.y || !el.scale) return;
+
+  const frame = idolGetTrainBillboardFrame(el.type.value, el.stat.value);
+  el.fit.value = frame.fit;
+  el.x.value = String(frame.x);
+  el.y.value = String(frame.y);
+  el.scale.value = String(frame.scale);
+  idolBillboardTunerSyncReadout();
+}
+
+function idolBillboardTunerSyncReadout() {
+  const el = idolGetBillboardTunerElements();
+  if (el.xv && el.x) el.xv.textContent = `${Number(el.x.value).toFixed(0)}%`;
+  if (el.yv && el.y) el.yv.textContent = `${Number(el.y.value).toFixed(0)}%`;
+  if (el.sv && el.scale) el.sv.textContent = `${Number(el.scale.value).toFixed(2)}x`;
+}
+
+function idolBillboardTunerApplyCurrent() {
+  const el = idolGetBillboardTunerElements();
+  if (!el.type || !el.stat || !el.fit || !el.x || !el.y || !el.scale) return null;
+  const patch = {
+    fit: el.fit.value === 'cover' ? 'cover' : 'contain',
+    x: Number(el.x.value),
+    y: Number(el.y.value),
+    scale: Number(el.scale.value),
+  };
+  idolBillboardTunerSyncReadout();
+  return idolSetTrainBillboardFrame(el.type.value, el.stat.value, patch, true);
+}
+
+function idolOpenBillboardTuner() {
+  idolLoadBillboardFramingOverrides();
+  const el = idolGetBillboardTunerElements();
+  if (!el.overlay) return;
+
+  const cp = idolCurrentPlayer();
+  const initialType = cp?.idolType || 'luna';
+  const initialStat = 'talent';
+  idolBillboardTunerLoadTypeOptions(initialType);
+  idolBillboardTunerLoadStatOptions(initialStat);
+  idolBillboardTunerLoadFrame();
+  el.overlay.style.display = 'flex';
+}
+
+function idolCloseBillboardTuner() {
+  const { overlay } = idolGetBillboardTunerElements();
+  if (!overlay) return;
+  overlay.style.display = 'none';
+}
+
+function idolBillboardTunerOnTypeChange() {
+  const el = idolGetBillboardTunerElements();
+  if (!el.type || !el.stat) return;
+  idolBillboardTunerLoadStatOptions(el.stat.value);
+  idolBillboardTunerLoadFrame();
+}
+
+function idolBillboardTunerOnStatChange() {
+  idolBillboardTunerLoadFrame();
+}
+
+function idolBillboardTunerOnFrameInput() {
+  idolBillboardTunerApplyCurrent();
+}
+
+function idolBillboardTunerPreview() {
+  const el = idolGetBillboardTunerElements();
+  if (!el.type || !el.stat) return;
+  idolBillboardTunerApplyCurrent();
+  if (!idolPreviewTrainBillboard(el.type.value, el.stat.value)) {
+    showToast('해당 조합의 영상이 없습니다.');
+  }
+}
+
+function idolBillboardTunerReset() {
+  const el = idolGetBillboardTunerElements();
+  if (!el.type || !el.stat) return;
+  idolResetTrainBillboardFrame(el.type.value, el.stat.value, true);
+  idolBillboardTunerLoadFrame();
+}
+
+async function idolBillboardTunerCopySnippet() {
+  const el = idolGetBillboardTunerElements();
+  if (!el.type || !el.stat) return;
+  const frame = idolGetTrainBillboardFrame(el.type.value, el.stat.value);
+  const snippet = `${el.stat.value}: { fit: '${frame.fit}', x: ${Math.round(frame.x)}, y: ${Math.round(frame.y)}, scale: ${Number(frame.scale).toFixed(2)} },`;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(snippet);
+      showToast('프레이밍 스니펫 복사 완료');
+      return;
+    }
+  } catch (e) {}
+  showToast('복사 실패: 브라우저 권한을 확인하세요.');
+}
+
+if (typeof window !== 'undefined') {
+  window.idolGetTrainBillboardFrame = idolGetTrainBillboardFrame;
+  window.idolSetTrainBillboardFrame = idolSetTrainBillboardFrame;
+  window.idolPreviewTrainBillboard = idolPreviewTrainBillboard;
+  window.idolOpenBillboardTuner = idolOpenBillboardTuner;
+  window.idolCloseBillboardTuner = idolCloseBillboardTuner;
+  window.idolBillboardTunerOnTypeChange = idolBillboardTunerOnTypeChange;
+  window.idolBillboardTunerOnStatChange = idolBillboardTunerOnStatChange;
+  window.idolBillboardTunerOnFrameInput = idolBillboardTunerOnFrameInput;
+  window.idolBillboardTunerPreview = idolBillboardTunerPreview;
+  window.idolBillboardTunerReset = idolBillboardTunerReset;
+  window.idolBillboardTunerCopySnippet = idolBillboardTunerCopySnippet;
 }
 
 function idolGetTrainResultActionKey(action) {
@@ -3394,8 +3676,8 @@ function idolMaybePlayTrainBillboard(action) {
   if (_idolTrainBillboardKey === key) return;
   _idolTrainBillboardKey = key;
 
-  const videoSrc = idolGetTrainBillboardVideo(player, action.stat);
-  if (!videoSrc) {
+  const videoProfile = idolGetTrainBillboardVideo(player, action.stat);
+  if (!videoProfile || !videoProfile.src) {
     if (state.isHost) {
       setTimeout(() => idolMarkTrainResultReady(key), 350);
     }
@@ -3403,11 +3685,9 @@ function idolMaybePlayTrainBillboard(action) {
   }
 
   idolEventScreenPlayTraining({
-    videoSrc,
-    statName: action.stat,
-    gain: action.gain,
-    overlayLeadMs: 280,
-    holdMs: 500,
+    videoSrc: videoProfile.src,
+    videoFrame: videoProfile.frame || null,
+    holdMs: Number.isFinite(Number(videoProfile.holdMs)) ? Number(videoProfile.holdMs) : 500,
   }).finally(() => {
     idolMarkTrainResultReady(key);
   });

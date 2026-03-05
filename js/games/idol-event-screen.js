@@ -7,16 +7,7 @@
   const FPS = 12;
   const MS_FRAME = 1000 / FPS;
 
-  const TRAIN_OVERLAY_LEAD_MS = 280;
   const TRAIN_HOLD_MS = 500;
-
-  const TRAIN_STAT_META = {
-    talent: { label: '재능', emoji: '🎵', tone: 'talent' },
-    looks: { label: '외모', emoji: '💄', tone: 'looks' },
-    fame: { label: '인기도', emoji: '📣', tone: 'fame' },
-    money: { label: '자금', emoji: '💰', tone: 'money' },
-    favor: { label: '호감도', emoji: '💖', tone: 'favor' },
-  };
 
   let _el = null;
   let _canvas = null;
@@ -32,6 +23,27 @@
 
   let _videoModeToken = 0;
   let _videoListeners = null;
+
+  function _clampNumber(v, min, max, fallback) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.min(max, Math.max(min, n));
+  }
+
+  function _applyVideoFrame(frameOpts) {
+    if (!_video) return;
+    const frame = frameOpts && typeof frameOpts === 'object' ? frameOpts : {};
+
+    const fit = frame.fit === 'cover' ? 'cover' : 'contain';
+    const x = _clampNumber(frame.x, 0, 100, 50);
+    const y = _clampNumber(frame.y, 0, 100, 50);
+    const scale = _clampNumber(frame.scale, 0.7, 1.8, 1);
+
+    _video.style.objectFit = fit;
+    _video.style.objectPosition = `${x}% ${y}%`;
+    _video.style.transform = `scale(${scale})`;
+    _video.style.transformOrigin = 'center center';
+  }
 
   function _build() {
     _el = document.getElementById('idolEventScreen');
@@ -120,7 +132,9 @@
 
   function _detachVideoListeners() {
     if (!_video || !_videoListeners) return;
-    _video.removeEventListener('timeupdate', _videoListeners.onTimeUpdate);
+    if (_videoListeners.onTimeUpdate) {
+      _video.removeEventListener('timeupdate', _videoListeners.onTimeUpdate);
+    }
     _video.removeEventListener('ended', _videoListeners.onEnded);
     _video.removeEventListener('error', _videoListeners.onError);
     _videoListeners = null;
@@ -135,6 +149,7 @@
         _video.removeAttribute('src');
         _video.load();
       } catch (e) {}
+      _applyVideoFrame(null);
     }
     if (_trainOverlay) {
       _trainOverlay.className = 'ies-train-overlay';
@@ -169,22 +184,6 @@
     _raf = requestAnimationFrame(_tick);
   }
 
-  function _formatGain(gain) {
-    const n = Number(gain);
-    if (!Number.isFinite(n)) return '+0';
-    return n >= 0 ? `+${n}` : String(n);
-  }
-
-  function _showTrainOverlay(statName, gain) {
-    if (!_trainOverlay) return;
-    const meta = TRAIN_STAT_META[statName] || { label: statName || '스탯', emoji: '📊', tone: 'generic' };
-    _trainOverlay.className = `ies-train-overlay is-visible tone-${meta.tone}`;
-    _trainOverlay.innerHTML =
-      `<span class="ies-train-overlay-emoji">${meta.emoji}</span>` +
-      `<span class="ies-train-overlay-label">훈련 ${meta.label}</span>` +
-      `<span class="ies-train-overlay-gain">${_formatGain(gain)}</span>`;
-  }
-
   window.idolEventScreenShow = async function (spriteSrc) {
     if (!_positionOnBoard()) return;
 
@@ -210,29 +209,14 @@
       _cancelVideoPlayback();
 
       const token = _videoModeToken;
-      const leadMs = Math.max(80, Number(opts?.overlayLeadMs) || TRAIN_OVERLAY_LEAD_MS);
       const holdMs = Math.max(0, Number(opts?.holdMs) || TRAIN_HOLD_MS);
-      let overlayShown = false;
 
       function isCurrentToken() {
         return token === _videoModeToken;
       }
 
-      function showOverlay() {
-        if (!isCurrentToken() || overlayShown) return;
-        overlayShown = true;
-        _showTrainOverlay(opts?.statName, opts?.gain);
-      }
-
-      function onTimeUpdate() {
-        if (!isCurrentToken() || !_video || !_video.duration || !isFinite(_video.duration)) return;
-        const remainMs = (_video.duration - _video.currentTime) * 1000;
-        if (remainMs <= leadMs) showOverlay();
-      }
-
       function onEnded() {
         if (!isCurrentToken()) return;
-        showOverlay();
         try { _video.pause(); } catch (e) {}
         if (_video.duration && isFinite(_video.duration)) {
           try { _video.currentTime = Math.max(0, _video.duration - (1 / 30)); } catch (e) {}
@@ -253,14 +237,14 @@
         resolve(false);
       }
 
-      _videoListeners = { onTimeUpdate, onEnded, onError };
-      _video.addEventListener('timeupdate', onTimeUpdate);
+      _videoListeners = { onEnded, onError };
       _video.addEventListener('ended', onEnded);
       _video.addEventListener('error', onError);
 
       _el.classList.add('ies-on', 'ies-video-mode');
       _video.loop = false;
       _video.muted = true;
+      _applyVideoFrame(opts?.videoFrame || null);
       _video.src = videoSrc;
       _video.currentTime = 0;
 

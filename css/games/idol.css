@@ -5868,3 +5868,141 @@
     padding: 14px 14px 16px;
   }
 }
+
+/* Billboard tuner overlay */
+#idolGame .idol-btuner-open-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 520;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.28);
+  background: rgba(12, 18, 32, 0.88);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#idolGame .idol-btuner-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 760;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+#idolGame .idol-btuner-card {
+  width: min(460px, 96vw);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: linear-gradient(180deg, rgba(11, 15, 28, 0.96), rgba(7, 10, 18, 0.97));
+  box-shadow: 0 20px 48px rgba(0,0,0,0.44);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#idolGame .idol-btuner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#idolGame .idol-btuner-title {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+#idolGame .idol-btuner-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  cursor: pointer;
+}
+
+#idolGame .idol-btuner-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+#idolGame .idol-btuner-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#idolGame .idol-btuner-field span {
+  font-size: 11px;
+  color: rgba(232, 241, 255, 0.88);
+}
+
+#idolGame .idol-btuner-field select {
+  min-height: 34px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  padding: 6px 8px;
+}
+
+#idolGame .idol-btuner-slider {
+  display: grid;
+  gap: 4px;
+}
+
+#idolGame .idol-btuner-slider-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(240,246,255,0.92);
+  font-size: 12px;
+}
+
+#idolGame .idol-btuner-slider-head b {
+  font-family: 'Outfit', sans-serif;
+  color: #ffe082;
+}
+
+#idolGame .idol-btuner-slider input[type="range"] {
+  width: 100%;
+}
+
+#idolGame .idol-btuner-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 4px;
+}
+
+#idolGame .idol-btuner-actions .idol-btn {
+  min-height: 42px;
+  font-size: 12px;
+}
+
+@media (max-width: 560px) {
+  #idolGame .idol-btuner-row {
+    grid-template-columns: 1fr;
+  }
+
+  #idolGame .idol-btuner-actions {
+    grid-template-columns: 1fr;
+  }
+
+  #idolGame .idol-btuner-open-btn {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+}

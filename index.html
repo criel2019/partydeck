@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="css/games/pupil.css?v=20260305b">
 <link rel="stylesheet" href="css/games/blackjack.css?v=20260305b">
 <link rel="stylesheet" href="css/games/tamagotchi.css?v=20260305b">
-<link rel="stylesheet" href="css/games/idol.css?v=20260305d">
+<link rel="stylesheet" href="css/games/idol.css?v=20260305f">
 <link rel="stylesheet" href="css/games/drinkpoker.css?v=20260305c">
 <link rel="stylesheet" href="css/games/kingstagram.css?v=20260305b">
 <link rel="stylesheet" href="css/games/mobile.css?v=20260305c">
@@ -110,7 +110,7 @@
       <button class="debug-game-btn" onclick="debugGame('blackjack')">🃏 블랙잭</button>
       <button class="debug-game-btn" onclick="debugGame('tamagotchi')">🐉 다마고치</button>
       <button class="debug-game-btn" onclick="debugGame('idol')">🎤 아이돌</button>
-      <button class="debug-game-btn" onclick="idolEventScreenShow()">📺 전광판테스트</button>
+      <button class="debug-game-btn" onclick="debugGame('idol')">📺 전광판/아이돌</button>
       <button class="debug-game-btn" onclick="debugGame('drinkpoker')">🍶 술피하기</button>
       <button class="debug-game-btn" onclick="debugGame('kingstagram')">👑 킹스타그램</button>
     </div>
@@ -2380,8 +2380,54 @@
   </div>
   <div id="idolTrainResultOverlay" class="idol-train-stat-overlay" style="display:none;" role="status" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- 전광판 테스트 버튼 (임시) -->
-  <button onclick="idolEventScreenShow()" style="position:absolute;top:8px;right:8px;z-index:500;padding:6px 12px;background:#333;color:#fff;border:1px solid #666;border-radius:6px;font-size:13px;cursor:pointer;">📺 전광판</button>
+  <!-- 전광판 프레이밍 조정 -->
+  <button class="idol-btuner-open-btn" onclick="idolOpenBillboardTuner()">📺 전광판 조정</button>
+
+  <div id="idolBillboardTuner" class="idol-btuner-overlay" style="display:none;" onclick="idolCloseBillboardTuner()">
+    <div class="idol-btuner-card" onclick="event.stopPropagation()">
+      <div class="idol-btuner-header">
+        <div class="idol-btuner-title">전광판 프레이밍 조정</div>
+        <button class="idol-btuner-close" onclick="idolCloseBillboardTuner()">✕</button>
+      </div>
+
+      <div class="idol-btuner-row">
+        <label class="idol-btuner-field">
+          <span>아이돌</span>
+          <select id="idolBtType" onchange="idolBillboardTunerOnTypeChange()"></select>
+        </label>
+        <label class="idol-btuner-field">
+          <span>훈련</span>
+          <select id="idolBtStat" onchange="idolBillboardTunerOnStatChange()"></select>
+        </label>
+        <label class="idol-btuner-field">
+          <span>fit</span>
+          <select id="idolBtFit" onchange="idolBillboardTunerOnFrameInput()">
+            <option value="contain">contain</option>
+            <option value="cover">cover</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="idol-btuner-slider">
+        <div class="idol-btuner-slider-head"><span>X 위치</span><b id="idolBtXVal">50%</b></div>
+        <input id="idolBtX" type="range" min="0" max="100" step="1" oninput="idolBillboardTunerOnFrameInput()">
+      </div>
+      <div class="idol-btuner-slider">
+        <div class="idol-btuner-slider-head"><span>Y 위치</span><b id="idolBtYVal">50%</b></div>
+        <input id="idolBtY" type="range" min="0" max="100" step="1" oninput="idolBillboardTunerOnFrameInput()">
+      </div>
+      <div class="idol-btuner-slider">
+        <div class="idol-btuner-slider-head"><span>줌</span><b id="idolBtScaleVal">1.00x</b></div>
+        <input id="idolBtScale" type="range" min="0.7" max="1.8" step="0.01" oninput="idolBillboardTunerOnFrameInput()">
+      </div>
+
+      <div class="idol-btuner-actions">
+        <button class="idol-btn idol-btn-primary" onclick="idolBillboardTunerPreview()">미리보기</button>
+        <button class="idol-btn" onclick="idolBillboardTunerReset()">현재값 초기화</button>
+        <button class="idol-btn" onclick="idolBillboardTunerCopySnippet()">코드 복사</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 3D 다이스 오버레이 (주사위 굴릴 때만 표시) -->
   <div id="idolDiceOverlay" class="idol-dice-overlay" style="display:none;" aria-hidden="true">
@@ -2455,10 +2501,10 @@
 <script src="js/games/slinkystairs.js?v=20260305b"></script>
 <script src="js/games/pupil.js?v=20260305b"></script>
 <script src="js/games/tamagotchi.js?v=20260305b"></script>
-<script src="js/games/idol-data.js?v=20260305b"></script>
+<script src="js/games/idol-data.js?v=20260305f"></script>
 <script src="js/games/idol-board-iso.js?v=20260305b"></script>
-<script src="js/games/idol-event-screen.js?v=20260305d"></script>
-<script src="js/games/idol.js?v=20260305d"></script>
+<script src="js/games/idol-event-screen.js?v=20260305f"></script>
+<script src="js/games/idol.js?v=20260305f"></script>
 <script src="js/games/idol-festival.js?v=20260305b"></script>
 <script src="js/games/idol-perf.js?v=20260305b"></script>
 <script src="js/games/drinkpoker.js?v=20260305c"></script>

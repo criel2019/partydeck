@@ -619,3 +619,37 @@ const IDOL_TRAIN_BILLBOARD_VIDEOS = {
     fame:   'img/games/idol/train/ai_fame.mp4',
   },
 };
+
+// Per-video framing controls for billboard training videos.
+// fit: 'contain' | 'cover'
+// x/y: 0~100 percentage (object-position)
+// scale: 0.7~1.8
+const IDOL_TRAIN_BILLBOARD_FRAME_DEFAULTS = {
+  fit: 'contain',
+  x: 50,
+  y: 50,
+  scale: 1,
+};
+
+const IDOL_TRAIN_BILLBOARD_FRAMING = {
+  luna: {
+    talent: {},
+    looks: {},
+    fame: {},
+  },
+  ddyobi: {
+    talent: {},
+    looks: {},
+    fame: {},
+  },
+  el: {
+    talent: {},
+    looks: {},
+    fame: {},
+  },
+  ai: {
+    talent: {},
+    looks: {},
+    fame: {},
+  },
+};
