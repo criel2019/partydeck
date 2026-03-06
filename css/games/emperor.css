@@ -265,23 +265,23 @@
 }
 
 .ecard-opp-submitted-card {
-  width: 62px;
-  height: 90px;
-  border-radius: 8px;
+  width: min(55vw, 200px);
+  height: min(77vw, 280px);
+  border-radius: 16px;
   background: linear-gradient(135deg, #1a1a2e, #16213e);
-  border: 2px solid var(--card-gold-border);
-  box-shadow: 0 0 18px var(--card-gold-glow), 0 4px 16px rgba(0,0,0,0.5);
+  border: 3px solid var(--card-gold-border);
+  box-shadow: 0 0 40px var(--card-gold-glow), 0 10px 40px rgba(0,0,0,0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  opacity: 0.55;
+  font-size: min(18vw, 64px);
+  opacity: 0.6;
 }
 .ecard-opp-submitted-card::before { content: '👑'; }
 
 .ecard-opp-submitted-msg {
-  font-size: 11px;
-  color: rgba(255,255,255,0.4);
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
 }
 
 /* ===== 내가 선공 후 대기 표시 ===== */
@@ -295,24 +295,24 @@
 }
 
 .ecard-submitted-card-big {
-  width: 88px;
-  height: 126px;
-  border-radius: 12px;
+  width: min(60vw, 220px);
+  height: min(84vw, 308px);
+  border-radius: 18px;
   background: linear-gradient(135deg, #1a1a2e, #16213e);
-  border: 2px solid var(--card-gold-border);
-  box-shadow: 0 0 28px var(--card-gold-glow), 0 8px 28px rgba(0,0,0,0.6);
+  border: 3px solid var(--card-gold-border);
+  box-shadow: 0 0 50px var(--card-gold-glow), 0 12px 50px rgba(0,0,0,0.7);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36px;
-  opacity: 0.5;
-  animation: ecMyCardSubmit 0.35s cubic-bezier(0.2, 0.8, 0.3, 1);
+  font-size: min(20vw, 72px);
+  opacity: 0.55;
+  animation: ecMyCardSubmit 0.4s cubic-bezier(0.15, 0.85, 0.3, 1.05);
 }
 .ecard-submitted-card-big::before { content: '👑'; }
 
 @keyframes ecMyCardSubmit {
-  from { transform: scale(0.6) translateY(20px); opacity: 0; }
-  to   { transform: scale(1)   translateY(0);    opacity: 0.5; }
+  from { transform: scale(0.3) translateY(60px); opacity: 0; }
+  to   { transform: scale(1)   translateY(0);    opacity: 0.55; }
 }
 
 .ecard-submitted-msg {
@@ -384,9 +384,9 @@
 
 /* ===== 3D 뒤집기 카드 ===== */
 .ec-flip-card {
-  perspective: 700px;
-  width: 88px;
-  height: 126px;
+  perspective: 900px;
+  width: min(38vw, 140px);
+  height: min(53vw, 196px);
 }
 
 .ec-flip-inner {
@@ -434,7 +434,7 @@
 
 /* ===== 결과 뱃지 ===== */
 .ecard-reveal-result {
-  font-size: 54px;
+  font-size: min(18vw, 72px);
   font-weight: 900;
   letter-spacing: 0.04em;
   text-align: center;
