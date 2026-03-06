@@ -547,9 +547,18 @@ function renderECardView(view) {
       if (betAmount) betAmount.textContent = String(ecClampBet(view.currentBet));
       var betRoleHint = document.getElementById('ecardBetRoleHint');
       if (betRoleHint) {
-        betRoleHint.textContent = view.myRole === 'emperor'
-          ? '황제 플레이 · 내 리스크 = 베팅 × ' + EC_SLAVE_MULTIPLIER
-          : '노예 플레이 · 내 리스크 = 베팅 (이기면 × ' + EC_SLAVE_MULTIPLIER + ')';
+        // 내가 노예이고 내가 베팅 설정자일 때만 5× 적용
+        var iAmSlave = view.myRole === 'slave';
+        var iAmSetter = view.betSetterId === view.myId;
+        if (iAmSlave && iAmSetter) {
+          betRoleHint.textContent = '노예 베팅 · 이기면 ×' + EC_SLAVE_MULTIPLIER + ' 획득 / 지면 베팅액만 잃음';
+        } else if (!iAmSlave && iAmSetter) {
+          betRoleHint.textContent = '황제 베팅 · 양쪽 동일 리스크 (×1)';
+        } else if (iAmSlave) {
+          betRoleHint.textContent = '황제가 베팅 설정 중 · 양쪽 동일 리스크';
+        } else {
+          betRoleHint.textContent = '';
+        }
       }
     } else {
       waiting.style.display = 'flex';
@@ -718,9 +727,12 @@ function ecApplyGameWin(winnerRole, reasonText) {
   var loserId  = winnerRole === 'emperor' ? ec.slavePlayerId  : ec.emperorPlayerId;
   var winner   = ecGetPlayerById(winnerId);
   var baseBet  = ecClampBet(ec.currentBet);
-  // 노예 승리: 5× 획득 / 황제 승리: 1× 획득 (노예 리스크 = 1×, 황제 리스크 = 5×)
-  var gain = winnerRole === 'slave' ? baseBet * EC_SLAVE_MULTIPLIER : baseBet;
-  var loss = winnerRole === 'slave' ? baseBet * EC_SLAVE_MULTIPLIER : baseBet;
+  // 노예가 베팅 설정자이고 노예가 이긴 경우에만 5× 적용
+  // 그 외(황제 설정 or 노예 설정+황제 승)는 1× 동일 리스크
+  var slaveSetterSlaveWin = (ec.betSetterId === ec.slavePlayerId && winnerRole === 'slave');
+  var multiplier = slaveSetterSlaveWin ? EC_SLAVE_MULTIPLIER : 1;
+  var gain = baseBet * multiplier;
+  var loss = baseBet * multiplier;
 
   ec.score[ecGetScoreKeyById(winnerId)] += gain;
   ec.score[ecGetScoreKeyById(loserId)]  -= loss;
