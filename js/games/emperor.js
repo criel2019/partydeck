@@ -224,25 +224,23 @@ function ecardFillFlipFront(el, cardType) {
 }
 
 function ecardShowReveal(view) {
-  var overlay = document.getElementById('ecardRevealOverlay');
-  if (!overlay) return;
-  overlay.style.display = 'flex';
+  var revealArea = document.getElementById('ecardRevealArea');
+  var resultEl   = document.getElementById('ecardRevealResult');
+  if (!revealArea) return;
 
   var oppInner = document.getElementById('ecardRevealOppInner');
   var myInner  = document.getElementById('ecardRevealMyInner');
   var oppFront = document.getElementById('ecardRevealOppFront');
   var myFront  = document.getElementById('ecardRevealMyFront');
-  var resultEl = document.getElementById('ecardRevealResult');
   var oppSlot  = document.getElementById('ecardRevealOppSlot');
   var mySlot   = document.getElementById('ecardRevealMySlot');
 
-  // Reset animation classes
+  // Reset
   oppInner.classList.remove('flipped');
   myInner.classList.remove('flipped');
   oppSlot.classList.remove('ec-exit-up');
   mySlot.classList.remove('ec-exit-down');
-  resultEl.className = 'ecard-reveal-result';
-  resultEl.textContent = '';
+  if (resultEl) { resultEl.className = 'ecard-reveal-result'; resultEl.textContent = ''; }
 
   ecardFillFlipFront(oppFront, view.oppPlayed);
   ecardFillFlipFront(myFront, view.myPlayed);
@@ -259,10 +257,12 @@ function ecardShowReveal(view) {
     setTimeout(function() {
       if (!_ecRevealActive) return;
       var labels = { win: 'WIN', lose: 'LOSE', draw: 'DRAW' };
-      resultEl.textContent = labels[result] || result;
-      resultEl.className = 'ecard-reveal-result ec-result-' + result;
-      void resultEl.offsetHeight;
-      resultEl.classList.add('ec-result-visible');
+      if (resultEl) {
+        resultEl.textContent = labels[result] || result;
+        resultEl.className = 'ecard-reveal-result ec-result-' + result;
+        void resultEl.offsetHeight;
+        resultEl.classList.add('ec-result-visible');
+      }
 
       if (result === 'draw') {
         // 1000ms DRAW 표시 후 카드 퇴장
@@ -273,13 +273,14 @@ function ecardShowReveal(view) {
           setTimeout(function() {
             if (_ecRevealActive) {
               _ecRevealActive = false;
-              overlay.style.display = 'none';
+              revealArea.style.display = 'none';
+              if (resultEl) { resultEl.className = 'ecard-reveal-result'; resultEl.textContent = ''; }
               ecState.selectedCard = null;
             }
           }, 380);
         }, 1000);
       }
-      // win/lose: host가 game-result 전환하면 renderECardView에서 오버레이 정리
+      // win/lose: host가 game-result 전환하면 renderECardView에서 정리
     }, 600);
   }, 700);
 }
@@ -312,40 +313,49 @@ function renderECardView(view) {
   document.getElementById('ecardOppName').textContent = view.oppName;
   document.getElementById('ecardOppCardsCount').textContent = String(view.oppCardsCount);
 
-  // ===== 공개 오버레이 관리 =====
-  var keepRevealPhases = ['reveal', 'result', 'game-result'];
-  if (view.phase === 'reveal' && view.myPlayed && view.oppPlayed) {
-    if (!_ecRevealActive) {
-      _ecRevealActive = true;
-      ecardShowReveal(view);
-    }
-  } else if (_ecRevealActive && keepRevealPhases.indexOf(view.phase) === -1) {
-    _ecRevealActive = false;
-    var _ov = document.getElementById('ecardRevealOverlay');
-    if (_ov) _ov.style.display = 'none';
-  }
-
   // ===== 플레이 상태 분석 =====
   var isPlayPhase = (view.phase === 'emperor-play' || view.phase === 'slave-play');
   var canPlay = ecardCanPlay(view);
   // 내가 선공으로 제출 완료, 상대 대기 중
   var isWaitingFirst = isPlayPhase && !canPlay && !!view.myPlayed;
-  // 상대가 선공 제출 완료, 내 차례
-  var isOppSubmittedFirst = isPlayPhase && canPlay && view.firstSubmittedRole !== null;
+
+  // ===== Reveal 영역 관리 =====
+  var revealAreaEl   = document.getElementById('ecardRevealArea');
+  var revealResultEl = document.getElementById('ecardRevealResult');
+  if (view.phase === 'reveal' && view.myPlayed && view.oppPlayed) {
+    if (!_ecRevealActive) {
+      _ecRevealActive = true;
+      if (revealAreaEl) revealAreaEl.style.display = 'flex';
+      ecardShowReveal(view);
+    }
+  } else if (_ecRevealActive && ['emperor-play', 'slave-play', 'betting'].indexOf(view.phase) !== -1) {
+    // 새 교환 시작 — 정리
+    _ecRevealActive = false;
+    if (revealAreaEl) revealAreaEl.style.display = 'none';
+    if (revealResultEl) { revealResultEl.className = 'ecard-reveal-result'; revealResultEl.textContent = ''; }
+  }
+  // result / game-result 중에는 reveal 영역 그대로 유지
 
   // ===== 영역 표시 전환 =====
-  var myCardsAreaEl = document.getElementById('ecardMyCardsArea');
-  var oppSubmittedAreaEl = document.getElementById('ecardOppSubmittedArea');
+  var myCardsAreaEl    = document.getElementById('ecardMyCardsArea');
   var submittedDisplayEl = document.getElementById('ecardSubmittedDisplay');
-  if (myCardsAreaEl)      myCardsAreaEl.style.display      = isWaitingFirst ? 'none' : '';
-  if (oppSubmittedAreaEl) oppSubmittedAreaEl.style.display  = isOppSubmittedFirst ? 'flex' : 'none';
-  if (submittedDisplayEl) submittedDisplayEl.style.display  = isWaitingFirst ? 'flex' : 'none';
+  // 내가 선공 대기 중: 큰 카드 표시, 패 숨김
+  // reveal 중에는 패 보여줌 (인라인이므로 아래에 그대로)
+  if (!_ecRevealActive) {
+    if (myCardsAreaEl)      myCardsAreaEl.style.display      = isWaitingFirst ? 'none' : '';
+    if (submittedDisplayEl) submittedDisplayEl.style.display = isWaitingFirst ? 'flex' : 'none';
+  } else {
+    // reveal 중: 선공 대기 숨김, 패 보임
+    if (submittedDisplayEl) submittedDisplayEl.style.display = 'none';
+    if (myCardsAreaEl)      myCardsAreaEl.style.display      = '';
+  }
 
   // ===== 헤더 상대 제출 카드 표시 =====
   var oppPlayedEl = document.getElementById('ecardOppPlayedCard');
   if ((view.phase === 'reveal' || view.phase === 'result' || view.phase === 'game-result') && view.oppPlayed) {
     oppPlayedEl.innerHTML = ecardCardHTML(view.oppPlayed, false, 'ecard-card-opp-small');
-  } else if (isOppSubmittedFirst) {
+  } else if (isPlayPhase && view.firstSubmittedRole !== null && !view.myPlayed) {
+    // 상대가 먼저 제출한 경우 — 헤더에 뒷면 표시
     oppPlayedEl.innerHTML = ecardCardHTML(null, true, 'ecard-card-opp-small');
   } else {
     oppPlayedEl.innerHTML = '';
