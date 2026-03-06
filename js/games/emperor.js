@@ -135,10 +135,16 @@ function broadcastECardState() {
     var oppCards = myRole === 'emperor' ? ec.slaveCards : ec.emperorCards;
     var myPlayed = myRole === 'emperor' ? ec.emperorPlayed : ec.slavePlayed;
     // 공개 페이즈 이전에는 상대 제출 카드 정보 숨김
+    // 단, 노예가 선공인 경우(짝수 교환) 노예 카드는 앞면 제출이므로 황제에게 공개
     var revealPhases = ['reveal', 'result', 'game-result'];
-    var oppPlayed = revealPhases.indexOf(ec.phase) !== -1
-      ? (myRole === 'emperor' ? ec.slavePlayed : ec.emperorPlayed)
-      : null;
+    var oppPlayed;
+    if (revealPhases.indexOf(ec.phase) !== -1) {
+      oppPlayed = myRole === 'emperor' ? ec.slavePlayed : ec.emperorPlayed;
+    } else if (ec.phase === 'emperor-play' && ec.firstSubmittedRole === 'slave' && myRole === 'emperor') {
+      oppPlayed = ec.slavePlayed; // 노예 선공 카드는 앞면이므로 황제가 볼 수 있음
+    } else {
+      oppPlayed = null;
+    }
 
     var view = {
       type: 'ec-state',
@@ -212,13 +218,7 @@ function ecardRenderBattle(view) {
   var battleMy = document.getElementById('ecardBattleMy');
   if (!battleOpp || !battleMy) return;
 
-  if (view.phase === 'slave-play' && view.firstSubmittedRole === 'emperor' && (view.oppPlayed || view.myPlayed)) {
-    battleArea.style.display = 'flex';
-    battleOpp.innerHTML = ecardCardHTML(null, true, 'ecard-card-battle');
-    battleMy.innerHTML = ecardCardHTML(null, true, 'ecard-card-battle');
-    return;
-  }
-
+  // slave-play 중에는 숨김 — 카드 선택 방해하지 않도록
   if (view.phase === 'reveal' && view.myPlayed && view.oppPlayed) {
     battleArea.style.display = 'flex';
     battleOpp.innerHTML = ecardCardHTML(view.oppPlayed, false, 'ecard-card-battle ecard-card-reveal-anim');
@@ -258,9 +258,13 @@ function renderECardView(view) {
   document.getElementById('ecardOppCardsCount').textContent = String(view.oppCardsCount);
 
   var oppPlayedEl = document.getElementById('ecardOppPlayedCard');
-  if (view.phase === 'slave-play' && view.myRole === 'slave' && view.oppPlayed) {
+  if (view.phase === 'slave-play' && view.firstSubmittedRole === 'emperor') {
+    // 황제가 선공으로 뒷면 제출, 노예에게 뒷면으로 표시
     oppPlayedEl.innerHTML = ecardCardHTML(null, true, 'ecard-card-opp-small');
-  } else if (view.phase === 'reveal' && view.oppPlayed) {
+  } else if (view.phase === 'emperor-play' && view.firstSubmittedRole === 'slave' && view.myRole === 'emperor' && view.oppPlayed) {
+    // 노예가 선공으로 앞면 제출, 황제에게 앞면으로 표시
+    oppPlayedEl.innerHTML = ecardCardHTML(view.oppPlayed, false, 'ecard-card-opp-small');
+  } else if ((view.phase === 'reveal' || view.phase === 'result' || view.phase === 'game-result') && view.oppPlayed) {
     oppPlayedEl.innerHTML = ecardCardHTML(view.oppPlayed, false, 'ecard-card-opp-small');
   } else {
     oppPlayedEl.innerHTML = '';
@@ -298,6 +302,12 @@ function renderECardView(view) {
     var setter = view.betSetterId === state.myId ? '내가' : (view.betSetterId === view.oppId ? view.oppName : '상대');
     resultTextEl.textContent = setter + ' 이번 판 배팅 금액 설정 중';
     resultTextEl.style.color = 'var(--text-dim)';
+  } else if (view.phase === 'slave-play' && view.firstSubmittedRole === 'emperor') {
+    resultTextEl.textContent = '⬛ 황제가 카드를 뒤집어 내려놨습니다';
+    resultTextEl.style.color = 'var(--gold)';
+  } else if (view.phase === 'emperor-play' && view.firstSubmittedRole === 'slave') {
+    resultTextEl.textContent = '🔓 노예가 카드를 앞면으로 냈습니다';
+    resultTextEl.style.color = '#c0c0c0';
   } else if ((view.phase === 'result' || view.phase === 'game-result') && view._lastResult && view._lastResult.message) {
     resultTextEl.textContent = view._lastResult.message;
     resultTextEl.style.color = view._lastResult.myWin ? 'var(--gold)' : 'var(--text-dim)';
@@ -333,25 +343,27 @@ function renderECardView(view) {
   }
 
   if (view.phase === 'emperor-play') {
+    var empIsFirst = view.firstSubmittedRole === null; // 황제가 선공
     if (view.myRole === 'emperor') {
       actionButtons.style.display = 'flex';
-      submitBtn.textContent = '카드 뒷면으로 제출 (' + view.exchange + '번째)';
+      submitBtn.textContent = (empIsFirst ? '선공 ' : '후공 ') + '뒷면으로 제출 (' + view.exchange + '번째)';
       submitBtn.disabled = ecState.selectedCard === null;
     } else {
       waiting.style.display = 'flex';
-      waitingText.textContent = '황제가 카드를 뒷면으로 제출 중... (' + view.exchange + '/' + view.maxExchanges + ')';
+      waitingText.textContent = (empIsFirst ? '황제가 선공으로' : '황제가 후공으로') + ' 제출 중... (' + view.exchange + '/' + view.maxExchanges + ')';
     }
     return;
   }
 
   if (view.phase === 'slave-play') {
+    var slvIsFirst = view.firstSubmittedRole === null; // 노예가 선공
     if (view.myRole === 'slave') {
       actionButtons.style.display = 'flex';
-      submitBtn.textContent = '카드 앞면으로 제출 (' + view.exchange + '번째)';
+      submitBtn.textContent = (slvIsFirst ? '선공 ' : '후공 ') + '앞면으로 제출 (' + view.exchange + '번째)';
       submitBtn.disabled = ecState.selectedCard === null;
     } else {
       waiting.style.display = 'flex';
-      waitingText.textContent = '노예가 카드를 앞면으로 제출 중... (' + view.exchange + '/' + view.maxExchanges + ')';
+      waitingText.textContent = (slvIsFirst ? '노예가 선공으로' : '노예가 후공으로') + ' 제출 중... (' + view.exchange + '/' + view.maxExchanges + ')';
     }
     return;
   }
@@ -452,9 +464,18 @@ function processECardPlay(playerId, cardType, cardIdx) {
 
     ec.emperorPlayed = cardType;
     ec.emperorCards.splice(cardIdx, 1);
-    ec.firstSubmittedRole = 'emperor';
-    ec.phase = 'slave-play';
-    broadcastECardState();
+
+    if (ec.firstSubmittedRole === null) {
+      // 황제가 선공 — 다음에 노예가 냄
+      ec.firstSubmittedRole = 'emperor';
+      ec.phase = 'slave-play';
+      broadcastECardState();
+    } else {
+      // 황제가 후공 (노예가 이미 냄) — 공개
+      ec.phase = 'reveal';
+      broadcastECardState();
+      setTimeout(function() { ecResolveExchange(); }, 1200);
+    }
     return;
   }
 
@@ -465,13 +486,24 @@ function processECardPlay(playerId, cardType, cardIdx) {
 
     ec.slavePlayed = cardType;
     ec.slaveCards.splice(cardIdx, 1);
-    ec.phase = 'reveal';
-    broadcastECardState();
 
-    setTimeout(function() {
-      ecResolveExchange();
-    }, 1200);
+    if (ec.firstSubmittedRole === null) {
+      // 노예가 선공 — 다음에 황제가 냄
+      ec.firstSubmittedRole = 'slave';
+      ec.phase = 'emperor-play';
+      broadcastECardState();
+    } else {
+      // 노예가 후공 (황제가 이미 냄) — 공개
+      ec.phase = 'reveal';
+      broadcastECardState();
+      setTimeout(function() { ecResolveExchange(); }, 1200);
+    }
   }
+}
+
+// 해당 교환 번호에서의 선공 페이즈 반환 (1, 3 홀수=황제 선공 / 2, 4 짝수=노예 선공)
+function ecGetStartPhase(exchange) {
+  return (exchange % 2 === 1) ? 'emperor-play' : 'slave-play';
 }
 
 function ecApplyGameWin(winnerRole, reasonText) {
@@ -530,7 +562,7 @@ function ecResolveExchange() {
     ec.slavePlayed = null;
     ec.firstSubmittedRole = null;
     ec._lastResult = null;
-    ec.phase = 'emperor-play';
+    ec.phase = ecGetStartPhase(ec.exchange); // 홀수=황제선공, 짝수=노예선공
     broadcastECardState();
   }, 1000);
 }
