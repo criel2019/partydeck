@@ -15,7 +15,7 @@
 }
 
 /* -- Main Screen -- */
-#ecardGame {
+#ecardGame.active {
   background:
     radial-gradient(ellipse at 50% 50%, var(--felt-light) 0%, var(--felt-green) 40%, var(--felt-dark) 100%);
   padding: 0;
