@@ -384,9 +384,9 @@ function renderSutdaView(vs) {
     myCardsEl.innerHTML = hwatuCardHTML(null, true) + hwatuCardHTML(null, true);
   }
 
-  // 족보 표시
+  // 족보 표시 (뒷면이면 숨김)
   const rankEl = document.getElementById('sutdaMyRank');
-  if (me?.rank) {
+  if (me?.rank && !_sutdaCardsHidden) {
     rankEl.textContent = me.rank.name;
   } else {
     rankEl.textContent = '';
@@ -690,7 +690,7 @@ function endSutdaRound(winner) {
   setTimeout(() => {
     broadcast(result);
     handleSutdaResult(result);
-  }, 1200);
+  }, 2500);
 }
 
 // =========================

@@ -7,7 +7,7 @@
 
 var EC_TOTAL_GAMES = 12;
 var EC_HALF_GAMES = 6;
-var EC_MAX_EXCHANGES = 2; // Emperor > Slave, Emperor > Slave
+var EC_MAX_EXCHANGES = 4; // Emperor > Slave x4, 마지막 1장 남기고 결과확인
 var EC_DEFAULT_BET = 100;
 var EC_BET_MIN = 10;
 var EC_BET_MAX = 500;
@@ -134,7 +134,11 @@ function broadcastECardState() {
     var myCards = myRole === 'emperor' ? ec.emperorCards : ec.slaveCards;
     var oppCards = myRole === 'emperor' ? ec.slaveCards : ec.emperorCards;
     var myPlayed = myRole === 'emperor' ? ec.emperorPlayed : ec.slavePlayed;
-    var oppPlayed = myRole === 'emperor' ? ec.slavePlayed : ec.emperorPlayed;
+    // 공개 페이즈 이전에는 상대 제출 카드 정보 숨김
+    var revealPhases = ['reveal', 'result', 'game-result'];
+    var oppPlayed = revealPhases.indexOf(ec.phase) !== -1
+      ? (myRole === 'emperor' ? ec.slavePlayed : ec.emperorPlayed)
+      : null;
 
     var view = {
       type: 'ec-state',
@@ -331,10 +335,11 @@ function renderECardView(view) {
   if (view.phase === 'emperor-play') {
     if (view.myRole === 'emperor') {
       actionButtons.style.display = 'flex';
+      submitBtn.textContent = '카드 뒷면으로 제출 (' + view.exchange + '번째)';
       submitBtn.disabled = ecState.selectedCard === null;
     } else {
       waiting.style.display = 'flex';
-      waitingText.textContent = '황제가 카드를 먼저 제출할 때까지 대기...';
+      waitingText.textContent = '황제가 카드를 뒷면으로 제출 중... (' + view.exchange + '/' + view.maxExchanges + ')';
     }
     return;
   }
@@ -342,17 +347,24 @@ function renderECardView(view) {
   if (view.phase === 'slave-play') {
     if (view.myRole === 'slave') {
       actionButtons.style.display = 'flex';
+      submitBtn.textContent = '카드 앞면으로 제출 (' + view.exchange + '번째)';
       submitBtn.disabled = ecState.selectedCard === null;
     } else {
       waiting.style.display = 'flex';
-      waitingText.textContent = '노예가 카드를 선택 중...';
+      waitingText.textContent = '노예가 카드를 앞면으로 제출 중... (' + view.exchange + '/' + view.maxExchanges + ')';
     }
     return;
   }
 
-  if (view.phase === 'reveal' || view.phase === 'result' || view.phase === 'game-result') {
+  if (view.phase === 'reveal') {
     waiting.style.display = 'flex';
-    waitingText.textContent = '결과 연출 중...';
+    waitingText.textContent = view.exchange + '번째 카드 공개 중...';
+  } else if (view.phase === 'result') {
+    waiting.style.display = 'flex';
+    waitingText.textContent = '다음 제출 준비 중...';
+  } else if (view.phase === 'game-result') {
+    waiting.style.display = 'flex';
+    waitingText.textContent = '이번 판 결과 처리 중...';
   }
 }
 
@@ -492,18 +504,16 @@ function ecResolveExchange() {
   var empCard = ec.emperorPlayed;
   var slvCard = ec.slavePlayed;
 
+  // 노예가 황제 카드에 노예 카드로 맞춤 → 즉시 노예 승리
   if (empCard === 'emperor' && slvCard === 'slave') {
     ecApplyGameWin('slave', '노예가 황제를 잡음');
     return;
   }
 
-  if (empCard === 'emperor' && slvCard !== 'slave') {
-    ecApplyGameWin('emperor', '황제가 노예를 회피');
-    return;
-  }
-
+  // 황제 회피(황제 카드 냈는데 노예가 시민 냄)는 즉시 승리 없음 — 계속 진행
+  // 4교환 모두 마쳤는데 잡히지 않으면 황제 생존 승리
   if (ec.exchange >= ec.maxExchanges) {
-    ecApplyGameWin('emperor', '남은 카드 결과 발표');
+    ecApplyGameWin('emperor', '황제 생존! 남은 카드 결과 발표');
     return;
   }
 
