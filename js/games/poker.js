@@ -157,8 +157,8 @@ function renderPokerView(ps) {
   const phaseNames = { preflop:'프리플랍', flop:'플랍', turn:'턴', river:'리버', showdown:'쇼다운' };
   document.getElementById('roundDisplay').textContent = phaseNames[ps.phase] || ps.phase;
 
-  // Hand rank
-  if(me?.cards && ps.community.length > 0) {
+  // Hand rank (뒷면이면 숨김)
+  if(me?.cards && ps.community.length > 0 && !_pkCardsHidden) {
     document.getElementById('handRankDisplay').textContent = evaluateHandName([...me.cards, ...ps.community]);
   } else {
     document.getElementById('handRankDisplay').textContent = '';

@@ -152,6 +152,9 @@ function showScreen(id) {
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  // 게임 카탈로그 오버레이가 열려있으면 닫기
+  var _catalog = document.getElementById('gameCatalogOverlay');
+  if (_catalog) _catalog.style.display = 'none';
   // Init Three.js scene when entering yahtzee
   if(id === 'yahtzeeGame') {
     // Force landscape orientation
@@ -616,13 +619,12 @@ function handleMessage(peerId, raw) {
     // Yahtzee handlers
     'yah-state': () => { showScreen('yahtzeeGame'); renderYahtzeeView(msg.state); },
     'yah-action': () => handleYahAction(peerId, msg),
-    // E-Card handlers
+    // 황제를 잡아라 handlers
     'ec-state': () => { showScreen('ecardGame'); renderECardView(msg); },
     'ec-bet': () => { if(state.isHost) processECardBet(peerId, msg.bet); },
     'ec-bet-response': () => { if(state.isHost) processECardBetResponse(peerId, msg.accept); },
     'ec-play': () => { if(state.isHost) processECardPlay(peerId, msg.cardType, msg.cardIdx); },
-    'ec-flip': () => { if(state.isHost) processECardFlip(peerId); },
-    'ec-both-play': () => { if(state.isHost) processECardBothPlay(peerId, msg.cardType, msg.cardIdx); },
+
     'ec-result': () => handleECardResult(msg),
     // Sutda handlers
     'sutda-state': () => { showScreen('sutdaGame'); renderSutdaView(msg); },
