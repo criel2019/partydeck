@@ -6,15 +6,17 @@
 // - If Emperor avoids Slave or gets caught by Slave, that game ends immediately
 
 var EC_TOTAL_GAMES = 12;
-var EC_HALF_GAMES = 6;
-var EC_MAX_EXCHANGES = 4; // Emperor > Slave x4, 마지막 1장 남기고 결과확인
+var EC_MAX_EXCHANGES = 4;
 var EC_DEFAULT_BET = 100;
 var EC_BET_MIN = 10;
 var EC_BET_MAX = 500;
+var EC_SLAVE_MULTIPLIER = 5; // 노예 승리 시 황제가 지불하는 배수
 
 var ecState = {
   player1: { id: '', name: '', avatar: '' },
   player2: { id: '', name: '', avatar: '' },
+  firstPlayerId: '',   // 주사위 높은 쪽 (첫 선공)
+  diceRoll: null,      // { p1: number, p2: number }
   gameNum: 1,
   maxGames: EC_TOTAL_GAMES,
   exchange: 1,
@@ -28,7 +30,8 @@ var ecState = {
   emperorPlayed: null,
   slavePlayed: null,
   firstSubmittedRole: null,
-  phase: 'betting', // betting | emperor-play | slave-play | reveal | result | game-result | gameover
+  // dice-roll | betting | emperor-play | slave-play | reveal | result | game-result | gameover
+  phase: 'dice-roll',
   score: { p1: 0, p2: 0 },
   selectedCard: null,
   _lastResult: null
@@ -65,23 +68,55 @@ function ecGetRoleForPlayer(playerId) {
 }
 
 function ecPrepareGame(gameNum) {
-  ecState.gameNum = gameNum;
-  ecState.exchange = 1;
-  ecState.maxExchanges = EC_MAX_EXCHANGES;
-  ecState.emperorPlayed = null;
-  ecState.slavePlayed = null;
-  ecState.firstSubmittedRole = null;
-  ecState.selectedCard = null;
-  ecState._lastResult = null;
+  var ec = ecState;
+  ec.gameNum = gameNum;
+  ec.exchange = 1;
+  ec.maxExchanges = EC_MAX_EXCHANGES;
+  ec.emperorPlayed = null;
+  ec.slavePlayed = null;
+  ec.firstSubmittedRole = null;
+  ec.selectedCard = null;
+  ec._lastResult = null;
 
-  var odd = (gameNum % 2 === 1);
-  ecState.emperorPlayerId = odd ? ecState.player1.id : ecState.player2.id;
-  ecState.slavePlayerId = odd ? ecState.player2.id : ecState.player1.id;
-  ecState.betSetterId = gameNum <= EC_HALF_GAMES ? ecState.player1.id : ecState.player2.id;
+  // firstPlayerId = 주사위 선공 플레이어
+  var firstId  = ec.firstPlayerId || ec.player1.id;
+  var secondId = firstId === ec.player1.id ? ec.player2.id : ec.player1.id;
 
-  ecState.emperorCards = ecCreateRoleCards('emperor');
-  ecState.slaveCards = ecCreateRoleCards('slave');
-  ecState.phase = 'betting';
+  // 황제/노예: 홀수 판 → firstPlayer 황제, 짝수 판 → firstPlayer 노예
+  var firstIsEmperor = (gameNum % 2 === 1);
+  ec.emperorPlayerId = firstIsEmperor ? firstId : secondId;
+  ec.slavePlayerId   = firstIsEmperor ? secondId : firstId;
+
+  // 베팅 설정자: 2판 단위로 교대 (1-2:first, 3-4:second, 5-6:first, ...)
+  var betGroup = Math.floor((gameNum - 1) / 2) % 2;
+  ec.betSetterId = betGroup === 0 ? firstId : secondId;
+
+  ec.emperorCards = ecCreateRoleCards('emperor');
+  ec.slaveCards   = ecCreateRoleCards('slave');
+  ec.phase = 'betting';
+}
+
+// 게임 시작 시 주사위 굴리기 (host only)
+function ecRollStartingDice() {
+  var ec = state.ecard;
+  if (!ec || !state.isHost) return;
+
+  var d1, d2;
+  do {
+    d1 = Math.floor(Math.random() * 6) + 1;
+    d2 = Math.floor(Math.random() * 6) + 1;
+  } while (d1 === d2);
+
+  ec.diceRoll = { p1: d1, p2: d2 };
+  ec.firstPlayerId = d1 > d2 ? ec.player1.id : ec.player2.id;
+  broadcastECardState();
+
+  // 2.5초 후 첫 번째 판 세팅
+  setTimeout(function() {
+    if (!state.ecard) return;
+    ecPrepareGame(1);
+    broadcastECardState();
+  }, 2500);
 }
 
 function startECard() {
@@ -93,7 +128,9 @@ function startECard() {
   ecState = {
     player1: { id: state.players[0].id, name: state.players[0].name, avatar: state.players[0].avatar },
     player2: { id: state.players[1].id, name: state.players[1].name, avatar: state.players[1].avatar },
-    gameNum: 1,
+    firstPlayerId: '',
+    diceRoll: null,
+    gameNum: 0,
     maxGames: EC_TOTAL_GAMES,
     exchange: 1,
     maxExchanges: EC_MAX_EXCHANGES,
@@ -106,16 +143,17 @@ function startECard() {
     emperorPlayed: null,
     slavePlayed: null,
     firstSubmittedRole: null,
-    phase: 'betting',
+    phase: 'dice-roll',
     score: { p1: 0, p2: 0 },
     selectedCard: null,
     _lastResult: null
   };
 
-  ecPrepareGame(1);
   state.ecard = ecState;
-  broadcastECardState();
   showScreen('ecardGame');
+  broadcastECardState();
+  // host가 주사위 굴림
+  if (state.isHost) ecRollStartingDice();
 }
 
 function ecardGetMyRole(view) {
@@ -165,6 +203,9 @@ function broadcastECardState() {
       emperorPlayerId: ec.emperorPlayerId,
       slavePlayerId: ec.slavePlayerId,
       firstSubmittedRole: ec.firstSubmittedRole,
+      firstPlayerId: ec.firstPlayerId,
+      myDice:  ec.diceRoll ? (player.id === ec.player1.id ? ec.diceRoll.p1 : ec.diceRoll.p2) : null,
+      oppDice: ec.diceRoll ? (player.id === ec.player1.id ? ec.diceRoll.p2 : ec.diceRoll.p1) : null,
       _lastResult: ec._lastResult
     };
 
@@ -412,6 +453,55 @@ function renderECardView(view) {
   actionButtons.style.display = 'none';
   waiting.style.display    = 'none';
 
+  if (view.phase === 'dice-roll') {
+    var diceEl = document.getElementById('ecardDiceArea');
+    if (diceEl) {
+      diceEl.style.display = 'flex';
+      var hasResult = view.myDice !== null;
+      var diceMe  = document.getElementById('ecardDiceMe');
+      var diceOpp = document.getElementById('ecardDiceOpp');
+      var diceMsg = document.getElementById('ecardDiceResultMsg');
+
+      if (!hasResult) {
+        // 굴리는 중 — 슬롯처럼 랜덤 숫자 빠르게 교체
+        diceMe.textContent  = '?';
+        diceOpp.textContent = '?';
+        diceMe.className  = 'ecard-dice-face ec-dice-rolling';
+        diceOpp.className = 'ecard-dice-face ec-dice-rolling';
+        diceMsg.textContent = '주사위 굴리는 중...';
+        diceMsg.className = 'ecard-dice-result-msg';
+        if (!window._ecDiceSpinInterval) {
+          window._ecDiceSpinInterval = setInterval(function() {
+            if (diceMe)  diceMe.textContent  = Math.floor(Math.random() * 6) + 1;
+            if (diceOpp) diceOpp.textContent = Math.floor(Math.random() * 6) + 1;
+          }, 80);
+        }
+      } else {
+        // 결과 나옴 — 스핀 멈추고 착지 애니메이션
+        if (window._ecDiceSpinInterval) {
+          clearInterval(window._ecDiceSpinInterval);
+          window._ecDiceSpinInterval = null;
+        }
+        diceMe.textContent  = String(view.myDice);
+        diceOpp.textContent = String(view.oppDice);
+        var iWin = view.myDice > view.oppDice;
+        diceMe.className  = 'ecard-dice-face ec-dice-landed ' + (iWin ? 'ec-dice-winner' : 'ec-dice-loser');
+        diceOpp.className = 'ecard-dice-face ec-dice-landed ' + (iWin ? 'ec-dice-loser'  : 'ec-dice-winner');
+        var firstIsMe = view.firstPlayerId === view.myId;
+        diceMsg.textContent = firstIsMe ? '내가 선공 — 황제로 시작!' : view.oppName + '이 선공 — 노예로 시작';
+        diceMsg.className = 'ecard-dice-result-msg' + (firstIsMe ? ' ec-dice-msg-win' : '');
+      }
+    }
+    return;
+  }
+  // dice-roll 페이즈 벗어나면 스핀 정리
+  if (window._ecDiceSpinInterval) {
+    clearInterval(window._ecDiceSpinInterval);
+    window._ecDiceSpinInterval = null;
+  }
+  var diceElHide = document.getElementById('ecardDiceArea');
+  if (diceElHide) diceElHide.style.display = 'none';
+
   if (view.phase === 'betting') {
     if (view.betSetterId === state.myId) {
       betArea.style.display = 'block';
@@ -419,6 +509,12 @@ function renderECardView(view) {
       var betAmount = document.getElementById('ecardBetAmount');
       if (slider)    slider.value = String(ecClampBet(view.currentBet));
       if (betAmount) betAmount.textContent = String(ecClampBet(view.currentBet));
+      var betRoleHint = document.getElementById('ecardBetRoleHint');
+      if (betRoleHint) {
+        betRoleHint.textContent = view.myRole === 'emperor'
+          ? '황제 플레이 · 내 리스크 = 베팅 × ' + EC_SLAVE_MULTIPLIER
+          : '노예 플레이 · 내 리스크 = 베팅 (이기면 × ' + EC_SLAVE_MULTIPLIER + ')';
+      }
     } else {
       waiting.style.display = 'flex';
       waitingText.textContent = '상대가 배팅 금액을 설정 중...';
@@ -583,14 +679,20 @@ function ecApplyGameWin(winnerRole, reasonText) {
   if (!ec) return;
 
   var winnerId = winnerRole === 'emperor' ? ec.emperorPlayerId : ec.slavePlayerId;
-  var winner = ecGetPlayerById(winnerId);
-  var scoreKey = ecGetScoreKeyById(winnerId);
-  var gain = ecClampBet(ec.currentBet);
-  ec.score[scoreKey] += gain;
+  var loserId  = winnerRole === 'emperor' ? ec.slavePlayerId  : ec.emperorPlayerId;
+  var winner   = ecGetPlayerById(winnerId);
+  var baseBet  = ecClampBet(ec.currentBet);
+  // 노예 승리: 5× 획득 / 황제 승리: 1× 획득 (노예 리스크 = 1×, 황제 리스크 = 5×)
+  var gain = winnerRole === 'slave' ? baseBet * EC_SLAVE_MULTIPLIER : baseBet;
+  var loss = winnerRole === 'slave' ? baseBet * EC_SLAVE_MULTIPLIER : baseBet;
+
+  ec.score[ecGetScoreKeyById(winnerId)] += gain;
+  ec.score[ecGetScoreKeyById(loserId)]  -= loss;
 
   var myWin = winnerId === state.myId;
   ec._lastResult = {
-    message: (winner ? winner.name : '플레이어') + ' 승리! +' + gain + 'P (' + reasonText + ')',
+    message: (winner ? winner.name : '플레이어') + ' 승리! ' +
+      (myWin ? '+' : '-') + gain + 'P (' + reasonText + ')',
     myWin: myWin
   };
   ec.phase = 'game-result';

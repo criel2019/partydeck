@@ -416,7 +416,6 @@
   transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.17, 0.67, 0.55, 1.5);
   text-shadow: 0 2px 20px rgba(0,0,0,0.6);
   flex-shrink: 0;
-  min-height: 0;
   min-height: 70px;
 }
 .ecard-reveal-result.ec-result-visible {
@@ -426,6 +425,274 @@
 .ecard-reveal-result.ec-result-win  { color: #ffd700; }
 .ecard-reveal-result.ec-result-lose { color: #ff4444; }
 .ecard-reveal-result.ec-result-draw { color: #aaa; }
+
+/* ===== DICE ROLL AREA ===== */
+.ecard-dice-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+}
+
+.ecard-dice-row {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.ecard-dice-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.ecard-dice-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(200, 190, 160, 0.6);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* 주사위 면 — 슬롯 스타일 */
+.ecard-dice-face {
+  width: min(22vw, 96px);
+  height: min(22vw, 96px);
+  background: linear-gradient(145deg, #fce94f 0%, #d4a520 45%, #b8860b 100%);
+  border-radius: 18px;
+  border: 3px solid #8b6914;
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.65),
+    0 0 0 1px rgba(255,215,0,0.15),
+    inset 0 2px 0 rgba(255,255,255,0.35),
+    inset 0 -2px 0 rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: min(11vw, 50px);
+  color: #3a2210;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+  overflow: hidden;
+  position: relative;
+}
+
+/* 굴리는 중 — 숫자 슬롯처럼 빠르게 교체 */
+.ecard-dice-face.ec-dice-rolling {
+  animation: ecDiceShake 0.1s ease-in-out infinite;
+}
+
+.ecard-dice-face.ec-dice-rolling::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.18) 0%,
+    transparent 40%,
+    transparent 60%,
+    rgba(0,0,0,0.12) 100%
+  );
+  pointer-events: none;
+}
+
+/* 결과 나왔을 때 */
+.ecard-dice-face.ec-dice-landed {
+  animation: ecDiceLand 0.45s cubic-bezier(0.2, 0.8, 0.3, 1.15) both;
+}
+
+/* 이긴 쪽 강조 */
+.ecard-dice-face.ec-dice-winner {
+  border-color: #ffd700;
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.65),
+    0 0 0 3px rgba(255,215,0,0.6),
+    0 0 30px rgba(255,215,0,0.4),
+    inset 0 2px 0 rgba(255,255,255,0.35);
+  animation: ecDiceWinPulse 1.2s ease-in-out infinite;
+}
+
+.ecard-dice-face.ec-dice-loser {
+  opacity: 0.45;
+  filter: grayscale(0.5);
+}
+
+@keyframes ecDiceShake {
+  0%   { transform: translate(0, 0)    rotate(0deg); }
+  25%  { transform: translate(-2px, 1px) rotate(-3deg); }
+  75%  { transform: translate(2px, -1px) rotate(3deg); }
+  100% { transform: translate(0, 0)    rotate(0deg); }
+}
+
+@keyframes ecDiceLand {
+  0%   { transform: scale(0.6) rotate(-12deg); opacity: 0.4; }
+  60%  { transform: scale(1.15) rotate(2deg);  opacity: 1; }
+  80%  { transform: scale(0.95) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes ecDiceWinPulse {
+  0%, 100% { box-shadow: 0 8px 24px rgba(0,0,0,0.65), 0 0 0 3px rgba(255,215,0,0.6), 0 0 20px rgba(255,215,0,0.3), inset 0 2px 0 rgba(255,255,255,0.35); }
+  50%       { box-shadow: 0 8px 24px rgba(0,0,0,0.65), 0 0 0 3px rgba(255,215,0,0.9), 0 0 40px rgba(255,215,0,0.6), inset 0 2px 0 rgba(255,255,255,0.35); }
+}
+
+.ecard-dice-vs {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: rgba(200, 190, 160, 0.35);
+  letter-spacing: 0.05em;
+  margin-top: 20px;
+}
+
+.ecard-dice-result-msg {
+  font-size: 15px;
+  font-weight: 700;
+  color: #aaa;
+  text-align: center;
+  letter-spacing: 0.04em;
+  min-height: 22px;
+  transition: color 0.3s ease, transform 0.3s ease;
+  padding: 0 20px;
+}
+
+.ecard-dice-result-msg.ec-dice-msg-win {
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255,215,0,0.5);
+  transform: scale(1.05);
+}
+
+/* ===== BET ROLE HINT ===== */
+.ecard-bet-role-hint {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(200, 190, 160, 0.55);
+  margin-bottom: 8px;
+  margin-top: -4px;
+}
+
+/* ===== BETTING AREA ===== */
+.ecard-bet-area,
+.ecard-bet-response {
+  padding: 10px 12px;
+  margin: 4px 10px;
+  background: linear-gradient(180deg, #4a3220 0%, #2e1e10 100%);
+  border-radius: 10px;
+  border: 1.5px solid #8b6914;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 3px 10px rgba(0,0,0,0.5);
+  flex-shrink: 0;
+}
+
+.bet-label {
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #e8dcc8;
+  margin-bottom: 10px;
+}
+
+.bet-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bet-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #1a3a1a 0%, #0d260d 100%);
+  border: 1px solid rgba(201,168,76,0.3);
+  outline: none;
+}
+
+.bet-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fce94f, #d4a520, #b8860b);
+  cursor: pointer;
+  border: 2px solid #8b6914;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 8px rgba(255,215,0,0.3);
+}
+
+.bet-amount {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  color: #ffd700;
+  min-width: 54px;
+  text-align: right;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
+}
+
+.bet-proposal {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #e8dcc8;
+}
+
+.bet-proposal span {
+  color: #ffd700;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 17px;
+}
+
+.bet-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.ecard-action-buttons {
+  display: flex;
+  gap: 8px;
+  padding: 6px 10px 10px;
+  flex-shrink: 0;
+}
+
+.ecard-action-buttons .btn {
+  background: linear-gradient(180deg, #3a6a3a 0%, #1a4a1a 100%);
+  border: 1.5px solid #4a8a4a;
+  color: #d4ecd4;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 3px 6px rgba(0,0,0,0.4);
+  min-height: 44px;
+  flex: 1;
+}
+
+.ecard-action-buttons .btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.ecard-action-buttons .btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===== WAITING ===== */
+.ecard-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  margin: 4px 10px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 10px;
+  border: 1px solid rgba(201,168,76,0.12);
+  flex-shrink: 0;
+  min-height: 48px;
+}
 
 /* ===== CARD BASE ===== */
 .ecard-card {
@@ -587,126 +854,6 @@
   transform: none !important;
 }
 
-/* ===== BETTING AREA ===== */
-.ecard-bet-area,
-.ecard-bet-response {
-  padding: 10px 12px;
-  margin: 4px 10px;
-  background: linear-gradient(180deg, #4a3220 0%, #2e1e10 100%);
-  border-radius: 10px;
-  border: 1.5px solid #8b6914;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 3px 10px rgba(0,0,0,0.5);
-  flex-shrink: 0;
-}
-
-.bet-label {
-  text-align: center;
-  font-weight: 700;
-  font-size: 13px;
-  color: #e8dcc8;
-  margin-bottom: 10px;
-}
-
-.bet-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.bet-slider {
-  flex: 1;
-  -webkit-appearance: none;
-  height: 8px;
-  border-radius: 4px;
-  background: linear-gradient(180deg, #1a3a1a 0%, #0d260d 100%);
-  border: 1px solid rgba(201,168,76,0.3);
-  outline: none;
-}
-
-.bet-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #fce94f, #d4a520, #b8860b);
-  cursor: pointer;
-  border: 2px solid #8b6914;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 8px rgba(255,215,0,0.3);
-}
-
-.bet-amount {
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: 20px;
-  color: #ffd700;
-  min-width: 54px;
-  text-align: right;
-  text-shadow: 0 0 8px rgba(255,215,0,0.4);
-}
-
-.bet-proposal {
-  text-align: center;
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 10px;
-  color: #e8dcc8;
-}
-
-.bet-proposal span {
-  color: #ffd700;
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: 17px;
-}
-
-.bet-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-/* ===== ACTION BUTTONS ===== */
-.ecard-action-buttons {
-  display: flex;
-  gap: 8px;
-  padding: 6px 10px 10px;
-  flex-shrink: 0;
-}
-
-.ecard-action-buttons .btn {
-  background: linear-gradient(180deg, #3a6a3a 0%, #1a4a1a 100%);
-  border: 1.5px solid #4a8a4a;
-  color: #d4ecd4;
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: 14px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 3px 6px rgba(0,0,0,0.4);
-  min-height: 44px;
-  flex: 1;
-}
-
-.ecard-action-buttons .btn:active {
-  transform: translateY(1px);
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-}
-
-.ecard-action-buttons .btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* ===== WAITING ===== */
-.ecard-waiting {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  margin: 4px 10px;
-  background: rgba(0,0,0,0.25);
-  border-radius: 10px;
-  border: 1px solid rgba(201,168,76,0.12);
-  flex-shrink: 0;
-  min-height: 48px;
-}
-
 /* ===== REVEAL ANIMATION ===== */
 .ecard-card-reveal-anim {
   animation: ecard-flip-in 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
@@ -753,6 +900,7 @@
 
   /* 왼쪽 컬럼: 상태·플레이·배팅·버튼 */
   .ecard-result-text,
+  .ecard-dice-area,
   .ecard-play-area,
   .ecard-submitted-display,
   .ecard-reveal-result,
@@ -786,6 +934,16 @@
   .ecard-card-back::before { font-size: 30px; }
   .ecard-card.selected { transform: translateY(-12px) scale(1.06); }
   .ecard-card:hover    { transform: translateY(-8px) scale(1.04); }
+
+  /* 주사위 가로 모드 소형화 */
+  .ecard-dice-area { gap: 10px; padding: 10px; }
+  .ecard-dice-face {
+    width: min(14vw, 64px);
+    height: min(14vw, 64px);
+    font-size: min(7vw, 32px);
+    border-radius: 12px;
+  }
+  .ecard-dice-result-msg { font-size: 12px; }
 
   /* 제출 대기 카드 · 뒤집기 카드 소형화 */
   .ecard-submitted-card-big {

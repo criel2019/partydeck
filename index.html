@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="css/games/lottery.css?v=20260305b">
 <link rel="stylesheet" href="css/games/updown.css?v=20260305b">
 <link rel="stylesheet" href="css/games/yahtzee.css?v=20260305b">
-<link rel="stylesheet" href="css/games/emperor.css?v=20260306l">
+<link rel="stylesheet" href="css/games/emperor.css?v=20260307a">
 <link rel="stylesheet" href="css/games/sutda.css?v=20260305b">
 <link rel="stylesheet" href="css/games/fortress.css?v=20260305b">
 <link rel="stylesheet" href="css/games/bombshot.css?v=20260305b">
@@ -1008,6 +1008,22 @@
     </div>
   </div>
 
+  <!-- 주사위 굴리기 (게임 시작 시) -->
+  <div class="ecard-dice-area" id="ecardDiceArea" style="display:none;">
+    <div class="ecard-dice-row">
+      <div class="ecard-dice-slot">
+        <div class="ecard-dice-label">나</div>
+        <div class="ecard-dice-face" id="ecardDiceMe">?</div>
+      </div>
+      <div class="ecard-dice-vs">VS</div>
+      <div class="ecard-dice-slot">
+        <div class="ecard-dice-label" id="ecardDiceOppLabel">상대</div>
+        <div class="ecard-dice-face" id="ecardDiceOpp">?</div>
+      </div>
+    </div>
+    <div class="ecard-dice-result-msg" id="ecardDiceResultMsg">주사위 굴리는 중...</div>
+  </div>
+
   <!-- Result / Status Text -->
   <div class="ecard-result-text" id="ecardResultText"></div>
 
@@ -1055,7 +1071,8 @@
 
   <!-- Betting Area -->
   <div class="ecard-bet-area" id="ecardBetArea" style="display:none;">
-    <div class="bet-label">배팅 금액 제안</div>
+    <div class="bet-label">배팅 금액 설정</div>
+    <div class="ecard-bet-role-hint" id="ecardBetRoleHint"></div>
     <div class="bet-controls">
       <input type="range" class="bet-slider" id="ecardBetSlider" min="10" max="500" value="100" step="10">
       <div class="bet-amount" id="ecardBetAmount">100</div>
@@ -2516,7 +2533,7 @@
 <script src="js/games/lottery.js?v=20260305b"></script>
 <script src="js/games/updown.js?v=20260305c"></script>
 <script src="js/games/yahtzee.js?v=20260305b"></script>
-<script src="js/games/emperor.js?v=20260306k"></script>
+<script src="js/games/emperor.js?v=20260307a"></script>
 <script src="js/games/sutda.js?v=20260306c"></script>
 <script src="js/games/fortress.js?v=20260305b"></script>
 <script src="js/games/bombshot.js?v=20260306b"></script>
