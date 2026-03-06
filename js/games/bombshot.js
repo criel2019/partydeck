@@ -283,7 +283,7 @@ function buildBSView(forPlayerId) {
     rouletteSlotIndex: bs.rouletteSlotIndex,
     rouletteResult: bs.rouletteResult,
     rouletteResultLabel: bs.rouletteResultLabel,
-    bombshotMixes: bs.bombshotMixes || 0
+    bombshotMixes: 0
   };
 }
 
@@ -495,14 +495,6 @@ function bsResumeAfterRoulette() {
   bs.liarCallerId = null;
   bs.liarCallerName = null;
   bs.penaltyPlayer = null;
-  // 폭탄주 누적 카운트: 당첨 시 초기화, 세이프/벌칙 시 증가
-  if (bs.rouletteResult === 'bombshot') {
-    bs.bombshotMixes = 0;
-  } else {
-    if (!bs.bombshotMixes) bs.bombshotMixes = 0;
-    bs.bombshotMixes++;
-  }
-
   // 룰렛 대상자의 인덱스를 기억 (턴 순서 보정용)
   var targetIdx = bs.rouletteTarget ? bs.players.findIndex(function(p) { return p.id === bs.rouletteTarget.id; }) : 0;
 
@@ -546,7 +538,7 @@ function bsRestartRound(startIdx) {
   bs.turnIdx = typeof startIdx === 'number' ? startIdx : 0;
   bs._submittedThisTurn = false;
 
-  showToast('🔄 새 라운드! 폭탄주 ' + (bs.bombshotMixes || 0) + '잔 누적 중...');
+  showToast('🔄 새 라운드! 지정 음료가 바뀌었습니다.');
 }
 
 // ===== HOST: ADVANCE TURN =====
@@ -684,9 +676,6 @@ function renderBSView(view) {
     document.getElementById('bsDrinkName').textContent = '지정: ' + (info ? info.name : '');
   }
 
-  // Glass count — show cumulative
-  var gc = document.getElementById('bsGlassCount');
-  if (gc) gc.textContent = '누적: ' + view.glassPileCount + '장';
 
   // -- Opponents --
   var oppContainer = document.getElementById('bsOpponents');
@@ -834,8 +823,7 @@ function renderBSView(view) {
   // -- Roulette info (static composition) --
   var myRouletteEl = document.getElementById('bsMyRoulette');
   if (myRouletteEl) {
-    var mixesText = view.bombshotMixes > 0 ? ' · 🍺 누적 ' + view.bombshotMixes + '잔' : '';
-    myRouletteEl.innerHTML = '<div style="font-size:11px;color:var(--text-dim);opacity:0.7;">🎰 룰렛: 폭탄주 2 / 벌칙 2 / 세이프 2' + mixesText + '</div>';
+    myRouletteEl.innerHTML = '<div style="font-size:11px;color:var(--text-dim);opacity:0.7;">🎰 룰렛: 폭탄주 2 / 벌칙 2 / 세이프 2</div>';
   }
 
   // -- Action buttons --
@@ -1029,8 +1017,7 @@ function handleBSResult(msg) {
   var titleEl = document.getElementById('bsGameOverTitle');
   if (titleEl) {
     if (msg.reason === 'bombshot' && msg.bombshotPlayer) {
-      var mixes = msg.bombshotMixes || 1;
-      titleEl.textContent = '🍺💥 ' + msg.bombshotPlayer.name + ' 폭탄주 당첨!' + (mixes > 1 ? ' (' + mixes + '잔 누적!)' : '');
+      titleEl.textContent = '🍺💥 ' + msg.bombshotPlayer.name + ' 폭탄주 당첨!';
     } else {
       titleEl.textContent = '🍺💣 폭탄주 게임 종료!';
     }
