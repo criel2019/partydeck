@@ -680,6 +680,65 @@
   }
 }
 
+/* -- Emperor-Flip: face-down card with tap hint -- */
+.ecard-card-flip-pending {
+  cursor: pointer !important;
+  animation: ecard-flip-pulse 1.4s ease-in-out infinite;
+  border-color: #ffd700 !important;
+  box-shadow:
+    0 0 0 3px rgba(255, 215, 0, 0.4),
+    0 8px 24px rgba(0,0,0,0.6),
+    0 0 30px rgba(255,215,0,0.3) !important;
+}
+
+@keyframes ecard-flip-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(255,215,0,0.3), 0 8px 24px rgba(0,0,0,0.6); }
+  50% { box-shadow: 0 0 0 6px rgba(255,215,0,0.5), 0 8px 24px rgba(0,0,0,0.6), 0 0 40px rgba(255,215,0,0.4); }
+}
+
+.ecard-flip-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 13px;
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255,215,0,0.8), 0 1px 3px rgba(0,0,0,0.8);
+  text-align: center;
+  line-height: 1.3;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* -- Reveal animation for both cards -- */
+.ecard-card-reveal-anim {
+  animation: ecard-card-flip-in 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes ecard-card-flip-in {
+  0% { transform: rotateY(90deg) scale(0.8); opacity: 0; }
+  60% { transform: rotateY(-8deg) scale(1.05); opacity: 1; }
+  100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+}
+
+/* -- Both-play phase: pulsing cards for dramatic final -- */
+.ecard-both-play-hint {
+  text-align: center;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 16px;
+  color: #ffd700;
+  text-shadow: 0 0 12px rgba(255,215,0,0.6);
+  padding: 4px 12px;
+  animation: ecard-both-pulse 1s ease-in-out infinite;
+}
+
+@keyframes ecard-both-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 @media (max-width: 340px) {
   .ecard-card {
     width: 60px;

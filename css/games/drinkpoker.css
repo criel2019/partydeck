@@ -1223,6 +1223,36 @@
   color: var(--text-dim, #aaa);
 }
 
+/* ===== OFFLINE PRESENTATION STYLES ===== */
+
+/* 상대에게 제시할 때 큰 뒷면 카드 */
+.dp-card-present {
+  position: relative;
+  overflow: visible;
+  animation: dp-card-present-drop 0.4s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes dp-card-present-drop {
+  0% { transform: translateY(-30px) scale(0.9) rotateX(20deg); opacity: 0; }
+  60% { transform: translateY(4px) scale(1.04); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* respond 페이즈: 받는 쪽에서 카드가 도착하는 느낌 */
+.dp-center-card .dp-card-drawn.dp-card-present {
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.65),
+    0 0 30px rgba(0, 229, 255, 0.15),
+    0 0 60px rgba(0, 229, 255, 0.08);
+  animation: dp-card-arrive 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes dp-card-arrive {
+  0% { transform: scale(0.7) translateY(-20px); opacity: 0; box-shadow: none; }
+  70% { transform: scale(1.06) translateY(4px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
 /* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 480px) {
   .dp-header-title {
