@@ -737,80 +737,84 @@
 
 /* ===== LANDSCAPE MODE ===== */
 @media (orientation: landscape) and (max-height: 500px) {
-  #ecardGame {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-content: flex-start;
+  /* Grid 레이아웃: 왼쪽 컨트롤 / 오른쪽 카드 */
+  #ecardGame.active {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr auto;
   }
 
-  /* Header spans full width */
+  /* 헤더: 전체 너비 */
   .ecard-compact-header {
-    width: 100%;
+    grid-column: 1 / 3;
     min-height: 38px;
     padding: 3px 8px;
-    flex-shrink: 0;
   }
 
-  /* Left column: status + bet/wait/action */
+  /* 왼쪽 컬럼: 상태·플레이·배팅·버튼 */
   .ecard-result-text,
+  .ecard-play-area,
+  .ecard-submitted-display,
+  .ecard-reveal-result,
   .ecard-bet-area,
   .ecard-bet-response,
   .ecard-action-buttons,
   .ecard-waiting {
-    width: 50%;
+    grid-column: 1;
     box-sizing: border-box;
+    width: 100%;
   }
 
-  /* Right column: cards */
+  /* 오른쪽 컬럼: 내 카드 (헤더 아래 전체 스팬) */
   .ecard-my-cards-area {
-    width: 50%;
+    grid-column: 2;
+    grid-row: 2 / 4;
     box-sizing: border-box;
     padding: 4px 6px;
     justify-content: center;
   }
 
-  /* Smaller cards in landscape */
+  /* 카드 크기 축소 */
   .ecard-card {
     width: 58px;
     height: 84px;
     margin: 0 -8px;
     border-width: 2px;
   }
-
   .ecard-card-icon { font-size: 26px; }
   .ecard-card-name { font-size: 10px; }
   .ecard-card-back::before { font-size: 30px; }
   .ecard-card.selected { transform: translateY(-12px) scale(1.06); }
-  .ecard-card:hover { transform: translateY(-8px) scale(1.04); }
+  .ecard-card:hover    { transform: translateY(-8px) scale(1.04); }
 
-  .ecard-result-text {
-    font-size: 13px;
-    padding: 6px 10px;
-    min-height: 32px;
+  /* 제출 대기 카드 · 뒤집기 카드 소형화 */
+  .ecard-submitted-card-big {
+    width: min(22vw, 120px);
+    height: min(31vw, 168px);
+    font-size: min(9vw, 50px);
+    border-radius: 12px;
+  }
+  .ec-flip-card {
+    width: min(17vw, 96px);
+    height: min(24vw, 134px);
+  }
+  .ecard-reveal-result {
+    font-size: min(8vw, 36px);
+    min-height: 0;
   }
 
-
-
-  .ecard-card-battle {
-    width: 54px !important;
-    height: 78px !important;
-  }
-
-  .ecard-action-buttons .btn {
-    min-height: 38px;
-    font-size: 12px;
-  }
-
-  .ecard-action-buttons { padding: 4px 8px 6px; }
-  .ecard-bet-area, .ecard-bet-response { margin: 2px 8px; padding: 8px 10px; }
-  .ecard-waiting { margin: 2px 8px; padding: 6px 10px; min-height: 38px; }
-  .my-cards-label { font-size: 10px; }
-  .ecard-cards-hand { padding: 4px 4px 10px; }
+  .ecard-result-text      { font-size: 13px; padding: 6px 10px; min-height: 28px; }
+  .ecard-action-buttons .btn { min-height: 38px; font-size: 12px; }
+  .ecard-action-buttons   { padding: 4px 8px 6px; }
+  .ecard-bet-area,
+  .ecard-bet-response     { margin: 2px 8px; padding: 8px 10px; }
+  .ecard-waiting          { margin: 2px 8px; padding: 6px 10px; min-height: 38px; }
+  .my-cards-label         { font-size: 10px; }
+  .ecard-cards-hand       { padding: 4px 4px 10px; }
 }
 
 @media (orientation: landscape) and (max-height: 380px) {
-  .ecard-card { width: 50px; height: 72px; margin: 0 -6px; }
+  .ecard-card      { width: 50px; height: 72px; margin: 0 -6px; }
   .ecard-card-icon { font-size: 22px; }
   .ecard-card-name { font-size: 9px; }
-  .ecard-card-battle { width: 46px !important; height: 66px !important; }
 }
