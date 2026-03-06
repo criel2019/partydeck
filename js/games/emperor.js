@@ -134,17 +134,11 @@ function broadcastECardState() {
     var myCards = myRole === 'emperor' ? ec.emperorCards : ec.slaveCards;
     var oppCards = myRole === 'emperor' ? ec.slaveCards : ec.emperorCards;
     var myPlayed = myRole === 'emperor' ? ec.emperorPlayed : ec.slavePlayed;
-    // 공개 페이즈 이전에는 상대 제출 카드 정보 숨김
-    // 단, 노예가 선공인 경우(짝수 교환) 노예 카드는 앞면 제출이므로 황제에게 공개
+    // 공개 페이즈에만 상대 카드 공개 (양쪽 모두 항상 뒷면 제출)
     var revealPhases = ['reveal', 'result', 'game-result'];
-    var oppPlayed;
-    if (revealPhases.indexOf(ec.phase) !== -1) {
-      oppPlayed = myRole === 'emperor' ? ec.slavePlayed : ec.emperorPlayed;
-    } else if (ec.phase === 'emperor-play' && ec.firstSubmittedRole === 'slave' && myRole === 'emperor') {
-      oppPlayed = ec.slavePlayed; // 노예 선공 카드는 앞면이므로 황제가 볼 수 있음
-    } else {
-      oppPlayed = null;
-    }
+    var oppPlayed = revealPhases.indexOf(ec.phase) !== -1
+      ? (myRole === 'emperor' ? ec.slavePlayed : ec.emperorPlayed)
+      : null;
 
     var view = {
       type: 'ec-state',
@@ -210,23 +204,84 @@ function ecardCanPlay(view) {
   return false;
 }
 
-function ecardRenderBattle(view) {
-  var battleArea = document.getElementById('ecardBattleArea');
-  if (!battleArea) return;
+// ===== Reveal Animation =====
+var _ecRevealActive = false;
 
-  var battleOpp = document.getElementById('ecardBattleOpp');
-  var battleMy = document.getElementById('ecardBattleMy');
-  if (!battleOpp || !battleMy) return;
-
-  // slave-play 중에는 숨김 — 카드 선택 방해하지 않도록
-  if (view.phase === 'reveal' && view.myPlayed && view.oppPlayed) {
-    battleArea.style.display = 'flex';
-    battleOpp.innerHTML = ecardCardHTML(view.oppPlayed, false, 'ecard-card-battle ecard-card-reveal-anim');
-    battleMy.innerHTML = ecardCardHTML(view.myPlayed, false, 'ecard-card-battle ecard-card-reveal-anim');
-    return;
+function ecardExchangeResult(view) {
+  var empCard = view.myRole === 'emperor' ? view.myPlayed : view.oppPlayed;
+  var slvCard = view.myRole === 'slave' ? view.myPlayed : view.oppPlayed;
+  if (empCard === 'emperor' && slvCard === 'slave') {
+    return view.myRole === 'slave' ? 'win' : 'lose';
   }
+  return 'draw';
+}
 
-  battleArea.style.display = 'none';
+function ecardFillFlipFront(el, cardType) {
+  if (!el) return;
+  el.className = 'ec-flip-front ec-front-' + (cardType || 'citizen');
+  el.innerHTML = '<div style="font-size:26px">' + ecardCardIcon(cardType) + '</div>' +
+    '<div style="font-size:11px;font-weight:700">' + ecardCardName(cardType) + '</div>';
+}
+
+function ecardShowReveal(view) {
+  var overlay = document.getElementById('ecardRevealOverlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+
+  var oppInner = document.getElementById('ecardRevealOppInner');
+  var myInner  = document.getElementById('ecardRevealMyInner');
+  var oppFront = document.getElementById('ecardRevealOppFront');
+  var myFront  = document.getElementById('ecardRevealMyFront');
+  var resultEl = document.getElementById('ecardRevealResult');
+  var oppSlot  = document.getElementById('ecardRevealOppSlot');
+  var mySlot   = document.getElementById('ecardRevealMySlot');
+
+  // Reset animation classes
+  oppInner.classList.remove('flipped');
+  myInner.classList.remove('flipped');
+  oppSlot.classList.remove('ec-exit-up');
+  mySlot.classList.remove('ec-exit-down');
+  resultEl.className = 'ecard-reveal-result';
+  resultEl.textContent = '';
+
+  ecardFillFlipFront(oppFront, view.oppPlayed);
+  ecardFillFlipFront(myFront, view.myPlayed);
+
+  var result = ecardExchangeResult(view);
+
+  // 700ms 후 양쪽 동시 뒤집기
+  setTimeout(function() {
+    if (!_ecRevealActive) return;
+    oppInner.classList.add('flipped');
+    myInner.classList.add('flipped');
+
+    // 뒤집기 완료(600ms) 후 결과 뱃지
+    setTimeout(function() {
+      if (!_ecRevealActive) return;
+      var labels = { win: 'WIN', lose: 'LOSE', draw: 'DRAW' };
+      resultEl.textContent = labels[result] || result;
+      resultEl.className = 'ecard-reveal-result ec-result-' + result;
+      void resultEl.offsetHeight;
+      resultEl.classList.add('ec-result-visible');
+
+      if (result === 'draw') {
+        // 1000ms DRAW 표시 후 카드 퇴장
+        setTimeout(function() {
+          if (!_ecRevealActive) return;
+          oppSlot.classList.add('ec-exit-up');
+          mySlot.classList.add('ec-exit-down');
+          setTimeout(function() {
+            if (_ecRevealActive) {
+              _ecRevealActive = false;
+              overlay.style.display = 'none';
+              ecState.selectedCard = null;
+            }
+          }, 380);
+        }, 1000);
+      }
+      // win/lose: host가 game-result 전환하면 renderECardView에서 오버레이 정리
+    }, 600);
+  }, 700);
 }
 
 function renderECardView(view) {
@@ -257,25 +312,50 @@ function renderECardView(view) {
   document.getElementById('ecardOppName').textContent = view.oppName;
   document.getElementById('ecardOppCardsCount').textContent = String(view.oppCardsCount);
 
+  // ===== 공개 오버레이 관리 =====
+  var keepRevealPhases = ['reveal', 'result', 'game-result'];
+  if (view.phase === 'reveal' && view.myPlayed && view.oppPlayed) {
+    if (!_ecRevealActive) {
+      _ecRevealActive = true;
+      ecardShowReveal(view);
+    }
+  } else if (_ecRevealActive && keepRevealPhases.indexOf(view.phase) === -1) {
+    _ecRevealActive = false;
+    var _ov = document.getElementById('ecardRevealOverlay');
+    if (_ov) _ov.style.display = 'none';
+  }
+
+  // ===== 플레이 상태 분석 =====
+  var isPlayPhase = (view.phase === 'emperor-play' || view.phase === 'slave-play');
+  var canPlay = ecardCanPlay(view);
+  // 내가 선공으로 제출 완료, 상대 대기 중
+  var isWaitingFirst = isPlayPhase && !canPlay && !!view.myPlayed;
+  // 상대가 선공 제출 완료, 내 차례
+  var isOppSubmittedFirst = isPlayPhase && canPlay && view.firstSubmittedRole !== null;
+
+  // ===== 영역 표시 전환 =====
+  var myCardsAreaEl = document.getElementById('ecardMyCardsArea');
+  var oppSubmittedAreaEl = document.getElementById('ecardOppSubmittedArea');
+  var submittedDisplayEl = document.getElementById('ecardSubmittedDisplay');
+  if (myCardsAreaEl)      myCardsAreaEl.style.display      = isWaitingFirst ? 'none' : '';
+  if (oppSubmittedAreaEl) oppSubmittedAreaEl.style.display  = isOppSubmittedFirst ? 'flex' : 'none';
+  if (submittedDisplayEl) submittedDisplayEl.style.display  = isWaitingFirst ? 'flex' : 'none';
+
+  // ===== 헤더 상대 제출 카드 표시 =====
   var oppPlayedEl = document.getElementById('ecardOppPlayedCard');
-  if (view.phase === 'slave-play' && view.firstSubmittedRole === 'emperor') {
-    // 황제가 선공으로 뒷면 제출, 노예에게 뒷면으로 표시
+  if ((view.phase === 'reveal' || view.phase === 'result' || view.phase === 'game-result') && view.oppPlayed) {
+    oppPlayedEl.innerHTML = ecardCardHTML(view.oppPlayed, false, 'ecard-card-opp-small');
+  } else if (isOppSubmittedFirst) {
     oppPlayedEl.innerHTML = ecardCardHTML(null, true, 'ecard-card-opp-small');
-  } else if (view.phase === 'emperor-play' && view.firstSubmittedRole === 'slave' && view.myRole === 'emperor' && view.oppPlayed) {
-    // 노예가 선공으로 앞면 제출, 황제에게 앞면으로 표시
-    oppPlayedEl.innerHTML = ecardCardHTML(view.oppPlayed, false, 'ecard-card-opp-small');
-  } else if ((view.phase === 'reveal' || view.phase === 'result' || view.phase === 'game-result') && view.oppPlayed) {
-    oppPlayedEl.innerHTML = ecardCardHTML(view.oppPlayed, false, 'ecard-card-opp-small');
   } else {
     oppPlayedEl.innerHTML = '';
   }
 
+  // ===== 카드 렌더링 =====
   document.getElementById('ecardMyCardsCount').textContent = String((view.myCards || []).length);
   var myCardsEl = document.getElementById('ecardMyCards');
-  var canPlay = ecardCanPlay(view);
   var cards = view.myCards || [];
 
-  // 카드 선택 시 선택한 1장만 표시, 선택 전에는 전체 표시
   if (ecState.selectedCard !== null && ecState.selectedCard < cards.length) {
     var selCard = cards[ecState.selectedCard];
     myCardsEl.innerHTML = '<div class="ecard-card ecard-card-' + selCard + ' selected"' +
@@ -295,19 +375,12 @@ function renderECardView(view) {
     }).join('');
   }
 
-  ecardRenderBattle(view);
-
+  // ===== 상태 텍스트 =====
   var resultTextEl = document.getElementById('ecardResultText');
   if (view.phase === 'betting') {
     var setter = view.betSetterId === state.myId ? '내가' : (view.betSetterId === view.oppId ? view.oppName : '상대');
     resultTextEl.textContent = setter + ' 이번 판 배팅 금액 설정 중';
     resultTextEl.style.color = 'var(--text-dim)';
-  } else if (view.phase === 'slave-play' && view.firstSubmittedRole === 'emperor') {
-    resultTextEl.textContent = '⬛ 황제가 카드를 뒤집어 내려놨습니다';
-    resultTextEl.style.color = 'var(--gold)';
-  } else if (view.phase === 'emperor-play' && view.firstSubmittedRole === 'slave') {
-    resultTextEl.textContent = '🔓 노예가 카드를 앞면으로 냈습니다';
-    resultTextEl.style.color = '#c0c0c0';
   } else if ((view.phase === 'result' || view.phase === 'game-result') && view._lastResult && view._lastResult.message) {
     resultTextEl.textContent = view._lastResult.message;
     resultTextEl.style.color = view._lastResult.myWin ? 'var(--gold)' : 'var(--text-dim)';
@@ -316,24 +389,25 @@ function renderECardView(view) {
     resultTextEl.style.color = 'var(--gold)';
   }
 
+  // ===== 하단 버튼 영역 =====
   var actionButtons = document.getElementById('ecardActionButtons');
-  var waiting = document.getElementById('ecardWaiting');
-  var betArea = document.getElementById('ecardBetArea');
-  var betResponse = document.getElementById('ecardBetResponse');
-  var submitBtn = document.getElementById('ecardSubmitBtn');
-  var waitingText = document.getElementById('ecardWaitingText');
+  var waiting        = document.getElementById('ecardWaiting');
+  var betArea        = document.getElementById('ecardBetArea');
+  var betResponse    = document.getElementById('ecardBetResponse');
+  var submitBtn      = document.getElementById('ecardSubmitBtn');
+  var waitingText    = document.getElementById('ecardWaitingText');
 
-  betArea.style.display = 'none';
+  betArea.style.display    = 'none';
   betResponse.style.display = 'none';
   actionButtons.style.display = 'none';
-  waiting.style.display = 'none';
+  waiting.style.display    = 'none';
 
   if (view.phase === 'betting') {
     if (view.betSetterId === state.myId) {
       betArea.style.display = 'block';
-      var slider = document.getElementById('ecardBetSlider');
+      var slider    = document.getElementById('ecardBetSlider');
       var betAmount = document.getElementById('ecardBetAmount');
-      if (slider) slider.value = String(ecClampBet(view.currentBet));
+      if (slider)    slider.value = String(ecClampBet(view.currentBet));
       if (betAmount) betAmount.textContent = String(ecClampBet(view.currentBet));
     } else {
       waiting.style.display = 'flex';
@@ -343,40 +417,28 @@ function renderECardView(view) {
   }
 
   if (view.phase === 'emperor-play') {
-    var empIsFirst = view.firstSubmittedRole === null; // 황제가 선공
     if (view.myRole === 'emperor') {
       actionButtons.style.display = 'flex';
-      submitBtn.textContent = (empIsFirst ? '선공 ' : '후공 ') + '뒷면으로 제출 (' + view.exchange + '번째)';
+      submitBtn.textContent = '뒷면으로 제출 (' + view.exchange + '/' + view.maxExchanges + ')';
       submitBtn.disabled = ecState.selectedCard === null;
-    } else {
+    } else if (!isWaitingFirst) {
+      // 상대가 아직 내기 전 (기다리는 중)
       waiting.style.display = 'flex';
-      waitingText.textContent = (empIsFirst ? '황제가 선공으로' : '황제가 후공으로') + ' 제출 중... (' + view.exchange + '/' + view.maxExchanges + ')';
+      waitingText.textContent = '황제가 카드를 선택 중...';
     }
     return;
   }
 
   if (view.phase === 'slave-play') {
-    var slvIsFirst = view.firstSubmittedRole === null; // 노예가 선공
     if (view.myRole === 'slave') {
       actionButtons.style.display = 'flex';
-      submitBtn.textContent = (slvIsFirst ? '선공 ' : '후공 ') + '앞면으로 제출 (' + view.exchange + '번째)';
+      submitBtn.textContent = '뒷면으로 제출 (' + view.exchange + '/' + view.maxExchanges + ')';
       submitBtn.disabled = ecState.selectedCard === null;
-    } else {
+    } else if (!isWaitingFirst) {
       waiting.style.display = 'flex';
-      waitingText.textContent = (slvIsFirst ? '노예가 선공으로' : '노예가 후공으로') + ' 제출 중... (' + view.exchange + '/' + view.maxExchanges + ')';
+      waitingText.textContent = '노예가 카드를 선택 중...';
     }
     return;
-  }
-
-  if (view.phase === 'reveal') {
-    waiting.style.display = 'flex';
-    waitingText.textContent = view.exchange + '번째 카드 공개 중...';
-  } else if (view.phase === 'result') {
-    waiting.style.display = 'flex';
-    waitingText.textContent = '다음 제출 준비 중...';
-  } else if (view.phase === 'game-result') {
-    waiting.style.display = 'flex';
-    waitingText.textContent = '이번 판 결과 처리 중...';
   }
 }
 
@@ -474,7 +536,7 @@ function processECardPlay(playerId, cardType, cardIdx) {
       // 황제가 후공 (노예가 이미 냄) — 공개
       ec.phase = 'reveal';
       broadcastECardState();
-      setTimeout(function() { ecResolveExchange(); }, 1200);
+      setTimeout(function() { ecResolveExchange(); }, 2500);
     }
     return;
   }
@@ -496,7 +558,7 @@ function processECardPlay(playerId, cardType, cardIdx) {
       // 노예가 후공 (황제가 이미 냄) — 공개
       ec.phase = 'reveal';
       broadcastECardState();
-      setTimeout(function() { ecResolveExchange(); }, 1200);
+      setTimeout(function() { ecResolveExchange(); }, 2500);
     }
   }
 }

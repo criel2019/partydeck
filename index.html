@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="css/games/lottery.css?v=20260305b">
 <link rel="stylesheet" href="css/games/updown.css?v=20260305b">
 <link rel="stylesheet" href="css/games/yahtzee.css?v=20260305b">
-<link rel="stylesheet" href="css/games/emperor.css?v=20260306f">
+<link rel="stylesheet" href="css/games/emperor.css?v=20260306g">
 <link rel="stylesheet" href="css/games/sutda.css?v=20260305b">
 <link rel="stylesheet" href="css/games/fortress.css?v=20260305b">
 <link rel="stylesheet" href="css/games/bombshot.css?v=20260305b">
@@ -1011,19 +1011,48 @@
   <!-- Result / Status Text -->
   <div class="ecard-result-text" id="ecardResultText"></div>
 
-  <!-- My Cards Area - takes most of the screen -->
-  <div class="ecard-my-cards-area">
+  <!-- 상대방이 선공 제출 후 표시 (상대 뒷면 카드 + 내 패) -->
+  <div class="ecard-opp-submitted-area" id="ecardOppSubmittedArea" style="display:none;">
+    <div class="ecard-opp-submitted-card"></div>
+    <div class="ecard-opp-submitted-msg">상대방이 카드를 제출했습니다</div>
+  </div>
+
+  <!-- My Cards Area -->
+  <div class="ecard-my-cards-area" id="ecardMyCardsArea">
     <div class="my-cards-label">내 카드 (<span id="ecardMyCardsCount">3</span>장)</div>
     <div class="ecard-cards-hand" id="ecardMyCards"></div>
   </div>
 
-  <!-- Battle Overlay (absolute positioned) -->
-  <div class="ecard-battle-overlay" id="ecardBattleArea" style="display:none;">
-    <div class="ecard-battle-inner">
-      <div class="battle-card" id="ecardBattleOpp"></div>
-      <div class="battle-vs">VS</div>
-      <div class="battle-card" id="ecardBattleMy"></div>
+  <!-- 내가 선공 제출 후 대기 표시 -->
+  <div class="ecard-submitted-display" id="ecardSubmittedDisplay" style="display:none;">
+    <div class="ecard-submitted-card-big"></div>
+    <div class="ecard-submitted-msg">제출 완료 · 상대방을 기다리는 중</div>
+    <div class="spinner" style="margin-top:6px;"></div>
+  </div>
+
+  <!-- Reveal Overlay (absolute, full screen) -->
+  <div class="ecard-reveal-overlay" id="ecardRevealOverlay" style="display:none;">
+    <div class="ecard-reveal-cards-row">
+      <div class="ecard-reveal-slot" id="ecardRevealOppSlot">
+        <div class="ecard-reveal-slot-label">상대</div>
+        <div class="ec-flip-card">
+          <div class="ec-flip-inner" id="ecardRevealOppInner">
+            <div class="ec-flip-back"></div>
+            <div class="ec-flip-front" id="ecardRevealOppFront"></div>
+          </div>
+        </div>
+      </div>
+      <div class="ecard-reveal-slot" id="ecardRevealMySlot">
+        <div class="ecard-reveal-slot-label">나</div>
+        <div class="ec-flip-card">
+          <div class="ec-flip-inner" id="ecardRevealMyInner">
+            <div class="ec-flip-back"></div>
+            <div class="ec-flip-front" id="ecardRevealMyFront"></div>
+          </div>
+        </div>
+      </div>
     </div>
+    <div class="ecard-reveal-result" id="ecardRevealResult"></div>
   </div>
 
   <!-- Betting Area -->
@@ -2489,7 +2518,7 @@
 <script src="js/games/lottery.js?v=20260305b"></script>
 <script src="js/games/updown.js?v=20260305c"></script>
 <script src="js/games/yahtzee.js?v=20260305b"></script>
-<script src="js/games/emperor.js?v=20260306e"></script>
+<script src="js/games/emperor.js?v=20260306h"></script>
 <script src="js/games/sutda.js?v=20260306c"></script>
 <script src="js/games/fortress.js?v=20260305b"></script>
 <script src="js/games/bombshot.js?v=20260306b"></script>

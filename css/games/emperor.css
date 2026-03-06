@@ -248,36 +248,209 @@
   min-height: 0;
 }
 
-/* ===== BATTLE OVERLAY ===== */
-.ecard-battle-overlay {
-  display: none;
+/* ===== 상대방 선공 제출 표시 ===== */
+.ecard-opp-submitted-area {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 6px 10px;
+  gap: 6px;
+  padding: 10px 0 4px;
   flex-shrink: 0;
+  animation: ecOppCardIn 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
-.ecard-battle-inner {
+@keyframes ecOppCardIn {
+  from { transform: translateY(-50px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+.ecard-opp-submitted-card {
+  width: 62px;
+  height: 90px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 2px solid var(--card-gold-border);
+  box-shadow: 0 0 18px var(--card-gold-glow), 0 4px 16px rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
-  gap: 14px;
-  background: radial-gradient(ellipse at center, rgba(255,215,0,0.07) 0%, rgba(0,0,0,0.35) 70%);
-  border-radius: 14px;
-  border: 1.5px solid rgba(201,168,76,0.4);
+  justify-content: center;
+  font-size: 24px;
+  opacity: 0.55;
+}
+.ecard-opp-submitted-card::before { content: '👑'; }
+
+.ecard-opp-submitted-msg {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+}
+
+/* ===== 내가 선공 후 대기 표시 ===== */
+.ecard-submitted-display {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.ecard-submitted-card-big {
+  width: 88px;
+  height: 126px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 2px solid var(--card-gold-border);
+  box-shadow: 0 0 28px var(--card-gold-glow), 0 8px 28px rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  opacity: 0.5;
+  animation: ecMyCardSubmit 0.35s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+.ecard-submitted-card-big::before { content: '👑'; }
+
+@keyframes ecMyCardSubmit {
+  from { transform: scale(0.6) translateY(20px); opacity: 0; }
+  to   { transform: scale(1)   translateY(0);    opacity: 0.5; }
+}
+
+.ecard-submitted-msg {
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+}
+
+/* ===== REVEAL OVERLAY ===== */
+.ecard-reveal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  z-index: 200;
+}
+
+.ecard-reveal-cards-row {
+  display: flex;
+  gap: 44px;
+  align-items: flex-start;
+}
+
+.ecard-reveal-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ecard-reveal-slot-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.06em;
+}
+
+#ecardRevealOppSlot {
+  animation: ecRevealOppIn 0.42s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+#ecardRevealMySlot {
+  animation: ecRevealMyIn 0.35s ease-out both;
+}
+@keyframes ecRevealOppIn {
+  from { transform: translateY(-70px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes ecRevealMyIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+#ecardRevealOppSlot.ec-exit-up {
+  animation: ecRevealOppOut 0.35s ease-in forwards;
+}
+#ecardRevealMySlot.ec-exit-down {
+  animation: ecRevealMyOut 0.35s ease-in forwards;
+}
+@keyframes ecRevealOppOut {
+  from { transform: translateY(0);    opacity: 1; }
+  to   { transform: translateY(-70px); opacity: 0; }
+}
+@keyframes ecRevealMyOut {
+  from { transform: translateY(0);   opacity: 1; }
+  to   { transform: translateY(70px); opacity: 0; }
+}
+
+/* ===== 3D 뒤집기 카드 ===== */
+.ec-flip-card {
+  perspective: 700px;
+  width: 88px;
+  height: 126px;
+}
+
+.ec-flip-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+.ec-flip-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.ec-flip-back,
+.ec-flip-front {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.ec-flip-back {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 2px solid var(--card-gold-border);
   box-shadow: 0 0 18px var(--card-gold-glow);
-  padding: 10px 18px;
+  font-size: 30px;
+  opacity: 0.6;
 }
+.ec-flip-back::before { content: '👑'; }
 
-.battle-card {
-  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
+.ec-flip-front {
+  transform: rotateY(180deg);
+  border: 2px solid rgba(255,255,255,0.25);
 }
+.ec-front-emperor { background: linear-gradient(135deg, #8b6000, #d4a520); }
+.ec-front-citizen  { background: linear-gradient(135deg, #1e3a6e, #2e5cb8); }
+.ec-front-slave    { background: linear-gradient(135deg, #12121e, #252540); }
 
-.battle-vs {
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: 22px;
-  color: #ffd700;
-  text-shadow: 0 0 12px rgba(255,215,0,0.7), 0 2px 4px rgba(0,0,0,0.6);
+/* ===== 결과 뱃지 ===== */
+.ecard-reveal-result {
+  font-size: 54px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-align: center;
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.17, 0.67, 0.55, 1.5);
+  text-shadow: 0 2px 20px rgba(0,0,0,0.6);
+  min-height: 70px;
 }
+.ecard-reveal-result.ec-result-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+.ecard-reveal-result.ec-result-win  { color: #ffd700; }
+.ecard-reveal-result.ec-result-lose { color: #ff4444; }
+.ecard-reveal-result.ec-result-draw { color: #aaa; }
 
 /* ===== CARD BASE ===== */
 .ecard-card {
@@ -603,9 +776,8 @@
     flex-shrink: 0;
   }
 
-  /* Left column: status + battle + bet/wait/action */
+  /* Left column: status + bet/wait/action */
   .ecard-result-text,
-  .ecard-battle-overlay,
   .ecard-bet-area,
   .ecard-bet-response,
   .ecard-action-buttons,
@@ -642,9 +814,7 @@
     min-height: 32px;
   }
 
-  .ecard-battle-overlay { padding: 4px 10px; }
-  .ecard-battle-inner { padding: 8px 14px; gap: 10px; }
-  .battle-vs { font-size: 16px; }
+
 
   .ecard-card-battle {
     width: 54px !important;
