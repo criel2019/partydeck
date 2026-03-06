@@ -96,6 +96,68 @@ function ecPrepareGame(gameNum) {
   ec.phase = 'betting';
 }
 
+// ===== 3D 주사위 로드 & 오버레이 =====
+var _ecDiceThreeLoaded = false;
+var _ecDiceThreeQueue = [];
+
+function ecLoadDiceThree(cb) {
+  if (_ecDiceThreeLoaded && typeof idolDiceThreeRoll === 'function') { cb(); return; }
+  _ecDiceThreeQueue.push(cb);
+  if (_ecDiceThreeQueue.length > 1) return; // 이미 로딩 중
+  var done = function() {
+    _ecDiceThreeLoaded = true;
+    var q = _ecDiceThreeQueue.splice(0);
+    q.forEach(function(fn) { try { fn(); } catch(e) {} });
+  };
+  var loadScript = function() {
+    if (typeof idolDiceThreeRoll === 'function') {
+      var canvas = document.getElementById('ecardDiceCanvas');
+      if (canvas && typeof initIdolDiceThree === 'function') initIdolDiceThree(canvas);
+      done(); return;
+    }
+    var s = document.createElement('script');
+    s.src = 'js/idol-dice-three.js';
+    s.onload = function() {
+      var canvas = document.getElementById('ecardDiceCanvas');
+      if (canvas && typeof initIdolDiceThree === 'function') initIdolDiceThree(canvas);
+      done();
+    };
+    s.onerror = done;
+    document.head.appendChild(s);
+  };
+  if (typeof THREE !== 'undefined') { loadScript(); return; }
+  var s1 = document.createElement('script');
+  s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  s1.onload = loadScript;
+  s1.onerror = done;
+  document.head.appendChild(s1);
+}
+
+var _ecDiceAnimPlayed = false;
+
+function ecShowDiceOverlay(d1, d2, firstIsMe, oppName) {
+  var overlay = document.getElementById('ecardDiceOverlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  var badge = document.getElementById('ecardDiceResultMsg');
+  if (badge) { badge.textContent = ''; badge.className = 'ecard-dice-result-badge'; }
+
+  ecLoadDiceThree(function() {
+    var canvas = document.getElementById('ecardDiceCanvas');
+    if (canvas && typeof initIdolDiceThree === 'function') initIdolDiceThree(canvas);
+    if (typeof idolDiceThreeRoll === 'function') {
+      idolDiceThreeRoll(d1, d2, function() {
+        if (badge) {
+          var EMOJIS = ['','⚀','⚁','⚂','⚃','⚄','⚅'];
+          var who = firstIsMe ? '내가 선공 👑' : (escapeHTML(oppName) + '이 선공');
+          badge.innerHTML = EMOJIS[d1] + ' ' + d1 + '  vs  ' + d2 + ' ' + EMOJIS[d2] + '<br>' + who;
+          badge.className = 'ecard-dice-result-badge visible' + (firstIsMe ? ' winner' : '');
+        }
+      });
+    }
+  });
+}
+
 // 게임 시작 시 주사위 굴리기 (host only)
 function ecRollStartingDice() {
   var ec = state.ecard;
@@ -251,9 +313,19 @@ var _ecRevealActive = false;
 function ecardExchangeResult(view) {
   var empCard = view.myRole === 'emperor' ? view.myPlayed : view.oppPlayed;
   var slvCard = view.myRole === 'slave' ? view.myPlayed : view.oppPlayed;
+  // 노예 > 황제
   if (empCard === 'emperor' && slvCard === 'slave') {
     return view.myRole === 'slave' ? 'win' : 'lose';
   }
+  // 황제 > 시민
+  if (empCard === 'emperor' && slvCard === 'citizen') {
+    return view.myRole === 'emperor' ? 'win' : 'lose';
+  }
+  // 시민 > 노예 (시민을 낸 황제 플레이어 승)
+  if (empCard === 'citizen' && slvCard === 'slave') {
+    return view.myRole === 'emperor' ? 'win' : 'lose';
+  }
+  // 시민 vs 시민 → 무승부(계속)
   return 'draw';
 }
 
@@ -454,53 +526,17 @@ function renderECardView(view) {
   waiting.style.display    = 'none';
 
   if (view.phase === 'dice-roll') {
-    var diceEl = document.getElementById('ecardDiceArea');
-    if (diceEl) {
-      diceEl.style.display = 'flex';
-      var hasResult = view.myDice !== null;
-      var diceMe  = document.getElementById('ecardDiceMe');
-      var diceOpp = document.getElementById('ecardDiceOpp');
-      var diceMsg = document.getElementById('ecardDiceResultMsg');
-
-      if (!hasResult) {
-        // 굴리는 중 — 슬롯처럼 랜덤 숫자 빠르게 교체
-        diceMe.textContent  = '?';
-        diceOpp.textContent = '?';
-        diceMe.className  = 'ecard-dice-face ec-dice-rolling';
-        diceOpp.className = 'ecard-dice-face ec-dice-rolling';
-        diceMsg.textContent = '주사위 굴리는 중...';
-        diceMsg.className = 'ecard-dice-result-msg';
-        if (!window._ecDiceSpinInterval) {
-          window._ecDiceSpinInterval = setInterval(function() {
-            if (diceMe)  diceMe.textContent  = Math.floor(Math.random() * 6) + 1;
-            if (diceOpp) diceOpp.textContent = Math.floor(Math.random() * 6) + 1;
-          }, 80);
-        }
-      } else {
-        // 결과 나옴 — 스핀 멈추고 착지 애니메이션
-        if (window._ecDiceSpinInterval) {
-          clearInterval(window._ecDiceSpinInterval);
-          window._ecDiceSpinInterval = null;
-        }
-        diceMe.textContent  = String(view.myDice);
-        diceOpp.textContent = String(view.oppDice);
-        var iWin = view.myDice > view.oppDice;
-        diceMe.className  = 'ecard-dice-face ec-dice-landed ' + (iWin ? 'ec-dice-winner' : 'ec-dice-loser');
-        diceOpp.className = 'ecard-dice-face ec-dice-landed ' + (iWin ? 'ec-dice-loser'  : 'ec-dice-winner');
-        var firstIsMe = view.firstPlayerId === view.myId;
-        diceMsg.textContent = firstIsMe ? '내가 선공 — 황제로 시작!' : view.oppName + '이 선공 — 노예로 시작';
-        diceMsg.className = 'ecard-dice-result-msg' + (firstIsMe ? ' ec-dice-msg-win' : '');
-      }
+    if (view.myDice !== null && !_ecDiceAnimPlayed) {
+      _ecDiceAnimPlayed = true;
+      var firstIsMe = view.firstPlayerId === view.myId;
+      ecShowDiceOverlay(view.myDice, view.oppDice, firstIsMe, view.oppName);
     }
     return;
   }
-  // dice-roll 페이즈 벗어나면 스핀 정리
-  if (window._ecDiceSpinInterval) {
-    clearInterval(window._ecDiceSpinInterval);
-    window._ecDiceSpinInterval = null;
-  }
-  var diceElHide = document.getElementById('ecardDiceArea');
-  if (diceElHide) diceElHide.style.display = 'none';
+  // dice-roll 벗어나면 오버레이 닫기
+  var diceOverlay = document.getElementById('ecardDiceOverlay');
+  if (diceOverlay) diceOverlay.style.display = 'none';
+  _ecDiceAnimPlayed = false;
 
   if (view.phase === 'betting') {
     if (view.betSetterId === state.myId) {
@@ -710,13 +746,22 @@ function ecResolveExchange() {
   var empCard = ec.emperorPlayed;
   var slvCard = ec.slavePlayed;
 
-  // 노예가 황제 카드에 노예 카드로 맞춤 → 즉시 노예 승리
+  // 노예 > 황제
   if (empCard === 'emperor' && slvCard === 'slave') {
     ecApplyGameWin('slave', '노예가 황제를 잡음');
     return;
   }
-
-  // 황제 회피(황제 카드 냈는데 노예가 시민 냄)는 즉시 승리 없음 — 계속 진행
+  // 황제 > 시민
+  if (empCard === 'emperor' && slvCard === 'citizen') {
+    ecApplyGameWin('emperor', '황제가 시민을 제압');
+    return;
+  }
+  // 시민 > 노예
+  if (empCard === 'citizen' && slvCard === 'slave') {
+    ecApplyGameWin('emperor', '시민이 노예를 제압');
+    return;
+  }
+  // 시민 vs 시민 → 다음 교환으로
   // 4교환 모두 마쳤는데 잡히지 않으면 황제 생존 승리
   if (ec.exchange >= ec.maxExchanges) {
     ecApplyGameWin('emperor', '황제 생존! 남은 카드 결과 발표');
