@@ -171,6 +171,7 @@ function slkDie(r) {
   slkGs = 'dead';
   if (slkG.score > slkG.best) { slkG.best = slkG.score; localStorage.setItem('slkBest', slkG.score); }
   slkBurstDeath(); slkG.shakeEnd = performance.now() + 500;
+  if (typeof skillsRecordPlay === 'function') skillsRecordPlay('slinky');
 }
 
 function slkDeathMsg() {

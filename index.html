@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="css/games/pupil.css?v=20260305b">
 <link rel="stylesheet" href="css/games/blackjack.css?v=20260305b">
 <link rel="stylesheet" href="css/games/tamagotchi.css?v=20260305b">
+<link rel="stylesheet" href="css/games/skills.css?v=20260307">
 <link rel="stylesheet" href="css/games/idol.css?v=20260305f">
 <link rel="stylesheet" href="css/games/drinkpoker.css?v=20260305c">
 <link rel="stylesheet" href="css/games/kingstagram.css?v=20260305b">
@@ -1197,6 +1198,8 @@
   <div class="fort-canvas-container">
     <canvas id="fortressCanvas" width="800" height="500"></canvas>
   </div>
+  <!-- Skill Bar (populated by fortress.js) -->
+  <div id="fortSkillBar"></div>
   <!-- Charge gauge: independent overlay above controls -->
   <div id="fortChargeGauge" style="display:none;position:absolute;bottom:42px;left:50%;transform:translateX(-50%);width:160px;height:20px;background:rgba(0,0,0,0.7);border-radius:10px;overflow:hidden;border:1.5px solid rgba(255,255,255,0.25);z-index:15;">
     <div class="fort-charge-fill" style="height:100%;width:0%;border-radius:9px;transition:width 0.04s linear;"></div>
@@ -2191,6 +2194,9 @@
       <button class="tama-action-btn" onclick="tamaShowInfo()">
         <span class="icon">ℹ️</span><span class="label">정보</span>
       </button>
+      <button class="tama-action-btn" onclick="tamaShowSkills()">
+        <span class="icon">⚔️</span><span class="label">스킬</span>
+      </button>
     </div>
 
   </div>
@@ -2260,6 +2266,9 @@
   <div class="tama-affinity-flash" id="tamaAffinityFlash">
     <div class="af-text">호감도 UP!</div>
   </div>
+
+  <!-- Skills Overlay (rendered by skills.js) -->
+  <div id="tamaSkillOverlay"></div>
 
 </div>
 
@@ -2538,6 +2547,7 @@
 <script src="js/games/slinkystairs.js?v=20260305b"></script>
 <script src="js/games/pupil.js?v=20260305b"></script>
 <script src="js/games/tamagotchi.js?v=20260305b"></script>
+<script src="js/games/skills.js?v=20260307"></script>
 <script src="js/games/idol-data.js?v=20260305f"></script>
 <script src="js/games/idol-board-iso.js?v=20260305b"></script>
 <script src="js/games/idol-event-screen.js?v=20260305f"></script>

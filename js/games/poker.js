@@ -463,6 +463,7 @@ function handlePokerResult(msg) {
   const won = msg.winnerId === state.myId;
   const goldMode = typeof isBetModeGold === 'function' && isBetModeGold();
   recordGame(won, goldMode ? 0 : (won ? msg.pot : 5));
+  if (typeof skillsRecordPlay === 'function') { skillsRecordPlay('poker'); if (won) skillsRecordWin('poker'); }
   if (goldMode && won) addGold(msg.pot);
   if (goldMode && !won) addGold(-Math.min(50, getEconomy().gold));
   

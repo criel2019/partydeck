@@ -1049,6 +1049,7 @@ function handleBSResult(msg) {
   if (myResult) {
     var won = !myResult.isBombshot;
     if (typeof recordGame === 'function') recordGame(won, won ? 30 : 5);
+    if (typeof skillsRecordPlay === 'function') { skillsRecordPlay('bombshot'); if (won) skillsRecordWin('bombshot'); }
   }
 }
 

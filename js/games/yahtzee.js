@@ -680,6 +680,10 @@ function showYahtzeeGameOver(view) {
   const rankRewards = [60, 30, 10];
   const goldReward = myRank >= 0 && myRank < rankRewards.length ? rankRewards[myRank] : 0;
   recordGame(won, goldReward);
+  if (typeof skillsRecordPlay === 'function') {
+    skillsRecordPlay('yahtzee');
+    if (won) skillsRecordWin('yahtzee');
+  }
 }
 
 function handleYahtzeeGameOver() {

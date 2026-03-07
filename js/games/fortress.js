@@ -187,6 +187,11 @@ let _fortKeyUp = null;
 let _fortVisibilityHandler = null;
 let _fortAngleInterval = null;
 
+// ── 스킬 상태 ─────────────────────────────────────────────────
+let _fortEquippedSkills = [];  // 이번 게임에 장착된 스킬 ID 목록
+let _fortSkillUsage = {};      // { skillId: 사용횟수 } 게임 내 누적
+let _fortActiveSkill = null;   // 이번 턴에 선택한 스킬 (null = 기본 포탄)
+
 // ===== BIRDS =====
 let fortBirds = [];
 let _fortFallingFeathers = [];
@@ -735,13 +740,15 @@ function startFortress() {
     name: p.name,
     avatar: p.avatar,
     color: FORT_TANK_COLORS[i % FORT_TANK_COLORS.length],
-    tama: p.tama || null, // tamagotchi pet info { tribe, level }
+    tama: p.tama || null,
     x: Math.floor((i + 1) * canvasW / (n + 1)),
     hp: FORT_MAX_HP,
     alive: true,
     angle: 45,
     power: 50,
     moveFuel: FORT_MOVE_FUEL,
+    poison: 0,
+    frozen: 0,
   }));
 
   fortState = {
@@ -760,6 +767,11 @@ function startFortress() {
   fortLocalAngle = 45;
   fortLocalPower = 50;
   fortMovedThisTurn = 0;
+
+  // 스킬 초기화
+  _fortEquippedSkills = (typeof skillsGetEquipped === 'function') ? skillsGetEquipped('fortress') : [];
+  _fortSkillUsage = {};
+  _fortActiveSkill = null;
   fortParticles = [];
   fortDebris = [];
   fortSmoke = [];
@@ -939,6 +951,8 @@ function createFortressView() {
       hp: p.hp,
       alive: p.alive,
       moveFuel: p.moveFuel || 0,
+      poison: p.poison || 0,
+      frozen: p.frozen || 0,
     })),
     terrain: fortState.terrain,
     wind: fortState.wind,
@@ -1207,11 +1221,22 @@ function fortFire() {
   const currentPlayer = view.players[view.turnIdx];
   if (!currentPlayer) return;
 
+  const usedSkill = _fortActiveSkill;
+
+  // 스킬 사용횟수 증가
+  if (usedSkill) {
+    _fortSkillUsage[usedSkill] = (_fortSkillUsage[usedSkill] || 0) + 1;
+  }
+  // 발사 후 스킬 선택 해제
+  _fortActiveSkill = null;
+  fortUpdateSkillBar();
+
   if (state.isHost) {
     handleFortFire(state.myId, {
       type: 'fort-fire',
       angle: fortLocalAngle,
       power: fortLocalPower,
+      skill: usedSkill,
     });
   } else {
     if (currentPlayer.id !== state.myId) return;
@@ -1219,40 +1244,130 @@ function fortFire() {
       type: 'fort-fire',
       angle: fortLocalAngle,
       power: fortLocalPower,
+      skill: usedSkill,
     });
   }
 }
 
-// ===== HOST: HANDLE FIRE =====
+// ===== HOST: HANDLE FIRE (스킬 지원) =====
 function handleFortFire(peerId, msg) {
   if (!fortState || fortState.phase !== 'aiming') return;
 
   const current = fortState.players[fortState.turnIdx];
   if (!current || !current.alive) return;
-
   if (peerId !== current.id && !(current.id.startsWith('ai-') && peerId === state.myId)) return;
 
   const angle = Math.max(0, Math.min(180, parseInt(msg.angle) || 45));
   const power = Math.max(10, Math.min(100, parseInt(msg.power) || 50));
+  const skill  = (typeof msg.skill === 'string') ? msg.skill : null;
 
   fortState.phase = 'animating';
 
   const startX = current.x;
   const stx = Math.floor(Math.max(0, Math.min(startX, FORT_CANVAS_W - 1)));
-  // Adjust turret center: tama characters are taller than tanks
-  const startY = fortState.terrain[stx] - FORT_TAMA_RADIUS * 1.5 - 2; // tama barrel origin (all players)
-  const pathResult = computeProjectilePath(startX, startY, angle, power, fortState.wind);
+  const startY = fortState.terrain[stx] - FORT_TAMA_RADIUS * 1.5 - 2;
 
-  const hitResult = checkHit(pathResult.impactX, pathResult.impactY, current.id);
+  // 유도탄 대상 목록
+  const homingTargets = fortState.players
+    .filter(p => p.alive && p.id !== current.id)
+    .map(p => {
+      const px = Math.floor(Math.max(0, Math.min(p.x, FORT_CANVAS_W - 1)));
+      return { x: p.x, y: fortState.terrain[px] - FORT_TANK_H / 2 };
+    });
 
-  applyDamage(hitResult);
+  const skillOpts = skill ? { skill, homingTargets } : {};
 
-  // Save terrain BEFORE destruction for animation
+  // ── 메인 경로 계산 ─────────────────────────────────────
+  let pathResult = computeProjectilePath(startX, startY, angle, power, fortState.wind, skillOpts);
+
+  // 분열탄: 메인 경로를 40% 지점에서 잘라냄
+  let splitIdx = 0;
+  if (skill === 'split') {
+    splitIdx = Math.max(1, Math.floor(pathResult.path.length * 0.40));
+    pathResult.path.length = splitIdx + 1;
+    pathResult.impactX = pathResult.path.xs[splitIdx];
+    pathResult.impactY = pathResult.path.ys[splitIdx];
+    pathResult.hitTerrain = false;
+  }
+
+  // ── 추가 포탄 계산 ──────────────────────────────────────
+  const extraShots = [];
+
+  if (skill === 'double_shot') {
+    [-7, 7].forEach((dA, i) => {
+      const a2 = Math.max(0, Math.min(180, angle + dA));
+      const pr2 = computeProjectilePath(startX, startY, a2, power, fortState.wind, {});
+      extraShots.push({ startX, startY, angle: a2, power, pathResult: pr2, delay: i * 120 });
+    });
+  } else if (skill === 'split') {
+    // 분열 지점에서 속도 벡터 방향 계산
+    const sxi = Math.min(splitIdx, pathResult.path.length - 1);
+    const sxi1 = Math.max(0, sxi - 1);
+    const vdx = pathResult.path.xs[sxi] - pathResult.path.xs[sxi1];
+    const vdy = pathResult.path.ys[sxi] - pathResult.path.ys[sxi1];
+    const baseAngle = Math.atan2(-vdy, vdx) * 180 / Math.PI;
+    const sx = pathResult.path.xs[sxi], sy = pathResult.path.ys[sxi];
+    [-22, 0, 22].forEach((dA, i) => {
+      const sa = Math.max(0, Math.min(180, baseAngle + dA));
+      const pr = computeProjectilePath(sx, sy, sa, power * 0.75, fortState.wind, {});
+      extraShots.push({ startX: sx, startY: sy, angle: sa, power: power * 0.75, pathResult: pr, delay: 0 });
+    });
+  }
+
+  // ── 히트 판정 ──────────────────────────────────────────
+  const mainHit = checkHit(pathResult.impactX, pathResult.impactY, current.id);
+  const extraHits = extraShots.map(s => checkHit(s.pathResult.impactX, s.pathResult.impactY, current.id));
+
+  // ── 스킬 상태이상 처리 ─────────────────────────────────
+  const skillEffects = { poison: [], frozen: [], knockback: [] };
+  const hitIdSet = new Set();
+  mainHit.targets.forEach(t => { if (t.direct) hitIdSet.add(t.id); });
+  extraHits.forEach(hr => hr.targets.forEach(t => { if (t.direct) hitIdSet.add(t.id); }));
+
+  hitIdSet.forEach(hitId => {
+    const p = fortState.players.find(pp => pp.id === hitId);
+    if (!p || !p.alive) return;
+    if (skill === 'poison')    { p.poison  = Math.max(p.poison  || 0, 3); skillEffects.poison.push(hitId); }
+    if (skill === 'ice')       { p.frozen  = Math.max(p.frozen  || 0, 1); skillEffects.frozen.push(hitId); }
+    if (skill === 'knockback') {
+      const dir = (p.x - pathResult.impactX) >= 0 ? 1 : -1;
+      const newX = Math.max(20, Math.min(FORT_CANVAS_W - 20, p.x + dir * 90));
+      p.x = newX;
+      skillEffects.knockback.push({ id: hitId, newX });
+    }
+  });
+
+  // ── 데미지 적용 ────────────────────────────────────────
+  applyDamage(mainHit);
+  extraHits.forEach(hr => applyDamage(hr));
+
+  // ── 지형 파괴 ──────────────────────────────────────────
   const terrainBefore = fortState.terrain.slice();
-
-  // Only deform terrain if projectile actually hit the ground (not off-screen or platform)
+  const craterR = (skill === 'earthquake') ? FORT_CRATER_RADIUS * 3 : FORT_CRATER_RADIUS;
   if (pathResult.hitTerrain) {
-    destroyTerrain(fortState.terrain, pathResult.impactX, pathResult.impactY, FORT_CRATER_RADIUS);
+    destroyTerrain(fortState.terrain, pathResult.impactX, pathResult.impactY, craterR);
+  }
+  extraShots.forEach(s => {
+    if (s.pathResult.hitTerrain) {
+      destroyTerrain(fortState.terrain, s.pathResult.impactX, s.pathResult.impactY, FORT_CRATER_RADIUS);
+    }
+  });
+
+  // ── 클러스터탄: 소형 폭탄 산포 ─────────────────────────
+  const clusterImpacts = [];
+  if (skill === 'cluster') {
+    for (let c = 0; c < 5; c++) {
+      const cA = angle + (Math.random() - 0.5) * 80;
+      const cPow = power * 0.35;
+      const cp = computeProjectilePath(
+        pathResult.impactX, pathResult.impactY - 8,
+        Math.max(0, Math.min(180, cA)), cPow, fortState.wind, {}
+      );
+      const chr = checkHit(cp.impactX, cp.impactY, current.id);
+      applyDamage(chr);
+      if (cp.hitTerrain) destroyTerrain(fortState.terrain, cp.impactX, cp.impactY, FORT_CRATER_RADIUS * 0.5);
+      clusterImpacts.push({ impactX: cp.impactX, impactY: cp.impactY, hitResult: chr });
+    }
   }
 
   const shooterTribe = (current.tama && current.tama.tribe) ? current.tama.tribe : 'fire';
@@ -1260,13 +1375,24 @@ function handleFortFire(peerId, msg) {
     type: 'fort-anim',
     startX, startY, angle, power,
     wind: fortState.wind,
-    hitResult,
+    hitResult: mainHit,
     shooterId: current.id,
     shooterTribe,
     impactX: pathResult.impactX,
     impactY: pathResult.impactY,
-    terrainBefore: terrainBefore,
+    terrainBefore,
     terrainAfter: fortState.terrain.slice(),
+    // 스킬 필드
+    skill,
+    extraShots: extraShots.map((s, i) => ({
+      startX: s.startX, startY: s.startY, angle: s.angle, power: s.power,
+      hitResult: extraHits[i],
+      impactX: s.pathResult.impactX, impactY: s.pathResult.impactY,
+      hitTerrain: s.pathResult.hitTerrain,
+      delay: s.delay || 0,
+    })),
+    skillEffects,
+    clusterImpacts,
   };
   broadcast(animMsg);
 
@@ -1317,16 +1443,21 @@ function drawTrajectoryPreview(ctx, startX, startY, angleDeg, wind) {
   ctx.restore();
 }
 
-function computeProjectilePath(startX, startY, angleDeg, power, wind) {
+// skillOpts: { skill, homingTargets }
+function computeProjectilePath(startX, startY, angleDeg, power, wind, skillOpts) {
+  const skill = (skillOpts && skillOpts.skill) || null;
   const rad = angleDeg * Math.PI / 180;
-  const speed = 1.5 + power * 0.1;
+
+  // 저격탄: 3배 속도
+  const speedMult = (skill === 'sniper') ? 3 : 1;
+  const speed = (1.5 + power * 0.1) * speedMult;
+
   let vx = speed * Math.cos(rad);
   let vy = -speed * Math.sin(rad);
   let x = startX;
   let y = startY;
 
-  // Float32Array: 2x less memory, faster iteration than object array
-  const MAX_STEPS = 3000;
+  const MAX_STEPS = (skill === 'sniper') ? 8000 : 4000;
   const xs = new Float32Array(MAX_STEPS + 1);
   const ys = new Float32Array(MAX_STEPS + 1);
   xs[0] = x; ys[0] = y;
@@ -1335,38 +1466,83 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind) {
   const terrain = fortState ? fortState.terrain :
     (window._fortView ? window._fortView.terrain : new Array(FORT_CANVAS_W).fill(380));
   const width = fortState ? fortState.canvasW : FORT_CANVAS_W;
-
-  // Sky platforms for collision (use whichever state is available)
   const platforms = (typeof fortSkyPlatforms !== 'undefined') ? fortSkyPlatforms : [];
+
+  // 유도 대상 (homing)
+  const homingTargets = (skillOpts && skillOpts.homingTargets) || [];
+
+  // 관통·바운스·구멍뚫기 상태
+  let pierceCount = 0;
+  const maxPierce = (skill === 'triple_pierce') ? 3 : (skill === 'double_pierce') ? 2 : 0;
+  let bounceCount = 0;
+  const maxBounce = (skill === 'bounce') ? 3 : 0;
 
   let exitReason = 'maxsteps';
   for (let i = 0; i < MAX_STEPS; i++) {
-    vx += wind * 0.003;
-    vy += FORT_GRAVITY;
-    x += vx;
-    y += vy;
+    // 바람 (저격탄은 바람 무시)
+    if (skill !== 'sniper') vx += wind * 0.003;
+    // 중력 (관통탄은 중력 무시 — 직선 관통)
+    if (skill !== 'penetrate') vy += FORT_GRAVITY;
+
+    // 유도탄: 가장 가까운 적으로 약하게 끌림
+    if (skill === 'homing' && homingTargets.length > 0) {
+      let nearest = homingTargets[0], minD = Infinity;
+      homingTargets.forEach(t => {
+        const d = (t.x - x) ** 2 + (t.y - y) ** 2;
+        if (d < minD) { minD = d; nearest = t; }
+      });
+      const dx = nearest.x - x, dy = nearest.y - y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 5) {
+        vx += (dx / dist) * 0.12;
+        vy += (dy / dist) * 0.12;
+        // 속도 제한 (급격히 빨라지지 않도록)
+        const spd = Math.sqrt(vx * vx + vy * vy);
+        if (spd > speed * 1.3) { vx = (vx / spd) * speed * 1.3; vy = (vy / spd) * speed * 1.3; }
+      }
+    }
+
+    x += vx; y += vy;
     xs[len] = x; ys[len] = y; len++;
 
     const tx = Math.floor(x);
-    if (tx < 0 || tx >= width) { exitReason = 'offscreen'; break; }
-    if (y >= terrain[tx]) { exitReason = 'terrain'; break; }
+
+    // 좌우 벽 처리
+    if (tx < 0 || tx >= width) {
+      if (skill === 'bounce' && bounceCount < maxBounce) {
+        vx = -vx;
+        x = tx < 0 ? 1 : width - 1;
+        bounceCount++;
+        continue;
+      }
+      exitReason = 'offscreen'; break;
+    }
+
+    // 지형 충돌
+    if (y >= terrain[tx]) {
+      if (skill === 'penetrate') { continue; }  // 관통탄은 지형 통과
+      if (skill === 'bounce' && bounceCount < maxBounce) {
+        vy = -Math.abs(vy) * 0.72;
+        y = terrain[tx] - 1;
+        bounceCount++;
+        continue;
+      }
+      if (pierceCount < maxPierce) { pierceCount++; continue; }
+      exitReason = 'terrain'; break;
+    }
     if (y > FORT_CANVAS_H + 100) { exitReason = 'offscreen'; break; }
 
-    // Platform collision: stop trajectory if projectile enters a platform rect
     let hitPlatform = false;
     for (const plat of platforms) {
       if (plat.destroyed) continue;
       if (x >= plat.x - plat.w / 2 && x <= plat.x + plat.w / 2 &&
-          y >= plat.y && y <= plat.y + plat.h) {
-        hitPlatform = true;
-        break;
-      }
+          y >= plat.y && y <= plat.y + plat.h) { hitPlatform = true; break; }
     }
     if (hitPlatform) { exitReason = 'platform'; break; }
   }
 
   const path = { xs, ys, length: len };
-  return { path, impactX: x, impactY: y, hitTerrain: exitReason === 'terrain' };
+  return { path, impactX: x, impactY: y, hitTerrain: exitReason === 'terrain' || exitReason === 'platform' };
 }
 
 function checkHit(impactX, impactY, shooterId) {
@@ -1415,25 +1591,65 @@ function advanceFortTurn() {
   const n = fortState.players.length;
   let nextIdx = (fortState.turnIdx + 1) % n;
   let tries = 0;
+  // 살아있는 다음 플레이어 탐색
   while (!fortState.players[nextIdx].alive && tries < n) {
     nextIdx = (nextIdx + 1) % n;
     tries++;
   }
 
-  if (nextIdx <= fortState.turnIdx) {
-    fortState.round++;
+  if (nextIdx <= fortState.turnIdx) fortState.round++;
+
+  // ── 빙결 처리: 빙결된 플레이어는 턴 스킵 ──────────────
+  const frozenPlayer = fortState.players[nextIdx];
+  if (frozenPlayer && frozenPlayer.frozen > 0 && frozenPlayer.alive) {
+    frozenPlayer.frozen--;
+    fortState.turnIdx = nextIdx;
+    fortState.wind = Math.floor(Math.random() * 11) - 5;
+    broadcastFortressState();
+    // 1초 후 자동으로 다음 턴 진행
+    setTimeout(() => {
+      if (fortState && fortState.phase !== 'gameover') advanceFortTurn();
+    }, 1200);
+    return;
+  }
+
+  // ── 독 데미지 적용 ─────────────────────────────────────
+  const nextPlayer = fortState.players[nextIdx];
+  if (nextPlayer && nextPlayer.poison > 0 && nextPlayer.alive) {
+    nextPlayer.hp = Math.max(0, nextPlayer.hp - 8);
+    nextPlayer.poison--;
+    if (nextPlayer.hp <= 0) {
+      nextPlayer.alive = false;
+      fortState.deathOrder.push(nextPlayer.id);
+      const alive = fortState.players.filter(p => p.alive);
+      if (alive.length <= 1) {
+        fortState.phase = 'gameover';
+        const winner = alive[0] || null;
+        const resultMsg = {
+          type: 'fort-result',
+          winnerId: winner ? winner.id : null,
+          winnerName: winner ? winner.name : null,
+          players: fortState.players.map(p => ({ id: p.id, name: p.name, avatar: p.avatar, hp: p.hp, alive: p.alive })),
+          deathOrder: fortState.deathOrder,
+        };
+        broadcast(resultMsg);
+        showFortressGameOver(resultMsg);
+        return;
+      }
+      // 독으로 사망 → 다시 턴 진행
+      fortState.turnIdx = nextIdx;
+      advanceFortTurn();
+      return;
+    }
   }
 
   fortState.turnIdx = nextIdx;
   fortState.wind = Math.floor(Math.random() * 11) - 5;
   fortState.phase = 'aiming';
 
-  // Reset movement fuel for next player
-  const nextPlayer = fortState.players[nextIdx];
   if (nextPlayer) nextPlayer.moveFuel = FORT_MOVE_FUEL;
   fortMovedThisTurn = 0;
 
-  // Camera: target next player
   if (nextPlayer) {
     const npx = nextPlayer.x;
     const npy = fortState.terrain[Math.floor(Math.max(0, Math.min(npx, FORT_CANVAS_W - 1)))] - FORT_TANK_H;
@@ -1443,13 +1659,60 @@ function advanceFortTurn() {
   broadcastFortressState();
 }
 
+// 추가 포탄 단순 애니메이션 (extra shots용)
+function _fortAnimateExtraShot(shot, terrainAfter, onDone) {
+  const skillOpts = {};
+  const pathResult = computeProjectilePath(shot.startX, shot.startY, shot.angle, shot.power, 0, skillOpts);
+  const path = pathResult.path;
+  const view = window._fortView;
+  if (!view) { if (onDone) onDone(); return; }
+
+  let frameIdx = 0;
+  const speed = 3;
+
+  function loop() {
+    if (!view) { if (onDone) onDone(); return; }
+    updateParticles();
+    renderFortressScene(view);
+    if (fortCtx && frameIdx < path.length) {
+      const ctx = fortCtx;
+      ctx.save(); applyCameraTransform(ctx);
+      const ti = Math.min(frameIdx, path.length - 1);
+      const ptx = path.xs[ti], pty = path.ys[ti];
+      ctx.fillStyle = '#ffcc00';
+      ctx.shadowColor = '#ff8800'; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.arc(ptx, pty, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    frameIdx += speed;
+    if (frameIdx >= path.length) {
+      const ix = shot.impactX != null ? shot.impactX : path.xs[path.length - 1];
+      const iy = shot.impactY != null ? shot.impactY : path.ys[path.length - 1];
+      animateExplosion(ix, iy, shot.hitResult, view, onDone, terrainAfter);
+      return;
+    }
+    fortAnimId = requestAnimationFrame(loop);
+  }
+  fortAnimId = requestAnimationFrame(loop);
+}
+
 // ===== ANIMATION =====
 function startFortAnimation(msg, callback) {
   // Play fire sound for all clients (shooter and observers alike)
   fortPlaySound('fire', msg.shooterTribe || 'fire');
 
-  const pathResult = computeProjectilePath(msg.startX, msg.startY, msg.angle, msg.power, msg.wind);
+  // 스킬 효과에 따른 skillOpts (클라이언트 경로 재계산용)
+  const animSkillOpts = (msg.skill === 'sniper' || msg.skill === 'penetrate' || msg.skill === 'bounce' ||
+                         msg.skill === 'double_pierce' || msg.skill === 'triple_pierce')
+    ? { skill: msg.skill }
+    : {};
+  const pathResult = computeProjectilePath(msg.startX, msg.startY, msg.angle, msg.power, msg.wind, animSkillOpts);
   const path = pathResult.path;
+
+  // 분열탄: 클라이언트도 경로를 40% 지점에서 잘라냄
+  if (msg.skill === 'split' && path.length > 1) {
+    path.length = Math.max(1, Math.floor(path.length * 0.40) + 1);
+  }
   const hitResult = msg.hitResult;
   const view = window._fortView;
 
@@ -1638,12 +1901,53 @@ function startFortAnimation(msg, callback) {
     frameIdx += speed;
 
     if (frameIdx >= path.length) {
-      // Use host's authoritative impact position (msg.impactX/Y) for the explosion.
-      // Falls back to client-computed path end if not provided (solo/practice mode).
       const impactIdx = path.length - 1;
       const exX = (msg.impactX != null) ? msg.impactX : path.xs[impactIdx];
       const exY = (msg.impactY != null) ? msg.impactY : path.ys[impactIdx];
-      animateExplosion(exX, exY, hitResult, view, callback, msg.terrainAfter);
+
+      // 스킬 플래시 표시
+      if (msg.skill && msg.skill !== null) {
+        const def = (typeof skillsGetDef === 'function') ? skillsGetDef(msg.skill) : null;
+        if (def) _fortShowSkillFlash(def.emoji + ' ' + def.name);
+      }
+
+      // 메인 폭발 후 → 추가 포탄 / 클러스터 애니메이션 체인
+      function runExtras(extIdx, finalCb) {
+        const extras = msg.extraShots || [];
+        if (extIdx >= extras.length) {
+          // 클러스터 폭발 처리
+          const clusters = msg.clusterImpacts || [];
+          if (clusters.length > 0) {
+            let ci = 0;
+            function nextCluster() {
+              if (ci >= clusters.length) { finalCb && finalCb(); return; }
+              const cl = clusters[ci++];
+              setTimeout(() => {
+                animateExplosion(cl.impactX, cl.impactY, cl.hitResult, view, nextCluster, null);
+              }, 80);
+            }
+            nextCluster(); return;
+          }
+          finalCb && finalCb(); return;
+        }
+        const shot = extras[extIdx];
+        setTimeout(() => {
+          fortPlaySound('fire', msg.shooterTribe || 'fire');
+          _fortAnimateExtraShot(shot, msg.terrainAfter, () => runExtras(extIdx + 1, finalCb));
+        }, shot.delay || 0);
+      }
+
+      // 넉백 시각 반영 (뷰의 플레이어 위치 이동)
+      if (msg.skillEffects && msg.skillEffects.knockback && view) {
+        msg.skillEffects.knockback.forEach(({ id, newX }) => {
+          const p = view.players.find(pp => pp.id === id);
+          if (p) p.x = newX;
+        });
+      }
+
+      animateExplosion(exX, exY, hitResult, view, () => {
+        runExtras(0, callback);
+      }, msg.terrainAfter);
       return;
     }
 
@@ -2735,6 +3039,13 @@ function renderFortressView(view) {
   if (!view) return;
   window._fortView = view;
 
+  // non-host 첫 렌더 시 스킬 로드
+  if (!state.isHost && _fortEquippedSkills.length === 0 && typeof skillsGetEquipped === 'function') {
+    _fortEquippedSkills = skillsGetEquipped('fortress');
+    _fortSkillUsage = {};
+    _fortActiveSkill = null;
+  }
+
   // Sync platform data from host so client path computation matches host
   if (view.skyPlatforms) fortSkyPlatforms = view.skyPlatforms;
 
@@ -2806,10 +3117,12 @@ function renderFortressView(view) {
       const itemClass = 'fort-player-hp-item' +
         (i === view.turnIdx ? ' active-turn' : '') +
         (!p.alive ? ' dead' : '');
+      const statusIcons = (p.poison > 0 ? `<span class="fort-status-icon" title="독 (${p.poison}턴)">☠️</span>` : '') +
+                          (p.frozen > 0 ? `<span class="fort-status-icon" title="빙결 (${p.frozen}턴)">❄️</span>` : '');
       return `<div class="${itemClass}">
         <div class="fort-player-avatar">${p.avatar}</div>
         <div class="fort-player-info">
-          <div class="fort-player-name">${escapeHTML(p.name)}</div>
+          <div class="fort-player-name">${escapeHTML(p.name)}${statusIcons}</div>
           <div class="fort-hp-bar"><div class="fort-hp-fill ${hpClass}" style="width:${hpPct}%"></div></div>
           <div class="fort-hp-text">${p.hp}/${FORT_MAX_HP}</div>
         </div>
@@ -2838,6 +3151,9 @@ function renderFortressView(view) {
     fuelFill.style.width = pct + '%';
     if (fuelText) fuelText.textContent = Math.round(pct) + '%';
   }
+
+  // 스킬바 업데이트 (내 턴일 때만 보임)
+  if (typeof fortUpdateSkillBar === 'function') fortUpdateSkillBar();
 
   renderFortressScene(view);
 }
@@ -2889,6 +3205,16 @@ function showFortressGameOver(msg) {
   const won = myRank === 0;
   const goldReward = goldRewards[myRank] || 0;
   recordGame(won, goldReward);
+
+  // 스킬 업적 기록
+  if (typeof skillsRecordPlay === 'function' && !(typeof practiceMode !== 'undefined' && practiceMode)) {
+    skillsRecordPlay('fortress');
+    if (won) skillsRecordWin('fortress');
+  }
+
+  // 스킬바 숨기기
+  const skillBar = document.getElementById('fortSkillBar');
+  if (skillBar) skillBar.classList.remove('visible');
 }
 
 function closeFortressCleanup() {
@@ -2900,6 +3226,10 @@ function closeFortressCleanup() {
   cleanupFortressKeyboard();
   fortStopMove();
   fortAngleStop();
+  // 스킬 상태 초기화
+  _fortActiveSkill = null;
+  const skillBar = document.getElementById('fortSkillBar');
+  if (skillBar) { skillBar.classList.remove('visible'); skillBar.innerHTML = ''; }
   if (fortCanvas) {
     fortCanvas.ontouchstart = null;
     fortCanvas.ontouchmove = null;
@@ -2934,6 +3264,76 @@ function closeFortressCleanup() {
 function closeFortressGame() {
   closeFortressCleanup();
   returnToLobby();
+}
+
+// ===== SKILL BAR UI =====
+function fortUpdateSkillBar() {
+  const bar = document.getElementById('fortSkillBar');
+  if (!bar) return;
+
+  const view = window._fortView;
+  const isMyTurn = view && view.phase === 'aiming' &&
+                   view.players[view.turnIdx]?.id === state.myId;
+
+  if (!isMyTurn || _fortEquippedSkills.length === 0) {
+    bar.classList.remove('visible');
+    bar.innerHTML = '';
+    return;
+  }
+
+  bar.classList.add('visible');
+
+  // 기본 포탄 버튼 + 장착 스킬 버튼
+  const items = [{ id: null, emoji: '💫', name: '기본 포탄' }];
+  _fortEquippedSkills.forEach(id => {
+    if (typeof skillsGetDef === 'function') {
+      const def = skillsGetDef(id);
+      if (def) items.push({ id, emoji: def.emoji, name: def.name });
+    }
+  });
+
+  bar.innerHTML = items.map(item => {
+    const uses = item.id ? (_fortSkillUsage[item.id] || 0) : 0;
+    const remaining = item.id ? (SKILL_MAX_USES - uses) : null;
+    const depleted = item.id && remaining <= 0;
+    const isActive = _fortActiveSkill === item.id;
+    const usesHtml = item.id
+      ? `<span class="fort-skill-uses${remaining === SKILL_MAX_USES ? ' full' : ''}">${remaining}/${SKILL_MAX_USES}</span>`
+      : '';
+    const btnClass = [
+      item.id ? 'fort-skill-btn' : 'fort-skill-btn fort-skill-btn-default',
+      isActive ? 'active' : '',
+      depleted ? 'depleted' : '',
+    ].filter(Boolean).join(' ');
+    return `<button class="${btnClass}" onclick="fortSelectSkill(${JSON.stringify(item.id)})"
+      ontouchend="event.preventDefault();fortSelectSkill(${JSON.stringify(item.id)})">
+      <span class="fort-skill-emoji">${item.emoji}</span>
+      <span class="fort-skill-name">${item.name}</span>
+      ${usesHtml}
+    </button>`;
+  }).join('');
+}
+
+function fortSelectSkill(skillId) {
+  // 토글: 같은 스킬 다시 누르면 기본으로
+  if (_fortActiveSkill === skillId) {
+    _fortActiveSkill = null;
+  } else {
+    const uses = skillId ? (_fortSkillUsage[skillId] || 0) : 0;
+    if (skillId && uses >= SKILL_MAX_USES) return; // 사용 횟수 초과
+    _fortActiveSkill = skillId;
+  }
+  fortUpdateSkillBar();
+}
+
+function _fortShowSkillFlash(text) {
+  const gameEl = document.getElementById('fortressGame');
+  if (!gameEl) return;
+  const el = document.createElement('div');
+  el.className = 'fort-skill-flash';
+  el.textContent = text;
+  gameEl.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 1000);
 }
 
 // ===== BIRDS SYSTEM =====

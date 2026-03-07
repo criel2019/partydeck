@@ -302,6 +302,7 @@ function handleQDResult(msg) {
   const won = msg.winnerId === state.myId;
   if(msg.winnerId) {
     recordGame(won, won ? 30 : 5);
+    if (typeof skillsRecordPlay === 'function') { skillsRecordPlay('quickdraw'); if (won) skillsRecordWin('quickdraw'); }
   }
 
   if(msg.winnerId === state.myId) {

@@ -1009,6 +1009,10 @@ function handleDPResult(msg) {
   if (typeof recordGame === 'function') {
     var won = msg.loserId !== state.myId;
     recordGame(won, won ? 30 : 5);
+    if (typeof skillsRecordPlay === 'function') {
+      skillsRecordPlay('drinkpoker');
+      if (won) skillsRecordWin('drinkpoker');
+    }
   }
 }
 

@@ -1413,6 +1413,10 @@ function mfHandleResult(msg) {
   const myTeam = mfView?.myTeam;
   const won = (msg.winner === myTeam);
   recordGame(won, won ? 40 : 5);
+  if (typeof skillsRecordPlay === 'function') {
+    skillsRecordPlay('mafia');
+    if (won) skillsRecordWin('mafia');
+  }
 
   // Show result overlay
   const overlay = document.getElementById('mfResultOverlay');
