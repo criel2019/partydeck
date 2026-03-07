@@ -25,6 +25,22 @@ const FORT_TANK_COLORS = [
   '#b388ff', '#84ffff'
 ];
 
+// ===== MAP THEMES & BIOMES (ported from fortress-map-design.html blueprint) =====
+const FORT_BIOME_LIST = ['temperate','desert','arctic','volcanic'];
+const FORT_BIOMES = {
+  temperate:{mtn4:['#0d1624','#080f18'],mtn3:['#18304a','#0e1e30'],mtn2:['#1c3a22','#101e14'],mtn1:['#264830','#162a1c'],treeColor:['#1a3418','#102010','#243e1e'],treeTrunk:'#3c2410',grassCap:'#3da83a',grassEdge:'#4fc44a',grassBlade:'#5ad454',topsoil:['#4a2a12','#341a08'],clay:['#6a4020','#4a2c12'],stone:['#484040','#2c2828'],bedrock:['#201e1e','#141212'],strata:'rgba(255,255,255,0.055)',waterColor:['#1a4a6a','#0e2a3c'],snowCap:null,surfaceColor:'rgba(40,120,30,0.12)'},
+  desert:{mtn4:['#1a0c04','#0e0602'],mtn3:['#3a1c08','#221004'],mtn2:['#7a3e10','#502808'],mtn1:['#c06820','#8a4a10'],treeColor:['#2a4010','#1c2c08','#384c14'],treeTrunk:'#6a3c10',grassCap:'#c8903a',grassEdge:'#dca048',grassBlade:'#e8b050',topsoil:['#b06028','#7a4018'],clay:['#c87a3a','#8a5220'],stone:['#7a5838','#504030'],bedrock:['#302820','#1c1810'],strata:'rgba(255,180,80,0.06)',waterColor:['#1a3a5a','#0e2040'],snowCap:null,surfaceColor:'rgba(200,130,40,0.1)'},
+  arctic:{mtn4:['#1a2030','#101620'],mtn3:['#3a5070','#28384e'],mtn2:['#a0b8cc','#788898'],mtn1:['#cce0f0','#a8c0d4'],treeColor:['#0e1c0e','#081408','#142012'],treeTrunk:'#3a2c20',grassCap:'#daeef8',grassEdge:'#eaf6ff',grassBlade:'#f4fcff',topsoil:['#707880','#505860'],clay:['#888890','#606068'],stone:['#4a4c52','#343438'],bedrock:['#282830','#181820'],strata:'rgba(200,220,255,0.08)',waterColor:['#0a2840','#081828'],snowCap:'#eef6ff',surfaceColor:'rgba(200,230,255,0.15)'},
+  volcanic:{mtn4:['#0e0400','#080200'],mtn3:['#1c0800','#100400'],mtn2:['#2e0e00','#1a0800'],mtn1:['#3c1200','#220a00'],treeColor:['#140800','#0c0400','#1c0c00'],treeTrunk:'#2a1000',grassCap:'#3a1a08',grassEdge:'#4a2210',grassBlade:'#5a2c14',topsoil:['#281008','#180804'],clay:['#1e0c04','#120800'],stone:['#2a1e1c','#1a1210'],bedrock:['#140e0c','#0c0806'],strata:'rgba(255,60,0,0.07)',waterColor:['#4a1000','#2a0800'],snowCap:null,surfaceColor:'rgba(255,60,0,0.08)'},
+};
+const FORT_THEMES = {
+  day:{skyBands:[[0,'#07111f'],[0.18,'#0d2244'],[0.42,'#1a5c9e'],[0.68,'#4a9ed4'],[0.85,'#8ec8e8'],[1.0,'#c2e4f4']],hazeColor:'rgba(200,230,255,0.28)',godRayAlpha:0.022,sunX:0.72,sunY:0.13,sunColor:'#fffbe8',sunGlow1:'rgba(255,240,150,0.22)',sunGlow2:'rgba(255,200,80,0.08)',moonVisible:false,starOpacity:0.15,cloudShadow:'rgba(140,180,220,0.45)',cloudBase:'rgba(255,255,255,0.93)',cloudHighlight:'rgba(255,255,255,1)',cloudDark:'rgba(180,200,230,0.6)'},
+  dusk:{skyBands:[[0,'#050810'],[0.2,'#1a0a1e'],[0.4,'#6a1a2a'],[0.58,'#c84a1a'],[0.72,'#f08030'],[0.85,'#f8c060'],[1.0,'#fce090']],hazeColor:'rgba(255,140,60,0.32)',godRayAlpha:0.028,sunX:0.12,sunY:0.75,sunColor:'#ffdd70',sunGlow1:'rgba(255,160,40,0.35)',sunGlow2:'rgba(255,80,0,0.15)',moonVisible:false,starOpacity:0.4,cloudShadow:'rgba(180,80,40,0.5)',cloudBase:'rgba(255,200,140,0.88)',cloudHighlight:'rgba(255,230,180,1)',cloudDark:'rgba(160,60,20,0.7)'},
+  night:{skyBands:[[0,'#010204'],[0.25,'#020408'],[0.5,'#04080e'],[0.75,'#060a12'],[1.0,'#080e18']],hazeColor:'rgba(30,50,100,0.25)',godRayAlpha:0.004,sunX:0.78,sunY:0.12,sunColor:'#d8e4ff',sunGlow1:'rgba(180,200,255,0.18)',sunGlow2:'rgba(100,130,220,0.08)',moonVisible:true,starOpacity:0.9,cloudShadow:'rgba(20,30,60,0.7)',cloudBase:'rgba(50,70,110,0.75)',cloudHighlight:'rgba(90,110,160,0.9)',cloudDark:'rgba(15,20,40,0.85)'},
+};
+let _fortCurrentBiome = 'temperate';
+let _fortCurrentTheme = 'day';
+
 // ===== TAMAGOTCHI CHARACTER INTEGRATION =====
 const FORT_TAMA_RADIUS = 12; // circular character icon radius
 const _fortTamaImgCache = {}; // key: imagePath, value: Image object
@@ -670,6 +686,10 @@ function drawWindParticles(ctx, wind) {
 // ===== HOST: GAME INIT =====
 function startFortress() {
   fortLoadTamaPet(); // load local player's tama for character rendering
+  _fortCurrentBiome = FORT_BIOME_LIST[Math.floor(Math.random() * FORT_BIOME_LIST.length)];
+  const _themeRoll = Math.random();
+  _fortCurrentTheme = _themeRoll < 0.6 ? 'day' : _themeRoll < 0.85 ? 'dusk' : 'night';
+  _fortSkyCache = null; // force sky rebuild with new theme/biome
   const n = state.players.length;
   const canvasW = FORT_CANVAS_W;
 
@@ -1305,6 +1325,9 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind) {
     (window._fortView ? window._fortView.terrain : new Array(FORT_CANVAS_W).fill(380));
   const width = fortState ? fortState.canvasW : FORT_CANVAS_W;
 
+  // Sky platforms for collision (use whichever state is available)
+  const platforms = (typeof fortSkyPlatforms !== 'undefined') ? fortSkyPlatforms : [];
+
   for (let i = 0; i < MAX_STEPS; i++) {
     vx += wind * 0.003;
     vy += FORT_GRAVITY;
@@ -1316,6 +1339,18 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind) {
     if (tx < 0 || tx >= width) break;
     if (y >= terrain[tx]) break;
     if (y > FORT_CANVAS_H + 100) break;
+
+    // Platform collision: stop trajectory if projectile enters a platform rect
+    let hitPlatform = false;
+    for (const plat of platforms) {
+      if (plat.destroyed) continue;
+      if (x >= plat.x - plat.w / 2 && x <= plat.x + plat.w / 2 &&
+          y >= plat.y && y <= plat.y + plat.h) {
+        hitPlatform = true;
+        break;
+      }
+    }
+    if (hitPlatform) break;
   }
 
   // Wrap in a path-like object compatible with animation code
@@ -1796,93 +1831,199 @@ function renderFortressScene(view) {
   ctx.restore();
 }
 
+// ===== BLUEPRINT SKY/TERRAIN HELPERS =====
+function _ftMakeMtnPath(W, H, baseY, freq, amp1, amp2, amp3, seed) {
+  const pts = [];
+  for (let x = 0; x <= W; x++) {
+    let y = baseY;
+    y += Math.sin(x * freq + seed) * amp1;
+    y += Math.sin(x * freq * 2.3 + seed + 1.1) * amp2;
+    y += Math.sin(x * freq * 5.7 + seed + 2.3) * amp3;
+    pts.push(y);
+  }
+  return pts;
+}
+function _ftFillMtnLayer(c, pts, colorTop, colorBot, opacity, H) {
+  const minY = Math.min(...pts);
+  const grd = c.createLinearGradient(0, minY, 0, H * 0.78);
+  grd.addColorStop(0, colorTop); grd.addColorStop(1, colorBot);
+  c.save(); c.globalAlpha = opacity;
+  c.beginPath(); c.moveTo(0, H); c.lineTo(0, pts[0]);
+  for (let x = 1; x <= pts.length - 1; x++) c.lineTo(x, pts[x]);
+  c.lineTo(pts.length - 1, H); c.closePath();
+  c.fillStyle = grd; c.fill(); c.globalAlpha = 1; c.restore();
+}
+function _ftPineTreeSil(c, x, groundY, h, col) {
+  const layers = 3;
+  c.fillStyle = col;
+  for (let i = 0; i < layers; i++) {
+    const ly = groundY - h * 0.18 * i;
+    const lw = (layers - i) * (h * 0.28) + h * 0.12;
+    c.beginPath(); c.moveTo(x, ly - h * 0.32); c.lineTo(x - lw, ly); c.lineTo(x + lw, ly); c.closePath(); c.fill();
+  }
+}
+function _ftTreeLineSil(c, W, H, ridgePts, B, opacity) {
+  c.save(); c.globalAlpha = opacity;
+  c.fillStyle = B.treeColor[0];
+  c.beginPath(); c.moveTo(0, H);
+  for (let x = 0; x <= W; x++) {
+    const th = 8 + Math.sin(x * 0.18 + 1.3) * 4 + Math.sin(x * 0.41 + 0.7) * 3;
+    c.lineTo(x, ridgePts[x] - th);
+  }
+  c.lineTo(W, H); c.closePath(); c.fill();
+  c.fillStyle = B.treeColor[1];
+  for (let x = 15; x < W - 15; x += 18 + Math.floor(Math.sin(x * 0.3) * 6)) {
+    _ftPineTreeSil(c, x, ridgePts[x], 12 + Math.sin(x * 0.25) * 6, B.treeColor[1]);
+  }
+  c.globalAlpha = 1; c.restore();
+}
+function _ftDrawCloud(c, cx, cy, w, h, puffs, opacity, T) {
+  c.save();
+  // Underside shadow
+  c.globalAlpha = opacity * 0.55; c.fillStyle = T.cloudShadow;
+  for (let i = 0; i < puffs; i++) {
+    const t = puffs > 1 ? i / (puffs - 1) : 0.5;
+    const px = cx + (t - 0.5) * w * 1.4;
+    const ss = 1 - Math.abs(t - 0.5) * 0.8;
+    const pr = h * (0.55 + (i === Math.floor(puffs/2) ? 0.35 : 0)) * ss;
+    c.beginPath(); c.ellipse(px + 4, cy + h * 0.45 + 5, pr * 1.2, pr * 0.5, 0, 0, Math.PI * 2); c.fill();
+  }
+  // Three-pass body (dark → base → highlight)
+  for (let pass = 0; pass < 3; pass++) {
+    const col = pass === 0 ? T.cloudDark : pass === 1 ? T.cloudBase : T.cloudHighlight;
+    const pa = pass === 0 ? 0.6 : pass === 1 ? 0.9 : 0.55;
+    const offY = pass === 0 ? h * 0.12 : pass === 1 ? 0 : -h * 0.1;
+    const scale = pass === 0 ? 1.08 : pass === 1 ? 1.0 : 0.88;
+    c.globalAlpha = opacity * pa; c.fillStyle = col;
+    for (let i = 0; i < puffs; i++) {
+      const t = puffs > 1 ? i / (puffs - 1) : 0.5;
+      const px = cx + (t - 0.5) * w * 1.4;
+      const ss = (1 - Math.abs(t - 0.5) * 0.7) * scale;
+      const pr = h * (0.6 + (i === Math.floor(puffs/2) ? 0.38 : 0)) * ss;
+      const pry = pr * 0.68;
+      c.save(); c.translate(px, cy + offY);
+      c.beginPath();
+      c.moveTo(-pr, pry * 0.2);
+      c.bezierCurveTo(-pr, -pry * 0.8, -pr * 0.3, -pry * 1.1, 0, -pry * 0.9);
+      c.bezierCurveTo(pr * 0.3, -pry * 1.1, pr, -pry * 0.8, pr, pry * 0.2);
+      c.bezierCurveTo(pr * 1.05, pry * 0.55, -pr * 1.05, pry * 0.55, -pr, pry * 0.2);
+      c.fill(); c.restore();
+    }
+  }
+  c.globalAlpha = 1; c.restore();
+}
+function _ftDrawMountains(c, W, H, T, B) {
+  const m4 = _ftMakeMtnPath(W, H, H*0.42, 0.005, 55, 22, 8, 0.8);
+  _ftFillMtnLayer(c, m4, B.mtn4[0], B.mtn4[1], 0.80, H);
+  // Fog between layer 4 and 3
+  const fog1 = c.createLinearGradient(0, H*0.38, 0, H*0.56);
+  fog1.addColorStop(0,'rgba(0,0,0,0)'); fog1.addColorStop(0.5, T.hazeColor); fog1.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle = fog1; c.fillRect(0, 0, W, H);
+  const m3 = _ftMakeMtnPath(W, H, H*0.49, 0.008, 70, 28, 10, 2.1);
+  _ftFillMtnLayer(c, m3, B.mtn3[0], B.mtn3[1], 0.88, H);
+  if (B.snowCap) {
+    c.save(); c.beginPath(); c.moveTo(0, H);
+    for (let x = 0; x <= W; x++) c.lineTo(x, m3[x]);
+    c.lineTo(W, H); c.closePath(); c.clip();
+    c.fillStyle = B.snowCap; c.globalAlpha = 0.7; c.fillRect(0, 0, W, H * 0.44); c.globalAlpha = 1; c.restore();
+  }
+  const m2 = _ftMakeMtnPath(W, H, H*0.55, 0.011, 50, 20, 8, 3.5);
+  _ftFillMtnLayer(c, m2, B.mtn2[0], B.mtn2[1], 0.92, H);
+  _ftTreeLineSil(c, W, H, m2, B, 0.42);
+  const m1 = _ftMakeMtnPath(W, H, H*0.60, 0.017, 38, 14, 6, 5.2);
+  _ftFillMtnLayer(c, m1, B.mtn1[0], B.mtn1[1], 0.96, H);
+  _ftTreeLineSil(c, W, H, m1, B, 0.68);
+}
+
 function _buildSkyCache(w, h) {
   // Build at DPR resolution so drawImage doesn't upscale on Retina displays
   const dpr = window.devicePixelRatio || 1;
   const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
   const oc = new OffscreenCanvas(pw, ph);
   const sCtx = oc.getContext('2d');
-  // Scale context so drawing commands use logical coordinates
   sCtx.scale(dpr, dpr);
+  const c = sCtx;
+  const T = FORT_THEMES[_fortCurrentTheme] || FORT_THEMES.day;
+  const B = FORT_BIOMES[_fortCurrentBiome] || FORT_BIOMES.temperate;
 
-  // Sky gradient: daytime
-  const grad = sCtx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, '#1a3a6e');
-  grad.addColorStop(0.35, '#2d6fa8');
-  grad.addColorStop(0.65, '#5299c8');
-  grad.addColorStop(1, '#9bc8e8');
-  sCtx.fillStyle = grad;
-  sCtx.fillRect(0, 0, w, h);
+  // ── Sky gradient ──
+  const grd = c.createLinearGradient(0, 0, 0, h);
+  for (const [stop, col] of T.skyBands) grd.addColorStop(stop, col);
+  c.fillStyle = grd; c.fillRect(0, 0, w, h);
 
-  // Sun
-  const sunX = w * 0.78, sunY = h * 0.12;
-  const sunGrad = sCtx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 55);
-  sunGrad.addColorStop(0, 'rgba(255,255,220,0.95)');
-  sunGrad.addColorStop(0.35, 'rgba(255,220,80,0.6)');
-  sunGrad.addColorStop(1, 'rgba(255,180,0,0)');
-  sCtx.fillStyle = sunGrad;
-  sCtx.beginPath(); sCtx.arc(sunX, sunY, 55, 0, Math.PI*2); sCtx.fill();
-  // Sun disc
-  sCtx.fillStyle = 'rgba(255,255,220,0.9)';
-  sCtx.beginPath(); sCtx.arc(sunX, sunY, 18, 0, Math.PI*2); sCtx.fill();
-
-  // Cloud helper: draw fluffy cloud
-  function drawCloudShape(cx, cy, cw, ch) {
-    const blobs = [
-      [0, 0, cw*0.45, ch*0.55],
-      [-cw*0.32, ch*0.12, cw*0.32, ch*0.42],
-      [cw*0.30, ch*0.08, cw*0.35, ch*0.45],
-      [-cw*0.12, -ch*0.2, cw*0.3, ch*0.38],
-      [cw*0.10, -ch*0.15, cw*0.28, ch*0.35],
-    ];
-    for (const [dx, dy, rx, ry] of blobs) {
-      sCtx.beginPath(); sCtx.ellipse(cx+dx, cy+dy, rx, ry, 0, 0, Math.PI*2); sCtx.fill();
+  // ── Stars ──
+  if (T.starOpacity > 0) {
+    for (let i = 0; i < 180; i++) {
+      const sr = i < 126 ? 0.6 : i < 165 ? 1.0 : 1.5;
+      const sa = (0.3 + ((i * 137 + 31) % 71) / 100) * T.starOpacity;
+      c.globalAlpha = sa; c.fillStyle = '#fff';
+      c.beginPath(); c.arc((i * 137 + 50) % w, (i * 97 + 10) % (h * 0.5), sr, 0, Math.PI * 2); c.fill();
     }
+    c.globalAlpha = 1;
   }
 
-  // Far clouds (dim, back layer)
-  sCtx.fillStyle = 'rgba(255,255,255,0.12)';
-  const farClouds = [{x:80,y:55,w:100,h:28},{x:380,y:38,w:120,h:24},{x:760,y:48,w:90,h:22},{x:1050,y:40,w:110,h:26}];
-  for (const c of farClouds) drawCloudShape(c.x, c.y, c.w, c.h);
-
-  // Near clouds (brighter)
-  sCtx.fillStyle = 'rgba(255,255,255,0.22)';
-  const nearClouds = [{x:200,y:80,w:140,h:38},{x:560,y:65,w:160,h:42},{x:900,y:78,w:130,h:35},{x:1130,y:58,w:120,h:32}];
-  for (const c of nearClouds) drawCloudShape(c.x, c.y, c.w, c.h);
-
-  // Cloud bottom shading
-  sCtx.fillStyle = 'rgba(160,180,200,0.08)';
-  const allClouds = [...farClouds, ...nearClouds];
-  for (const c of allClouds) {
-    sCtx.beginPath(); sCtx.ellipse(c.x, c.y + c.h*0.3, c.w*0.4, c.h*0.25, 0, 0, Math.PI*2); sCtx.fill();
+  // ── Sun / Moon + God Rays ──
+  const sx = T.sunX * w, sy = T.sunY * h;
+  // God rays (screen blend)
+  if (!T.moonVisible) {
+    c.save(); c.globalCompositeOperation = 'screen';
+    for (let i = 0; i < 16; i++) {
+      const baseAngle = Math.atan2(h - sy, w / 2 - sx);
+      const spread = Math.PI * 0.9;
+      const angle = baseAngle - spread / 2 + (i / 16) * spread;
+      const rayW = 15 + ((i * 41 + 7) % 60);
+      const rayLen = Math.max(w, h) * 1.8;
+      const rayAlpha = T.godRayAlpha * (0.5 + ((i * 31) % 50) / 100);
+      const rg = c.createLinearGradient(sx, sy, sx + Math.cos(angle) * rayLen, sy + Math.sin(angle) * rayLen);
+      rg.addColorStop(0, `rgba(255,240,200,${rayAlpha})`); rg.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = rg; c.save(); c.translate(sx, sy); c.rotate(angle);
+      c.beginPath(); c.moveTo(0, 0); c.lineTo(rayLen, -rayW/2); c.lineTo(rayLen, rayW/2); c.closePath(); c.fill(); c.restore();
+    }
+    c.globalCompositeOperation = 'source-over'; c.restore();
+  }
+  // Outer glow
+  const r1 = c.createRadialGradient(sx,sy,0,sx,sy,T.moonVisible?120:200);
+  r1.addColorStop(0,T.sunGlow1); r1.addColorStop(0.4,T.sunGlow2); r1.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=r1; c.beginPath(); c.arc(sx,sy,T.moonVisible?120:200,0,Math.PI*2); c.fill();
+  if (!T.moonVisible) {
+    const corona = c.createRadialGradient(sx,sy,16,sx,sy,50);
+    corona.addColorStop(0,T.sunGlow1); corona.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=corona; c.beginPath(); c.arc(sx,sy,50,0,Math.PI*2); c.fill();
+  }
+  const diskR = T.moonVisible ? 13 : 20;
+  c.fillStyle = T.sunColor; c.beginPath(); c.arc(sx,sy,diskR,0,Math.PI*2); c.fill();
+  if (!T.moonVisible) {
+    const core = c.createRadialGradient(sx-diskR*0.2,sy-diskR*0.2,0,sx,sy,diskR);
+    core.addColorStop(0,'rgba(255,255,255,0.9)'); core.addColorStop(0.5,'rgba(255,255,255,0.2)'); core.addColorStop(1,'rgba(255,255,255,0)');
+    c.fillStyle=core; c.beginPath(); c.arc(sx,sy,diskR,0,Math.PI*2); c.fill();
+  } else {
+    c.save(); c.beginPath(); c.arc(sx,sy,diskR,0,Math.PI*2); c.clip();
+    c.fillStyle='rgba(0,0,0,0.35)'; c.beginPath(); c.arc(sx+diskR*0.35,sy,diskR*1.1,0,Math.PI*2); c.fill();
+    for (const [ox,oy,cr] of [[-4,-2,2.5],[3,3,1.8],[-1,5,1.5],[5,-3,1.2]]) {
+      c.globalAlpha=0.22; c.fillStyle='#000'; c.beginPath(); c.arc(sx+ox,sy+oy,cr,0,Math.PI*2); c.fill();
+    }
+    c.globalAlpha=1; c.restore();
   }
 
-  // Stars (very faint, near horizon)
-  sCtx.fillStyle = 'rgba(255,255,255,0.2)';
-  for (let i = 0; i < 30; i++) {
-    const sx = (i * 137 + 50) % w;
-    const sy = (i * 97 + 10) % (h * 0.28);
-    sCtx.beginPath(); sCtx.arc(sx, sy, 0.7, 0, Math.PI*2); sCtx.fill();
-  }
+  // ── Atmospheric haze ──
+  const hazeGrd = c.createLinearGradient(0, h*0.58, 0, h*0.72);
+  hazeGrd.addColorStop(0,'rgba(0,0,0,0)'); hazeGrd.addColorStop(0.45,T.hazeColor); hazeGrd.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=hazeGrd; c.fillRect(0,0,w,h);
 
-  // Distant mountain silhouette
-  sCtx.fillStyle = 'rgba(80,110,150,0.22)';
-  sCtx.beginPath(); sCtx.moveTo(0, h);
-  const mPts = 14;
-  for (let i = 0; i <= mPts; i++) {
-    const mx = (i/mPts)*w;
-    const my = h * 0.52 - Math.sin(i*0.7+1)*h*0.08 - Math.sin(i*1.3+0.5)*h*0.04;
-    sCtx.lineTo(mx, my);
-  }
-  sCtx.lineTo(w, h); sCtx.closePath(); sCtx.fill();
-  sCtx.fillStyle = 'rgba(100,130,165,0.15)';
-  sCtx.beginPath(); sCtx.moveTo(0, h);
-  for (let i = 0; i <= mPts; i++) {
-    const mx = (i/mPts)*w;
-    const my = h * 0.6 - Math.sin(i*0.9+2)*h*0.06 - Math.sin(i*1.8+1)*h*0.03;
-    sCtx.lineTo(mx, my);
-  }
-  sCtx.lineTo(w, h); sCtx.closePath(); sCtx.fill();
+  // ── Layered background mountains (4 layers) ──
+  _ftDrawMountains(c, w, h, T, B);
+
+  // ── Volumetric clouds (7 clouds, 3 layers) ──
+  const cloudDefs = [
+    {cx:w*0.08, cy:h*0.08, cw:110, ch:28, puffs:3, op:0.5, layer:'high'},
+    {cx:w*0.32, cy:h*0.06, cw:150, ch:32, puffs:4, op:0.55, layer:'high'},
+    {cx:w*0.65, cy:h*0.09, cw:100, ch:25, puffs:3, op:0.45, layer:'high'},
+    {cx:w*0.88, cy:h*0.07, cw:130, ch:29, puffs:3, op:0.5, layer:'high'},
+    {cx:w*0.18, cy:h*0.19, cw:170, ch:44, puffs:5, op:0.7, layer:'mid'},
+    {cx:w*0.55, cy:h*0.17, cw:180, ch:48, puffs:5, op:0.72, layer:'mid'},
+    {cx:w*0.80, cy:h*0.21, cw:150, ch:40, puffs:4, op:0.65, layer:'mid'},
+  ];
+  for (const cd of cloudDefs) _ftDrawCloud(c, cd.cx, cd.cy, cd.cw, cd.ch, cd.puffs, cd.op, T);
 
   return oc;
 }
@@ -1896,85 +2037,208 @@ function drawSky(ctx, w, h) {
 function drawClouds() { /* merged into drawSky cache */ }
 
 function drawTerrain(ctx, terrain, w, h) {
-  // Cache terrain gradient (fixed colors, only depends on h)
-  if (!_fortTerrainGrad) {
-    _fortTerrainGrad = ctx.createLinearGradient(0, h * 0.4, 0, h);
-    _fortTerrainGrad.addColorStop(0, '#5a9c4f');
-    _fortTerrainGrad.addColorStop(0.3, '#4a8c3f');
-    _fortTerrainGrad.addColorStop(0.7, '#3a6c2f');
-    _fortTerrainGrad.addColorStop(1, '#2a4c1f');
+  const B = FORT_BIOMES[_fortCurrentBiome] || FORT_BIOMES.temperate;
+  const T = FORT_THEMES[_fortCurrentTheme] || FORT_THEMES.day;
+
+  function terrainPath(offset) {
+    ctx.beginPath(); ctx.moveTo(0, h);
+    for (let x = 0; x < w; x++) ctx.lineTo(x, terrain[x] + offset);
+    ctx.lineTo(w, h); ctx.closePath();
   }
 
-  // Build terrain path once per call (terrain changes only on crater)
-  // Use a single path for main fill to avoid redundant traversals
-  ctx.beginPath();
-  ctx.moveTo(0, h);
-  for (let x = 0; x < w; x++) ctx.lineTo(x, terrain[x]);
-  ctx.lineTo(w, h);
-  ctx.closePath();
+  // ── Bedrock ──
+  const bedGrd = ctx.createLinearGradient(0, h*0.78, 0, h);
+  bedGrd.addColorStop(0, B.bedrock[0]); bedGrd.addColorStop(1, B.bedrock[1]);
+  terrainPath(52); ctx.fillStyle = bedGrd; ctx.fill();
 
-  ctx.fillStyle = _fortTerrainGrad;
-  ctx.fill();
-
-  // Underground layer (offset terrain up by 15px, same shape)
-  ctx.beginPath();
-  ctx.moveTo(0, h);
-  for (let x = 0; x < w; x++) ctx.lineTo(x, terrain[x] + 15);
-  ctx.lineTo(w, h);
-  ctx.closePath();
-  ctx.fillStyle = '#3a5c2f';
-  ctx.fill();
-
-  // Bright grass edge
-  ctx.strokeStyle = '#7fc46a';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(0, terrain[0]);
-  for (let x = 1; x < w; x++) ctx.lineTo(x, terrain[x]);
-  ctx.stroke();
-
-  // Grass tufts on surface
-  ctx.strokeStyle = '#5ab048';
-  ctx.lineWidth = 1.5;
-  ctx.lineCap = 'round';
-  for (let i = 0; i < 120; i++) {
-    const tx = (i * 73 + 20) % w;
-    const ty = terrain[tx];
-    const h1 = 4 + ((i * 37) % 5);
-    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx - 2, ty - h1); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx + 2, ty - h1 + 1); ctx.stroke();
-  }
-  ctx.lineCap = 'butt';
-
-  // Surface rocks
-  ctx.fillStyle = 'rgba(0,0,0,0.06)';
-  ctx.beginPath();
-  for (let i = 0; i < 80; i++) {
-    const tx = (i * 97 + 30) % w;
-    const ty = terrain[tx] + 10 + ((i * 53) % 60);
-    if (ty < h) ctx.arc(tx, ty, 1.5, 0, Math.PI * 2);
-  }
-  ctx.fill();
-
-  // Rock outcroppings on surface
-  for (let i = 0; i < 18; i++) {
-    const rx = (i * 157 + 80) % w;
-    const ry = terrain[rx];
-    const rw = 6 + ((i * 43) % 14), rh = 5 + ((i * 29) % 8);
-    const pts = 6;
-    ctx.fillStyle = i % 3 === 0 ? '#7a6b58' : i % 3 === 1 ? '#8a7a68' : '#6a5c4a';
+  // ── Stone + strata ──
+  const stoneGrd = ctx.createLinearGradient(0, h*0.62, 0, h*0.9);
+  stoneGrd.addColorStop(0, B.stone[0]); stoneGrd.addColorStop(1, B.stone[1]);
+  terrainPath(30); ctx.fillStyle = stoneGrd; ctx.fill();
+  // Strata lines clipped inside stone layer
+  ctx.save(); terrainPath(30); ctx.clip();
+  ctx.strokeStyle = B.strata; ctx.lineWidth = 1.2;
+  for (let i = 0; i < 8; i++) {
+    const ly = h * 0.72 + i * 16 + Math.sin(i * 1.5) * 4;
     ctx.beginPath();
-    for (let k = 0; k < pts; k++) {
-      const a = (k / pts) * Math.PI * 2 - Math.PI / 2;
-      const jitter = 0.75 + ((k * i * 17) % 25) / 100;
-      const prx = rw * jitter * Math.cos(a), pry = rh * jitter * Math.sin(a) * 0.6;
-      k === 0 ? ctx.moveTo(rx + prx, ry + pry - 2) : ctx.lineTo(rx + prx, ry + pry - 2);
+    for (let x = 0; x < w; x += 2) {
+      const wy = ly + Math.sin(x * 0.04 + i * 1.3) * 3;
+      x === 0 ? ctx.moveTo(x, wy) : ctx.lineTo(x, wy);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // ── Clay / subsoil ──
+  const clayGrd = ctx.createLinearGradient(0, h*0.52, 0, h*0.82);
+  clayGrd.addColorStop(0, B.clay[0]); clayGrd.addColorStop(1, B.clay[1]);
+  terrainPath(18); ctx.fillStyle = clayGrd; ctx.fill();
+
+  // ── Topsoil ──
+  const topGrd = ctx.createLinearGradient(0, h*0.45, 0, h*0.72);
+  topGrd.addColorStop(0, B.topsoil[0]); topGrd.addColorStop(1, B.topsoil[1]);
+  terrainPath(9); ctx.fillStyle = topGrd; ctx.fill();
+
+  // Embedded pebbles in topsoil
+  for (let i = 0; i < 35; i++) {
+    const rx = (i * 191 + 44) % w, ry = terrain[rx] + 11 + (i * 41) % 16;
+    if (ry > h - 4) continue;
+    ctx.globalAlpha = 0.45; ctx.fillStyle = B.stone[0];
+    ctx.beginPath(); ctx.ellipse(rx, ry, 3+(i*7)%8, 2+(i*5)%4, (i*0.5)%Math.PI, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // ── Grass cap ──
+  ctx.beginPath(); ctx.moveTo(0, terrain[0]);
+  for (let x = 1; x < w; x++) ctx.lineTo(x, terrain[x]);
+  for (let x = w-1; x >= 0; x--) ctx.lineTo(x, terrain[x] + 8);
+  ctx.closePath(); ctx.fillStyle = B.grassCap; ctx.fill();
+
+  // ── Grass edge highlight ──
+  ctx.shadowColor = B.grassEdge; ctx.shadowBlur = 4;
+  ctx.strokeStyle = B.grassEdge; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(0, terrain[0]);
+  for (let x = 1; x < w; x++) ctx.lineTo(x, terrain[x]);
+  ctx.stroke(); ctx.shadowBlur = 0;
+
+  // ── Grass blades ──
+  ctx.save(); ctx.globalAlpha = 0.75; ctx.strokeStyle = B.grassBlade;
+  ctx.lineWidth = 1; ctx.lineCap = 'round';
+  for (let i = 0; i < 220; i++) {
+    const gx = (i * 173 + 17) % w, gy = terrain[gx];
+    const bh2 = 5 + (i * 11) % 7;
+    const lean = Math.sin(gx * 0.08 + i * 0.4) * 3.5;
+    ctx.beginPath(); ctx.moveTo(gx, gy);
+    ctx.quadraticCurveTo(gx + lean * 0.5, gy - bh2 * 0.55, gx + lean, gy - bh2);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // ── Cliff face detail ──
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.lineWidth = 1;
+  for (let x = 2; x < w - 2; x++) {
+    const slope = Math.abs(terrain[x+1] - terrain[x-1]) / 2;
+    if (slope < 1.8) continue;
+    ctx.globalAlpha = Math.min(0.6, (slope - 1.8) * 0.2);
+    ctx.beginPath(); ctx.moveTo(x, terrain[x] + 6); ctx.lineTo(x, Math.min(terrain[x] + 40, h - 4)); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1.5;
+  for (let x = 2; x < w - 2; x++) {
+    const slope = terrain[x+1] - terrain[x-1];
+    if (slope > -3.0) continue;
+    ctx.globalAlpha = Math.min(0.5, (-slope - 3.0) * 0.15);
+    ctx.beginPath(); ctx.moveTo(x, terrain[x]); ctx.lineTo(x, terrain[x] + 20); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.restore();
+
+  // ── Boulders ──
+  for (let i = 0; i < 18; i++) {
+    const bx = (i * 241 + 70) % w, by = terrain[bx];
+    const bw2 = 8 + (i * 13) % 18, bh3 = bw2 * (0.55 + ((i * 37) % 40) / 100);
+    const ang = (i * 0.6) % (Math.PI * 0.6);
+    if (by < 20 || by > h - 10) continue;
+    ctx.save(); ctx.globalAlpha = 0.4; ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.beginPath(); ctx.ellipse(bx+3, by+2, bw2*0.8, bh3*0.3, 0, 0, Math.PI*2); ctx.fill();
+    const bg2 = ctx.createRadialGradient(bx-bw2*0.25, by-bh3*0.3, 0, bx, by, bw2);
+    bg2.addColorStop(0,'rgba(200,195,190,0.9)'); bg2.addColorStop(0.4,B.stone[0]); bg2.addColorStop(1,B.bedrock[0]);
+    ctx.globalAlpha = 0.92; ctx.fillStyle = bg2;
+    ctx.save(); ctx.translate(bx, by - bh3*0.5); ctx.rotate(ang * 0.3);
+    ctx.beginPath();
+    for (let j = 0; j < 7; j++) {
+      const a2 = (j/7)*Math.PI*2, jitter = 0.75 + Math.sin(j*2.3+ang)*0.22;
+      const rx2 = Math.cos(a2)*bw2*jitter, ry2 = Math.sin(a2)*bh3*jitter;
+      j===0 ? ctx.moveTo(rx2, ry2) : ctx.lineTo(rx2, ry2);
     }
     ctx.closePath(); ctx.fill();
-    // Rock highlight
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.beginPath(); ctx.ellipse(rx - rw * 0.2, ry - rh * 0.4 - 2, rw * 0.25, rh * 0.15, -0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 0.3; ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.beginPath(); ctx.ellipse(-bw2*0.2,-bh3*0.2,bw2*0.3,bh3*0.18,-0.4,0,Math.PI*2); ctx.fill();
+    ctx.restore(); ctx.restore();
   }
+  ctx.globalAlpha = 1;
+
+  // ── Foreground pine trees ──
+  for (let i = 0; i < 12; i++) {
+    const gx = (i * 277 + 100) % w, gy = terrain[gx];
+    if (gy < h * 0.25 || gy > h * 0.85) continue;
+    const th2 = 30 + Math.sin(gx * 0.15) * 14;
+    ctx.save();
+    ctx.globalAlpha = 0.25; ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.beginPath(); ctx.ellipse(gx + th2*0.4, gy, th2*0.35, th2*0.07, 0, 0, Math.PI*2); ctx.fill();
+    const trunkGrd = ctx.createLinearGradient(gx-3, gy-th2*0.3, gx+3, gy);
+    trunkGrd.addColorStop(0, B.treeTrunk); trunkGrd.addColorStop(1, 'rgba(20,10,0,0.9)');
+    ctx.globalAlpha = 0.9; ctx.fillStyle = trunkGrd;
+    ctx.beginPath(); ctx.roundRect(gx-2.5, gy-th2*0.28, 5, th2*0.28, 1); ctx.fill();
+    for (let ti = 0; ti < 3; ti++) {
+      const ty2 = gy - th2*(0.22 + ti/3*0.55), tw2 = th2*(0.38-ti*0.1)*(1-ti*0.08);
+      ctx.globalAlpha = 0.85; ctx.fillStyle = B.treeColor[2] || B.treeColor[0];
+      ctx.beginPath(); ctx.moveTo(gx, ty2-th2*0.28); ctx.lineTo(gx-tw2*0.15, ty2); ctx.lineTo(gx+tw2, ty2); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 0.75; ctx.fillStyle = B.treeColor[0];
+      ctx.beginPath(); ctx.moveTo(gx, ty2-th2*0.28); ctx.lineTo(gx-tw2, ty2); ctx.lineTo(gx+tw2*0.15, ty2); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 0.18; ctx.fillStyle = 'rgba(180,255,120,1)';
+      ctx.beginPath(); ctx.moveTo(gx, ty2-th2*0.28); ctx.lineTo(gx-tw2, ty2); ctx.lineTo(gx-tw2*0.7, ty2); ctx.lineTo(gx, ty2-th2*0.24); ctx.closePath(); ctx.fill();
+    }
+    ctx.globalAlpha = 1; ctx.restore();
+  }
+
+  // ── AO under terrain top edge ──
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(0, terrain[0]);
+  for (let x = 1; x < w; x++) ctx.lineTo(x, terrain[x]);
+  ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.clip();
+  const aoGrd = ctx.createLinearGradient(0, 0, 0, 22);
+  aoGrd.addColorStop(0, 'rgba(0,0,0,0.35)'); aoGrd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.moveTo(0, terrain[0]);
+  for (let x = 1; x < w; x++) ctx.lineTo(x, terrain[x]);
+  for (let x = w-1; x >= 0; x--) ctx.lineTo(x, terrain[x]+22);
+  ctx.closePath(); ctx.fillStyle = aoGrd; ctx.fill(); ctx.restore();
+
+  // ── Valley fog pools ──
+  ctx.save();
+  for (let x = 20; x < w - 20; x += 8) {
+    if (terrain[x] <= h * 0.68) continue;
+    const fogH2 = (terrain[x] - h*0.68) * 0.6 + 8;
+    const fg = ctx.createRadialGradient(x, terrain[x], 0, x, terrain[x], 40+fogH2*3);
+    fg.addColorStop(0, T.hazeColor.replace(/[\d.]+\)$/, '0.15)')); fg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = fg; ctx.beginPath(); ctx.ellipse(x, terrain[x], 40+fogH2*3, fogH2, 0, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+
+  // ── Water in deep valleys ──
+  const waterY = h * 0.80;
+  let hasWater = false;
+  for (let x = 0; x < w; x++) { if (terrain[x] > waterY) { hasWater = true; break; } }
+  if (hasWater) {
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(0, h);
+    for (let x = 0; x < w; x++) ctx.lineTo(x, Math.max(terrain[x], waterY));
+    ctx.lineTo(w, h); ctx.closePath();
+    const wGrd = ctx.createLinearGradient(0, waterY, 0, h);
+    wGrd.addColorStop(0, B.waterColor[0]); wGrd.addColorStop(1, B.waterColor[1]);
+    ctx.fillStyle = wGrd; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+    for (let i = 0; i < 6; i++) {
+      const wy = waterY + 8 + i * 10;
+      ctx.beginPath();
+      for (let x = 10; x < w - 10; x += 3) {
+        if (terrain[x] < wy) { const wx2 = wy + Math.sin(x*0.12+i*0.8)*2; (x===10||terrain[x-3]>=wy)?ctx.moveTo(x,wx2):ctx.lineTo(x,wx2); }
+      }
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    for (let x = 0; x < w; x++) {
+      if (terrain[x] > waterY) { (x===0||terrain[x-1]<=waterY)?ctx.moveTo(x,waterY):ctx.lineTo(x,waterY); }
+    }
+    ctx.strokeStyle='rgba(180,230,255,0.35)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── Surface ambient tint ──
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(0, terrain[0]);
+  for (let x = 1; x < w; x++) ctx.lineTo(x, terrain[x]);
+  ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+  ctx.fillStyle = B.surfaceColor; ctx.fill(); ctx.restore();
 }
 
 function drawTanks(ctx, players, turnIdx, terrain) {
@@ -2101,6 +2365,117 @@ function darkenColor(hex, factor) {
   return `rgb(${r},${g},${b})`;
 }
 
+function _drawFortChargeAura(ctx, cx, cy, R, ratio, tribe, now) {
+  ctx.save();
+  const outerR = R + 10 + ratio * 20;
+
+  if (tribe === 'fire') {
+    // Inner glow ring
+    const ringGrad = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, outerR);
+    ringGrad.addColorStop(0, 'rgba(255,80,0,0)');
+    ringGrad.addColorStop(0.5, `rgba(255,140,0,${0.18 + ratio * 0.32})`);
+    ringGrad.addColorStop(1, 'rgba(255,40,0,0)');
+    ctx.beginPath(); ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+    ctx.fillStyle = ringGrad; ctx.fill();
+    // Orbiting fire particles
+    for (let i = 0; i < 8; i++) {
+      const a = (now * 0.008 + i * Math.PI * 2 / 8) % (Math.PI * 2);
+      const orbitR = outerR * (0.82 + 0.18 * Math.sin(now * 0.015 + i));
+      const px = cx + Math.cos(a) * orbitR;
+      const py = cy + Math.sin(a) * orbitR * 0.65;
+      const sz = (3 + ratio * 5) * (0.7 + 0.3 * Math.sin(now * 0.022 + i));
+      const g = ctx.createRadialGradient(px, py, 0, px, py, sz);
+      g.addColorStop(0, 'rgba(255,240,100,0.95)');
+      g.addColorStop(0.4, 'rgba(255,100,0,0.7)');
+      g.addColorStop(1, 'rgba(255,0,0,0)');
+      ctx.beginPath(); ctx.arc(px, py, sz, 0, Math.PI * 2);
+      ctx.fillStyle = g; ctx.fill();
+    }
+
+  } else if (tribe === 'rock') {
+    // Dust cloud particles orbiting slowly
+    for (let i = 0; i < 7; i++) {
+      const a = (i * Math.PI * 2 / 7) + now * 0.0015;
+      const dustR = outerR * (0.65 + 0.35 * ((now * 0.003 + i * 0.9) % 1));
+      const px = cx + Math.cos(a) * dustR;
+      const py = cy + Math.sin(a) * dustR * 0.6 + R * 0.25;
+      const sz = 5 + ratio * 8;
+      ctx.beginPath(); ctx.arc(px, py, sz, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(190,150,95,${0.35 + ratio * 0.35})`; ctx.fill();
+    }
+    // Stone rumble ring
+    ctx.beginPath(); ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(130,100,55,${0.3 + ratio * 0.45})`;
+    ctx.lineWidth = 2.5 + ratio * 3.5;
+    ctx.setLineDash([5, 6]); ctx.stroke(); ctx.setLineDash([]);
+
+  } else if (tribe === 'wind') {
+    // Swirling arc lines
+    for (let i = 0; i < 5; i++) {
+      const baseA = (now * 0.006 + i * Math.PI * 2 / 5);
+      ctx.beginPath();
+      for (let j = 0; j < 22; j++) {
+        const t = j / 21;
+        const r = (R + 5) + t * (outerR - R - 5);
+        const a = baseA + t * 1.6;
+        const px = cx + Math.cos(a) * r;
+        const py = cy + Math.sin(a) * r * 0.65;
+        if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.strokeStyle = `rgba(120,220,255,${0.45 + ratio * 0.45})`;
+      ctx.lineWidth = 1.5 + ratio * 1.5; ctx.stroke();
+    }
+
+  } else if (tribe === 'thunder') {
+    // Electric bolt sparks
+    for (let i = 0; i < 7; i++) {
+      const a = (now * 0.013 * (i % 2 ? 1 : -1) + i * Math.PI * 2 / 7);
+      ctx.beginPath();
+      let r = R + 3;
+      ctx.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.65);
+      for (let s = 1; s <= 4; s++) {
+        r = R + 3 + (s / 4) * (outerR - R - 3);
+        const jitter = Math.sin(now * 0.06 + i * 7.3 + s) * 0.28;
+        const sa = a + jitter;
+        ctx.lineTo(cx + Math.cos(sa) * r, cy + Math.sin(sa) * r * 0.65);
+      }
+      ctx.strokeStyle = `rgba(200,240,255,${0.75 + ratio * 0.25})`;
+      ctx.lineWidth = 1 + ratio * 1.5;
+      ctx.shadowColor = 'rgba(120,200,255,0.95)'; ctx.shadowBlur = 7;
+      ctx.stroke(); ctx.shadowBlur = 0;
+    }
+    // Yellow arc ring
+    ctx.beginPath(); ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255,240,0,${0.12 + ratio * 0.28})`;
+    ctx.lineWidth = 4 + ratio * 5; ctx.stroke();
+
+  } else { // spirit
+    // Mystical glow ring
+    const ringGrad = ctx.createRadialGradient(cx, cy, R * 0.85, cx, cy, outerR);
+    ringGrad.addColorStop(0, 'rgba(170,100,255,0)');
+    ringGrad.addColorStop(0.5, `rgba(190,120,255,${0.15 + ratio * 0.28})`);
+    ringGrad.addColorStop(1, 'rgba(100,0,220,0)');
+    ctx.beginPath(); ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+    ctx.fillStyle = ringGrad; ctx.fill();
+    // Orbiting orbs
+    for (let i = 0; i < 5; i++) {
+      const a = (now * 0.005 * (1 + i * 0.18) + i * Math.PI * 2 / 5);
+      const orbitR = outerR * (0.88 + 0.12 * Math.sin(now * 0.011 + i * 2));
+      const px = cx + Math.cos(a) * orbitR;
+      const py = cy + Math.sin(a) * orbitR * 0.65;
+      const sz = 3 + ratio * 4;
+      const g = ctx.createRadialGradient(px, py, 0, px, py, sz * 2);
+      g.addColorStop(0, 'rgba(220,170,255,0.95)');
+      g.addColorStop(0.5, 'rgba(140,80,240,0.5)');
+      g.addColorStop(1, 'rgba(80,0,200,0)');
+      ctx.beginPath(); ctx.arc(px, py, sz * 2, 0, Math.PI * 2);
+      ctx.fillStyle = g; ctx.fill();
+    }
+  }
+
+  ctx.restore();
+}
+
 function drawTank(ctx, player, isCurrentTurn, terrain) {
   const x = player.x;
   const tx = Math.floor(Math.max(0, Math.min(x, FORT_CANVAS_W - 1)));
@@ -2152,6 +2527,10 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
       const vib = 1 + Math.sin(vibPhase) * chargeRatio * 0.06;
       sx *= compress * vib;
       sy *= compress / vib;
+
+      // Per-tribe charge aura (drawn before character so it appears behind)
+      const auraTribe = tamaData ? tamaData.tribe : 'fire';
+      _drawFortChargeAura(ctx, centerX, visY, R, chargeRatio, auraTribe, now);
     }
 
     // --- Ground shadow (cast on terrain surface) ---
