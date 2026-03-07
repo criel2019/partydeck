@@ -210,7 +210,8 @@
 }
 #fortSkillBar.visible {
   display: flex;
-  pointer-events: all;
+  pointer-events: auto;
+  touch-action: auto;
 }
 .fort-skill-btn {
   display: flex;
@@ -229,6 +230,7 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
+.fort-skill-btn { touch-action: manipulation; }
 .fort-skill-btn:active { transform: scale(0.92); }
 .fort-skill-btn.active {
   border-color: #7c9ffe;

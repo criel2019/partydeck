@@ -3324,7 +3324,8 @@ function fortUpdateSkillBar() {
       depleted ? 'depleted' : '',
     ].filter(Boolean).join(' ');
     return `<button class="${btnClass}" onclick="fortSelectSkill(${JSON.stringify(item.id)})"
-      ontouchend="event.preventDefault();fortSelectSkill(${JSON.stringify(item.id)})">
+      ontouchstart="event.stopPropagation();this._tapped=true;"
+      ontouchend="event.preventDefault();event.stopPropagation();if(this._tapped){this._tapped=false;fortSelectSkill(${JSON.stringify(item.id)});}">
       <span class="fort-skill-emoji">${item.emoji}</span>
       <span class="fort-skill-name">${item.name}</span>
       ${usesHtml}
