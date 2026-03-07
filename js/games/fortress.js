@@ -554,10 +554,12 @@ function updateWindParticles(wind) {
 function drawWindParticles(ctx, wind) {
   if (wind === 0 || fortWindParticles.length === 0) return;
   const dir = wind > 0 ? 1 : -1;
+  // Keep line width constant in screen pixels regardless of zoom
+  const lw = 1 / (fortCam.zoom || 1);
 
   ctx.save();
   ctx.lineCap = 'round';
-  ctx.lineWidth = 1;
+  ctx.lineWidth = lw;
   fortWindParticles.forEach(p => {
     const a = p.alpha * p.life;
     ctx.strokeStyle = `rgba(255, 255, 255, ${a})`;
@@ -1608,13 +1610,11 @@ function renderFortressScene(view) {
   applyCameraTransform(ctx);
   drawClouds(ctx, w);
   drawTerrain(ctx, terrain, w, h);
+  drawWindParticles(ctx, view.wind || 0);  // world-space: moves with camera
   drawTanks(ctx, view.players, view.turnIdx, terrain);
   drawHPBars(ctx, view.players, terrain);
   drawNames(ctx, view.players, terrain);
   ctx.restore();
-
-  // Wind particles are viewport-space effects — draw OUTSIDE camera transform
-  drawWindParticles(ctx, view.wind || 0);
 }
 
 function _buildSkyCache(w, h) {
