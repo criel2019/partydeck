@@ -1080,6 +1080,44 @@ function handleFortFire(peerId, msg) {
 // ===== PHYSICS (clean rewrite) =====
 // Simple projectile motion: parabolic arc, no drag, gentle wind
 // speed = 1.5 + power * 0.1  →  P50 ≈ 280px range, P100 ≈ 880px range at 45°
+// ===== TRAJECTORY PREVIEW =====
+function drawTrajectoryPreview(ctx, startX, startY, angleDeg, power, wind, terrain) {
+  const rad = angleDeg * Math.PI / 180;
+  const speed = 1.5 + power * 0.1;
+  let vx = speed * Math.cos(rad);
+  let vy = -speed * Math.sin(rad);
+  let x = startX, y = startY;
+
+  const MAX = 120;
+  const DOT_STEP = 3; // draw dot every N simulation steps
+  let dotCount = 0;
+  const maxDots = 18;
+
+  ctx.save();
+  for (let i = 0; i < MAX && dotCount < maxDots; i++) {
+    vx += wind * 0.003;
+    vy += FORT_GRAVITY;
+    x += vx; y += vy;
+
+    const tx = Math.floor(x);
+    if (tx < 0 || tx >= FORT_CANVAS_W) break;
+    if (terrain && y >= terrain[tx]) break;
+    if (y > FORT_CANVAS_H + 40) break;
+
+    if (i % DOT_STEP === 0) {
+      const progress = dotCount / maxDots;
+      const alpha = 0.85 - progress * 0.7;
+      const r = Math.max(0.8, 2.5 - progress * 1.8);
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
+      ctx.fill();
+      dotCount++;
+    }
+  }
+  ctx.restore();
+}
+
 function computeProjectilePath(startX, startY, angleDeg, power, wind) {
   const rad = angleDeg * Math.PI / 180;
   const speed = 1.5 + power * 0.1;
@@ -1668,9 +1706,9 @@ function drawDeadTank(ctx, player, terrain) {
     ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
 
     if (tamaImg) {
-      const imgSize = R * 2 * 1.22;
+      const imgSize = R * 2 * 2.4;
       const imgX = centerX - imgSize / 2;
-      const imgY = centerY - imgSize * 0.42;
+      const imgY = centerY - imgSize * 0.62;
       ctx.filter = 'grayscale(0.8) brightness(0.5)';
       ctx.drawImage(tamaImg, imgX, imgY, imgSize, imgSize);
       ctx.filter = 'none';
@@ -1784,10 +1822,11 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
     ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
 
     if (tamaImg) {
-      // Draw image scaled to fill circle, offset for head focus (like CSS object-position: center 58%)
-      const imgSize = R * 2 * 1.22;
+      // Zoom in so character content fills the circle (sprites often have padding around the character)
+      const imgSize = R * 2 * 2.4;
       const imgX = centerX - imgSize / 2;
-      const imgY = centerY - imgSize * 0.42;
+      // Shift up a bit: character body tends to be in lower-center of sprite
+      const imgY = centerY - imgSize * 0.62;
       ctx.drawImage(tamaImg, imgX, imgY, imgSize, imgSize);
     } else {
       // Fallback: emoji centered in circle (tribe color bg already drawn above)
@@ -1826,36 +1865,17 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
 
     ctx.restore();
 
-    // === Barrel from top of character circle ===
+    // === Dotted trajectory preview (local player's turn only) ===
     const isLocalPlayer = player.id === state.myId;
-    let angle = 45;
-    if (isLocalPlayer) angle = fortLocalAngle;
-
-    const rad = angle * Math.PI / 180;
-    const turretSX = centerX;
-    const turretSY = centerY - R * 0.5;
-    const barrelEndX = turretSX + FORT_BARREL_LEN * Math.cos(rad);
-    const barrelEndY = turretSY - FORT_BARREL_LEN * Math.sin(rad);
-
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(turretSX, turretSY + 1);
-    ctx.lineTo(barrelEndX, barrelEndY + 1);
-    ctx.stroke();
-    ctx.strokeStyle = '#444';
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(turretSX, turretSY);
-    ctx.lineTo(barrelEndX, barrelEndY);
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(turretSX, turretSY - 1);
-    ctx.lineTo(barrelEndX, barrelEndY - 1);
-    ctx.stroke();
+    if (isLocalPlayer && isCurrentTurn) {
+      const view = window._fortView;
+      const wind = view ? view.wind : 0;
+      const terrain = view ? view.terrain : null;
+      // Start from top-center of the character circle
+      const launchX = centerX;
+      const launchY = centerY - R - 1;
+      drawTrajectoryPreview(ctx, launchX, launchY, fortLocalAngle, fortLocalPower, wind, terrain);
+    }
 
   // Move fuel indicator for current turn player
   if (isCurrentTurn && player.id === state.myId) {
