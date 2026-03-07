@@ -3323,14 +3323,23 @@ function fortUpdateSkillBar() {
       isActive ? 'active' : '',
       depleted ? 'depleted' : '',
     ].filter(Boolean).join(' ');
-    return `<button class="${btnClass}" onclick="fortSelectSkill(${JSON.stringify(item.id)})"
-      ontouchstart="event.stopPropagation();this._tapped=true;"
-      ontouchend="event.preventDefault();event.stopPropagation();if(this._tapped){this._tapped=false;fortSelectSkill(${JSON.stringify(item.id)});}">
+    return `<button class="${btnClass}" data-skill="${item.id || ''}">
       <span class="fort-skill-emoji">${item.emoji}</span>
       <span class="fort-skill-name">${item.name}</span>
       ${usesHtml}
     </button>`;
   }).join('');
+
+  // 이벤트 위임: 버튼 클릭/터치 처리
+  bar.querySelectorAll('button[data-skill]').forEach(btn => {
+    const sid = btn.dataset.skill || null;
+    btn.addEventListener('touchstart', (e) => { e.stopPropagation(); btn._tapped = true; }, { passive: true });
+    btn.addEventListener('touchend', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (btn._tapped) { btn._tapped = false; fortSelectSkill(sid); }
+    });
+    btn.addEventListener('click', (e) => { e.stopPropagation(); fortSelectSkill(sid); });
+  });
 }
 
 function fortSelectSkill(skillId) {
