@@ -196,6 +196,39 @@ let _fortBirdHitCount = 0;
 // ===== SKY PLATFORMS =====
 let fortSkyPlatforms = [];
 
+// ===== CLOUD ASSETS =====
+let _fortCloudImgs = null;
+function _fortPreloadCloudImages() {
+  if (_fortCloudImgs) return; // already loading/loaded
+  _fortCloudImgs = [];
+  for (let i = 1; i <= 5; i++) {
+    const img = new Image();
+    img.src = 'img/games/fortress/cloud' + i + '.png';
+    img.onload = () => { _fortSkyCache = null; }; // rebuild sky when any cloud loads
+    _fortCloudImgs.push(img);
+  }
+}
+function _ftDrawCloudSprite(c, img, cx, cy, w, h, opacity, tint) {
+  if (!img || !img.complete || !img.naturalWidth) return;
+  // Draw into a temp surface so we can tint without affecting other canvas pixels
+  const tc = typeof OffscreenCanvas !== 'undefined'
+    ? new OffscreenCanvas(Math.ceil(w), Math.ceil(h))
+    : (() => { const el = document.createElement('canvas'); el.width = Math.ceil(w); el.height = Math.ceil(h); return el; })();
+  const tc2 = tc.getContext('2d');
+  tc2.drawImage(img, 0, 0, w, h);
+  if (tint) {
+    // source-atop: overlay color only where cloud has pixels
+    tc2.globalCompositeOperation = 'source-atop';
+    tc2.globalAlpha = tint.a;
+    tc2.fillStyle = `rgb(${tint.r},${tint.g},${tint.b})`;
+    tc2.fillRect(0, 0, w, h);
+  }
+  c.save();
+  c.globalAlpha = opacity;
+  c.drawImage(tc, cx - w / 2, cy - h / 2);
+  c.restore();
+}
+
 // ===== WEB AUDIO =====
 let _fortAudioCtx = null;
 function _fortGetAudioCtx() {
@@ -686,6 +719,7 @@ function drawWindParticles(ctx, wind) {
 // ===== HOST: GAME INIT =====
 function startFortress() {
   fortLoadTamaPet(); // load local player's tama for character rendering
+  _fortPreloadCloudImages(); // async: sprites load in bg, sky rebuilds when ready
   _fortCurrentBiome = FORT_BIOME_LIST[Math.floor(Math.random() * FORT_BIOME_LIST.length)];
   const _themeRoll = Math.random();
   _fortCurrentTheme = _themeRoll < 0.6 ? 'day' : _themeRoll < 0.85 ? 'dusk' : 'night';
@@ -1444,17 +1478,6 @@ function startFortAnimation(msg, callback) {
     view.terrain = msg.terrainBefore;
   }
 
-  // Apply damage to local view for post-animation render
-  if (view && hitResult && hitResult.targets) {
-    hitResult.targets.forEach(t => {
-      const p = view.players.find(pp => pp.id === t.id);
-      if (p) {
-        p.hp = Math.max(0, p.hp - t.damage);
-        if (p.hp <= 0) p.alive = false;
-      }
-    });
-  }
-
   // Clear old particles
   fortParticles = [];
   fortDebris = [];
@@ -1661,6 +1684,14 @@ function animateExplosion(x, y, hitResult, view, callback, terrainAfter) {
   spawnDebris(x, y, 20);
   spawnSmoke(x, y, 12);
   fortPlaySound('explosion');
+
+  // Apply damage to view NOW (at impact moment, not before animation)
+  if (view && hitResult && hitResult.targets) {
+    hitResult.targets.forEach(t => {
+      const p = view.players.find(pp => pp.id === t.id);
+      if (p) { p.hp = Math.max(0, p.hp - t.damage); if (p.hp <= 0) p.alive = false; }
+    });
+  }
 
   // Trigger hit squash on all damaged players
   if (hitResult && hitResult.targets) {
@@ -2033,22 +2064,42 @@ function _buildSkyCache(w, h) {
   // ── Layered background mountains (4 layers) ──
   _ftDrawMountains(c, w, h, T, B);
 
-  // ── Volumetric clouds (9 clouds, 3 depth layers) ──
-  const cloudDefs = [
-    // Far/high layer – small, faint
-    {cx:w*0.07, cy:h*0.07, cw:90,  ch:22, puffs:3, op:0.38},
-    {cx:w*0.38, cy:h*0.05, cw:130, ch:28, puffs:4, op:0.42},
-    {cx:w*0.62, cy:h*0.08, cw:110, ch:26, puffs:3, op:0.38},
-    {cx:w*0.90, cy:h*0.06, cw:100, ch:24, puffs:3, op:0.40},
-    // Mid layer – medium
-    {cx:w*0.22, cy:h*0.16, cw:200, ch:55, puffs:6, op:0.68},
-    {cx:w*0.57, cy:h*0.14, cw:220, ch:60, puffs:6, op:0.72},
-    {cx:w*0.84, cy:h*0.18, cw:175, ch:50, puffs:5, op:0.65},
-    // Near layer – large, prominent
-    {cx:w*0.10, cy:h*0.27, cw:240, ch:72, puffs:7, op:0.80},
-    {cx:w*0.73, cy:h*0.25, cw:260, ch:78, puffs:7, op:0.82},
+  // ── Clouds: sprite assets (with procedural fallback) ──
+  // [imgIdx, cx_frac, cy_frac, w, h, opacity]
+  const cloudSpriteDefs = [
+    // Far layer – small, high up
+    [0, 0.07, 0.08, 120, 68,  0.52],
+    [2, 0.39, 0.06, 110, 62,  0.48],
+    [4, 0.68, 0.09, 115, 65,  0.50],
+    [3, 0.91, 0.07, 105, 60,  0.45],
+    // Mid layer
+    [1, 0.22, 0.19, 220, 124, 0.78],
+    [3, 0.58, 0.17, 250, 142, 0.82],
+    [0, 0.86, 0.22, 200, 113, 0.75],
+    // Near layer – large
+    [2, 0.12, 0.30, 290, 164, 0.90],
+    [4, 0.70, 0.28, 310, 175, 0.92],
   ];
-  for (const cd of cloudDefs) _ftDrawCloud(c, cd.cx, cd.cy, cd.cw, cd.ch, cd.puffs, cd.op, T);
+  const tintMap = {
+    day:  null,
+    dusk: { r:210, g:110, b:40,  a:0.42 },
+    night:{ r:15,  g:22,  b:60,  a:0.60 },
+  };
+  const cloudTint = tintMap[_fortCurrentTheme] || null;
+  const imgsReady = _fortCloudImgs && _fortCloudImgs.every(img => img.complete && img.naturalWidth);
+  if (imgsReady) {
+    for (const [idx, cxf, cyf, cw, ch, op] of cloudSpriteDefs) {
+      _ftDrawCloudSprite(c, _fortCloudImgs[idx], cxf * w, cyf * h, cw, ch, op, cloudTint);
+    }
+  } else {
+    // Fallback procedural clouds until images load
+    const cloudDefs = [
+      {cx:w*0.22, cy:h*0.19, cw:200, ch:55, puffs:5, op:0.68},
+      {cx:w*0.57, cy:h*0.16, cw:220, ch:60, puffs:5, op:0.72},
+      {cx:w*0.84, cy:h*0.20, cw:175, ch:50, puffs:4, op:0.65},
+    ];
+    for (const cd of cloudDefs) _ftDrawCloud(c, cd.cx, cd.cy, cd.cw, cd.ch, cd.puffs, cd.op, T);
+  }
 
   return oc;
 }
