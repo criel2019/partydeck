@@ -1284,49 +1284,22 @@ function handleFortFire(peerId, msg) {
 // Simple projectile motion: parabolic arc, no drag, gentle wind
 // speed = 1.5 + power * 0.1  →  P50 ≈ 280px range, P100 ≈ 880px range at 45°
 // ===== TRAJECTORY PREVIEW =====
-// Simulates actual physics parabola so player sees the real arc
+// Simple straight dotted line showing only the firing angle direction
 function drawTrajectoryPreview(ctx, startX, startY, angleDeg, wind) {
   const rad = angleDeg * Math.PI / 180;
-  const speed = 1.5 + fortLocalPower * 0.1;
-  let vx = speed * Math.cos(rad);
-  let vy = -speed * Math.sin(rad);
-  let x = startX, y = startY;
-
-  const terrain = window._fortView ? window._fortView.terrain : null;
-  const platforms = fortSkyPlatforms || [];
-  const width = FORT_CANVAS_W;
-  const w = wind || 0;
+  const lineLen = 72;
+  const endX = startX + Math.cos(rad) * lineLen;
+  const endY = startY - Math.sin(rad) * lineLen;
 
   ctx.save();
-  const MAX_PREVIEW = 500;
-  const DOT_STEP = 6; // draw dot every N steps
-  for (let i = 1; i <= MAX_PREVIEW; i++) {
-    vx += w * 0.003;
-    vy += FORT_GRAVITY;
-    x += vx;
-    y += vy;
-
-    if (x < 0 || x >= width || y > FORT_CANVAS_H + 20) break;
-    if (terrain) {
-      const tx = Math.floor(Math.max(0, Math.min(x, width - 1)));
-      if (y >= terrain[tx]) break;
-    }
-    let onPlatform = false;
-    for (const plat of platforms) {
-      if (!plat.destroyed && x >= plat.x - plat.w / 2 && x <= plat.x + plat.w / 2 &&
-          y >= plat.y && y <= plat.y + plat.h) { onPlatform = true; break; }
-    }
-    if (onPlatform) break;
-
-    if (i % DOT_STEP === 0) {
-      const fade = Math.max(0, 0.85 - (i / MAX_PREVIEW) * 1.1);
-      const sz = Math.max(0.8, 2.5 - (i / MAX_PREVIEW) * 2);
-      ctx.beginPath();
-      ctx.arc(x, y, sz, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${fade.toFixed(2)})`;
-      ctx.fill();
-    }
-  }
+  ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(startX, startY);
+  ctx.lineTo(endX, endY);
+  ctx.stroke();
   ctx.restore();
 }
 
