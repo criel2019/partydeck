@@ -1701,6 +1701,17 @@ function startFortAnimation(msg, callback) {
   // Play fire sound for all clients (shooter and observers alike)
   fortPlaySound('fire', msg.shooterTribe || 'fire');
 
+  const view = window._fortView;
+
+  // ── terrainBefore를 경로 계산 전에 적용 ──────────────────────
+  // HOST와 CLIENT 모두 동일한 terrainBefore 기준으로 경로를 계산해야
+  // 시각 경로와 폭발 위치가 일치한다. 순서가 중요!
+  const savedFortTerrain = fortState ? fortState.terrain : null;
+  if (msg.terrainBefore) {
+    if (view) view.terrain = msg.terrainBefore;
+    if (fortState) fortState.terrain = msg.terrainBefore; // host도 일시 교체
+  }
+
   // 스킬 효과에 따른 skillOpts (클라이언트 경로 재계산용)
   const animSkillOpts = (msg.skill === 'sniper' || msg.skill === 'penetrate' || msg.skill === 'bounce' ||
                          msg.skill === 'double_pierce' || msg.skill === 'triple_pierce')
@@ -1709,17 +1720,14 @@ function startFortAnimation(msg, callback) {
   const pathResult = computeProjectilePath(msg.startX, msg.startY, msg.angle, msg.power, msg.wind, animSkillOpts);
   const path = pathResult.path;
 
+  // host terrain 복구 (state 로직은 terrainAfter 기준으로 돌아감)
+  if (savedFortTerrain && fortState) fortState.terrain = savedFortTerrain;
+
   // 분열탄: 클라이언트도 경로를 40% 지점에서 잘라냄
   if (msg.skill === 'split' && path.length > 1) {
     path.length = Math.max(1, Math.floor(path.length * 0.40) + 1);
   }
   const hitResult = msg.hitResult;
-  const view = window._fortView;
-
-  // Use pre-destruction terrain during projectile flight
-  if (view && msg.terrainBefore) {
-    view.terrain = msg.terrainBefore;
-  }
 
   // Clear old particles
   fortParticles = [];
