@@ -1058,18 +1058,18 @@ const HAND_RANKINGS = {
 </div>`
   },
   ecard: {
-    title: '👑 황제를 잡아라! 규칙',
+    title: '🕵️ 형사와 강도 규칙',
     content: `<div style="display:flex;flex-direction:column;gap:6px;">
 <div style="color:#ffd700;font-weight:700;">진행 방식</div>
 <div>총 <b>12판</b> 진행</div>
 <div><b>1~6판</b>: A 유저가 배팅 금액 설정</div>
 <div><b>7~12판</b>: B 유저가 배팅 금액 설정</div>
-<div>역할은 판마다 교대되어 각자 <b>황제 3회 / 노예 3회</b></div>
+<div>역할은 판마다 교대되어 각자 <b>강도 3회 / 형사 3회</b></div>
 <div style="color:#ffb74d;font-weight:700;margin-top:6px;">한 판 카드 순서</div>
-<div><b>황제 제출 → 노예 제출 → 황제 제출 → 노예 제출 → 남은 카드 결과 발표</b></div>
+<div><b>강도 제출 → 형사 제출 → 강도 제출 → 형사 제출 → 남은 카드 결과 발표</b></div>
 <div style="color:#4fc3f7;font-weight:700;margin-top:6px;">승패 핵심</div>
-<div>노예가 황제를 잡으면 노예 승리</div>
-<div>황제가 노예를 회피하면 즉시 황제 승리</div>
+<div>형사가 강도를 잡으면 형사 승리</div>
+<div>강도가 형사를 회피하면 즉시 강도 승리</div>
 </div>`
   }
 };
@@ -1311,7 +1311,7 @@ const GAME_INFO = {
   quickdraw:{ emoji:'🤠', name:'총잡이', desc:'서부 결투! "Fire!" 신호에 가장 빠르게 반응하는 사람이 승리.', players:'2~14명', time:'2~5분', type:'반응속도' },
   roulette: { emoji:'🔫', name:'러시안 룰렛', desc:'스마트폰을 총처럼! 실린더를 돌리고 방아쇠를 당기는 스릴 게임.', players:'2~14명', time:'1~3분', type:'운' },
   lottery:  { emoji:'🎰', name:'뽑기', desc:'번호를 뽑아 운명을 결정! 랜덤 추첨으로 당첨자를 가려내세요.', players:'1~14명', time:'5~15분', type:'운' },
-  ecard:    { emoji:'👑', name:'황제를 잡아라!', desc:'황제 vs 노예 심리전. 4판 A황제→A노예→B황제→B노예 구조로 배팅과 블러핑 승부!', players:'2명', time:'5~10분', type:'심리전' },
+  ecard:    { emoji:'🕵️', name:'형사와 강도', desc:'강도 vs 형사 심리전. 4판 A강도→A형사→B강도→B형사 구조로 배팅과 블러핑 승부!', players:'2명', time:'5~10분', type:'심리전' },
   yahtzee:  { emoji:'🎲', name:'야추', desc:'5개의 주사위로 최고 점수를 노려라! 3번의 기회로 족보 완성.', players:'1~14명', time:'10~15분', type:'주사위' },
   updown:   { emoji:'🃏', name:'업다운', desc:'다음 카드가 높을까 낮을까? 연속 맞추기 도전!', players:'1~14명', time:'5~10분', type:'카드' },
   truth:    { emoji:'⭕', name:'진실게임', desc:'질문을 하고, 비밀투표를 통해 다른 사람의 속마음을 엿볼 수 있어요.', players:'3~14명', time:'10~20분', type:'파티' },

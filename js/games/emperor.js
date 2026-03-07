@@ -183,7 +183,7 @@ function ecRollStartingDice() {
 
 function startECard() {
   if (state.players.length !== 2) {
-    showToast('황제를 잡아라는 정확히 2명만 플레이 가능합니다');
+    showToast('형사와 강도는 정확히 2명만 플레이 가능합니다');
     return;
   }
 
@@ -285,7 +285,7 @@ function ecardCardIcon(card) {
 }
 
 function ecardCardName(card) {
-  var names = { emperor: '황제', citizen: '시민', slave: '노예' };
+  var names = { emperor: '강도', citizen: '시민', slave: '형사' };
   return names[card] || '알수없음';
 }
 
@@ -414,7 +414,7 @@ function renderECardView(view) {
   document.getElementById('ecardScoreSlave').textContent = String(view.score.p2 || 0);
 
   var roleIcon = view.myRole === 'emperor' ? '👑' : '⛓️';
-  var roleName = view.myRole === 'emperor' ? '황제' : '노예';
+  var roleName = view.myRole === 'emperor' ? '강도' : '형사';
   var roleColor = view.myRole === 'emperor' ? 'var(--gold)' : '#c0c0c0';
   document.getElementById('ecardRoleIcon').textContent = roleIcon;
   document.getElementById('ecardRoleName').textContent = roleName;
@@ -551,11 +551,11 @@ function renderECardView(view) {
         var iAmSlave = view.myRole === 'slave';
         var iAmSetter = view.betSetterId === view.myId;
         if (iAmSlave && iAmSetter) {
-          betRoleHint.textContent = '노예 베팅 · 이기면 ×' + EC_SLAVE_MULTIPLIER + ' 획득 / 지면 베팅액만 잃음';
+          betRoleHint.textContent = '형사 베팅 · 이기면 ×' + EC_SLAVE_MULTIPLIER + ' 획득 / 지면 베팅액만 잃음';
         } else if (!iAmSlave && iAmSetter) {
-          betRoleHint.textContent = '황제 베팅 · 양쪽 동일 리스크 (×1)';
+          betRoleHint.textContent = '강도 베팅 · 양쪽 동일 리스크 (×1)';
         } else if (iAmSlave) {
-          betRoleHint.textContent = '황제가 베팅 설정 중 · 양쪽 동일 리스크';
+          betRoleHint.textContent = '강도가 베팅 설정 중 · 양쪽 동일 리스크';
         } else {
           betRoleHint.textContent = '';
         }
@@ -575,7 +575,7 @@ function renderECardView(view) {
     } else if (!isWaitingFirst) {
       // 상대가 아직 내기 전 (기다리는 중)
       waiting.style.display = 'flex';
-      waitingText.textContent = '황제가 카드를 선택 중...';
+      waitingText.textContent = '강도가 카드를 선택 중...';
     }
     return;
   }
@@ -587,7 +587,7 @@ function renderECardView(view) {
       submitBtn.disabled = ecState.selectedCard === null;
     } else if (!isWaitingFirst) {
       waiting.style.display = 'flex';
-      waitingText.textContent = '노예가 카드를 선택 중...';
+      waitingText.textContent = '형사가 카드를 선택 중...';
     }
     return;
   }
@@ -760,23 +760,23 @@ function ecResolveExchange() {
 
   // 노예 > 황제
   if (empCard === 'emperor' && slvCard === 'slave') {
-    ecApplyGameWin('slave', '노예가 황제를 잡음');
+    ecApplyGameWin('slave', '형사가 강도를 잡음');
     return;
   }
   // 황제 > 시민
   if (empCard === 'emperor' && slvCard === 'citizen') {
-    ecApplyGameWin('emperor', '황제가 시민을 제압');
+    ecApplyGameWin('emperor', '강도가 시민을 제압');
     return;
   }
   // 시민 > 노예
   if (empCard === 'citizen' && slvCard === 'slave') {
-    ecApplyGameWin('emperor', '시민이 노예를 제압');
+    ecApplyGameWin('emperor', '시민이 형사를 제압');
     return;
   }
   // 시민 vs 시민 → 다음 교환으로
   // 4교환 모두 마쳤는데 잡히지 않으면 황제 생존 승리
   if (ec.exchange >= ec.maxExchanges) {
-    ecApplyGameWin('emperor', '황제 생존! 남은 카드 결과 발표');
+    ecApplyGameWin('emperor', '강도 도주! 남은 카드 결과 발표');
     return;
   }
 

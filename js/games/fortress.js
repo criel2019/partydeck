@@ -823,7 +823,7 @@ function setupFortressKeyboard() {
     } else if (e.key === 'e' || e.key === 'E') {
       e.preventDefault();
       fortPowerStep(1);
-    } else if (e.key === ' ' || e.key === 'Enter') {
+    } else if (e.key === 'Enter') {
       e.preventDefault();
       fortFire();
     }
@@ -972,12 +972,13 @@ function fortFitCanvas() {
   if (!container) return;
   const cw = container.clientWidth;
   const ch = container.clientHeight;
-  const aspect = FORT_CANVAS_W / FORT_CANVAS_H; // 8:5 = 1.6
+  const aspect = FORT_CANVAS_W / FORT_CANVAS_H;
   let w, h;
+  // Cover mode: fill the entire container (no letterbox bars)
   if (cw / ch > aspect) {
-    h = ch; w = h * aspect;
-  } else {
     w = cw; h = w / aspect;
+  } else {
+    h = ch; w = h * aspect;
   }
   fortCanvas.style.width = Math.round(w) + 'px';
   fortCanvas.style.height = Math.round(h) + 'px';
