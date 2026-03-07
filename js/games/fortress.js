@@ -90,9 +90,63 @@ function fortTamaGlowColor(pet) {
 let _fortSkyCache = null;       // OffscreenCanvas: sky + clouds (static, built once)
 let _fortTerrainGrad = null;    // cached terrain gradient (rebuilt on canvas init)
 let _fortPlayerInfoCache = {};  // per-player id → { tamaData, glowColor, emoji }
+let _fortCharAnim = {};          // per-player id → { phase, squash: null|{startMs,type} }
 // Pre-resolved references to tamagotchi globals (avoid typeof checks per frame)
 function _fortResolveTamaGlobals() {
   _fortPlayerInfoCache = {}; // clear on game start
+  _fortCharAnim = {};
+}
+
+// ===== CHARACTER ANIMATION HELPERS =====
+function _fortCharAnimGet(id) {
+  if (!_fortCharAnim[id]) {
+    _fortCharAnim[id] = { phase: Math.random() * Math.PI * 2, squash: null };
+  }
+  return _fortCharAnim[id];
+}
+
+function fortTriggerSquash(playerId, type) {
+  _fortCharAnimGet(playerId).squash = { startMs: Date.now(), type };
+}
+
+// Returns { sx, sy } squash/stretch scale. Clears anim.squash when done.
+function _fortGetSquashScale(anim, now) {
+  if (!anim || !anim.squash) return { sx: 1, sy: 1 };
+  const elapsed = now - anim.squash.startMs;
+  const type = anim.squash.type;
+  let sx, sy;
+  if (type === 'fire') {
+    // Recoil: quick squash wide → stretch tall → settle
+    if (elapsed < 80) {
+      const t = elapsed / 80;
+      sx = 1 + 0.35 * t; sy = 1 - 0.35 * t;
+    } else if (elapsed < 200) {
+      const t = (elapsed - 80) / 120;
+      sx = 1.35 - 0.57 * t; sy = 0.65 + 0.65 * t;
+    } else if (elapsed < 340) {
+      const t = (elapsed - 200) / 140;
+      sx = 0.78 + 0.22 * t; sy = 1.30 - 0.30 * t;
+    } else {
+      anim.squash = null; return { sx: 1, sy: 1 };
+    }
+  } else if (type === 'hit') {
+    // Impact: slam flat → overshooting bounce → settle
+    if (elapsed < 65) {
+      const t = elapsed / 65;
+      sx = 1 + 0.45 * t; sy = 1 - 0.45 * t;
+    } else if (elapsed < 230) {
+      const t = (elapsed - 65) / 165;
+      sx = 1.45 - 0.60 * t; sy = 0.55 + 0.65 * t;
+    } else if (elapsed < 400) {
+      const t = (elapsed - 230) / 170;
+      sx = 0.85 + 0.15 * t; sy = 1.20 - 0.20 * t;
+    } else {
+      anim.squash = null; return { sx: 1, sy: 1 };
+    }
+  } else {
+    return { sx: 1, sy: 1 };
+  }
+  return { sx, sy };
 }
 
 // ===== GLOBAL STATE =====
@@ -1257,6 +1311,12 @@ function startFortAnimation(msg, callback) {
   fortDebris = [];
   fortSmoke = [];
 
+  // Trigger fire squash on shooter
+  if (view && view.players && view.turnIdx !== undefined) {
+    const shooter = view.players[view.turnIdx];
+    if (shooter) fortTriggerSquash(shooter.id, 'fire');
+  }
+
   let frameIdx = 0;
   const speed = 2; // slower projectile (was 4)
   let muzzleFlashFrame = 0;
@@ -1387,6 +1447,11 @@ function animateExplosion(x, y, hitResult, view, callback, terrainAfter) {
   spawnExplosionParticles(x, y, 40, true);
   spawnDebris(x, y, 20);
   spawnSmoke(x, y, 12);
+
+  // Trigger hit squash on all damaged players
+  if (hitResult && hitResult.targets) {
+    hitResult.targets.forEach(t => { if (t.damage > 0) fortTriggerSquash(t.id, 'hit'); });
+  }
 
   // Camera: target impact point
   fortCam.targetX = x;
@@ -1806,10 +1871,39 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
   // ===== TAMAGOTCHI CHARACTER RENDERING =====
   const R = FORT_TAMA_RADIUS;
     const centerX = x;
-    const centerY = terrainY - R - 2;
+    const baseY = terrainY - R - 2;   // ground-level base position
     const tamaImg = fortGetTamaImage(tamaData);
 
+    // --- Float animation ---
+    const now = Date.now();
+    const anim = _fortCharAnimGet(player.id);
+    const isMoving = fortMoveDir !== 0 && player.id === (state && state.myId);
+    const floatAmp  = isMoving ? 3.5 : 2.5;
+    const floatSpeed = isMoving ? 0.005 : 0.0025;
+    // Always float 2–(2+floatAmp*2) px above ground (use half-wave so never dips below base)
+    const floatOff = -2 - (1 - Math.cos(now * floatSpeed + anim.phase)) * floatAmp;
+    const visY = baseY + floatOff;
+
+    // --- Squash/stretch scale ---
+    const { sx, sy } = _fortGetSquashScale(anim, now);
+
+    // --- Ground shadow (cast on terrain surface) ---
+    const floatH = -floatOff; // how high above base (positive)
+    const shadowOp = Math.max(0, 0.22 - floatH * 0.018);
+    const shadowW  = R * Math.max(0.6, 1.05 - floatH * 0.025);
     ctx.save();
+    ctx.globalAlpha = shadowOp;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(centerX, terrainY - 1, shadowW, R * 0.28, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // --- Character circle (with squash+float pivot transform) ---
+    ctx.save();
+    ctx.translate(centerX, visY);
+    ctx.scale(sx, sy);
+    ctx.translate(-centerX, -visY);
 
     // Current turn glow
     if (isCurrentTurn) {
@@ -1819,7 +1913,7 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
 
     // Circular border (player color ring)
     ctx.beginPath();
-    ctx.arc(centerX, centerY, R + 3, 0, Math.PI * 2);
+    ctx.arc(centerX, visY, R + 3, 0, Math.PI * 2);
     ctx.fillStyle = player.color;
     ctx.fill();
     ctx.shadowBlur = 0;
@@ -1827,12 +1921,12 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
     // Clip to circle and draw character image
     ctx.save();
     ctx.beginPath();
-    ctx.arc(centerX, centerY, R, 0, Math.PI * 2);
+    ctx.arc(centerX, visY, R, 0, Math.PI * 2);
     ctx.clip();
 
     // Always draw a solid base background (tribe color)
     ctx.fillStyle = pInfo.glowColor;
-    ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
+    ctx.fillRect(centerX - R, visY - R, R * 2, R * 2);
 
     if (tamaImg) {
       // Mirror tamagotchi CSS: object-fit:cover + object-position:center 58% + scale(1.22)
@@ -1841,43 +1935,43 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
       const coverScale = Math.max(2 * R / natW, 2 * R / natH) * 1.22;
       const dw = natW * coverScale;
       const dh = natH * coverScale;
-      ctx.drawImage(tamaImg, centerX - dw * 0.5, centerY - dh * 0.58, dw, dh);
+      ctx.drawImage(tamaImg, centerX - dw * 0.5, visY - dh * 0.58, dw, dh);
     } else {
       // Fallback: emoji centered in circle (tribe color bg already drawn above)
       ctx.fillStyle = 'rgba(0,0,0,0.35)';
-      ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
+      ctx.fillRect(centerX - R, visY - R, R * 2, R * 2);
       ctx.font = `bold ${Math.floor(R * 1.1)}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(pInfo.emoji, centerX, centerY + 1);
+      ctx.fillText(pInfo.emoji, centerX, visY + 1);
     }
     ctx.restore(); // end clip
 
     // Inner highlight ring
     ctx.beginPath();
-    ctx.arc(centerX, centerY, R, 0, Math.PI * 2);
+    ctx.arc(centerX, visY, R, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(255,255,255,0.2)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
     // Outer ring outline
     ctx.beginPath();
-    ctx.arc(centerX, centerY, R + 3, 0, Math.PI * 2);
+    ctx.arc(centerX, visY, R + 3, 0, Math.PI * 2);
     ctx.strokeStyle = isCurrentTurn ? '#ffd700' : 'rgba(0,0,0,0.4)';
     ctx.lineWidth = isCurrentTurn ? 2.5 : 1.5;
     ctx.stroke();
 
     // Pulsing glow for current turn
     if (isCurrentTurn) {
-      const pulse = 0.3 + 0.2 * Math.sin(Date.now() * 0.004);
+      const pulse = 0.3 + 0.2 * Math.sin(now * 0.004);
       ctx.beginPath();
-      ctx.arc(centerX, centerY, R + 6, 0, Math.PI * 2);
+      ctx.arc(centerX, visY, R + 6, 0, Math.PI * 2);
       ctx.strokeStyle = `rgba(255,215,0,${pulse})`;
       ctx.lineWidth = 2;
       ctx.stroke();
     }
 
-    ctx.restore();
+    ctx.restore(); // end squash transform
 
     // === Dotted trajectory preview (local player's turn only) ===
     const isLocalPlayer = player.id === state.myId;
@@ -1885,9 +1979,9 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
       const view = window._fortView;
       const wind = view ? view.wind : 0;
       const terrain = view ? view.terrain : null;
-      // Start from top-center of the character circle
+      // Start from top-center of the character circle (accounting for float offset)
       const launchX = centerX;
-      const launchY = centerY - R - 1;
+      const launchY = visY - R - 1;
       drawTrajectoryPreview(ctx, launchX, launchY, fortLocalAngle);
     }
 
@@ -2156,6 +2250,7 @@ function closeFortressCleanup() {
   _fortSkyCache = null;
   _fortTerrainGrad = null;
   _fortPlayerInfoCache = {};
+  _fortCharAnim = {};
 }
 
 function closeFortressGame() {
