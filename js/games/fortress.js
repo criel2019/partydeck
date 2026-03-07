@@ -129,10 +129,12 @@ let _fortDrag = null;
 function clampCamera() {
   const vw = FORT_CANVAS_W / fortCam.zoom / 2;
   const vh = FORT_CANVAS_H / fortCam.zoom / 2;
-  fortCam.x = Math.max(vw, Math.min(FORT_CANVAS_W - vw, fortCam.x));
-  fortCam.y = Math.max(vh, Math.min(FORT_CANVAS_H - vh, fortCam.y));
-  fortCam.targetX = Math.max(vw, Math.min(FORT_CANVAS_W - vw, fortCam.targetX));
-  fortCam.targetY = Math.max(vh, Math.min(FORT_CANVAS_H - vh, fortCam.targetY));
+  const cx = FORT_CANVAS_W / 2, cy = FORT_CANVAS_H / 2;
+  // When zoomed out enough to see the whole axis, force center
+  if (vw >= cx) { fortCam.x = cx; fortCam.targetX = cx; }
+  else { fortCam.x = Math.max(vw, Math.min(FORT_CANVAS_W - vw, fortCam.x)); fortCam.targetX = Math.max(vw, Math.min(FORT_CANVAS_W - vw, fortCam.targetX)); }
+  if (vh >= cy) { fortCam.y = cy; fortCam.targetY = cy; }
+  else { fortCam.y = Math.max(vh, Math.min(FORT_CANVAS_H - vh, fortCam.y)); fortCam.targetY = Math.max(vh, Math.min(FORT_CANVAS_H - vh, fortCam.targetY)); }
 }
 
 function applyCameraTransform(ctx) {
@@ -142,15 +144,19 @@ function applyCameraTransform(ctx) {
   ctx.translate(-fortCam.x + vw / 2, -fortCam.y + vh / 2);
 }
 
-function fortCameraLoop() {
+let _fortCamLastTs = 0;
+function fortCameraLoop(ts) {
   const view = window._fortView;
   if (view && view.phase === 'aiming') {
-    // Lerp camera toward target and re-render
+    // Frame-rate independent lerp (normalized to 60fps)
+    const dt = Math.min(ts - _fortCamLastTs, 50); // cap at 50ms to handle tab switch
+    _fortCamLastTs = ts;
+    const alpha = dt > 0 ? 1 - Math.pow(1 - fortCam.lerp, dt / (1000 / 60)) : fortCam.lerp;
     const dx = fortCam.targetX - fortCam.x;
     const dy = fortCam.targetY - fortCam.y;
-    if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
-      fortCam.x += dx * fortCam.lerp;
-      fortCam.y += dy * fortCam.lerp;
+    if (Math.abs(dx) > 0.3 || Math.abs(dy) > 0.3) {
+      fortCam.x += dx * alpha;
+      fortCam.y += dy * alpha;
       clampCamera();
       renderFortressScene(view);
     }
@@ -159,6 +165,7 @@ function fortCameraLoop() {
 }
 
 function fortZoomIn() {
+  if (fortAnimId) return; // don't zoom during animation
   fortCam.zoom = Math.min(FORT_CAM_ZOOM_MAX, fortCam.zoom + 0.2);
   clampCamera();
   const view = window._fortView;
@@ -166,6 +173,7 @@ function fortZoomIn() {
 }
 
 function fortZoomOut() {
+  if (fortAnimId) return; // don't zoom during animation
   fortCam.zoom = Math.max(FORT_CAM_ZOOM_MIN, fortCam.zoom - 0.2);
   clampCamera();
   const view = window._fortView;
@@ -619,13 +627,18 @@ function setupFortressKeyboard() {
     }
   };
 
+  _fortVisibilityHandler = () => { if (document.hidden) _fortDrag = null; };
+
   document.addEventListener('keydown', _fortKeyDown);
   document.addEventListener('keyup', _fortKeyUp);
+  document.addEventListener('visibilitychange', _fortVisibilityHandler);
 }
 
 function cleanupFortressKeyboard() {
   if (_fortKeyDown) document.removeEventListener('keydown', _fortKeyDown);
   if (_fortKeyUp) document.removeEventListener('keyup', _fortKeyUp);
+  if (_fortVisibilityHandler) document.removeEventListener('visibilitychange', _fortVisibilityHandler);
+  _fortVisibilityHandler = null;
   _fortKeyDown = null;
   _fortKeyUp = null;
   fortStopMove();
@@ -811,21 +824,23 @@ function initFortCanvas() {
       const dist = Math.sqrt(dx * dx + dy * dy);
       const scale = dist / _fortDrag.startDist;
       fortCam.zoom = Math.max(FORT_CAM_ZOOM_MIN, Math.min(FORT_CAM_ZOOM_MAX, _fortDrag.startZoom * scale));
-      // Also pan with midpoint
+      // Pan with midpoint — use separate X/Y scales for correct aspect ratio
       const rect = fortCanvas.getBoundingClientRect();
       const scaleX = FORT_CANVAS_W / rect.width;
+      const scaleY = FORT_CANVAS_H / rect.height;
       const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
       const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       const pdx = (mx - _fortDrag.sx) * scaleX / fortCam.zoom;
-      const pdy = (my - _fortDrag.sy) * scaleX / fortCam.zoom;
+      const pdy = (my - _fortDrag.sy) * scaleY / fortCam.zoom;
       fortCam.targetX = _fortDrag.cx - pdx;
       fortCam.targetY = _fortDrag.cy - pdy;
       clampCamera();
     } else if (!_fortDrag.pinch && e.touches.length === 1) {
       const rect = fortCanvas.getBoundingClientRect();
       const scaleX = FORT_CANVAS_W / rect.width;
+      const scaleY = FORT_CANVAS_H / rect.height;
       const dx = (e.touches[0].clientX - _fortDrag.sx) * scaleX / fortCam.zoom;
-      const dy = (e.touches[0].clientY - _fortDrag.sy) * scaleX / fortCam.zoom;
+      const dy = (e.touches[0].clientY - _fortDrag.sy) * scaleY / fortCam.zoom;
       fortCam.targetX = _fortDrag.cx - dx;
       fortCam.targetY = _fortDrag.cy - dy;
       clampCamera();
@@ -857,8 +872,9 @@ function initFortCanvas() {
     if (!_fortDrag) return;
     const rect = fortCanvas.getBoundingClientRect();
     const scaleX = FORT_CANVAS_W / rect.width;
+    const scaleY = FORT_CANVAS_H / rect.height;
     const dx = (e.clientX - _fortDrag.sx) * scaleX / fortCam.zoom;
-    const dy = (e.clientY - _fortDrag.sy) * scaleX / fortCam.zoom;
+    const dy = (e.clientY - _fortDrag.sy) * scaleY / fortCam.zoom;
     fortCam.targetX = _fortDrag.cx - dx;
     fortCam.targetY = _fortDrag.cy - dy;
     clampCamera();
@@ -867,14 +883,16 @@ function initFortCanvas() {
   fortCanvas.onmouseup = () => { _fortDrag = null; };
   fortCanvas.onmouseleave = () => { _fortDrag = null; };
 
-  // Wheel zoom
-  fortCanvas.onwheel = (e) => {
+  // Wheel zoom — use addEventListener for explicit passive:false
+  fortCanvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     const zoomSpeed = 0.15;
     const dir = e.deltaY < 0 ? 1 : -1;
     fortCam.zoom = Math.max(FORT_CAM_ZOOM_MIN, Math.min(FORT_CAM_ZOOM_MAX, fortCam.zoom + dir * zoomSpeed));
     clampCamera();
-  };
+    const view = window._fortView;
+    if (view && !fortAnimId) renderFortressScene(view);
+  }, { passive: false });
 }
 
 // ===== LOCAL CONTROLS =====
@@ -1527,6 +1545,9 @@ function renderFortressScene(view) {
   const h = FORT_CANVAS_H;
   const terrain = view.terrain || (fortState ? fortState.terrain : new Array(w).fill(380));
 
+  // Reset to DPR base transform before clearRect to avoid ghost strips from any caller-applied translate
+  const dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
 
   // Sky: no camera transform (always full screen)
@@ -1535,7 +1556,7 @@ function renderFortressScene(view) {
   // Update wind particles each frame
   updateWindParticles(view.wind || 0);
 
-  // Everything else: camera transform
+  // World-space drawing: camera transform
   ctx.save();
   applyCameraTransform(ctx);
   drawClouds(ctx, w);
@@ -1543,13 +1564,20 @@ function renderFortressScene(view) {
   drawTanks(ctx, view.players, view.turnIdx, terrain);
   drawHPBars(ctx, view.players, terrain);
   drawNames(ctx, view.players, terrain);
-  drawWindParticles(ctx, view.wind || 0);
   ctx.restore();
+
+  // Wind particles are viewport-space effects — draw OUTSIDE camera transform
+  drawWindParticles(ctx, view.wind || 0);
 }
 
 function _buildSkyCache(w, h) {
-  const oc = new OffscreenCanvas(w, h);
+  // Build at DPR resolution so drawImage doesn't upscale on Retina displays
+  const dpr = window.devicePixelRatio || 1;
+  const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+  const oc = new OffscreenCanvas(pw, ph);
   const sCtx = oc.getContext('2d');
+  // Scale context so drawing commands use logical coordinates
+  sCtx.scale(dpr, dpr);
 
   // Sky gradient
   const grad = sCtx.createLinearGradient(0, 0, 0, h * 0.8);
@@ -1594,7 +1622,8 @@ function _buildSkyCache(w, h) {
 
 function drawSky(ctx, w, h) {
   if (!_fortSkyCache) _fortSkyCache = _buildSkyCache(w, h);
-  ctx.drawImage(_fortSkyCache, 0, 0);
+  // Draw at logical size — ctx already has DPR base transform applied
+  ctx.drawImage(_fortSkyCache, 0, 0, w, h);
 }
 
 function drawClouds() { /* merged into drawSky cache */ }

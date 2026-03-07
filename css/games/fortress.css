@@ -12,11 +12,12 @@
 
   padding: 0;
   gap: 0;
-  background: linear-gradient(180deg, var(--fort-sky-top) 0%, var(--fort-sky-bot) 60%, var(--fort-ground) 80%);
+  background: #1a3a6e;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
+  touch-action: none; /* block browser scroll/zoom while in game */
 }
 
 /* ===== Canvas Container — full screen ===== */
@@ -35,7 +36,7 @@
   touch-action: none;
 }
 
-/* ===== Header — overlay top ===== */
+/* ===== Header — minimal floating overlay, no background bar ===== */
 .fort-header {
   position: absolute;
   top: 0;
@@ -43,60 +44,66 @@
   right: 0;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 3px 6px;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
+  align-items: flex-start;
+  padding: 6px 8px;
   z-index: 10;
-  min-height: 0;
+  pointer-events: none; /* pass touches through empty areas */
 }
 
 .fort-header .back-btn {
-  background: rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.45);
   border: none;
   color: #fff;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   flex-shrink: 0;
+  pointer-events: all;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
 
 .fort-header-info {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
+  pointer-events: none;
 }
 
 .fort-round-badge {
   font-family: 'Oswald', sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--fort-gold);
   text-transform: uppercase;
   letter-spacing: 1px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.6);
 }
 
 .fort-turn-name {
   font-size: 10px;
-  color: rgba(255,255,255,0.75);
-  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
 }
 
 .fort-wind-badge {
   display: flex;
   align-items: center;
   gap: 2px;
-  background: rgba(255,255,255,0.12);
-  padding: 2px 6px;
-  border-radius: 8px;
+  background: rgba(0,0,0,0.45);
+  padding: 3px 8px;
+  border-radius: 10px;
   font-size: 11px;
   font-weight: 700;
   color: #fff;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
 
 #fortWindArrow {
@@ -104,19 +111,19 @@
   transition: transform 0.3s;
 }
 
-/* ===== Players Bar — overlay below header ===== */
+/* ===== Players Bar — floating chips below header, no background bar ===== */
 .fort-players-bar {
   position: absolute;
-  top: 30px;
+  top: 44px;
   left: 0;
   right: 0;
   display: flex;
-  gap: 3px;
-  padding: 2px 4px;
+  gap: 4px;
+  padding: 0 6px;
   overflow-x: auto;
-  background: rgba(0,0,0,0.2);
   z-index: 5;
   scrollbar-width: none;
+  pointer-events: none;
 }
 .fort-players-bar::-webkit-scrollbar { display: none; }
 
@@ -124,17 +131,17 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 2px 4px;
-  border-radius: 5px;
-  background: rgba(255,255,255,0.07);
-  min-width: 60px;
+  padding: 2px 5px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.5);
+  min-width: 58px;
   flex-shrink: 0;
   transition: background 0.3s;
 }
 
 .fort-player-hp-item.active-turn {
-  background: rgba(255,215,0,0.18);
-  box-shadow: 0 0 6px rgba(255,215,0,0.25);
+  background: rgba(0,0,0,0.65);
+  box-shadow: 0 0 0 1.5px rgba(255,215,0,0.6);
 }
 
 .fort-player-hp-item.dead {
@@ -197,18 +204,17 @@
   font-weight: 600;
 }
 
-/* ===== Controls — overlay bottom ===== */
+/* ===== Controls — floating overlay bottom, no background bar ===== */
 .fort-controls {
   position: absolute;
-  bottom: 0;
+  bottom: env(safe-area-inset-bottom, 0px);
   left: 0;
   right: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  padding: 3px 5px;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(6px);
+  padding: 5px 6px;
   z-index: 10;
   flex-wrap: nowrap;
 }
@@ -233,14 +239,23 @@
   flex-shrink: 0;
 }
 
+.fort-ctrl-grp {
+  background: rgba(0,0,0,0.5);
+  border-radius: 10px;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .fort-ctrl-btn {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border: none;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.13);
+  border-radius: 7px;
+  background: rgba(255,255,255,0.1);
   color: #fff;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -254,14 +269,14 @@
 }
 
 .fort-zoom-btn {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border: none;
-  border-radius: 6px;
-  background: rgba(255,255,255,0.09);
-  color: rgba(255,255,255,0.7);
-  font-size: 16px;
-  font-weight: 700;
+  border-radius: 7px;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.85);
+  font-size: 18px;
+  font-weight: 400;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -272,7 +287,18 @@
   user-select: none;
   line-height: 1;
 }
-.fort-zoom-btn:active { background: rgba(255,255,255,0.22); }
+.fort-zoom-btn:active { background: rgba(255,255,255,0.25); }
+
+/* Small screen: shrink controls to prevent overflow */
+@media (max-width: 380px) {
+  .fort-ctrl-btn { width: 30px; height: 30px; font-size: 14px; }
+  .fort-zoom-btn { width: 26px; height: 26px; font-size: 16px; }
+  .fort-fire-btn { min-width: 54px; height: 30px; font-size: 11px; }
+  .fort-controls { gap: 3px; padding: 4px 3px; }
+  .fort-ctrl-grp { padding: 2px; gap: 1px; }
+  .fort-val { min-width: 24px; }
+  .fort-val-num { font-size: 11px; }
+}
 
 .fort-ctrl-btn:active {
   background: rgba(255,255,255,0.28);
@@ -295,11 +321,15 @@
   transition: height 0.2s ease;
 }
 
+.fort-ctrl-sep {
+  display: none; /* separators no longer needed with grouped backgrounds */
+}
+
 .fort-val {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 30px;
+  min-width: 28px;
 }
 
 .fort-val-lbl {
@@ -317,8 +347,8 @@
 }
 
 .fort-fire-btn {
-  min-width: 56px;
-  height: 32px;
+  min-width: 64px;
+  height: 34px;
   border: none;
   border-radius: 10px;
   background: linear-gradient(135deg, #ff4500, #ff6b35);
@@ -326,10 +356,10 @@
   font-size: 12px;
   font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(255,69,0,0.4);
+  box-shadow: 0 2px 10px rgba(255,69,0,0.5), 0 0 0 1px rgba(255,100,0,0.3);
   transition: transform 0.1s, opacity 0.2s;
   flex-shrink: 0;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   touch-action: none;
 }
 
