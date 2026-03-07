@@ -38,24 +38,27 @@ function fortLoadTamaPet() {
   } catch(e) { _fortTamaPet = null; }
 }
 
-function fortGetTamaImage(pet) {
+function fortTamaImageSrc(pet) {
   if (!pet || !pet.tribe) return null;
   const stageIdx = fortTamaStageIdx(pet);
-  const flow = (typeof TAMA_STAGE_VISUAL_FLOW !== 'undefined')
-    ? TAMA_STAGE_VISUAL_FLOW[Math.min(stageIdx, TAMA_STAGE_VISUAL_FLOW.length - 1)] || 'low'
-    : 'low';
-  const base = flow.indexOf('mid') === 0 ? 'mid' : flow.indexOf('high') === 0 ? 'high' : 'low';
-  const map = (typeof TAMA_STAGE_IMAGE_MAP !== 'undefined') ? TAMA_STAGE_IMAGE_MAP[pet.tribe] : null;
-  if (!map) return null;
-  const src = map[base];
+  const FLOW = (typeof TAMA_STAGE_VISUAL_FLOW !== 'undefined') ? TAMA_STAGE_VISUAL_FLOW : ['low','low_fx','mid','mid_fx','high'];
+  const flow = FLOW[Math.min(stageIdx, FLOW.length - 1)] || 'low';
+  const base = flow.startsWith('high') ? 'high' : flow.startsWith('mid') ? 'mid' : 'low';
+  const MAP = (typeof TAMA_STAGE_IMAGE_MAP !== 'undefined') ? TAMA_STAGE_IMAGE_MAP : null;
+  if (!MAP || !MAP[pet.tribe]) return null;
+  return MAP[pet.tribe][base] || null;
+}
+
+function fortGetTamaImage(pet) {
+  const src = fortTamaImageSrc(pet);
   if (!src) return null;
-  if (_fortTamaImgCache[src] && _fortTamaImgCache[src].complete) return _fortTamaImgCache[src];
-  if (!_fortTamaImgCache[src]) {
-    const img = new Image();
-    img.src = src;
-    _fortTamaImgCache[src] = img;
-  }
-  return _fortTamaImgCache[src].complete ? _fortTamaImgCache[src] : null;
+  if (_fortTamaImgCache[src]) return _fortTamaImgCache[src].complete ? _fortTamaImgCache[src] : null;
+  const img = new Image();
+  img.onload = () => { _fortTamaImgCache[src] = img; }; // triggers on next rAF frame
+  img.onerror = () => { delete _fortTamaImgCache[src]; };
+  _fortTamaImgCache[src] = img; // store immediately so we don't double-create
+  img.src = src;
+  return null;
 }
 
 function fortTamaStageIdx(pet) {
@@ -1562,6 +1565,10 @@ function drawDeadTank(ctx, player, terrain) {
     ctx.arc(centerX, centerY, R, 0, Math.PI * 2);
     ctx.clip();
 
+    // Always draw base (darkened tribe color)
+    ctx.fillStyle = darkenColor(fortTamaGlowColor(tamaData), 0.4);
+    ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
+
     if (tamaImg) {
       const imgSize = R * 2 * 1.22;
       const imgX = centerX - imgSize / 2;
@@ -1570,9 +1577,7 @@ function drawDeadTank(ctx, player, terrain) {
       ctx.drawImage(tamaImg, imgX, imgY, imgSize, imgSize);
       ctx.filter = 'none';
     } else {
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
-      ctx.font = `${R * 1.2}px sans-serif`;
+      ctx.font = `bold ${Math.floor(R * 1.1)}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(fortTamaEmoji(tamaData), centerX, centerY + 1);
@@ -1761,17 +1766,21 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
     ctx.arc(centerX, centerY, R, 0, Math.PI * 2);
     ctx.clip();
 
+    // Always draw a solid base background (tribe color)
+    ctx.fillStyle = fortTamaGlowColor(tamaData);
+    ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
+
     if (tamaImg) {
       // Draw image scaled to fill circle, offset for head focus (like CSS object-position: center 58%)
       const imgSize = R * 2 * 1.22;
       const imgX = centerX - imgSize / 2;
-      const imgY = centerY - imgSize * 0.42; // offset up to focus on head/face
+      const imgY = centerY - imgSize * 0.42;
       ctx.drawImage(tamaImg, imgX, imgY, imgSize, imgSize);
     } else {
-      // Fallback: draw emoji in circle
-      ctx.fillStyle = '#1a1a2e';
+      // Fallback: emoji centered in circle (tribe color bg already drawn above)
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
       ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
-      ctx.font = `${R * 1.2}px sans-serif`;
+      ctx.font = `bold ${Math.floor(R * 1.1)}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(fortTamaEmoji(tamaData), centerX, centerY + 1);
