@@ -11,8 +11,8 @@ const FORT_HIT_RADIUS = 30;
 const FORT_SPLASH_RADIUS = 60;
 const FORT_DIRECT_DMG = [30, 50];
 const FORT_SPLASH_DMG = [10, 25];
-const FORT_CANVAS_W = 800;
-const FORT_CANVAS_H = 500;
+const FORT_CANVAS_W = 1200;
+const FORT_CANVAS_H = 560;
 const FORT_CRATER_RADIUS = 35;
 const FORT_MOVE_SPEED = 3;
 const FORT_MOVE_LIMIT = 60; // pixels per turn
@@ -171,6 +171,98 @@ let _fortKeyUp = null;
 let _fortVisibilityHandler = null;
 let _fortAngleInterval = null;
 let _fortPowerInterval = null;
+
+// ===== BIRDS =====
+let fortBirds = [];
+let _fortFallingFeathers = [];
+let _fortBirdHitCount = 0;
+
+// ===== SKY PLATFORMS =====
+let fortSkyPlatforms = [];
+
+// ===== WEB AUDIO =====
+let _fortAudioCtx = null;
+function _fortGetAudioCtx() {
+  if (!_fortAudioCtx) _fortAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _fortAudioCtx;
+}
+function fortPlaySound(type, tribe) {
+  try {
+    const ctx = _fortGetAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    if (type === 'fire') _fortSoundFire(ctx, tribe || 'fire');
+    else if (type === 'explosion') _fortSoundExplosion(ctx);
+    else if (type === 'bird') _fortSoundBird(ctx);
+    else if (type === 'hit') _fortSoundHit(ctx);
+    else if (type === 'move') _fortSoundMove(ctx);
+  } catch(e) {}
+}
+function _fortSoundFire(ctx, tribe) {
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  if (tribe === 'rock') {
+    osc.type = 'square'; osc.frequency.setValueAtTime(90, now); osc.frequency.exponentialRampToValueAtTime(35, now+0.5);
+    gain.gain.setValueAtTime(0.35, now); gain.gain.exponentialRampToValueAtTime(0.001, now+0.6);
+  } else if (tribe === 'wind') {
+    // noise-like whoosh
+    osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(150, now+0.3);
+    gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now+0.4);
+  } else if (tribe === 'thunder') {
+    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(80, now+0.25);
+    gain.gain.setValueAtTime(0.4, now); gain.gain.exponentialRampToValueAtTime(0.001, now+0.35);
+  } else if (tribe === 'spirit') {
+    osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.linearRampToValueAtTime(400, now+0.3);
+    gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now+0.45);
+  } else { // fire default
+    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(180, now); osc.frequency.exponentialRampToValueAtTime(60, now+0.35);
+    gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.001, now+0.45);
+  }
+  osc.start(now); osc.stop(now+0.7);
+}
+function _fortSoundExplosion(ctx) {
+  try {
+    const sr = ctx.sampleRate, dur = 0.6, buf = ctx.createBuffer(1, sr*dur, sr), d = buf.getChannelData(0);
+    for (let i = 0; i < sr*dur; i++) d[i] = (Math.random()*2-1) * Math.exp(-i/(sr*0.15));
+    const src = ctx.createBufferSource(), filt = ctx.createBiquadFilter(), gain = ctx.createGain();
+    filt.type = 'lowpass'; filt.frequency.value = 350;
+    src.buffer = buf; src.connect(filt); filt.connect(gain); gain.connect(ctx.destination);
+    const now = ctx.currentTime;
+    gain.gain.setValueAtTime(0.7, now); gain.gain.exponentialRampToValueAtTime(0.001, now+0.6);
+    src.start(now);
+  } catch(e) {}
+}
+function _fortSoundBird(ctx) {
+  const now = ctx.currentTime;
+  [0, 0.08, 0.16].forEach((t, i) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'sine'; o.frequency.setValueAtTime(1200+i*200, now+t); o.frequency.linearRampToValueAtTime(900+i*150, now+t+0.06);
+    g.gain.setValueAtTime(0.12, now+t); g.gain.exponentialRampToValueAtTime(0.001, now+t+0.1);
+    o.start(now+t); o.stop(now+t+0.12);
+  });
+}
+function _fortSoundHit(ctx) {
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator(), gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(60, now+0.2);
+  gain.gain.setValueAtTime(0.25, now); gain.gain.exponentialRampToValueAtTime(0.001, now+0.3);
+  osc.start(now); osc.stop(now+0.35);
+}
+function _fortSoundMove(ctx) {
+  try {
+    const now = ctx.currentTime, sr = ctx.sampleRate, dur=0.12;
+    const buf = ctx.createBuffer(1, sr*dur, sr), d=buf.getChannelData(0);
+    for(let i=0;i<sr*dur;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(sr*0.04));
+    const src=ctx.createBufferSource(), f=ctx.createBiquadFilter(), g=ctx.createGain();
+    f.type='bandpass'; f.frequency.value=200; src.buffer=buf;
+    src.connect(f); f.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.08, now);
+    src.start(now);
+  } catch(e) {}
+}
 
 // ===== CAMERA STATE =====
 const FORT_CAM_ZOOM_MIN = 0.8;
@@ -619,6 +711,10 @@ function startFortress() {
   fortDebris = [];
   fortSmoke = [];
   fortWindParticles = [];
+  _fortFallingFeathers = [];
+  _fortBirdHitCount = 0;
+  initFortBirds();
+  initFortSkyPlatforms();
 
   // Camera: fit-zoom to show all players
   {
@@ -752,6 +848,7 @@ function fortMoveBtn(dir) {
   const isMyTurn = view.players[view.turnIdx]?.id === state.myId;
   if (!isMyTurn) return;
 
+  fortPlaySound('move');
   if (state.isHost) {
     handleFortMove(state.myId, { type: 'fort-move', dir });
   } else {
@@ -1075,6 +1172,12 @@ function fortFire() {
   const currentPlayer = view.players[view.turnIdx];
   if (!currentPlayer) return;
 
+  // Play fire sound based on current player's tribe
+  if (currentPlayer.id === state.myId) {
+    const myTribe = currentPlayer.tama && currentPlayer.tama.tribe ? currentPlayer.tama.tribe : 'fire';
+    fortPlaySound('fire', myTribe);
+  }
+
   if (state.isHost) {
     handleFortFire(state.myId, {
       type: 'fort-fire',
@@ -1121,12 +1224,14 @@ function handleFortFire(peerId, msg) {
   // Destroy terrain at impact
   destroyTerrain(fortState.terrain, pathResult.impactX, pathResult.impactY, FORT_CRATER_RADIUS);
 
+  const shooterTribe = (current.tama && current.tama.tribe) ? current.tama.tribe : 'fire';
   const animMsg = {
     type: 'fort-anim',
     startX, startY, angle, power,
     wind: fortState.wind,
     hitResult,
     shooterId: current.id,
+    shooterTribe,
     impactX: pathResult.impactX,
     impactY: pathResult.impactY,
     terrainBefore: terrainBefore,
@@ -1381,53 +1486,110 @@ function startFortAnimation(msg, callback) {
       ctx.setLineDash([]);
       ctx.restore();
 
-      // Draw glowing projectile trail (last N points)
+      // Check bird hits
+      if (frameIdx < path.length) {
+        const bx = path.xs[frameIdx], by = path.ys[frameIdx];
+        for (const bird of fortBirds) {
+          if (!bird.alive || bird.falling) continue;
+          if (Math.abs(bx - bird.x) < 18 && Math.abs(by - bird.y) < 12) {
+            bird.falling = true; bird.fallVy = -1; bird.fallRot = 0; bird.alive = false;
+            _fortBirdHitCount++;
+            fortPlaySound('bird');
+            // Feather burst
+            for (let fi = 0; fi < 6; fi++) _fortFallingFeathers.push({ x:bird.x, y:bird.y, vx:(Math.random()-0.5)*3, vy:-1-Math.random()*2, rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.3, life:1.0, decay:0.018 });
+            if (_fortBirdHitCount === 1) setTimeout(() => showToast('🐦 새 명중! [새 저격] 업적 달성!'), 300);
+            else if (_fortBirdHitCount >= 5) setTimeout(() => showToast('🦅 새 5마리 격추! [조류 전멸] 업적!'), 300);
+            else setTimeout(() => showToast('🐦 새 명중! (' + _fortBirdHitCount + '마리)'), 300);
+          }
+        }
+      }
+
+      // Draw tribe-specific projectile trail + ball
+      const tribe = msg.shooterTribe || 'fire';
       const trailLen = 15;
       const tStart = Math.max(0, frameIdx - trailLen);
       const tEnd = Math.min(frameIdx, path.length - 1);
+
+      // Trail colors per tribe
+      const trailColors = {
+        fire:    (t) => `rgba(255,${100+Math.floor(t*100)},20,${t*0.75})`,
+        rock:    (t) => `rgba(${120+Math.floor(t*60)},${80+Math.floor(t*40)},40,${t*0.6})`,
+        wind:    (t) => `rgba(100,${200+Math.floor(t*55)},${200+Math.floor(t*55)},${t*0.55})`,
+        thunder: (t) => `rgba(255,${220+Math.floor(t*35)},0,${t*0.8})`,
+        spirit:  (t) => `rgba(${160+Math.floor(t*60)},100,255,${t*0.7})`,
+      };
+      const getTrailColor = trailColors[tribe] || trailColors.fire;
+
       for (let i = tStart; i <= tEnd; i++) {
         const t = (i - tStart) / trailLen;
-        const alpha = t * 0.7;
-        const size = 1 + t * 3;
-        ctx.fillStyle = `rgba(255, ${150 + Math.floor(t * 80)}, 50, ${alpha})`;
+        const size = tribe === 'wind' ? 1 + t * 2 : 1 + t * 3;
+        ctx.fillStyle = getTrailColor(t);
         ctx.beginPath();
         ctx.arc(path.xs[i], path.ys[i], size, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Draw projectile with glow
+      // Draw projectile head
       if (frameIdx < path.length) {
         const ptx = path.xs[frameIdx];
         const pty = path.ys[frameIdx];
 
-        // Glow
         ctx.save();
-        ctx.shadowColor = '#ff6600';
-        ctx.shadowBlur = 12;
-        ctx.fillStyle = '#ffcc00';
-        ctx.beginPath();
-        ctx.arc(ptx, pty, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+        if (tribe === 'fire') {
+          ctx.shadowColor = '#ff6600'; ctx.shadowBlur = 16;
+          ctx.fillStyle = '#ffcc00';
+          ctx.beginPath(); ctx.arc(ptx, pty, 5, 0, Math.PI*2); ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#ff3300';
+          ctx.beginPath(); ctx.arc(ptx, pty, 3, 0, Math.PI*2); ctx.fill();
+          if (frameIdx % 2 === 0) fortParticles.push({ x:ptx, y:pty, vx:(Math.random()-0.5)*2, vy:(Math.random()-0.5)*2, life:0.6, decay:0.05+Math.random()*0.03, size:2+Math.random()*2, color:`hsl(${20+Math.random()*30},100%,${55+Math.random()*25}%)` });
 
-        // Core
-        ctx.fillStyle = '#ff4400';
-        ctx.beginPath();
-        ctx.arc(ptx, pty, 3, 0, Math.PI * 2);
-        ctx.fill();
+        } else if (tribe === 'rock') {
+          ctx.fillStyle = '#8b7355';
+          // Draw as jagged polygon
+          const pts = 7, r1=6, r2=4;
+          ctx.beginPath();
+          for (let k=0; k<pts; k++) {
+            const a = (k/pts)*Math.PI*2, r = k%2===0?r1:r2;
+            k===0 ? ctx.moveTo(ptx+Math.cos(a)*r, pty+Math.sin(a)*r) : ctx.lineTo(ptx+Math.cos(a)*r, pty+Math.sin(a)*r);
+          }
+          ctx.closePath(); ctx.fill();
+          ctx.fillStyle = 'rgba(200,180,140,0.5)';
+          ctx.beginPath(); ctx.arc(ptx-2, pty-2, 2, 0, Math.PI*2); ctx.fill();
+          if (frameIdx % 4 === 0) fortParticles.push({ x:ptx, y:pty, vx:(Math.random()-0.5)*1.5, vy:(Math.random()-0.5)*1.5, life:0.4, decay:0.03, size:1.5+Math.random()*2, color:`hsl(30,40%,40%)` });
 
-        // Tiny sparks every few frames
-        if (frameIdx % 3 === 0) {
-          fortParticles.push({
-            x: ptx, y: pty,
-            vx: (Math.random() - 0.5) * 1.5,
-            vy: (Math.random() - 0.5) * 1.5,
-            life: 0.5 + Math.random() * 0.3,
-            decay: 0.04 + Math.random() * 0.03,
-            size: 1 + Math.random() * 1.5,
-            color: `hsl(${30 + Math.random() * 20}, 100%, ${60 + Math.random() * 30}%)`,
-          });
+        } else if (tribe === 'wind') {
+          ctx.strokeStyle = 'rgba(150,240,255,0.9)'; ctx.lineWidth = 2;
+          ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 10;
+          const vd = Math.atan2(path.ys[Math.min(frameIdx+1,path.length-1)]-pty, path.xs[Math.min(frameIdx+1,path.length-1)]-ptx);
+          ctx.save(); ctx.translate(ptx,pty); ctx.rotate(vd);
+          ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(8,0); ctx.moveTo(4,-4); ctx.lineTo(8,0); ctx.lineTo(4,4);
+          ctx.stroke(); ctx.restore();
+          if (frameIdx % 2 === 0) fortParticles.push({ x:ptx, y:pty, vx:(Math.random()-0.5)*2, vy:-0.5-Math.random(), life:0.5, decay:0.06, size:1+Math.random()*2, color:`rgba(100,230,255,0.7)` });
+
+        } else if (tribe === 'thunder') {
+          ctx.shadowColor = '#ffff00'; ctx.shadowBlur = 20;
+          ctx.strokeStyle = '#ffe000'; ctx.lineWidth = 3;
+          const zi = Math.min(frameIdx+3, path.length-1);
+          ctx.beginPath(); ctx.moveTo(ptx-6, pty+6); ctx.lineTo(ptx, pty-2); ctx.lineTo(ptx+3, pty); ctx.lineTo(ptx+8, pty-7);
+          ctx.stroke();
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(ptx-6, pty+6); ctx.lineTo(ptx, pty-2); ctx.lineTo(ptx+3, pty); ctx.lineTo(ptx+8, pty-7);
+          ctx.stroke();
+          if (frameIdx % 2 === 0) fortParticles.push({ x:ptx, y:pty, vx:(Math.random()-0.5)*3, vy:(Math.random()-0.5)*3, life:0.4, decay:0.08, size:1+Math.random()*2, color:`hsl(55,100%,70%)` });
+
+        } else { // spirit
+          ctx.shadowColor = '#b388ff'; ctx.shadowBlur = 18;
+          const gr = ctx.createRadialGradient(ptx,pty,0,ptx,pty,7);
+          gr.addColorStop(0,'rgba(255,255,255,0.9)'); gr.addColorStop(0.5,'rgba(180,120,255,0.7)'); gr.addColorStop(1,'rgba(100,60,200,0)');
+          ctx.fillStyle = gr;
+          ctx.beginPath(); ctx.arc(ptx, pty, 7, 0, Math.PI*2); ctx.fill();
+          if (frameIdx % 3 === 0) {
+            const sa = Math.random()*Math.PI*2, sd = 4+Math.random()*4;
+            fortParticles.push({ x:ptx+Math.cos(sa)*sd, y:pty+Math.sin(sa)*sd, vx:Math.cos(sa)*0.5, vy:Math.sin(sa)*0.5, life:0.7, decay:0.04, size:1.5, color:`hsl(${260+Math.random()*40},80%,70%)` });
+          }
         }
+        ctx.restore();
       }
 
       // Draw particles on top
@@ -1460,6 +1622,7 @@ function animateExplosion(x, y, hitResult, view, callback, terrainAfter) {
   spawnExplosionParticles(x, y, 40, true);
   spawnDebris(x, y, 20);
   spawnSmoke(x, y, 12);
+  fortPlaySound('explosion');
 
   // Trigger hit squash on all damaged players
   if (hitResult && hitResult.targets) {
@@ -1620,6 +1783,11 @@ function renderFortressScene(view) {
   ctx.save();
   applyCameraTransform(ctx);
   drawClouds(ctx, w);
+  drawSkyPlatforms(ctx);
+  updateFortBirds();
+  drawFortBirds(ctx);
+  updateFallingFeathers();
+  drawFallingFeathers(ctx);
   drawTerrain(ctx, terrain, w, h);
   drawWindParticles(ctx, view.wind || 0);  // world-space: moves with camera
   drawTanks(ctx, view.players, view.turnIdx, terrain);
@@ -1637,44 +1805,85 @@ function _buildSkyCache(w, h) {
   // Scale context so drawing commands use logical coordinates
   sCtx.scale(dpr, dpr);
 
-  // Sky gradient
-  const grad = sCtx.createLinearGradient(0, 0, 0, h * 0.8);
-  grad.addColorStop(0, '#0d1b3e');
-  grad.addColorStop(0.3, '#1a3a6e');
-  grad.addColorStop(0.7, '#4a90c4');
-  grad.addColorStop(1, '#87CEEB');
+  // Sky gradient: daytime
+  const grad = sCtx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, '#1a3a6e');
+  grad.addColorStop(0.35, '#2d6fa8');
+  grad.addColorStop(0.65, '#5299c8');
+  grad.addColorStop(1, '#9bc8e8');
   sCtx.fillStyle = grad;
   sCtx.fillRect(0, 0, w, h);
 
-  // Stars
-  sCtx.fillStyle = 'rgba(255,255,255,0.3)';
-  for (let i = 0; i < 20; i++) {
-    const sx = (i * 137 + 50) % w;
-    const sy = (i * 97 + 10) % (h * 0.3);
-    sCtx.beginPath();
-    sCtx.arc(sx, sy, 0.8, 0, Math.PI * 2);
-    sCtx.fill();
+  // Sun
+  const sunX = w * 0.78, sunY = h * 0.12;
+  const sunGrad = sCtx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 55);
+  sunGrad.addColorStop(0, 'rgba(255,255,220,0.95)');
+  sunGrad.addColorStop(0.35, 'rgba(255,220,80,0.6)');
+  sunGrad.addColorStop(1, 'rgba(255,180,0,0)');
+  sCtx.fillStyle = sunGrad;
+  sCtx.beginPath(); sCtx.arc(sunX, sunY, 55, 0, Math.PI*2); sCtx.fill();
+  // Sun disc
+  sCtx.fillStyle = 'rgba(255,255,220,0.9)';
+  sCtx.beginPath(); sCtx.arc(sunX, sunY, 18, 0, Math.PI*2); sCtx.fill();
+
+  // Cloud helper: draw fluffy cloud
+  function drawCloudShape(cx, cy, cw, ch) {
+    const blobs = [
+      [0, 0, cw*0.45, ch*0.55],
+      [-cw*0.32, ch*0.12, cw*0.32, ch*0.42],
+      [cw*0.30, ch*0.08, cw*0.35, ch*0.45],
+      [-cw*0.12, -ch*0.2, cw*0.3, ch*0.38],
+      [cw*0.10, -ch*0.15, cw*0.28, ch*0.35],
+    ];
+    for (const [dx, dy, rx, ry] of blobs) {
+      sCtx.beginPath(); sCtx.ellipse(cx+dx, cy+dy, rx, ry, 0, 0, Math.PI*2); sCtx.fill();
+    }
   }
 
-  // Clouds (static, drawn once)
-  sCtx.fillStyle = 'rgba(255,255,255,0.08)';
-  const clouds = [
-    { x: 100, y: 40, rx: 50, ry: 15 },
-    { x: 350, y: 60, rx: 70, ry: 18 },
-    { x: 600, y: 35, rx: 45, ry: 12 },
-    { x: 750, y: 70, rx: 55, ry: 14 },
-  ];
-  for (const c of clouds) {
-    sCtx.beginPath();
-    sCtx.ellipse(c.x, c.y, c.rx, c.ry, 0, 0, Math.PI * 2);
-    sCtx.fill();
-    sCtx.beginPath();
-    sCtx.ellipse(c.x - c.rx * 0.5, c.y + 5, c.rx * 0.6, c.ry * 0.8, 0, 0, Math.PI * 2);
-    sCtx.fill();
-    sCtx.beginPath();
-    sCtx.ellipse(c.x + c.rx * 0.4, c.y + 3, c.rx * 0.5, c.ry * 0.7, 0, 0, Math.PI * 2);
-    sCtx.fill();
+  // Far clouds (dim, back layer)
+  sCtx.fillStyle = 'rgba(255,255,255,0.12)';
+  const farClouds = [{x:80,y:55,w:100,h:28},{x:380,y:38,w:120,h:24},{x:760,y:48,w:90,h:22},{x:1050,y:40,w:110,h:26}];
+  for (const c of farClouds) drawCloudShape(c.x, c.y, c.w, c.h);
+
+  // Near clouds (brighter)
+  sCtx.fillStyle = 'rgba(255,255,255,0.22)';
+  const nearClouds = [{x:200,y:80,w:140,h:38},{x:560,y:65,w:160,h:42},{x:900,y:78,w:130,h:35},{x:1130,y:58,w:120,h:32}];
+  for (const c of nearClouds) drawCloudShape(c.x, c.y, c.w, c.h);
+
+  // Cloud bottom shading
+  sCtx.fillStyle = 'rgba(160,180,200,0.08)';
+  const allClouds = [...farClouds, ...nearClouds];
+  for (const c of allClouds) {
+    sCtx.beginPath(); sCtx.ellipse(c.x, c.y + c.h*0.3, c.w*0.4, c.h*0.25, 0, 0, Math.PI*2); sCtx.fill();
   }
+
+  // Stars (very faint, near horizon)
+  sCtx.fillStyle = 'rgba(255,255,255,0.2)';
+  for (let i = 0; i < 30; i++) {
+    const sx = (i * 137 + 50) % w;
+    const sy = (i * 97 + 10) % (h * 0.28);
+    sCtx.beginPath(); sCtx.arc(sx, sy, 0.7, 0, Math.PI*2); sCtx.fill();
+  }
+
+  // Distant mountain silhouette
+  sCtx.fillStyle = 'rgba(80,110,150,0.22)';
+  sCtx.beginPath(); sCtx.moveTo(0, h);
+  const mPts = 14;
+  for (let i = 0; i <= mPts; i++) {
+    const mx = (i/mPts)*w;
+    const my = h * 0.52 - Math.sin(i*0.7+1)*h*0.08 - Math.sin(i*1.3+0.5)*h*0.04;
+    sCtx.lineTo(mx, my);
+  }
+  sCtx.lineTo(w, h); sCtx.closePath(); sCtx.fill();
+  sCtx.fillStyle = 'rgba(100,130,165,0.15)';
+  sCtx.beginPath(); sCtx.moveTo(0, h);
+  for (let i = 0; i <= mPts; i++) {
+    const mx = (i/mPts)*w;
+    const my = h * 0.6 - Math.sin(i*0.9+2)*h*0.06 - Math.sin(i*1.8+1)*h*0.03;
+    sCtx.lineTo(mx, my);
+  }
+  sCtx.lineTo(w, h); sCtx.closePath(); sCtx.fill();
+
   return oc;
 }
 
@@ -1716,15 +1925,28 @@ function drawTerrain(ctx, terrain, w, h) {
   ctx.fillStyle = '#3a5c2f';
   ctx.fill();
 
-  // Grass edge — single stroke over terrain profile
-  ctx.strokeStyle = '#6aac5f';
-  ctx.lineWidth = 2;
+  // Bright grass edge
+  ctx.strokeStyle = '#7fc46a';
+  ctx.lineWidth = 2.5;
   ctx.beginPath();
   ctx.moveTo(0, terrain[0]);
   for (let x = 1; x < w; x++) ctx.lineTo(x, terrain[x]);
   ctx.stroke();
 
-  // Texture dots (static positions, no randomness needed)
+  // Grass tufts on surface
+  ctx.strokeStyle = '#5ab048';
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 120; i++) {
+    const tx = (i * 73 + 20) % w;
+    const ty = terrain[tx];
+    const h1 = 4 + ((i * 37) % 5);
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx - 2, ty - h1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx + 2, ty - h1 + 1); ctx.stroke();
+  }
+  ctx.lineCap = 'butt';
+
+  // Surface rocks
   ctx.fillStyle = 'rgba(0,0,0,0.06)';
   ctx.beginPath();
   for (let i = 0; i < 80; i++) {
@@ -1733,6 +1955,26 @@ function drawTerrain(ctx, terrain, w, h) {
     if (ty < h) ctx.arc(tx, ty, 1.5, 0, Math.PI * 2);
   }
   ctx.fill();
+
+  // Rock outcroppings on surface
+  for (let i = 0; i < 18; i++) {
+    const rx = (i * 157 + 80) % w;
+    const ry = terrain[rx];
+    const rw = 6 + ((i * 43) % 14), rh = 5 + ((i * 29) % 8);
+    const pts = 6;
+    ctx.fillStyle = i % 3 === 0 ? '#7a6b58' : i % 3 === 1 ? '#8a7a68' : '#6a5c4a';
+    ctx.beginPath();
+    for (let k = 0; k < pts; k++) {
+      const a = (k / pts) * Math.PI * 2 - Math.PI / 2;
+      const jitter = 0.75 + ((k * i * 17) % 25) / 100;
+      const prx = rw * jitter * Math.cos(a), pry = rh * jitter * Math.sin(a) * 0.6;
+      k === 0 ? ctx.moveTo(rx + prx, ry + pry - 2) : ctx.lineTo(rx + prx, ry + pry - 2);
+    }
+    ctx.closePath(); ctx.fill();
+    // Rock highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.beginPath(); ctx.ellipse(rx - rw * 0.2, ry - rh * 0.4 - 2, rw * 0.25, rh * 0.15, -0.4, 0, Math.PI * 2); ctx.fill();
+  }
 }
 
 function drawTanks(ctx, players, turnIdx, terrain) {
@@ -2276,9 +2518,191 @@ function closeFortressCleanup() {
   _fortTerrainGrad = null;
   _fortPlayerInfoCache = {};
   _fortCharAnim = {};
+  fortBirds = [];
+  fortSkyPlatforms = [];
+  _fortFallingFeathers = [];
 }
 
 function closeFortressGame() {
   closeFortressCleanup();
   returnToLobby();
+}
+
+// ===== BIRDS SYSTEM =====
+function initFortBirds() {
+  fortBirds = [];
+  const count = 4 + Math.floor(Math.random() * 4); // 4-7 birds
+  for (let i = 0; i < count; i++) {
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    fortBirds.push({
+      x: dir > 0 ? -40 - Math.random() * 200 : FORT_CANVAS_W + 40 + Math.random() * 200,
+      y: 40 + Math.random() * 200,
+      vx: dir * (0.6 + Math.random() * 1.0),
+      dir,
+      phase: Math.random() * Math.PI * 2,
+      alive: true,
+      falling: false,
+      fallVy: 0,
+      fallRot: 0,
+      fallRotV: (Math.random() - 0.5) * 0.15,
+      size: 0.7 + Math.random() * 0.6, // scale
+    });
+  }
+}
+
+function updateFortBirds() {
+  const now = Date.now() * 0.003;
+  for (const bird of fortBirds) {
+    if (bird.falling) {
+      bird.fallVy += 0.06;
+      bird.y += bird.fallVy;
+      bird.fallRot += bird.fallRotV;
+      bird.x += bird.vx * 0.3;
+      continue;
+    }
+    bird.x += bird.vx;
+    bird.y += Math.sin(now + bird.phase) * 0.4;
+    // Wrap around edges
+    if (bird.dir > 0 && bird.x > FORT_CANVAS_W + 60) {
+      bird.x = -40;
+      bird.y = 40 + Math.random() * 200;
+    } else if (bird.dir < 0 && bird.x < -60) {
+      bird.x = FORT_CANVAS_W + 40;
+      bird.y = 40 + Math.random() * 200;
+    }
+  }
+}
+
+function drawFortBirds(ctx) {
+  const now = Date.now() * 0.005;
+  for (const bird of fortBirds) {
+    ctx.save();
+    ctx.translate(bird.x, bird.y);
+    if (bird.falling) ctx.rotate(bird.fallRot);
+    if (bird.dir < 0) ctx.scale(-1, 1);
+    ctx.scale(bird.size, bird.size);
+
+    // Wing flap
+    const flapPhase = bird.falling ? 0 : Math.sin(now * 3.5 + bird.phase) * 0.5;
+    const wingUp = bird.falling ? -0.8 : Math.sin(now * 5 + bird.phase) * 6 - 2;
+
+    ctx.strokeStyle = bird.falling ? 'rgba(80,50,30,0.7)' : 'rgba(40,30,20,0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    // Body (small oval)
+    ctx.ellipse(0, 0, 5, 2.5, 0, 0, Math.PI * 2);
+    ctx.fillStyle = bird.falling ? 'rgba(100,70,40,0.6)' : '#4a3728';
+    ctx.fill();
+    ctx.stroke();
+    // Left wing
+    ctx.beginPath();
+    ctx.moveTo(-1, 0);
+    ctx.quadraticCurveTo(-7, wingUp - 2, -13, wingUp);
+    ctx.stroke();
+    // Right wing
+    ctx.beginPath();
+    ctx.moveTo(1, 0);
+    ctx.quadraticCurveTo(7, wingUp - 2, 13, wingUp);
+    ctx.stroke();
+    // Head
+    ctx.fillStyle = '#3a2a1a';
+    ctx.beginPath(); ctx.arc(5, -1, 2.5, 0, Math.PI * 2); ctx.fill();
+    // Beak
+    ctx.fillStyle = '#cc8800';
+    ctx.beginPath(); ctx.moveTo(7, -1); ctx.lineTo(10, -0.5); ctx.lineTo(7, 0.5); ctx.closePath(); ctx.fill();
+
+    ctx.restore();
+  }
+}
+
+// ===== FALLING FEATHERS =====
+function updateFallingFeathers() {
+  let j = 0;
+  for (let i = 0; i < _fortFallingFeathers.length; i++) {
+    const f = _fortFallingFeathers[i];
+    f.x += f.vx; f.y += f.vy; f.vy += 0.04; f.vx *= 0.98;
+    f.rot += f.rotV; f.life -= f.decay;
+    if (f.life > 0) _fortFallingFeathers[j++] = f;
+  }
+  _fortFallingFeathers.length = j;
+}
+
+function drawFallingFeathers(ctx) {
+  for (const f of _fortFallingFeathers) {
+    ctx.save();
+    ctx.globalAlpha = f.life;
+    ctx.translate(f.x, f.y);
+    ctx.rotate(f.rot);
+    ctx.fillStyle = '#d4b896';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 1.5, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ===== SKY PLATFORMS =====
+function initFortSkyPlatforms() {
+  fortSkyPlatforms = [];
+  const count = 3 + Math.floor(Math.random() * 3); // 3-5 platforms
+  for (let i = 0; i < count; i++) {
+    const pw = 60 + Math.random() * 80;
+    const ph = 14 + Math.random() * 10;
+    const px = FORT_CANVAS_W * 0.1 + Math.random() * FORT_CANVAS_W * 0.8;
+    const py = FORT_CANVAS_H * 0.15 + Math.random() * FORT_CANVAS_H * 0.35;
+    fortSkyPlatforms.push({ x: px, y: py, w: pw, h: ph, destroyed: false,
+      type: Math.floor(Math.random() * 3) }); // 0=rock, 1=dark rock, 2=stone
+  }
+}
+
+function drawSkyPlatforms(ctx) {
+  for (const p of fortSkyPlatforms) {
+    if (p.destroyed) continue;
+    const { x, y, w, h } = p;
+    ctx.save();
+
+    // Main rock body
+    const rockColors = ['#7a6b58', '#5a5048', '#8a7c6a'];
+    ctx.fillStyle = rockColors[p.type] || '#7a6b58';
+    ctx.beginPath();
+    ctx.moveTo(x - w/2 + 8, y);
+    ctx.lineTo(x - w/2, y + h - 4);
+    ctx.lineTo(x - w/2 + 5, y + h);
+    ctx.lineTo(x + w/2 - 5, y + h);
+    ctx.lineTo(x + w/2, y + h - 4);
+    ctx.lineTo(x + w/2 - 6, y);
+    ctx.closePath();
+    ctx.fill();
+
+    // Top surface highlight (mossy look)
+    const topGrad = ctx.createLinearGradient(x - w/2, y, x + w/2, y);
+    topGrad.addColorStop(0, 'rgba(100,140,80,0.6)');
+    topGrad.addColorStop(0.5, 'rgba(120,160,90,0.7)');
+    topGrad.addColorStop(1, 'rgba(90,120,70,0.5)');
+    ctx.fillStyle = topGrad;
+    ctx.beginPath();
+    ctx.moveTo(x - w/2 + 8, y);
+    ctx.lineTo(x + w/2 - 6, y);
+    ctx.lineTo(x + w/2 - 8, y + 5);
+    ctx.lineTo(x - w/2 + 10, y + 5);
+    ctx.closePath();
+    ctx.fill();
+
+    // Rock texture lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 1;
+    for (let li = 0; li < 3; li++) {
+      const lx = x - w/2 + (w / 4) * (li + 1);
+      ctx.beginPath(); ctx.moveTo(lx, y + 2); ctx.lineTo(lx - 3, y + h - 2); ctx.stroke();
+    }
+
+    // Drop shadow
+    ctx.shadowColor = 'rgba(0,0,0,0.35)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = 'transparent';
+    ctx.beginPath(); ctx.rect(x - w/2, y, w, h); ctx.fill(); // just trigger shadow
+    ctx.restore();
+  }
 }

@@ -112,8 +112,10 @@ function startPracticeGame(gameName) {
 
   // Add human player + AI players
   const aiCount = AI_COUNTS[gameName] || 2;
+  let _practiceTama = null;
+  try { const _r = localStorage.getItem('pd_tama_pet'); if (_r) { const _p = JSON.parse(_r); if (_p && _p.tribe) _practiceTama = { tribe: _p.tribe, level: _p.level || 1 }; } } catch(e) {}
   state.players = [
-    { id: state.myId, name: state.myName, avatar: state.myAvatar, isHost: true }
+    { id: state.myId, name: state.myName, avatar: state.myAvatar, isHost: true, tama: _practiceTama }
   ];
   for (let i = 0; i < aiCount; i++) {
     state.players.push({
