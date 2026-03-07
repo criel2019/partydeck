@@ -26,7 +26,7 @@ const FORT_TANK_COLORS = [
 ];
 
 // ===== TAMAGOTCHI CHARACTER INTEGRATION =====
-const FORT_TAMA_RADIUS = 18; // circular character icon radius
+const FORT_TAMA_RADIUS = 12; // circular character icon radius
 const _fortTamaImgCache = {}; // key: imagePath, value: Image object
 let _fortTamaPet = null; // local player's tama pet data
 
@@ -114,10 +114,13 @@ let _fortAngleInterval = null;
 let _fortPowerInterval = null;
 
 // ===== CAMERA STATE =====
+const FORT_CAM_ZOOM_MIN = 0.8;
+const FORT_CAM_ZOOM_MAX = 2.5;
+
 let fortCam = {
   x: 400, y: 250,
   targetX: 400, targetY: 250,
-  zoom: 2.0,
+  zoom: 1.0,
   lerp: 0.08
 };
 let _fortCamLoopId = null;
@@ -140,16 +143,33 @@ function applyCameraTransform(ctx) {
 }
 
 function fortCameraLoop() {
-  // Only lerp + render during aiming phase (animation loops handle their own)
   const view = window._fortView;
   if (view && view.phase === 'aiming') {
-    fortCam.x += (fortCam.targetX - fortCam.x) * fortCam.lerp;
-    fortCam.y += (fortCam.targetY - fortCam.y) * fortCam.lerp;
-    clampCamera();
-    renderFortressScene(view);
+    // Lerp camera toward target and re-render
+    const dx = fortCam.targetX - fortCam.x;
+    const dy = fortCam.targetY - fortCam.y;
+    if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+      fortCam.x += dx * fortCam.lerp;
+      fortCam.y += dy * fortCam.lerp;
+      clampCamera();
+      renderFortressScene(view);
+    }
   }
-
   _fortCamLoopId = requestAnimationFrame(fortCameraLoop);
+}
+
+function fortZoomIn() {
+  fortCam.zoom = Math.min(FORT_CAM_ZOOM_MAX, fortCam.zoom + 0.2);
+  clampCamera();
+  const view = window._fortView;
+  if (view) renderFortressScene(view);
+}
+
+function fortZoomOut() {
+  fortCam.zoom = Math.max(FORT_CAM_ZOOM_MIN, fortCam.zoom - 0.2);
+  clampCamera();
+  const view = window._fortView;
+  if (view) renderFortressScene(view);
 }
 
 function fortCameraTarget(px, py) {
@@ -533,11 +553,18 @@ function startFortress() {
   fortSmoke = [];
   fortWindParticles = [];
 
-  // Camera: snap to first player
-  const firstPlayer = players[0];
-  const fpx = firstPlayer.x;
-  const fpy = terrain[Math.floor(Math.max(0, Math.min(fpx, FORT_CANVAS_W - 1)))] - FORT_TANK_H;
-  fortCameraSnap(fpx, fpy);
+  // Camera: fit-zoom to show all players
+  {
+    const xs = players.map(p => p.x);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const spanX = Math.max(maxX - minX, 200);
+    const fitZoom = Math.max(FORT_CAM_ZOOM_MIN, Math.min(1.2, FORT_CANVAS_W / (spanX + 240)));
+    fortCam.zoom = fitZoom;
+    const cx = (minX + maxX) / 2;
+    const cty = Math.floor(Math.max(0, Math.min(cx, FORT_CANVAS_W - 1)));
+    const cy = (terrain[cty] || FORT_CANVAS_H * 0.7) - 40;
+    fortCameraSnap(cx, cy);
+  }
 
   const view = createFortressView();
   broadcast({ type: 'game-start', game: 'fortress', state: view });
@@ -709,6 +736,25 @@ function broadcastFortressState() {
   renderFortressView(view);
 }
 
+let _fortResizeObserver = null;
+
+function fortFitCanvas() {
+  if (!fortCanvas) return;
+  const container = fortCanvas.parentElement;
+  if (!container) return;
+  const cw = container.clientWidth;
+  const ch = container.clientHeight;
+  const aspect = FORT_CANVAS_W / FORT_CANVAS_H; // 8:5 = 1.6
+  let w, h;
+  if (cw / ch > aspect) {
+    h = ch; w = h * aspect;
+  } else {
+    w = cw; h = w / aspect;
+  }
+  fortCanvas.style.width = Math.round(w) + 'px';
+  fortCanvas.style.height = Math.round(h) + 'px';
+}
+
 // ===== CANVAS INIT =====
 function initFortCanvas() {
   fortCanvas = document.getElementById('fortressCanvas');
@@ -722,14 +768,18 @@ function initFortCanvas() {
   const dpr = window.devicePixelRatio || 1;
   fortCanvas.width = FORT_CANVAS_W * dpr;
   fortCanvas.height = FORT_CANVAS_H * dpr;
-  fortCanvas.style.width = '100%';
-  fortCanvas.style.height = '100%';
   fortCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // Touch pan + pinch zoom
+  // Fit canvas to container maintaining 8:5 aspect ratio
+  fortFitCanvas();
+  if (_fortResizeObserver) _fortResizeObserver.disconnect();
+  _fortResizeObserver = new ResizeObserver(() => {
+    fortFitCanvas();
+  });
+  _fortResizeObserver.observe(fortCanvas.parentElement);
+
+  // Touch pan + pinch zoom (always active, not locked to aiming phase)
   fortCanvas.ontouchstart = (e) => {
-    const view = window._fortView;
-    if (!view || view.phase !== 'aiming') return;
     if (e.touches.length === 2) {
       // Pinch zoom start
       const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -760,7 +810,7 @@ function initFortCanvas() {
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       const scale = dist / _fortDrag.startDist;
-      fortCam.zoom = Math.max(1.0, Math.min(3.0, _fortDrag.startZoom * scale));
+      fortCam.zoom = Math.max(FORT_CAM_ZOOM_MIN, Math.min(FORT_CAM_ZOOM_MAX, _fortDrag.startZoom * scale));
       // Also pan with midpoint
       const rect = fortCanvas.getBoundingClientRect();
       const scaleX = FORT_CANVAS_W / rect.width;
@@ -795,10 +845,8 @@ function initFortCanvas() {
     }
   };
 
-  // Mouse pan
+  // Mouse pan (always active)
   fortCanvas.onmousedown = (e) => {
-    const view = window._fortView;
-    if (!view || view.phase !== 'aiming') return;
     _fortDrag = {
       sx: e.clientX, sy: e.clientY,
       cx: fortCam.targetX, cy: fortCam.targetY
@@ -824,7 +872,7 @@ function initFortCanvas() {
     e.preventDefault();
     const zoomSpeed = 0.15;
     const dir = e.deltaY < 0 ? 1 : -1;
-    fortCam.zoom = Math.max(1.0, Math.min(3.0, fortCam.zoom + dir * zoomSpeed));
+    fortCam.zoom = Math.max(FORT_CAM_ZOOM_MIN, Math.min(FORT_CAM_ZOOM_MAX, fortCam.zoom + dir * zoomSpeed));
     clampCamera();
   };
 }
@@ -1779,6 +1827,7 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
     ctx.restore();
 
     // === Barrel from top of character circle ===
+    const isLocalPlayer = player.id === state.myId;
     let angle = 45;
     if (isLocalPlayer) angle = fortLocalAngle;
 
@@ -2043,6 +2092,7 @@ function closeFortressCleanup() {
   if (overlay) overlay.style.display = 'none';
   if (fortAnimId) { cancelAnimationFrame(fortAnimId); fortAnimId = null; }
   if (_fortCamLoopId) { cancelAnimationFrame(_fortCamLoopId); _fortCamLoopId = null; }
+  if (_fortResizeObserver) { _fortResizeObserver.disconnect(); _fortResizeObserver = null; }
   cleanupFortressKeyboard();
   fortStopMove();
   fortAngleStop();

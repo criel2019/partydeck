@@ -27,11 +27,10 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  background: #1a3a6e;
 }
 
 #fortressCanvas {
-  width: 100%;
-  height: 100%;
   display: block;
   touch-action: none;
 }
@@ -45,75 +44,77 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 8px;
-  background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(6px);
+  padding: 3px 6px;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
   z-index: 10;
+  min-height: 0;
 }
 
 .fort-header .back-btn {
   background: rgba(255,255,255,0.1);
   border: none;
   color: #fff;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 .fort-header-info {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 1px;
+  gap: 6px;
 }
 
 .fort-round-badge {
   font-family: 'Oswald', sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--fort-gold);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
 }
 
 .fort-turn-name {
   font-size: 10px;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255,255,255,0.75);
   font-weight: 600;
 }
 
 .fort-wind-badge {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   background: rgba(255,255,255,0.12);
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 11px;
   font-weight: 700;
   color: #fff;
 }
 
 #fortWindArrow {
-  font-size: 14px;
+  font-size: 11px;
   transition: transform 0.3s;
 }
 
 /* ===== Players Bar — overlay below header ===== */
 .fort-players-bar {
   position: absolute;
-  top: 34px;
+  top: 30px;
   left: 0;
   right: 0;
   display: flex;
-  gap: 4px;
-  padding: 2px 6px;
+  gap: 3px;
+  padding: 2px 4px;
   overflow-x: auto;
-  background: rgba(0,0,0,0.25);
+  background: rgba(0,0,0,0.2);
   z-index: 5;
   scrollbar-width: none;
 }
@@ -122,32 +123,31 @@
 .fort-player-hp-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 5px;
-  border-radius: 6px;
-  background: rgba(255,255,255,0.08);
-  min-width: 80px;
+  gap: 3px;
+  padding: 2px 4px;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.07);
+  min-width: 60px;
   flex-shrink: 0;
   transition: background 0.3s;
 }
 
 .fort-player-hp-item.active-turn {
-  background: rgba(255,215,0,0.2);
-  box-shadow: 0 0 8px rgba(255,215,0,0.3);
+  background: rgba(255,215,0,0.18);
+  box-shadow: 0 0 6px rgba(255,215,0,0.25);
 }
 
 .fort-player-hp-item.dead {
-  opacity: 0.4;
+  opacity: 0.35;
 }
 
 .fort-player-avatar {
-  font-size: 18px;
-  width: 22px;
-  height: 22px;
+  font-size: 13px;
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
   flex-shrink: 0;
 }
 
@@ -160,7 +160,7 @@
 }
 
 .fort-player-name {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
@@ -170,7 +170,7 @@
 
 .fort-hp-bar {
   width: 100%;
-  height: 4px;
+  height: 3px;
   background: rgba(255,255,255,0.15);
   border-radius: 2px;
   overflow: hidden;
@@ -192,8 +192,8 @@
 }
 
 .fort-hp-text {
-  font-size: 9px;
-  color: rgba(255,255,255,0.7);
+  font-size: 8px;
+  color: rgba(255,255,255,0.65);
   font-weight: 600;
 }
 
@@ -205,11 +205,12 @@
   right: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 6px;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(8px);
+  gap: 4px;
+  padding: 3px 5px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
   z-index: 10;
+  flex-wrap: nowrap;
 }
 
 .fort-controls.fort-disabled .fort-ctrl-btn,
@@ -233,13 +234,13 @@
 }
 
 .fort-ctrl-btn {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: none;
-  border-radius: 6px;
-  background: rgba(255,255,255,0.12);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.13);
   color: #fff;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -251,6 +252,27 @@
   user-select: none;
   transition: background 0.1s;
 }
+
+.fort-zoom-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.09);
+  color: rgba(255,255,255,0.7);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  line-height: 1;
+}
+.fort-zoom-btn:active { background: rgba(255,255,255,0.22); }
 
 .fort-ctrl-btn:active {
   background: rgba(255,255,255,0.28);
@@ -295,8 +317,8 @@
 }
 
 .fort-fire-btn {
-  min-width: 48px;
-  height: 30px;
+  min-width: 56px;
+  height: 32px;
   border: none;
   border-radius: 10px;
   background: linear-gradient(135deg, #ff4500, #ff6b35);
