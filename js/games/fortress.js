@@ -1594,9 +1594,8 @@ function drawDeadTank(ctx, player, terrain) {
     _fortPlayerInfoCache[player.id] = pInfo;
   }
 
-  {
-    // ===== DEAD TAMAGOTCHI CHARACTER =====
-    const R = FORT_TAMA_RADIUS;
+  // ===== DEAD TAMAGOTCHI CHARACTER =====
+  const R = FORT_TAMA_RADIUS;
     const centerX = x;
     const centerY = terrainY - R - 2;
     const tamaImg = fortGetTamaImage(tamaData);
@@ -1666,95 +1665,6 @@ function drawDeadTank(ctx, player, terrain) {
       ctx.fill();
     }
     ctx.restore();
-
-  } else {
-    // ===== ORIGINAL DEAD TANK RENDERING =====
-    const bodyX = x - FORT_TANK_W / 2;
-    const bodyY = terrainY - FORT_TANK_H;
-
-    ctx.save();
-    ctx.globalAlpha = 0.6;
-    ctx.translate(x, terrainY);
-    ctx.rotate(slope + 0.12);
-    ctx.translate(-x, -terrainY);
-
-    ctx.fillStyle = '#1a1a1a';
-    const treadH = 6;
-    ctx.beginPath();
-    ctx.roundRect(bodyX - 2, terrainY - treadH, FORT_TANK_W + 4, treadH, 3);
-    ctx.fill();
-
-    const charColor = darkenColor(player.color, 0.35);
-    ctx.fillStyle = charColor;
-    ctx.beginPath();
-    ctx.roundRect(bodyX, bodyY, FORT_TANK_W, FORT_TANK_H, 4);
-    ctx.fill();
-
-    ctx.fillStyle = 'rgba(30, 20, 10, 0.45)';
-    ctx.beginPath();
-    ctx.roundRect(bodyX, bodyY, FORT_TANK_W, FORT_TANK_H, 4);
-    ctx.fill();
-
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(bodyX + 5, bodyY + 3);
-    ctx.lineTo(bodyX + 15, bodyY + FORT_TANK_H - 4);
-    ctx.moveTo(bodyX + FORT_TANK_W - 8, bodyY + 5);
-    ctx.lineTo(bodyX + FORT_TANK_W - 14, bodyY + FORT_TANK_H - 2);
-    ctx.stroke();
-
-    ctx.fillStyle = charColor;
-    ctx.beginPath();
-    ctx.arc(x + 2, bodyY + 3, 8, Math.PI, 0);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(30, 20, 10, 0.4)';
-    ctx.beginPath();
-    ctx.arc(x + 2, bodyY + 3, 8, Math.PI, 0);
-    ctx.fill();
-
-    ctx.fillStyle = '#222';
-    const wheelY = terrainY - 1;
-    for (let wx = bodyX + 4; wx < bodyX + FORT_TANK_W; wx += 8) {
-      ctx.beginPath();
-      ctx.arc(wx, wheelY, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    ctx.restore();
-
-    ctx.save();
-    ctx.globalAlpha = 0.5;
-    ctx.lineCap = 'round';
-    const tH = FORT_TANK_H - 2;
-    const turretSX = x + Math.sin(slope) * tH + 2;
-    const turretSY = terrainY - Math.cos(slope) * tH;
-    const stubLen = FORT_BARREL_LEN * 0.55;
-    const droopRad = 20 * Math.PI / 180;
-    const stubEndX = turretSX + stubLen * Math.cos(droopRad);
-    const stubEndY = turretSY + stubLen * Math.sin(droopRad);
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(turretSX, turretSY);
-    ctx.lineTo(stubEndX, stubEndY);
-    ctx.stroke();
-    ctx.restore();
-
-    ctx.save();
-    ctx.globalAlpha = 0.18;
-    ctx.fillStyle = '#888';
-    const t = Date.now() * 0.001;
-    for (let i = 0; i < 3; i++) {
-      const sy = bodyY - 5 - Math.sin(t * 0.8 + i * 2) * 8 - i * 6;
-      const sx = x - 3 + Math.sin(t * 0.5 + i * 3) * 5;
-      const sr = 3 + Math.sin(t + i) * 1.5;
-      ctx.beginPath();
-      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
 }
 
 function darkenColor(hex, factor) {
@@ -1794,9 +1704,8 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
     _fortPlayerInfoCache[player.id] = pInfo;
   }
 
-  {
-    // ===== TAMAGOTCHI CHARACTER RENDERING =====
-    const R = FORT_TAMA_RADIUS;
+  // ===== TAMAGOTCHI CHARACTER RENDERING =====
+  const R = FORT_TAMA_RADIUS;
     const centerX = x;
     const centerY = terrainY - R - 2;
     const tamaImg = fortGetTamaImage(tamaData);
@@ -1898,107 +1807,6 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
     ctx.moveTo(turretSX, turretSY - 1);
     ctx.lineTo(barrelEndX, barrelEndY - 1);
     ctx.stroke();
-
-  } else {
-    // ===== ORIGINAL TANK RENDERING (non-tama players) =====
-    const bodyX = x - FORT_TANK_W / 2;
-    const bodyY = terrainY - FORT_TANK_H;
-
-    ctx.save();
-    ctx.translate(x, terrainY);
-    ctx.rotate(slope);
-    ctx.translate(-x, -terrainY);
-
-    if (isCurrentTurn) {
-      ctx.shadowColor = '#ffd700';
-      ctx.shadowBlur = 18;
-    }
-
-    ctx.fillStyle = '#222';
-    const treadH = 6;
-    ctx.beginPath();
-    ctx.roundRect(bodyX - 2, terrainY - treadH, FORT_TANK_W + 4, treadH, 3);
-    ctx.fill();
-
-    ctx.fillStyle = player.color;
-    ctx.beginPath();
-    ctx.roundRect(bodyX, bodyY, FORT_TANK_W, FORT_TANK_H, 4);
-    ctx.fill();
-
-    const bodyGrad = ctx.createLinearGradient(bodyX, bodyY, bodyX, bodyY + FORT_TANK_H);
-    bodyGrad.addColorStop(0, 'rgba(255,255,255,0.25)');
-    bodyGrad.addColorStop(0.5, 'rgba(255,255,255,0)');
-    bodyGrad.addColorStop(1, 'rgba(0,0,0,0.2)');
-    ctx.fillStyle = bodyGrad;
-    ctx.beginPath();
-    ctx.roundRect(bodyX, bodyY, FORT_TANK_W, FORT_TANK_H, 4);
-    ctx.fill();
-
-    ctx.strokeStyle = isCurrentTurn ? '#ffd700' : 'rgba(0,0,0,0.4)';
-    ctx.lineWidth = isCurrentTurn ? 2 : 1;
-    ctx.beginPath();
-    ctx.roundRect(bodyX, bodyY, FORT_TANK_W, FORT_TANK_H, 4);
-    ctx.stroke();
-
-    ctx.shadowBlur = 0;
-
-    ctx.fillStyle = player.color;
-    ctx.beginPath();
-    ctx.arc(x, bodyY + 2, 9, Math.PI, 0);
-    ctx.fill();
-    const turretGrad = ctx.createRadialGradient(x - 2, bodyY - 2, 1, x, bodyY, 9);
-    turretGrad.addColorStop(0, 'rgba(255,255,255,0.3)');
-    turretGrad.addColorStop(1, 'rgba(0,0,0,0.1)');
-    ctx.fillStyle = turretGrad;
-    ctx.beginPath();
-    ctx.arc(x, bodyY + 2, 9, Math.PI, 0);
-    ctx.fill();
-
-    ctx.fillStyle = '#333';
-    const wheelY = terrainY - 1;
-    for (let wx = bodyX + 4; wx < bodyX + FORT_TANK_W; wx += 8) {
-      ctx.beginPath();
-      ctx.arc(wx, wheelY, 3.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#555';
-      ctx.beginPath();
-      ctx.arc(wx, wheelY, 1.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#333';
-    }
-
-    ctx.restore();
-
-    let angle = 45;
-    if (isLocalPlayer) angle = fortLocalAngle;
-
-    const rad = angle * Math.PI / 180;
-    const tH = FORT_TANK_H - 2;
-    const turretSX = x + Math.sin(slope) * tH;
-    const turretSY = terrainY - Math.cos(slope) * tH;
-    const barrelEndX = turretSX + FORT_BARREL_LEN * Math.cos(rad);
-    const barrelEndY = turretSY - FORT_BARREL_LEN * Math.sin(rad);
-
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(turretSX, turretSY + 1);
-    ctx.lineTo(barrelEndX, barrelEndY + 1);
-    ctx.stroke();
-    ctx.strokeStyle = '#444';
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(turretSX, turretSY);
-    ctx.lineTo(barrelEndX, barrelEndY);
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(turretSX, turretSY - 1);
-    ctx.lineTo(barrelEndX, barrelEndY - 1);
-    ctx.stroke();
-  }
 
   // Move fuel indicator for current turn player
   if (isCurrentTurn && player.id === state.myId) {
