@@ -3275,6 +3275,8 @@ function closeFortressGame() {
 }
 
 // ===== SKILL BAR UI =====
+let _fortSkillBarState = '';  // 이전 상태 해시 (불필요한 innerHTML 교체 방지)
+
 function fortUpdateSkillBar() {
   const bar = document.getElementById('fortSkillBar');
   if (!bar) return;
@@ -3284,8 +3286,11 @@ function fortUpdateSkillBar() {
                    view.players[view.turnIdx]?.id === state.myId;
 
   if (!isMyTurn || _fortEquippedSkills.length === 0) {
-    bar.classList.remove('visible');
-    bar.innerHTML = '';
+    if (bar.classList.contains('visible')) {
+      bar.classList.remove('visible');
+      bar.innerHTML = '';
+      _fortSkillBarState = '';
+    }
     return;
   }
 
@@ -3299,6 +3304,11 @@ function fortUpdateSkillBar() {
       if (def) items.push({ id, emoji: def.emoji, name: def.name });
     }
   });
+
+  // 상태 해시: active 스킬 + 사용횟수가 바뀔 때만 DOM 교체
+  const stateKey = (_fortActiveSkill || '') + '|' + items.map(i => i.id + ':' + (_fortSkillUsage[i.id] || 0)).join(',');
+  if (stateKey === _fortSkillBarState) return;
+  _fortSkillBarState = stateKey;
 
   bar.innerHTML = items.map(item => {
     const uses = item.id ? (_fortSkillUsage[item.id] || 0) : 0;
