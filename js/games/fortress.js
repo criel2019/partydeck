@@ -86,6 +86,15 @@ function fortTamaGlowColor(pet) {
   return tribes[pet.tribe].color || 'rgba(255,255,255,0.5)';
 }
 
+// ===== RENDER CACHES =====
+let _fortSkyCache = null;       // OffscreenCanvas: sky + clouds (static, built once)
+let _fortTerrainGrad = null;    // cached terrain gradient (rebuilt on canvas init)
+let _fortPlayerInfoCache = {};  // per-player id → { tamaData, glowColor, emoji }
+// Pre-resolved references to tamagotchi globals (avoid typeof checks per frame)
+function _fortResolveTamaGlobals() {
+  _fortPlayerInfoCache = {}; // clear on game start
+}
+
 // ===== GLOBAL STATE =====
 let fortState = null;
 let fortCanvas = null, fortCtx = null;
@@ -306,6 +315,7 @@ function spawnDebris(x, y, count) {
       size: 2 + Math.random() * 3,
       rotation: Math.random() * Math.PI * 2,
       rotSpeed: (Math.random() - 0.5) * 0.3,
+      color: `hsl(30, ${30 + Math.random() * 20 | 0}%, ${25 + Math.random() * 15 | 0}%)`,
     });
   }
 }
@@ -325,60 +335,77 @@ function spawnSmoke(x, y, count) {
 }
 
 function updateParticles() {
-  // Fire particles
-  fortParticles = fortParticles.filter(p => {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += 0.08;
-    p.life -= p.decay;
-    return p.life > 0;
-  });
-  // Debris
-  fortDebris = fortDebris.filter(p => {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += 0.12;
-    p.rotation += p.rotSpeed;
-    p.life -= p.decay;
-    return p.life > 0;
-  });
-  // Smoke
-  fortSmoke = fortSmoke.filter(p => {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.size += 0.3;
-    p.life -= p.decay;
-    return p.life > 0;
-  });
+  // In-place compact (avoids new array allocation every frame)
+  let j = 0;
+  for (let i = 0; i < fortParticles.length; i++) {
+    const p = fortParticles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.life -= p.decay;
+    if (p.life > 0) fortParticles[j++] = p;
+  }
+  fortParticles.length = j;
+
+  j = 0;
+  for (let i = 0; i < fortDebris.length; i++) {
+    const p = fortDebris[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.rotation += p.rotSpeed; p.life -= p.decay;
+    if (p.life > 0) fortDebris[j++] = p;
+  }
+  fortDebris.length = j;
+
+  j = 0;
+  for (let i = 0; i < fortSmoke.length; i++) {
+    const p = fortSmoke[i];
+    p.x += p.vx; p.y += p.vy; p.size += 0.3; p.life -= p.decay;
+    if (p.life > 0) fortSmoke[j++] = p;
+  }
+  fortSmoke.length = j;
 }
 
 function drawParticles(ctx) {
-  // Fire particles
-  fortParticles.forEach(p => {
+  // Fire particles — batch by color where possible, minimize state changes
+  let lastColor = null;
+  for (let i = 0; i < fortParticles.length; i++) {
+    const p = fortParticles[i];
+    if (p.color !== lastColor) {
+      if (lastColor !== null) ctx.fill(); // flush previous batch
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      lastColor = p.color;
+    } else {
+      ctx.globalAlpha = p.life;
+    }
+    ctx.moveTo(p.x + p.size * p.life, p.y);
+    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+  }
+  if (lastColor !== null) ctx.fill();
+
+  // Debris — color cached at spawn, reduce save/restore overhead
+  for (let i = 0; i < fortDebris.length; i++) {
+    const p = fortDebris[i];
     ctx.globalAlpha = p.life;
     ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  // Debris (dirt chunks)
-  fortDebris.forEach(p => {
-    ctx.globalAlpha = p.life;
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(p.rotation);
-    ctx.fillStyle = `hsl(30, ${30 + Math.random() * 20}%, ${25 + Math.random() * 15}%)`;
     ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
     ctx.restore();
-  });
-  // Smoke
-  fortSmoke.forEach(p => {
-    ctx.globalAlpha = p.life * 0.4;
-    ctx.fillStyle = `rgba(100, 100, 100, 1)`;
+  }
+
+  // Smoke — batch all smoke into one path (same color)
+  if (fortSmoke.length > 0) {
+    ctx.fillStyle = 'rgba(100,100,100,1)';
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    for (let i = 0; i < fortSmoke.length; i++) {
+      const p = fortSmoke[i];
+      ctx.globalAlpha = p.life * 0.4;
+      // Can't batch with varying alpha — still one arc per particle, but no fillStyle reset
+      ctx.moveTo(p.x + p.size, p.y);
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    }
     ctx.fill();
-  });
+  }
+
   ctx.globalAlpha = 1;
 }
 
@@ -449,10 +476,10 @@ function drawWindParticles(ctx, wind) {
 
   ctx.save();
   ctx.lineCap = 'round';
+  ctx.lineWidth = 1;
   fortWindParticles.forEach(p => {
     const a = p.alpha * p.life;
     ctx.strokeStyle = `rgba(255, 255, 255, ${a})`;
-    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
     ctx.lineTo(p.x - p.length * dir, p.y);
@@ -1012,17 +1039,24 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind) {
   let vy = -speed * Math.sin(rad);
   let x = startX;
   let y = startY;
-  const path = [{ x, y }];
+
+  // Float32Array: 2x less memory, faster iteration than object array
+  const MAX_STEPS = 3000;
+  const xs = new Float32Array(MAX_STEPS + 1);
+  const ys = new Float32Array(MAX_STEPS + 1);
+  xs[0] = x; ys[0] = y;
+  let len = 1;
+
   const terrain = fortState ? fortState.terrain :
     (window._fortView ? window._fortView.terrain : new Array(FORT_CANVAS_W).fill(380));
   const width = fortState ? fortState.canvasW : FORT_CANVAS_W;
 
-  for (let i = 0; i < 3000; i++) {
+  for (let i = 0; i < MAX_STEPS; i++) {
     vx += wind * 0.003;
     vy += FORT_GRAVITY;
     x += vx;
     y += vy;
-    path.push({ x, y });
+    xs[len] = x; ys[len] = y; len++;
 
     const tx = Math.floor(x);
     if (tx < 0 || tx >= width) break;
@@ -1030,6 +1064,9 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind) {
     if (y > FORT_CANVAS_H + 100) break;
   }
 
+  // Wrap in a path-like object compatible with animation code
+  // path[i].x / path[i].y → use typed views; also expose length
+  const path = { xs, ys, length: len };
   return { path, impactX: x, impactY: y };
 }
 
@@ -1152,9 +1189,9 @@ function startFortAnimation(msg, callback) {
 
     // Camera lerp: track projectile
     if (frameIdx < path.length) {
-      const trackPt = path[Math.min(frameIdx, path.length - 1)];
-      fortCam.targetX = trackPt.x;
-      fortCam.targetY = trackPt.y;
+      const ti = Math.min(frameIdx, path.length - 1);
+      fortCam.targetX = path.xs[ti];
+      fortCam.targetY = path.ys[ti];
     }
     fortCam.x += (fortCam.targetX - fortCam.x) * fortCam.lerp;
     fortCam.y += (fortCam.targetY - fortCam.y) * fortCam.lerp;
@@ -1179,8 +1216,8 @@ function startFortAnimation(msg, callback) {
       const trailStart = 0;
       const trailEnd = Math.min(frameIdx, path.length - 1);
       for (let i = trailStart; i <= trailEnd; i++) {
-        if (i === trailStart) ctx.moveTo(path[i].x, path[i].y);
-        else ctx.lineTo(path[i].x, path[i].y);
+        if (i === trailStart) ctx.moveTo(path.xs[i], path.ys[i]);
+        else ctx.lineTo(path.xs[i], path.ys[i]);
       }
       ctx.stroke();
       ctx.setLineDash([]);
@@ -1196,13 +1233,14 @@ function startFortAnimation(msg, callback) {
         const size = 1 + t * 3;
         ctx.fillStyle = `rgba(255, ${150 + Math.floor(t * 80)}, 50, ${alpha})`;
         ctx.beginPath();
-        ctx.arc(path[i].x, path[i].y, size, 0, Math.PI * 2);
+        ctx.arc(path.xs[i], path.ys[i], size, 0, Math.PI * 2);
         ctx.fill();
       }
 
       // Draw projectile with glow
       if (frameIdx < path.length) {
-        const pt = path[frameIdx];
+        const ptx = path.xs[frameIdx];
+        const pty = path.ys[frameIdx];
 
         // Glow
         ctx.save();
@@ -1210,20 +1248,20 @@ function startFortAnimation(msg, callback) {
         ctx.shadowBlur = 12;
         ctx.fillStyle = '#ffcc00';
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+        ctx.arc(ptx, pty, 4, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
         // Core
         ctx.fillStyle = '#ff4400';
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+        ctx.arc(ptx, pty, 3, 0, Math.PI * 2);
         ctx.fill();
 
         // Tiny sparks every few frames
         if (frameIdx % 3 === 0) {
           fortParticles.push({
-            x: pt.x, y: pt.y,
+            x: ptx, y: pty,
             vx: (Math.random() - 0.5) * 1.5,
             vy: (Math.random() - 0.5) * 1.5,
             life: 0.5 + Math.random() * 0.3,
@@ -1243,8 +1281,8 @@ function startFortAnimation(msg, callback) {
     frameIdx += speed;
 
     if (frameIdx >= path.length) {
-      const impactPt = path[path.length - 1];
-      animateExplosion(impactPt.x, impactPt.y, hitResult, view, callback, msg.terrainAfter);
+      const impactIdx = path.length - 1;
+      animateExplosion(path.xs[impactIdx], path.ys[impactIdx], hitResult, view, callback, msg.terrainAfter);
       return;
     }
 
@@ -1423,98 +1461,105 @@ function renderFortressScene(view) {
   ctx.restore();
 }
 
-function drawSky(ctx, w, h) {
-  const grad = ctx.createLinearGradient(0, 0, 0, h * 0.8);
+function _buildSkyCache(w, h) {
+  const oc = new OffscreenCanvas(w, h);
+  const sCtx = oc.getContext('2d');
+
+  // Sky gradient
+  const grad = sCtx.createLinearGradient(0, 0, 0, h * 0.8);
   grad.addColorStop(0, '#0d1b3e');
   grad.addColorStop(0.3, '#1a3a6e');
   grad.addColorStop(0.7, '#4a90c4');
   grad.addColorStop(1, '#87CEEB');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
+  sCtx.fillStyle = grad;
+  sCtx.fillRect(0, 0, w, h);
 
-  // Stars (very subtle in upper sky)
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  // Stars
+  sCtx.fillStyle = 'rgba(255,255,255,0.3)';
   for (let i = 0; i < 20; i++) {
     const sx = (i * 137 + 50) % w;
     const sy = (i * 97 + 10) % (h * 0.3);
-    ctx.beginPath();
-    ctx.arc(sx, sy, 0.8, 0, Math.PI * 2);
-    ctx.fill();
+    sCtx.beginPath();
+    sCtx.arc(sx, sy, 0.8, 0, Math.PI * 2);
+    sCtx.fill();
   }
-}
 
-function drawClouds(ctx, w) {
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  // Simple static cloud shapes
+  // Clouds (static, drawn once)
+  sCtx.fillStyle = 'rgba(255,255,255,0.08)';
   const clouds = [
     { x: 100, y: 40, rx: 50, ry: 15 },
     { x: 350, y: 60, rx: 70, ry: 18 },
     { x: 600, y: 35, rx: 45, ry: 12 },
     { x: 750, y: 70, rx: 55, ry: 14 },
   ];
-  clouds.forEach(c => {
-    ctx.beginPath();
-    ctx.ellipse(c.x, c.y, c.rx, c.ry, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(c.x - c.rx * 0.5, c.y + 5, c.rx * 0.6, c.ry * 0.8, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(c.x + c.rx * 0.4, c.y + 3, c.rx * 0.5, c.ry * 0.7, 0, 0, Math.PI * 2);
-    ctx.fill();
-  });
+  for (const c of clouds) {
+    sCtx.beginPath();
+    sCtx.ellipse(c.x, c.y, c.rx, c.ry, 0, 0, Math.PI * 2);
+    sCtx.fill();
+    sCtx.beginPath();
+    sCtx.ellipse(c.x - c.rx * 0.5, c.y + 5, c.rx * 0.6, c.ry * 0.8, 0, 0, Math.PI * 2);
+    sCtx.fill();
+    sCtx.beginPath();
+    sCtx.ellipse(c.x + c.rx * 0.4, c.y + 3, c.rx * 0.5, c.ry * 0.7, 0, 0, Math.PI * 2);
+    sCtx.fill();
+  }
+  return oc;
 }
 
-function drawTerrain(ctx, terrain, w, h) {
-  // Main terrain fill with gradient
-  const terrainGrad = ctx.createLinearGradient(0, h * 0.4, 0, h);
-  terrainGrad.addColorStop(0, '#5a9c4f');
-  terrainGrad.addColorStop(0.3, '#4a8c3f');
-  terrainGrad.addColorStop(0.7, '#3a6c2f');
-  terrainGrad.addColorStop(1, '#2a4c1f');
+function drawSky(ctx, w, h) {
+  if (!_fortSkyCache) _fortSkyCache = _buildSkyCache(w, h);
+  ctx.drawImage(_fortSkyCache, 0, 0);
+}
 
-  ctx.fillStyle = terrainGrad;
+function drawClouds() { /* merged into drawSky cache */ }
+
+function drawTerrain(ctx, terrain, w, h) {
+  // Cache terrain gradient (fixed colors, only depends on h)
+  if (!_fortTerrainGrad) {
+    _fortTerrainGrad = ctx.createLinearGradient(0, h * 0.4, 0, h);
+    _fortTerrainGrad.addColorStop(0, '#5a9c4f');
+    _fortTerrainGrad.addColorStop(0.3, '#4a8c3f');
+    _fortTerrainGrad.addColorStop(0.7, '#3a6c2f');
+    _fortTerrainGrad.addColorStop(1, '#2a4c1f');
+  }
+
+  // Build terrain path once per call (terrain changes only on crater)
+  // Use a single path for main fill to avoid redundant traversals
   ctx.beginPath();
   ctx.moveTo(0, h);
-  for (let x = 0; x < w; x++) {
-    ctx.lineTo(x, terrain[x]);
-  }
+  for (let x = 0; x < w; x++) ctx.lineTo(x, terrain[x]);
   ctx.lineTo(w, h);
   ctx.closePath();
+
+  ctx.fillStyle = _fortTerrainGrad;
   ctx.fill();
 
-  // Grass detail on top edge
+  // Underground layer (offset terrain up by 15px, same shape)
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  for (let x = 0; x < w; x++) ctx.lineTo(x, terrain[x] + 15);
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fillStyle = '#3a5c2f';
+  ctx.fill();
+
+  // Grass edge — single stroke over terrain profile
   ctx.strokeStyle = '#6aac5f';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  for (let x = 0; x < w; x++) {
-    if (x === 0) ctx.moveTo(x, terrain[x]);
-    else ctx.lineTo(x, terrain[x]);
-  }
+  ctx.moveTo(0, terrain[0]);
+  for (let x = 1; x < w; x++) ctx.lineTo(x, terrain[x]);
   ctx.stroke();
 
-  // Darker underground layer
-  ctx.fillStyle = '#3a5c2f';
-  ctx.beginPath();
-  ctx.moveTo(0, h);
-  for (let x = 0; x < w; x++) {
-    ctx.lineTo(x, terrain[x] + 15);
-  }
-  ctx.lineTo(w, h);
-  ctx.closePath();
-  ctx.fill();
-
-  // Subtle texture dots
+  // Texture dots (static positions, no randomness needed)
   ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.beginPath();
   for (let i = 0; i < 80; i++) {
     const tx = (i * 97 + 30) % w;
     const ty = terrain[tx] + 10 + ((i * 53) % 60);
-    if (ty < h) {
-      ctx.beginPath();
-      ctx.arc(tx, ty, 1.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    if (ty < h) ctx.arc(tx, ty, 1.5, 0, Math.PI * 2);
   }
+  ctx.fill();
 }
 
 function drawTanks(ctx, players, turnIdx, terrain) {
@@ -1541,9 +1586,15 @@ function drawDeadTank(ctx, player, terrain) {
 
   // No pet = show egg (level 1, any tribe gives 🥚 at stage 0)
   const tamaData = (player.tama && player.tama.tribe) ? player.tama : { tribe: 'fire', level: 1 };
-  const hasTama = true;
 
-  if (hasTama) {
+  // Use cached tama display info (same cache as drawTank)
+  let pInfo = _fortPlayerInfoCache[player.id];
+  if (!pInfo) {
+    pInfo = { glowColor: fortTamaGlowColor(tamaData), emoji: fortTamaEmoji(tamaData) };
+    _fortPlayerInfoCache[player.id] = pInfo;
+  }
+
+  {
     // ===== DEAD TAMAGOTCHI CHARACTER =====
     const R = FORT_TAMA_RADIUS;
     const centerX = x;
@@ -1566,7 +1617,7 @@ function drawDeadTank(ctx, player, terrain) {
     ctx.clip();
 
     // Always draw base (darkened tribe color)
-    ctx.fillStyle = darkenColor(fortTamaGlowColor(tamaData), 0.4);
+    ctx.fillStyle = darkenColor(pInfo.glowColor, 0.4);
     ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
 
     if (tamaImg) {
@@ -1580,7 +1631,7 @@ function drawDeadTank(ctx, player, terrain) {
       ctx.font = `bold ${Math.floor(R * 1.1)}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(fortTamaEmoji(tamaData), centerX, centerY + 1);
+      ctx.fillText(pInfo.emoji, centerX, centerY + 1);
     }
 
     // Soot/burn overlay
@@ -1732,13 +1783,18 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
   const txR = Math.min(terrain.length - 1, tx + 8);
   const slope = Math.atan2(terrain[txR] - terrain[txL], txR - txL);
 
-  const isLocalPlayer = player.id === state.myId;
   // Use player.tama from the broadcasted state (works for all players)
   // No pet = show egg (level 1, any tribe gives 🥚 at stage 0)
   const tamaData = (player.tama && player.tama.tribe) ? player.tama : { tribe: 'fire', level: 1 };
-  const hasTama = true;
 
-  if (hasTama) {
+  // Cache per-player resolved tama display info (avoid repeated typeof/map lookups per frame)
+  let pInfo = _fortPlayerInfoCache[player.id];
+  if (!pInfo) {
+    pInfo = { glowColor: fortTamaGlowColor(tamaData), emoji: fortTamaEmoji(tamaData) };
+    _fortPlayerInfoCache[player.id] = pInfo;
+  }
+
+  {
     // ===== TAMAGOTCHI CHARACTER RENDERING =====
     const R = FORT_TAMA_RADIUS;
     const centerX = x;
@@ -1749,7 +1805,7 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
 
     // Current turn glow
     if (isCurrentTurn) {
-      ctx.shadowColor = fortTamaGlowColor(tamaData);
+      ctx.shadowColor = pInfo.glowColor;
       ctx.shadowBlur = 22;
     }
 
@@ -1767,7 +1823,7 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
     ctx.clip();
 
     // Always draw a solid base background (tribe color)
-    ctx.fillStyle = fortTamaGlowColor(tamaData);
+    ctx.fillStyle = pInfo.glowColor;
     ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
 
     if (tamaImg) {
@@ -1783,7 +1839,7 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
       ctx.font = `bold ${Math.floor(R * 1.1)}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(fortTamaEmoji(tamaData), centerX, centerY + 1);
+      ctx.fillText(pInfo.emoji, centerX, centerY + 1);
     }
     ctx.restore(); // end clip
 
@@ -2205,6 +2261,9 @@ function closeFortressCleanup() {
   fortCam.x = 400; fortCam.y = 250;
   fortCam.targetX = 400; fortCam.targetY = 250;
   fortCam.zoom = 2.0;
+  _fortSkyCache = null;
+  _fortTerrainGrad = null;
+  _fortPlayerInfoCache = {};
 }
 
 function closeFortressGame() {
