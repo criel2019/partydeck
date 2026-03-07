@@ -1294,11 +1294,9 @@ function handleFortFire(peerId, msg) {
   const extraShots = [];
 
   if (skill === 'double_shot') {
-    [-7, 7].forEach((dA, i) => {
-      const a2 = Math.max(0, Math.min(180, angle + dA));
-      const pr2 = computeProjectilePath(startX, startY, a2, power, fortState.wind, {});
-      extraShots.push({ startX, startY, angle: a2, power, pathResult: pr2, delay: i * 120 });
-    });
+    const a2 = Math.max(0, Math.min(180, angle + 7));
+    const pr2 = computeProjectilePath(startX, startY, a2, power, fortState.wind, {});
+    extraShots.push({ startX, startY, angle: a2, power, pathResult: pr2, delay: 120 });
   } else if (skill === 'split') {
     // 분열 지점에서 속도 벡터 방향 계산
     const sxi = Math.min(splitIdx, pathResult.path.length - 1);
