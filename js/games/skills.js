@@ -114,7 +114,39 @@ function skillsRecordWin(game) {
 }
 
 // ── 해금 판정 ────────────────────────────────────────────────────
+// [CHEAT] 아이콘 3연타 강제 해금용
+const _skillCheatTaps = {};  // { skillId: { count, timer } }
+const SKILL_CHEAT_KEY = 'pd_skill_cheat_unlocked';
+
+function _skillCheatGetUnlocked() {
+  try { return JSON.parse(localStorage.getItem(SKILL_CHEAT_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function _skillCheatForceUnlock(skillId) {
+  const list = _skillCheatGetUnlocked();
+  if (!list.includes(skillId)) {
+    list.push(skillId);
+    localStorage.setItem(SKILL_CHEAT_KEY, JSON.stringify(list));
+  }
+}
+function _skillCheatHandleTap(skillId) {
+  const now = Date.now();
+  const t = _skillCheatTaps[skillId] || { count: 0, last: 0 };
+  // 1초 이내 연속 탭만 카운트
+  if (now - t.last > 1000) t.count = 0;
+  t.count++;
+  t.last = now;
+  _skillCheatTaps[skillId] = t;
+  if (t.count >= 3) {
+    t.count = 0;
+    _skillCheatForceUnlock(skillId);
+    _skillsRenderOverlay();
+  }
+}
+
 function skillsIsUnlocked(skillId) {
+  // [CHEAT] 강제 해금 목록 체크
+  if (_skillCheatGetUnlocked().includes(skillId)) return true;
   const def = SKILL_DEFS.find(s => s.id === skillId);
   if (!def) return false;
   const a = skillsGetAchievements();
@@ -214,7 +246,7 @@ function _skillsRenderList(game, equipped, achieve) {
     const pct = Math.min(100, Math.floor(progress / s.unlock.count * 100));
     const canEquip = unlocked && !isEquipped && equipped.length < SKILL_MAX_EQUIPPED;
     return `<div class="skill-item ${unlocked ? 'unlocked' : 'locked'} ${isEquipped ? 'equipped' : ''}">
-      <div class="skill-item-icon">${s.emoji}</div>
+      <div class="skill-item-icon" onclick="event.stopPropagation();_skillCheatHandleTap('${s.id}')">${s.emoji}</div>
       <div class="skill-item-body">
         <div class="skill-item-name">${s.name}</div>
         <div class="skill-item-desc">${s.desc}</div>
