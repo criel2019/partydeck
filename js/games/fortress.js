@@ -110,6 +110,7 @@ let fortMoveInterval = null;
 let fortMovedThisTurn = 0;
 let _fortKeyDown = null;
 let _fortKeyUp = null;
+let _fortVisibilityHandler = null;
 let _fortAngleInterval = null;
 let _fortPowerInterval = null;
 
@@ -158,8 +159,9 @@ function fortCameraLoop(ts) {
       fortCam.x += dx * alpha;
       fortCam.y += dy * alpha;
       clampCamera();
-      renderFortressScene(view);
     }
+    // Always render so wind particles animate even when camera is stationary
+    renderFortressScene(view);
   }
   _fortCamLoopId = requestAnimationFrame(fortCameraLoop);
 }
@@ -1715,11 +1717,13 @@ function drawDeadTank(ctx, player, terrain) {
     ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
 
     if (tamaImg) {
-      const imgSize = R * 2 * 2.4;
-      const imgX = centerX - imgSize / 2;
-      const imgY = centerY - imgSize * 0.62;
+      const natW = tamaImg.naturalWidth || 1;
+      const natH = tamaImg.naturalHeight || 1;
+      const coverScale = Math.max(2 * R / natW, 2 * R / natH) * 1.22;
+      const dw = natW * coverScale;
+      const dh = natH * coverScale;
       ctx.filter = 'grayscale(0.8) brightness(0.5)';
-      ctx.drawImage(tamaImg, imgX, imgY, imgSize, imgSize);
+      ctx.drawImage(tamaImg, centerX - dw * 0.5, centerY - dh * 0.58, dw, dh);
       ctx.filter = 'none';
     } else {
       ctx.font = `bold ${Math.floor(R * 1.1)}px sans-serif`;
@@ -1831,12 +1835,13 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
     ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
 
     if (tamaImg) {
-      // Zoom in so character content fills the circle (sprites often have padding around the character)
-      const imgSize = R * 2 * 2.4;
-      const imgX = centerX - imgSize / 2;
-      // Shift up a bit: character body tends to be in lower-center of sprite
-      const imgY = centerY - imgSize * 0.62;
-      ctx.drawImage(tamaImg, imgX, imgY, imgSize, imgSize);
+      // Mirror tamagotchi CSS: object-fit:cover + object-position:center 58% + scale(1.22)
+      const natW = tamaImg.naturalWidth || 1;
+      const natH = tamaImg.naturalHeight || 1;
+      const coverScale = Math.max(2 * R / natW, 2 * R / natH) * 1.22;
+      const dw = natW * coverScale;
+      const dh = natH * coverScale;
+      ctx.drawImage(tamaImg, centerX - dw * 0.5, centerY - dh * 0.58, dw, dh);
     } else {
       // Fallback: emoji centered in circle (tribe color bg already drawn above)
       ctx.fillStyle = 'rgba(0,0,0,0.35)';
