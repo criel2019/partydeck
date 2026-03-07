@@ -920,6 +920,7 @@ function createFortressView() {
     phase: fortState.phase,
     canvasW: fortState.canvasW,
     canvasH: fortState.canvasH,
+    skyPlatforms: fortSkyPlatforms.map(p => ({ x: p.x, y: p.y, w: p.w, h: p.h, destroyed: p.destroyed || false })),
   };
 }
 
@@ -1241,8 +1242,10 @@ function handleFortFire(peerId, msg) {
   // Save terrain BEFORE destruction for animation
   const terrainBefore = fortState.terrain.slice();
 
-  // Destroy terrain at impact
-  destroyTerrain(fortState.terrain, pathResult.impactX, pathResult.impactY, FORT_CRATER_RADIUS);
+  // Only deform terrain if projectile actually hit the ground (not off-screen or platform)
+  if (pathResult.hitTerrain) {
+    destroyTerrain(fortState.terrain, pathResult.impactX, pathResult.impactY, FORT_CRATER_RADIUS);
+  }
 
   const shooterTribe = (current.tama && current.tama.tribe) ? current.tama.tribe : 'fire';
   const animMsg = {
@@ -1287,22 +1290,49 @@ function handleFortFire(peerId, msg) {
 // Simple projectile motion: parabolic arc, no drag, gentle wind
 // speed = 1.5 + power * 0.1  →  P50 ≈ 280px range, P100 ≈ 880px range at 45°
 // ===== TRAJECTORY PREVIEW =====
-// Shows only the firing angle as a dashed line — no physics curvature
-function drawTrajectoryPreview(ctx, startX, startY, angleDeg) {
+// Simulates actual physics parabola so player sees the real arc
+function drawTrajectoryPreview(ctx, startX, startY, angleDeg, wind) {
   const rad = angleDeg * Math.PI / 180;
-  const lineLen = 72;
-  const endX = startX + Math.cos(rad) * lineLen;
-  const endY = startY - Math.sin(rad) * lineLen;
+  const speed = 1.5 + fortLocalPower * 0.1;
+  let vx = speed * Math.cos(rad);
+  let vy = -speed * Math.sin(rad);
+  let x = startX, y = startY;
+
+  const terrain = window._fortView ? window._fortView.terrain : null;
+  const platforms = fortSkyPlatforms || [];
+  const width = FORT_CANVAS_W;
+  const w = wind || 0;
 
   ctx.save();
-  ctx.setLineDash([5, 5]);
-  ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-  ctx.lineWidth = 1.5;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(startX, startY);
-  ctx.lineTo(endX, endY);
-  ctx.stroke();
+  const MAX_PREVIEW = 500;
+  const DOT_STEP = 6; // draw dot every N steps
+  for (let i = 1; i <= MAX_PREVIEW; i++) {
+    vx += w * 0.003;
+    vy += FORT_GRAVITY;
+    x += vx;
+    y += vy;
+
+    if (x < 0 || x >= width || y > FORT_CANVAS_H + 20) break;
+    if (terrain) {
+      const tx = Math.floor(Math.max(0, Math.min(x, width - 1)));
+      if (y >= terrain[tx]) break;
+    }
+    let onPlatform = false;
+    for (const plat of platforms) {
+      if (!plat.destroyed && x >= plat.x - plat.w / 2 && x <= plat.x + plat.w / 2 &&
+          y >= plat.y && y <= plat.y + plat.h) { onPlatform = true; break; }
+    }
+    if (onPlatform) break;
+
+    if (i % DOT_STEP === 0) {
+      const fade = Math.max(0, 0.85 - (i / MAX_PREVIEW) * 1.1);
+      const sz = Math.max(0.8, 2.5 - (i / MAX_PREVIEW) * 2);
+      ctx.beginPath();
+      ctx.arc(x, y, sz, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${fade.toFixed(2)})`;
+      ctx.fill();
+    }
+  }
   ctx.restore();
 }
 
@@ -1328,6 +1358,7 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind) {
   // Sky platforms for collision (use whichever state is available)
   const platforms = (typeof fortSkyPlatforms !== 'undefined') ? fortSkyPlatforms : [];
 
+  let exitReason = 'maxsteps';
   for (let i = 0; i < MAX_STEPS; i++) {
     vx += wind * 0.003;
     vy += FORT_GRAVITY;
@@ -1336,9 +1367,9 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind) {
     xs[len] = x; ys[len] = y; len++;
 
     const tx = Math.floor(x);
-    if (tx < 0 || tx >= width) break;
-    if (y >= terrain[tx]) break;
-    if (y > FORT_CANVAS_H + 100) break;
+    if (tx < 0 || tx >= width) { exitReason = 'offscreen'; break; }
+    if (y >= terrain[tx]) { exitReason = 'terrain'; break; }
+    if (y > FORT_CANVAS_H + 100) { exitReason = 'offscreen'; break; }
 
     // Platform collision: stop trajectory if projectile enters a platform rect
     let hitPlatform = false;
@@ -1350,13 +1381,11 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind) {
         break;
       }
     }
-    if (hitPlatform) break;
+    if (hitPlatform) { exitReason = 'platform'; break; }
   }
 
-  // Wrap in a path-like object compatible with animation code
-  // path[i].x / path[i].y → use typed views; also expose length
   const path = { xs, ys, length: len };
-  return { path, impactX: x, impactY: y };
+  return { path, impactX: x, impactY: y, hitTerrain: exitReason === 'terrain' };
 }
 
 function checkHit(impactX, impactY, shooterId) {
@@ -1636,8 +1665,12 @@ function startFortAnimation(msg, callback) {
     frameIdx += speed;
 
     if (frameIdx >= path.length) {
+      // Use host's authoritative impact position (msg.impactX/Y) for the explosion.
+      // Falls back to client-computed path end if not provided (solo/practice mode).
       const impactIdx = path.length - 1;
-      animateExplosion(path.xs[impactIdx], path.ys[impactIdx], hitResult, view, callback, msg.terrainAfter);
+      const exX = (msg.impactX != null) ? msg.impactX : path.xs[impactIdx];
+      const exY = (msg.impactY != null) ? msg.impactY : path.ys[impactIdx];
+      animateExplosion(exX, exY, hitResult, view, callback, msg.terrainAfter);
       return;
     }
 
@@ -1808,16 +1841,13 @@ function renderFortressScene(view) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
 
-  // Sky: no camera transform (always full screen)
-  drawSky(ctx, w, h);
-
   // Update wind particles each frame
   updateWindParticles(view.wind || 0);
 
-  // World-space drawing: camera transform
+  // All world-space drawing under camera transform
   ctx.save();
   applyCameraTransform(ctx);
-  drawClouds(ctx, w);
+  drawSky(ctx, w, h);  // world-space: sky/mountains scroll & zoom with camera
   drawSkyPlatforms(ctx);
   updateFortBirds();
   drawFortBirds(ctx);
@@ -2624,11 +2654,10 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
     if (isLocalPlayer && isCurrentTurn) {
       const view = window._fortView;
       const wind = view ? view.wind : 0;
-      const terrain = view ? view.terrain : null;
       // Start from top-center of the character circle (accounting for float offset)
       const launchX = centerX;
       const launchY = visY - R - 1;
-      drawTrajectoryPreview(ctx, launchX, launchY, fortLocalAngle);
+      drawTrajectoryPreview(ctx, launchX, launchY, fortLocalAngle, wind);
     }
 
   // Move fuel indicator for current turn player
@@ -2707,6 +2736,9 @@ function drawNames(ctx, players, terrain) {
 function renderFortressView(view) {
   if (!view) return;
   window._fortView = view;
+
+  // Sync platform data from host so client path computation matches host
+  if (view.skyPlatforms) fortSkyPlatforms = view.skyPlatforms;
 
   if (!fortCtx) initFortCanvas();
 
