@@ -105,8 +105,10 @@ function _fortCharAnimGet(id) {
   return _fortCharAnim[id];
 }
 
-function fortTriggerSquash(playerId, type) {
-  _fortCharAnimGet(playerId).squash = { startMs: Date.now(), type };
+function fortTriggerSquash(playerId, type, chargeRatio) {
+  // chargeRatio 0→1: scales squash intensity for 'fire' type
+  const cr = (chargeRatio !== undefined) ? Math.max(0, Math.min(1, chargeRatio)) : 1;
+  _fortCharAnimGet(playerId).squash = { startMs: Date.now(), type, cr };
 }
 
 // Returns { sx, sy } squash/stretch scale. Clears anim.squash when done.
@@ -114,18 +116,20 @@ function _fortGetSquashScale(anim, now) {
   if (!anim || !anim.squash) return { sx: 1, sy: 1 };
   const elapsed = now - anim.squash.startMs;
   const type = anim.squash.type;
+  // cr: charge ratio 0-1, scales squash magnitude (min 0.4 so even low power has some feel)
+  const cr = 0.4 + (anim.squash.cr !== undefined ? anim.squash.cr : 1) * 0.6;
   let sx, sy;
   if (type === 'fire') {
-    // Recoil: quick squash wide → stretch tall → settle
+    // Recoil: burst wide → stretch tall → settle; magnitude scales with charge
     if (elapsed < 80) {
       const t = elapsed / 80;
-      sx = 1 + 0.35 * t; sy = 1 - 0.35 * t;
+      sx = 1 + 0.45 * cr * t; sy = 1 - 0.45 * cr * t;
     } else if (elapsed < 200) {
       const t = (elapsed - 80) / 120;
-      sx = 1.35 - 0.57 * t; sy = 0.65 + 0.65 * t;
+      sx = (1 + 0.45 * cr) - (0.67 * cr) * t; sy = (1 - 0.45 * cr) + (0.75 * cr) * t;
     } else if (elapsed < 340) {
       const t = (elapsed - 200) / 140;
-      sx = 0.78 + 0.22 * t; sy = 1.30 - 0.30 * t;
+      sx = (1 - 0.22 * cr) + 0.22 * cr * t; sy = (1 + 0.30 * cr) - 0.30 * cr * t;
     } else {
       anim.squash = null; return { sx: 1, sy: 1 };
     }
@@ -1313,10 +1317,13 @@ function startFortAnimation(msg, callback) {
   fortDebris = [];
   fortSmoke = [];
 
-  // Trigger fire squash on shooter
+  // Trigger fire squash on shooter — magnitude scales with power (chargeRatio)
   if (view && view.players && view.turnIdx !== undefined) {
     const shooter = view.players[view.turnIdx];
-    if (shooter) fortTriggerSquash(shooter.id, 'fire');
+    if (shooter) {
+      const cr = Math.max(0, Math.min(1, (msg.power - 10) / 90));
+      fortTriggerSquash(shooter.id, 'fire', cr);
+    }
   }
 
   let frameIdx = 0;
@@ -1885,7 +1892,21 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
     const visY = baseY + floatOff;
 
     // --- Squash/stretch scale ---
-    const { sx, sy } = _fortGetSquashScale(anim, now);
+    let { sx, sy } = _fortGetSquashScale(anim, now);
+
+    // --- Charge compression (local player only) ---
+    const isLocalPlayerChar = player.id === (state && state.myId);
+    if (isLocalPlayerChar && _fortCharging && !anim.squash) {
+      // chargeRatio: 0 (power=10) → 1 (power=100)
+      const chargeRatio = Math.max(0, (_fortChargeValue - 10) / 90);
+      // Uniform shrink: condenses to 0.78× at full charge
+      const compress = 1 - chargeRatio * 0.22;
+      // Trembling that intensifies with charge (squeeze X vs Y alternating)
+      const vibPhase = now * 0.028;
+      const vib = 1 + Math.sin(vibPhase) * chargeRatio * 0.06;
+      sx *= compress * vib;
+      sy *= compress / vib;
+    }
 
     // --- Ground shadow (cast on terrain surface) ---
     const floatH = -floatOff; // how high above base (positive)
