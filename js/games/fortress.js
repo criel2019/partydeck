@@ -420,18 +420,16 @@ function drawParticles(ctx) {
     ctx.restore();
   }
 
-  // Smoke — batch all smoke into one path (same color)
+  // Smoke — each particle needs its own alpha so draw individually
   if (fortSmoke.length > 0) {
     ctx.fillStyle = 'rgba(100,100,100,1)';
-    ctx.beginPath();
     for (let i = 0; i < fortSmoke.length; i++) {
       const p = fortSmoke[i];
       ctx.globalAlpha = p.life * 0.4;
-      // Can't batch with varying alpha — still one arc per particle, but no fillStyle reset
-      ctx.moveTo(p.x + p.size, p.y);
+      ctx.beginPath();
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
     }
-    ctx.fill();
   }
 
   ctx.globalAlpha = 1;
@@ -439,62 +437,61 @@ function drawParticles(ctx) {
 
 // ===== WIND PARTICLE SYSTEM =====
 function updateWindParticles(wind) {
-  // Update existing particles
-  fortWindParticles = fortWindParticles.filter(p => {
+  // Update existing particles — in-place compact (no allocation)
+  let j = 0;
+  for (let i = 0; i < fortWindParticles.length; i++) {
+    const p = fortWindParticles[i];
     p.x += p.vx;
     p.y += p.vy;
     p.life -= p.decay;
-    return p.life > 0;
-  });
+    // Wrap horizontally so particle re-enters from opposite edge
+    if (p.x < -20) p.x = FORT_CANVAS_W + 20;
+    if (p.x > FORT_CANVAS_W + 20) p.x = -20;
+    if (p.life > 0) fortWindParticles[j++] = p;
+  }
+  fortWindParticles.length = j;
 
   // Don't spawn if no wind
   if (wind === 0) return;
 
   const absWind = Math.abs(wind);
-  // Spawn rate scales with wind strength: 1-2 per frame for light, up to 3-4 for strong
-  const spawnCount = Math.floor(Math.random() * (absWind > 3 ? 3 : 2)) + (absWind > 1 ? 1 : (Math.random() < 0.5 ? 1 : 0));
+  const dir = wind > 0 ? 1 : -1;
+  // Keep pool small so individual particles are visibly moving (max 40)
+  const maxPool = 40;
+  if (fortWindParticles.length >= maxPool) return;
 
-  for (let i = 0; i < spawnCount; i++) {
-    // Spawn across the full canvas width, in the sky area (upper 60%)
-    const spawnX = Math.random() * FORT_CANVAS_W;
-    const spawnY = Math.random() * FORT_CANVAS_H * 0.6;
+  const spawnCount = absWind > 3 ? 2 : 1;
+  for (let i = 0; i < spawnCount && fortWindParticles.length < maxPool; i++) {
+    // Spawn off the upwind edge so we see them fly across
+    const spawnX = dir > 0 ? -10 - Math.random() * 30 : FORT_CANVAS_W + 10 + Math.random() * 30;
+    const spawnY = Math.random() * FORT_CANVAS_H * 0.65;
 
-    // Speed scales with wind strength
-    const baseSpeed = 0.5 + absWind * 0.8;
-    const speed = baseSpeed + Math.random() * baseSpeed * 0.5;
-    const dir = wind > 0 ? 1 : -1;
+    // Faster speed so movement is clearly visible
+    const baseSpeed = 2.5 + absWind * 1.2;
+    const speed = baseSpeed + Math.random() * baseSpeed * 0.3;
 
-    // Length/size scales with wind
     let length, alpha;
     if (absWind <= 2) {
-      // Light wind: small dots
-      length = 2 + Math.random() * 3;
-      alpha = 0.15 + Math.random() * 0.1;
+      length = 6 + Math.random() * 6;
+      alpha = 0.35 + Math.random() * 0.15;
     } else if (absWind <= 4) {
-      // Medium wind: short streaks
-      length = 4 + Math.random() * 6;
-      alpha = 0.2 + Math.random() * 0.15;
+      length = 12 + Math.random() * 10;
+      alpha = 0.45 + Math.random() * 0.2;
     } else {
-      // Strong wind: long streaks
-      length = 8 + Math.random() * 10;
-      alpha = 0.25 + Math.random() * 0.15;
+      length = 20 + Math.random() * 14;
+      alpha = 0.55 + Math.random() * 0.2;
     }
 
     fortWindParticles.push({
       x: spawnX,
       y: spawnY,
       vx: speed * dir,
-      vy: 0.1 + Math.random() * 0.3, // slight downward drift
+      vy: (Math.random() - 0.3) * 0.5,
       life: 1.0,
-      decay: 0.01 + Math.random() * 0.015,
-      length: length,
-      alpha: alpha,
+      decay: 0.006 + Math.random() * 0.008,
+      length,
+      alpha,
     });
-  }
-
-  // Cap particle count
-  if (fortWindParticles.length > 150) {
-    fortWindParticles = fortWindParticles.slice(-150);
   }
 }
 
@@ -1099,40 +1096,22 @@ function handleFortFire(peerId, msg) {
 // Simple projectile motion: parabolic arc, no drag, gentle wind
 // speed = 1.5 + power * 0.1  →  P50 ≈ 280px range, P100 ≈ 880px range at 45°
 // ===== TRAJECTORY PREVIEW =====
-function drawTrajectoryPreview(ctx, startX, startY, angleDeg, power, wind, terrain) {
+// Shows only the firing angle as a dashed line — no physics curvature
+function drawTrajectoryPreview(ctx, startX, startY, angleDeg) {
   const rad = angleDeg * Math.PI / 180;
-  const speed = 1.5 + power * 0.1;
-  let vx = speed * Math.cos(rad);
-  let vy = -speed * Math.sin(rad);
-  let x = startX, y = startY;
-
-  const MAX = 120;
-  const DOT_STEP = 3; // draw dot every N simulation steps
-  let dotCount = 0;
-  const maxDots = 18;
+  const lineLen = 72;
+  const endX = startX + Math.cos(rad) * lineLen;
+  const endY = startY - Math.sin(rad) * lineLen;
 
   ctx.save();
-  for (let i = 0; i < MAX && dotCount < maxDots; i++) {
-    vx += wind * 0.003;
-    vy += FORT_GRAVITY;
-    x += vx; y += vy;
-
-    const tx = Math.floor(x);
-    if (tx < 0 || tx >= FORT_CANVAS_W) break;
-    if (terrain && y >= terrain[tx]) break;
-    if (y > FORT_CANVAS_H + 40) break;
-
-    if (i % DOT_STEP === 0) {
-      const progress = dotCount / maxDots;
-      const alpha = 0.85 - progress * 0.7;
-      const r = Math.max(0.8, 2.5 - progress * 1.8);
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
-      ctx.fill();
-      dotCount++;
-    }
-  }
+  ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(startX, startY);
+  ctx.lineTo(endX, endY);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -1428,8 +1407,9 @@ function animateExplosion(x, y, hitResult, view, callback, terrainAfter) {
     updateParticles();
 
     // Screen shake
-    const shakeX = (Math.random() - 0.5) * shakeIntensity;
-    const shakeY = (Math.random() - 0.5) * shakeIntensity;
+    const dprShake = window.devicePixelRatio || 1;
+    const shakeX = (Math.random() - 0.5) * shakeIntensity / dprShake;
+    const shakeY = (Math.random() - 0.5) * shakeIntensity / dprShake;
     shakeIntensity *= 0.9;
 
     if (fortCtx) {
@@ -1903,7 +1883,7 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
       // Start from top-center of the character circle
       const launchX = centerX;
       const launchY = centerY - R - 1;
-      drawTrajectoryPreview(ctx, launchX, launchY, fortLocalAngle, fortLocalPower, wind, terrain);
+      drawTrajectoryPreview(ctx, launchX, launchY, fortLocalAngle);
     }
 
   // Move fuel indicator for current turn player
