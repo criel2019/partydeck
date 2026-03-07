@@ -691,6 +691,10 @@ function setupFortressKeyboard() {
   document.addEventListener('keydown', _fortKeyDown);
   document.addEventListener('keyup', _fortKeyUp);
   document.addEventListener('visibilitychange', _fortVisibilityHandler);
+
+  // Prevent context menu (long-press on Android / right-click) from interrupting button holds
+  const controls = document.getElementById('fortControls');
+  if (controls) controls.addEventListener('contextmenu', e => e.preventDefault());
 }
 
 function cleanupFortressKeyboard() {

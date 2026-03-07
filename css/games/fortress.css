@@ -217,6 +217,9 @@
   padding: 5px 6px;
   z-index: 10;
   flex-wrap: nowrap;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .fort-controls.fort-disabled .fort-ctrl-btn,
@@ -361,6 +364,9 @@
   flex-shrink: 0;
   letter-spacing: 0.5px;
   touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .fort-fire-btn:active:not(:disabled) {
