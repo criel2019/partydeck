@@ -701,8 +701,13 @@ async function createRoom() {
     showToast('방 생성 중...');
     await initPeer('pd-' + state.roomCode);
     
+    let _hostTama = null;
+    try {
+      const _raw = localStorage.getItem('pd_tama_pet');
+      if (_raw) { const _p = JSON.parse(_raw); if (_p && _p.tribe) _hostTama = { tribe: _p.tribe, level: _p.level || 1 }; }
+    } catch(e) {}
     state.players = [{
-      id: state.myId, name: state.myName, avatar: state.myAvatar, isHost: true
+      id: state.myId, name: state.myName, avatar: state.myAvatar, isHost: true, tama: _hostTama
     }];
     
     state.peer.on('connection', (conn) => {
@@ -793,8 +798,14 @@ async function joinRoom() {
       clearTimeout(connTimeout);
       console.log('[PartyDeck] 호스트 연결 성공:', conn.peer);
       state.connections[conn.peer] = conn;
+      // Include tama pet data so other players can see each other's characters
+      let _tamaInfo = null;
+      try {
+        const _raw = localStorage.getItem('pd_tama_pet');
+        if (_raw) { const _p = JSON.parse(_raw); if (_p && _p.tribe) _tamaInfo = { tribe: _p.tribe, level: _p.level || 1 }; }
+      } catch(e) {}
       conn.send(JSON.stringify({
-        type: 'player-info', name: state.myName, avatar: state.myAvatar, id: state.myId
+        type: 'player-info', name: state.myName, avatar: state.myAvatar, id: state.myId, tama: _tamaInfo
       }));
       conn.on('data', (d) => handleMessage(conn.peer, d));
       conn.on('close', () => {
@@ -852,7 +863,8 @@ function handlePlayerJoin(peerId, msg) {
   }
   const name = (typeof msg.name === 'string' ? msg.name : '').trim().slice(0, 20) || '플레이어';
   const avatar = AVATARS.includes(msg.avatar) ? msg.avatar : '😎';
-  state.players.push({ id: peerId, name, avatar, isHost: false });
+  const tama = (msg.tama && msg.tama.tribe) ? { tribe: msg.tama.tribe, level: msg.tama.level || 1 } : null;
+  state.players.push({ id: peerId, name, avatar, isHost: false, tama });
   broadcast({ type: 'player-list', players: state.players });
   updateLobbyUI();
   showToast(name + ' 참가!');
