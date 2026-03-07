@@ -186,7 +186,6 @@ let _fortKeyDown = null;
 let _fortKeyUp = null;
 let _fortVisibilityHandler = null;
 let _fortAngleInterval = null;
-let _fortPowerInterval = null;
 
 // ===== BIRDS =====
 let fortBirds = [];
@@ -817,12 +816,6 @@ function setupFortressKeyboard() {
     } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
       e.preventDefault();
       fortAngleStep(-1);
-    } else if (e.key === 'q' || e.key === 'Q') {
-      e.preventDefault();
-      fortPowerStep(-1);
-    } else if (e.key === 'e' || e.key === 'E') {
-      e.preventDefault();
-      fortPowerStep(1);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       fortFire();
@@ -1140,20 +1133,6 @@ function fortAngleStart(dir) {
 
 function fortAngleStop() {
   if (_fortAngleInterval) { clearInterval(_fortAngleInterval); _fortAngleInterval = null; }
-}
-
-function fortPowerStep(dir) {
-  fortSetPower(Math.max(10, Math.min(100, fortLocalPower + dir)));
-}
-
-function fortPowerStart(dir) {
-  fortPowerStep(dir);
-  if (_fortPowerInterval) clearInterval(_fortPowerInterval);
-  _fortPowerInterval = setInterval(() => fortPowerStep(dir * 2), 60);
-}
-
-function fortPowerStop() {
-  if (_fortPowerInterval) { clearInterval(_fortPowerInterval); _fortPowerInterval = null; }
 }
 
 // ===== CHARGE SHOT =====
@@ -2921,7 +2900,6 @@ function closeFortressCleanup() {
   cleanupFortressKeyboard();
   fortStopMove();
   fortAngleStop();
-  fortPowerStop();
   if (fortCanvas) {
     fortCanvas.ontouchstart = null;
     fortCanvas.ontouchmove = null;
