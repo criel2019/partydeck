@@ -365,9 +365,9 @@ function fortCameraSnap(px, py) {
 // ===== TERRAIN GENERATION =====
 function generateFortressTerrain(width, height, playerCount) {
   const terrain = new Array(width);
-  const baseHeight = height * 0.7;
-  const minHeight = height * 0.4;
-  const maxHeight = height * 0.85;
+  const baseHeight = height * 0.62;
+  const minHeight = height * 0.38;
+  const maxHeight = height * 0.74;
 
   // Use layered sine waves (Fourier-style) for natural rolling hills
   const waves = [];
@@ -1193,12 +1193,6 @@ function fortFire() {
   const currentPlayer = view.players[view.turnIdx];
   if (!currentPlayer) return;
 
-  // Play fire sound based on current player's tribe
-  if (currentPlayer.id === state.myId) {
-    const myTribe = currentPlayer.tama && currentPlayer.tama.tribe ? currentPlayer.tama.tribe : 'fire';
-    fortPlaySound('fire', myTribe);
-  }
-
   if (state.isHost) {
     handleFortFire(state.myId, {
       type: 'fort-fire',
@@ -1464,6 +1458,9 @@ function advanceFortTurn() {
 
 // ===== ANIMATION =====
 function startFortAnimation(msg, callback) {
+  // Play fire sound for all clients (shooter and observers alike)
+  fortPlaySound('fire', msg.shooterTribe || 'fire');
+
   const pathResult = computeProjectilePath(msg.startX, msg.startY, msg.angle, msg.power, msg.wind);
   const path = pathResult.path;
   const hitResult = msg.hitResult;
@@ -1907,40 +1904,60 @@ function _ftTreeLineSil(c, W, H, ridgePts, B, opacity) {
   }
   c.globalAlpha = 1; c.restore();
 }
-function _ftDrawCloud(c, cx, cy, w, h, puffs, opacity, T) {
+function _ftDrawCloud(c, cx, cy, cloudW, cloudH, puffs, opacity, T) {
   c.save();
-  // Underside shadow
-  c.globalAlpha = opacity * 0.55; c.fillStyle = T.cloudShadow;
+
+  // Build main puff circles
+  const circles = [];
   for (let i = 0; i < puffs; i++) {
     const t = puffs > 1 ? i / (puffs - 1) : 0.5;
-    const px = cx + (t - 0.5) * w * 1.4;
-    const ss = 1 - Math.abs(t - 0.5) * 0.8;
-    const pr = h * (0.55 + (i === Math.floor(puffs/2) ? 0.35 : 0)) * ss;
-    c.beginPath(); c.ellipse(px + 4, cy + h * 0.45 + 5, pr * 1.2, pr * 0.5, 0, 0, Math.PI * 2); c.fill();
+    const xOff = (t - 0.5) * cloudW * 1.05;
+    const edgeFade = 1 - Math.abs(t - 0.5) * 1.15;
+    const r = cloudH * (0.5 + edgeFade * 0.6);
+    circles.push({ x: cx + xOff, y: cy, r: Math.max(cloudH * 0.18, r) });
   }
-  // Three-pass body (dark → base → highlight)
-  for (let pass = 0; pass < 3; pass++) {
-    const col = pass === 0 ? T.cloudDark : pass === 1 ? T.cloudBase : T.cloudHighlight;
-    const pa = pass === 0 ? 0.6 : pass === 1 ? 0.9 : 0.55;
-    const offY = pass === 0 ? h * 0.12 : pass === 1 ? 0 : -h * 0.1;
-    const scale = pass === 0 ? 1.08 : pass === 1 ? 1.0 : 0.88;
-    c.globalAlpha = opacity * pa; c.fillStyle = col;
-    for (let i = 0; i < puffs; i++) {
-      const t = puffs > 1 ? i / (puffs - 1) : 0.5;
-      const px = cx + (t - 0.5) * w * 1.4;
-      const ss = (1 - Math.abs(t - 0.5) * 0.7) * scale;
-      const pr = h * (0.6 + (i === Math.floor(puffs/2) ? 0.38 : 0)) * ss;
-      const pry = pr * 0.68;
-      c.save(); c.translate(px, cy + offY);
-      c.beginPath();
-      c.moveTo(-pr, pry * 0.2);
-      c.bezierCurveTo(-pr, -pry * 0.8, -pr * 0.3, -pry * 1.1, 0, -pry * 0.9);
-      c.bezierCurveTo(pr * 0.3, -pry * 1.1, pr, -pry * 0.8, pr, pry * 0.2);
-      c.bezierCurveTo(pr * 1.05, pry * 0.55, -pr * 1.05, pry * 0.55, -pr, pry * 0.2);
-      c.fill(); c.restore();
-    }
+  // Extra top-bump sub-circles between main ones
+  for (let i = 0; i < puffs - 1; i++) {
+    const c1 = circles[i], c2 = circles[i + 1];
+    const r = (c1.r + c2.r) * 0.42;
+    circles.push({ x: (c1.x + c2.x) * 0.5, y: cy - r * 0.65, r });
   }
-  c.globalAlpha = 1; c.restore();
+
+  // Drop shadow below the cloud
+  c.globalAlpha = opacity * 0.5;
+  const shadowGrd = c.createLinearGradient(cx, cy + cloudH * 0.15, cx, cy + cloudH * 1.1);
+  shadowGrd.addColorStop(0, T.cloudShadow);
+  shadowGrd.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = shadowGrd;
+  c.beginPath();
+  c.ellipse(cx, cy + cloudH * 0.55, cloudW * 0.62, cloudH * 0.45, 0, 0, Math.PI * 2);
+  c.fill();
+
+  // Main puff bodies using radial gradients (soft, overlapping)
+  c.globalAlpha = opacity * 0.92;
+  for (const circle of circles) {
+    const g = c.createRadialGradient(
+      circle.x - circle.r * 0.18, circle.y - circle.r * 0.28, 0,
+      circle.x, circle.y, circle.r
+    );
+    g.addColorStop(0, T.cloudHighlight);
+    g.addColorStop(0.5, T.cloudBase);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = g;
+    c.beginPath();
+    c.arc(circle.x, circle.y, circle.r, 0, Math.PI * 2);
+    c.fill();
+  }
+
+  // Dark underside for depth
+  c.globalAlpha = opacity * 0.38;
+  c.fillStyle = T.cloudDark;
+  c.beginPath();
+  c.ellipse(cx, cy + cloudH * 0.22, cloudW * 0.5, cloudH * 0.24, 0, 0, Math.PI * 2);
+  c.fill();
+
+  c.globalAlpha = 1;
+  c.restore();
 }
 function _ftDrawMountains(c, W, H, T, B) {
   const m4 = _ftMakeMtnPath(W, H, H*0.42, 0.005, 55, 22, 8, 0.8);
@@ -2043,15 +2060,20 @@ function _buildSkyCache(w, h) {
   // ── Layered background mountains (4 layers) ──
   _ftDrawMountains(c, w, h, T, B);
 
-  // ── Volumetric clouds (7 clouds, 3 layers) ──
+  // ── Volumetric clouds (9 clouds, 3 depth layers) ──
   const cloudDefs = [
-    {cx:w*0.08, cy:h*0.08, cw:110, ch:28, puffs:3, op:0.5, layer:'high'},
-    {cx:w*0.32, cy:h*0.06, cw:150, ch:32, puffs:4, op:0.55, layer:'high'},
-    {cx:w*0.65, cy:h*0.09, cw:100, ch:25, puffs:3, op:0.45, layer:'high'},
-    {cx:w*0.88, cy:h*0.07, cw:130, ch:29, puffs:3, op:0.5, layer:'high'},
-    {cx:w*0.18, cy:h*0.19, cw:170, ch:44, puffs:5, op:0.7, layer:'mid'},
-    {cx:w*0.55, cy:h*0.17, cw:180, ch:48, puffs:5, op:0.72, layer:'mid'},
-    {cx:w*0.80, cy:h*0.21, cw:150, ch:40, puffs:4, op:0.65, layer:'mid'},
+    // Far/high layer – small, faint
+    {cx:w*0.07, cy:h*0.07, cw:90,  ch:22, puffs:3, op:0.38},
+    {cx:w*0.38, cy:h*0.05, cw:130, ch:28, puffs:4, op:0.42},
+    {cx:w*0.62, cy:h*0.08, cw:110, ch:26, puffs:3, op:0.38},
+    {cx:w*0.90, cy:h*0.06, cw:100, ch:24, puffs:3, op:0.40},
+    // Mid layer – medium
+    {cx:w*0.22, cy:h*0.16, cw:200, ch:55, puffs:6, op:0.68},
+    {cx:w*0.57, cy:h*0.14, cw:220, ch:60, puffs:6, op:0.72},
+    {cx:w*0.84, cy:h*0.18, cw:175, ch:50, puffs:5, op:0.65},
+    // Near layer – large, prominent
+    {cx:w*0.10, cy:h*0.27, cw:240, ch:72, puffs:7, op:0.80},
+    {cx:w*0.73, cy:h*0.25, cw:260, ch:78, puffs:7, op:0.82},
   ];
   for (const cd of cloudDefs) _ftDrawCloud(c, cd.cx, cd.cy, cd.cw, cd.ch, cd.puffs, cd.op, T);
 
@@ -2201,12 +2223,15 @@ function drawTerrain(ctx, terrain, w, h) {
     ctx.beginPath(); ctx.roundRect(gx-2.5, gy-th2*0.28, 5, th2*0.28, 1); ctx.fill();
     for (let ti = 0; ti < 3; ti++) {
       const ty2 = gy - th2*(0.22 + ti/3*0.55), tw2 = th2*(0.38-ti*0.1)*(1-ti*0.08);
-      ctx.globalAlpha = 0.85; ctx.fillStyle = B.treeColor[2] || B.treeColor[0];
-      ctx.beginPath(); ctx.moveTo(gx, ty2-th2*0.28); ctx.lineTo(gx-tw2*0.15, ty2); ctx.lineTo(gx+tw2, ty2); ctx.closePath(); ctx.fill();
-      ctx.globalAlpha = 0.75; ctx.fillStyle = B.treeColor[0];
-      ctx.beginPath(); ctx.moveTo(gx, ty2-th2*0.28); ctx.lineTo(gx-tw2, ty2); ctx.lineTo(gx+tw2*0.15, ty2); ctx.closePath(); ctx.fill();
-      ctx.globalAlpha = 0.18; ctx.fillStyle = 'rgba(180,255,120,1)';
-      ctx.beginPath(); ctx.moveTo(gx, ty2-th2*0.28); ctx.lineTo(gx-tw2, ty2); ctx.lineTo(gx-tw2*0.7, ty2); ctx.lineTo(gx, ty2-th2*0.24); ctx.closePath(); ctx.fill();
+      // Dark shadow side (right)
+      ctx.globalAlpha = 0.65; ctx.fillStyle = B.treeColor[0];
+      ctx.beginPath(); ctx.moveTo(gx, ty2-th2*0.28); ctx.lineTo(gx, ty2); ctx.lineTo(gx+tw2, ty2); ctx.closePath(); ctx.fill();
+      // Light side (left)
+      ctx.globalAlpha = 0.82; ctx.fillStyle = B.treeColor[2] || B.treeColor[1];
+      ctx.beginPath(); ctx.moveTo(gx, ty2-th2*0.28); ctx.lineTo(gx-tw2, ty2); ctx.lineTo(gx, ty2); ctx.closePath(); ctx.fill();
+      // Rim highlight
+      ctx.globalAlpha = 0.14; ctx.fillStyle = 'rgba(200,255,150,1)';
+      ctx.beginPath(); ctx.moveTo(gx, ty2-th2*0.28); ctx.lineTo(gx-tw2*0.95, ty2); ctx.lineTo(gx-tw2*0.65, ty2); ctx.closePath(); ctx.fill();
     }
     ctx.globalAlpha = 1; ctx.restore();
   }
@@ -2223,52 +2248,21 @@ function drawTerrain(ctx, terrain, w, h) {
   for (let x = w-1; x >= 0; x--) ctx.lineTo(x, terrain[x]+22);
   ctx.closePath(); ctx.fillStyle = aoGrd; ctx.fill(); ctx.restore();
 
-  // ── Valley fog pools ──
+  // ── Subtle valley ground fog (low-lying mist, not a sea) ──
   ctx.save();
-  for (let x = 20; x < w - 20; x += 8) {
-    if (terrain[x] <= h * 0.68) continue;
-    const fogH2 = (terrain[x] - h*0.68) * 0.6 + 8;
-    const fg = ctx.createRadialGradient(x, terrain[x], 0, x, terrain[x], 40+fogH2*3);
-    fg.addColorStop(0, T.hazeColor.replace(/[\d.]+\)$/, '0.15)')); fg.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle = fg; ctx.beginPath(); ctx.ellipse(x, terrain[x], 40+fogH2*3, fogH2, 0, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 0.18;
+  const fogBand = h * 0.68;
+  for (let x = 60; x < w - 60; x += 60) {
+    const ty = terrain[x];
+    if (ty < fogBand) continue; // only in deep valleys
+    const fogR = 55 + (ty - fogBand) * 0.5;
+    const fg = ctx.createRadialGradient(x, ty, 0, x, ty, fogR);
+    fg.addColorStop(0, T.hazeColor);
+    fg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = fg;
+    ctx.beginPath(); ctx.ellipse(x, ty, fogR, fogR * 0.25, 0, 0, Math.PI * 2); ctx.fill();
   }
-  ctx.restore();
-
-  // ── Water in deep valleys ──
-  const waterY = h * 0.80;
-  let hasWater = false;
-  for (let x = 0; x < w; x++) { if (terrain[x] > waterY) { hasWater = true; break; } }
-  if (hasWater) {
-    ctx.save();
-    ctx.beginPath(); ctx.moveTo(0, h);
-    for (let x = 0; x < w; x++) ctx.lineTo(x, Math.max(terrain[x], waterY));
-    ctx.lineTo(w, h); ctx.closePath();
-    const wGrd = ctx.createLinearGradient(0, waterY, 0, h);
-    wGrd.addColorStop(0, B.waterColor[0]); wGrd.addColorStop(1, B.waterColor[1]);
-    ctx.fillStyle = wGrd; ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
-    for (let i = 0; i < 6; i++) {
-      const wy = waterY + 8 + i * 10;
-      ctx.beginPath();
-      for (let x = 10; x < w - 10; x += 3) {
-        if (terrain[x] < wy) { const wx2 = wy + Math.sin(x*0.12+i*0.8)*2; (x===10||terrain[x-3]>=wy)?ctx.moveTo(x,wx2):ctx.lineTo(x,wx2); }
-      }
-      ctx.stroke();
-    }
-    ctx.beginPath();
-    for (let x = 0; x < w; x++) {
-      if (terrain[x] > waterY) { (x===0||terrain[x-1]<=waterY)?ctx.moveTo(x,waterY):ctx.lineTo(x,waterY); }
-    }
-    ctx.strokeStyle='rgba(180,230,255,0.35)'; ctx.lineWidth=1.5; ctx.stroke();
-    ctx.restore();
-  }
-
-  // ── Surface ambient tint ──
-  ctx.save();
-  ctx.beginPath(); ctx.moveTo(0, terrain[0]);
-  for (let x = 1; x < w; x++) ctx.lineTo(x, terrain[x]);
-  ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
-  ctx.fillStyle = B.surfaceColor; ctx.fill(); ctx.restore();
+  ctx.globalAlpha = 1; ctx.restore();
 }
 
 function drawTanks(ctx, players, turnIdx, terrain) {
