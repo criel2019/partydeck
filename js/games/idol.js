@@ -1640,6 +1640,13 @@ function idolEndGame() {
   idolState.ranked = ranked;
   idolState.pendingAction = { type: 'ending' };
 
+  // 스킬 업적 기록
+  if (typeof skillsRecordPlay === 'function') {
+    skillsRecordPlay('idol');
+    const myRank = ranked.findIndex(p => p.id === state.myId);
+    if (myRank === 0) skillsRecordWin('idol');
+  }
+
   broadcastIdolState();
   idolRenderAll();
 }

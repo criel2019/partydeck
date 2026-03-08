@@ -88,6 +88,38 @@ const SKILL_DEFS = [
     unlock: { game: 'detective', type: 'win', count: 50, label: '형사와 강도 50번 승리' },
     games: ['fortress'],
   },
+  // ── 회복 스킬 (아이돌매니저먼트 승리) ──
+  {
+    id: 'heal_10',  name: '응급 치료', emoji: '💊',
+    desc: '체력을 10% 회복합니다. (발사 대신 사용)',
+    unlock: { game: 'idol', type: 'win', count: 10, label: '아이돌매니저먼트 10번 승리' },
+    games: ['fortress'], type: 'instant',
+  },
+  {
+    id: 'heal_30',  name: '영양 보충', emoji: '🧃',
+    desc: '체력을 30% 회복합니다. (발사 대신 사용)',
+    unlock: { game: 'idol', type: 'win', count: 30, label: '아이돌매니저먼트 30번 승리' },
+    games: ['fortress'], type: 'instant',
+  },
+  {
+    id: 'heal_50',  name: '회복 주문', emoji: '💚',
+    desc: '체력을 50% 회복합니다. (발사 대신 사용)',
+    unlock: { game: 'idol', type: 'win', count: 50, label: '아이돌매니저먼트 50번 승리' },
+    games: ['fortress'], type: 'instant',
+  },
+  {
+    id: 'heal_100', name: '완전 회복', emoji: '✨',
+    desc: '체력을 100% 회복합니다. (발사 대신 사용)',
+    unlock: { game: 'idol', type: 'win', count: 100, label: '아이돌매니저먼트 100번 승리' },
+    games: ['fortress'], type: 'instant',
+  },
+  // ── 쉴드 스킬 (야추다이스 승리) ──
+  {
+    id: 'shield',  name: '방어막', emoji: '🛡️',
+    desc: '자기 턴이 올 때까지 공격 1회를 막습니다. (발사 대신 사용)',
+    unlock: { game: 'yahtzee', type: 'win', count: 100, label: '야추다이스 100번 승리' },
+    games: ['fortress'], type: 'instant',
+  },
 ];
 
 // ── 업적 저장소 ─────────────────────────────────────────────────
@@ -151,7 +183,7 @@ function skillsIsUnlocked(skillId) {
   if (!def) return false;
   const a = skillsGetAchievements();
   const g = a[def.unlock.game] || { play: 0, win: 0 };
-  return (g[def.unlock.type] || 0) >= def.unlock.count;
+  return (Number(g[def.unlock.type]) || 0) >= def.unlock.count;
 }
 function skillsGetDef(skillId) {
   return SKILL_DEFS.find(s => s.id === skillId) || null;
@@ -161,7 +193,7 @@ function skillsGetDef(skillId) {
 function skillsGetEquipped(game) {
   try {
     const data = JSON.parse(localStorage.getItem(SKILL_EQUIP_KEY) || '{}');
-    return (data[game] || []).filter(id => skillsIsUnlocked(id));
+    return (data[game] || []).filter(id => skillsGetDef(id) && skillsIsUnlocked(id));
   } catch(e) { return []; }
 }
 function skillsSetEquipped(game, skillIds) {

@@ -634,6 +634,16 @@ function handleMessage(peerId, raw) {
     // Fortress handlers
     'fort-state': () => { showScreen('fortressGame'); initFortCanvas(); renderFortressView(msg.state); if(typeof setupFortressKeyboard==='function' && !_fortKeyDown) setupFortressKeyboard(); },
     'fort-fire': () => { if(state.isHost) handleFortFire(peerId, msg); },
+    'fort-instant-skill': () => { if(state.isHost) handleFortInstantSkill(peerId, msg); },
+    'fort-instant-effect': () => {
+      if(typeof _fortShowSkillFlash === 'function') _fortShowSkillFlash(msg.flashText || '');
+      const v = window._fortView;
+      if (v && msg.playerId) {
+        const p = v.players.find(pp => pp.id === msg.playerId);
+        if (p) { p.hp = msg.hp; p.shield = msg.shield || 0; }
+        if (typeof renderFortressView === 'function') renderFortressView(v);
+      }
+    },
     'fort-move': () => { if(state.isHost) handleFortMove(peerId, msg); },
     'fort-anim': () => { startFortAnimation(msg); },
     'fort-result': () => { showFortressGameOver(msg); },
