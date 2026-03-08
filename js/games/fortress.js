@@ -105,6 +105,10 @@ function fortTamaGlowColor(pet) {
 // ===== RENDER CACHES =====
 let _fortSkyCache = null;       // OffscreenCanvas: sky + clouds (static, built once)
 let _fortTerrainGrad = null;    // cached terrain gradient (rebuilt on canvas init)
+let _fortTerrainCache = null;   // OffscreenCanvas: full terrain (rebuilt on destruction)
+let _fortTerrainCacheRef = null; // terrain array reference used for cache
+let _fortTerrainDirtyVer = 0;   // incremented when terrain mutated in-place
+let _fortTerrainCacheVer = -1;  // version when cache was last built
 let _fortPlayerInfoCache = {};  // per-player id → { tamaData, glowColor, emoji }
 let _fortCharAnim = {};          // per-player id → { phase, squash: null|{startMs,type} }
 // Pre-resolved references to tamagotchi globals (avoid typeof checks per frame)
@@ -186,6 +190,7 @@ let _fortKeyDown = null;
 let _fortKeyUp = null;
 let _fortVisibilityHandler = null;
 let _fortAngleInterval = null;
+let _fortWheelHandler = null;
 
 // ── 스킬 상태 ─────────────────────────────────────────────────
 let _fortEquippedSkills = [];  // 이번 게임에 장착된 스킬 ID 목록
@@ -495,6 +500,7 @@ function generateFortressTerrain(width, height, playerCount) {
 
 // ===== TERRAIN DESTRUCTION =====
 function destroyTerrain(terrain, impactX, impactY, radius) {
+  _fortTerrainDirtyVer++;
   const cx = Math.floor(impactX);
   const r = Math.floor(radius);
   for (let x = cx - r; x <= cx + r; x++) {
@@ -1107,7 +1113,8 @@ function initFortCanvas() {
   fortCanvas.onmouseleave = () => { _fortDrag = null; };
 
   // Wheel zoom — use addEventListener for explicit passive:false
-  fortCanvas.addEventListener('wheel', (e) => {
+  if (_fortWheelHandler && fortCanvas) fortCanvas.removeEventListener('wheel', _fortWheelHandler);
+  _fortWheelHandler = (e) => {
     e.preventDefault();
     const zoomSpeed = 0.15;
     const dir = e.deltaY < 0 ? 1 : -1;
@@ -1115,7 +1122,8 @@ function initFortCanvas() {
     clampCamera();
     const view = window._fortView;
     if (view && !fortAnimId) renderFortressScene(view);
-  }, { passive: false });
+  };
+  fortCanvas.addEventListener('wheel', _fortWheelHandler, { passive: false });
 }
 
 // ===== LOCAL CONTROLS =====
@@ -1136,7 +1144,7 @@ function fortSetPower(val) {
 
 // ===== BUTTON-BASED ANGLE/POWER CONTROLS =====
 function fortAngleStep(dir) {
-  fortSetAngle(Math.max(0, Math.min(180, fortLocalAngle + dir)));
+  fortSetAngle(Math.max(-90, Math.min(180, fortLocalAngle + dir)));
 }
 
 function fortAngleStart(dir) {
@@ -1257,7 +1265,7 @@ function handleFortFire(peerId, msg) {
   if (!current || !current.alive) return;
   if (peerId !== current.id && !(current.id.startsWith('ai-') && peerId === state.myId)) return;
 
-  const angle = Math.max(0, Math.min(180, parseInt(msg.angle) || 45));
+  const angle = Math.max(-90, Math.min(180, parseInt(msg.angle) || 45));
   const power = Math.max(10, Math.min(100, parseInt(msg.power) || 50));
   const skill  = (typeof msg.skill === 'string') ? msg.skill : null;
 
@@ -1280,6 +1288,13 @@ function handleFortFire(peerId, msg) {
   // ── 메인 경로 계산 ─────────────────────────────────────
   let pathResult = computeProjectilePath(startX, startY, angle, power, fortState.wind, skillOpts);
 
+  // 관통탄: 첫 히트 지점을 impact로 설정 (폭발 위치)
+  if (skill === 'penetrate' && pathResult.penetrateHitX.length > 0) {
+    pathResult.impactX = pathResult.penetrateHitX[0];
+    pathResult.impactY = pathResult.penetrateHitY[0];
+    pathResult.hitTerrain = true; // 폭발 이펙트를 위해
+  }
+
   // 분열탄: 메인 경로를 40% 지점에서 잘라냄
   let splitIdx = 0;
   if (skill === 'split') {
@@ -1294,7 +1309,7 @@ function handleFortFire(peerId, msg) {
   const extraShots = [];
 
   if (skill === 'double_shot') {
-    const a2 = Math.max(0, Math.min(180, angle + 7));
+    const a2 = Math.max(-90, Math.min(180, angle + 7));
     const pr2 = computeProjectilePath(startX, startY, a2, power, fortState.wind, {});
     extraShots.push({ startX, startY, angle: a2, power, pathResult: pr2, delay: 120 });
   } else if (skill === 'split') {
@@ -1306,14 +1321,28 @@ function handleFortFire(peerId, msg) {
     const baseAngle = Math.atan2(-vdy, vdx) * 180 / Math.PI;
     const sx = pathResult.path.xs[sxi], sy = pathResult.path.ys[sxi];
     [-22, 0, 22].forEach((dA, i) => {
-      const sa = Math.max(0, Math.min(180, baseAngle + dA));
+      const sa = Math.max(-90, Math.min(180, baseAngle + dA));
       const pr = computeProjectilePath(sx, sy, sa, power * 0.75, fortState.wind, {});
       extraShots.push({ startX: sx, startY: sy, angle: sa, power: power * 0.75, pathResult: pr, delay: 0 });
     });
   }
 
   // ── 히트 판정 ──────────────────────────────────────────
-  const mainHit = checkHit(pathResult.impactX, pathResult.impactY, current.id);
+  let mainHit;
+  if (skill === 'penetrate' && pathResult.penetrateHitX.length > 0) {
+    // 관통탄: 경로 상의 각 히트 지점에서 판정하여 병합
+    const allTargets = [];
+    const hitIdDedup = new Set();
+    for (let hi = 0; hi < pathResult.penetrateHitX.length; hi++) {
+      const hr = checkHit(pathResult.penetrateHitX[hi], pathResult.penetrateHitY[hi], current.id);
+      hr.targets.forEach(t => {
+        if (!hitIdDedup.has(t.id)) { hitIdDedup.add(t.id); allTargets.push(t); }
+      });
+    }
+    mainHit = { hit: allTargets.length > 0, targets: allTargets };
+  } else {
+    mainHit = checkHit(pathResult.impactX, pathResult.impactY, current.id);
+  }
   const extraHits = extraShots.map(s => checkHit(s.pathResult.impactX, s.pathResult.impactY, current.id));
 
   // ── 스킬 상태이상 처리 ─────────────────────────────────
@@ -1339,12 +1368,26 @@ function handleFortFire(peerId, msg) {
   applyDamage(mainHit);
   extraHits.forEach(hr => applyDamage(hr));
 
+  // ── 땅뚫기 중간 관통 지점 데미지 & 지형 파괴 ─────────
+  const pierceHits = [];
+  if ((skill === 'double_pierce' || skill === 'triple_pierce') && pathResult.pierceImpacts) {
+    pathResult.pierceImpacts.forEach(pi => {
+      const hr = checkHit(pi.x, pi.y, current.id);
+      applyDamage(hr);
+      pierceHits.push({ impactX: pi.x, impactY: pi.y, hitResult: hr });
+    });
+  }
+
   // ── 지형 파괴 ──────────────────────────────────────────
   const terrainBefore = fortState.terrain.slice();
   const craterR = (skill === 'earthquake') ? FORT_CRATER_RADIUS * 3 : FORT_CRATER_RADIUS;
   if (pathResult.hitTerrain) {
     destroyTerrain(fortState.terrain, pathResult.impactX, pathResult.impactY, craterR);
   }
+  // 땅뚫기 중간 관통 지점 지형 파괴
+  pierceHits.forEach(ph => {
+    destroyTerrain(fortState.terrain, ph.impactX, ph.impactY, FORT_CRATER_RADIUS);
+  });
   extraShots.forEach(s => {
     if (s.pathResult.hitTerrain) {
       destroyTerrain(fortState.terrain, s.pathResult.impactX, s.pathResult.impactY, FORT_CRATER_RADIUS);
@@ -1354,16 +1397,18 @@ function handleFortFire(peerId, msg) {
   // ── 클러스터탄: 소형 폭탄 산포 ─────────────────────────
   const clusterImpacts = [];
   if (skill === 'cluster') {
-    for (let c = 0; c < 5; c++) {
+    for (let c = 0; c < 3; c++) {
       const cA = angle + (Math.random() - 0.5) * 80;
-      const cPow = power * 0.35;
+      const cPow = power * 0.2;
       const cp = computeProjectilePath(
         pathResult.impactX, pathResult.impactY - 8,
-        Math.max(0, Math.min(180, cA)), cPow, fortState.wind, {}
+        Math.max(-90, Math.min(180, cA)), cPow, fortState.wind, {}
       );
       const chr = checkHit(cp.impactX, cp.impactY, current.id);
+      // 클러스터 서브 폭탄 데미지 50% 감소
+      chr.targets.forEach(t => { t.damage = Math.floor(t.damage * 0.5); });
       applyDamage(chr);
-      if (cp.hitTerrain) destroyTerrain(fortState.terrain, cp.impactX, cp.impactY, FORT_CRATER_RADIUS * 0.5);
+      if (cp.hitTerrain) destroyTerrain(fortState.terrain, cp.impactX, cp.impactY, FORT_CRATER_RADIUS * 0.3);
       clusterImpacts.push({ impactX: cp.impactX, impactY: cp.impactY, hitResult: chr });
     }
   }
@@ -1390,6 +1435,7 @@ function handleFortFire(peerId, msg) {
       delay: s.delay || 0,
     })),
     skillEffects,
+    pierceHits,
     clusterImpacts,
   };
   broadcast(animMsg);
@@ -1475,6 +1521,16 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind, skillOpts)
   let bounceCount = 0;
   const maxBounce = (skill === 'bounce') ? 3 : 0;
 
+  // 관통탄: 경로 상 플레이어 히트 지점 기록
+  const penetrateHitX = [];
+  const penetrateHitY = [];
+  const penetrateHitIds = new Set();
+  const playerPositions = (skillOpts && skillOpts.homingTargets) || [];
+
+  // 땅뚫기: 관통 지점 기록
+  const pierceImpacts = [];
+  let wasInTerrain = false;
+
   let exitReason = 'maxsteps';
   for (let i = 0; i < MAX_STEPS; i++) {
     // 바람 (저격탄은 바람 무시)
@@ -1516,6 +1572,20 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind, skillOpts)
       exitReason = 'offscreen'; break;
     }
 
+    // 관통탄: 경로 상 플레이어 히트 체크
+    if (skill === 'penetrate' && playerPositions.length > 0) {
+      for (let pi = 0; pi < playerPositions.length; pi++) {
+        const pt = playerPositions[pi];
+        const dx = x - pt.x, dy = y - pt.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist <= FORT_HIT_RADIUS && !penetrateHitIds.has(pi)) {
+          penetrateHitIds.add(pi);
+          penetrateHitX.push(x);
+          penetrateHitY.push(y);
+        }
+      }
+    }
+
     // 지형 충돌
     if (y >= terrain[tx]) {
       if (skill === 'penetrate') { continue; }  // 관통탄은 지형 통과
@@ -1525,8 +1595,18 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind, skillOpts)
         bounceCount++;
         continue;
       }
-      if (pierceCount < maxPierce) { pierceCount++; continue; }
+      if (pierceCount < maxPierce) {
+        // 땅뚫기: 지형에 진입하는 순간만 카운트 (이미 지형 안에 있으면 그냥 통과)
+        if (!wasInTerrain) {
+          pierceImpacts.push({ x, y });
+          wasInTerrain = true;
+          pierceCount++;
+        }
+        continue;
+      }
       exitReason = 'terrain'; break;
+    } else {
+      wasInTerrain = false;
     }
     if (y > FORT_CANVAS_H + 100) { exitReason = 'offscreen'; break; }
 
@@ -1540,7 +1620,12 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind, skillOpts)
   }
 
   const path = { xs, ys, length: len };
-  return { path, impactX: x, impactY: y, hitTerrain: exitReason === 'terrain' || exitReason === 'platform' };
+  return {
+    path, impactX: x, impactY: y,
+    hitTerrain: exitReason === 'terrain' || exitReason === 'platform',
+    penetrateHitX, penetrateHitY,
+    pierceImpacts,
+  };
 }
 
 function checkHit(impactX, impactY, shooterId) {
@@ -1711,9 +1796,18 @@ function startFortAnimation(msg, callback) {
   }
 
   // 스킬 효과에 따른 skillOpts (클라이언트 경로 재계산용)
+  // penetrate/homing은 플레이어 위치 목록이 필요 → view에서 추출
+  const _animPlayers = (view && view.players) || [];
+  const _animHomingTargets = _animPlayers
+    .filter(p => p.alive && p.id !== msg.shooterId)
+    .map(p => {
+      const px = Math.floor(Math.max(0, Math.min(p.x, FORT_CANVAS_W - 1)));
+      const t = (view && view.terrain) || (fortState ? fortState.terrain : []);
+      return { x: p.x, y: (t[px] || 380) - FORT_TANK_H / 2 };
+    });
   const animSkillOpts = (msg.skill === 'sniper' || msg.skill === 'penetrate' || msg.skill === 'bounce' ||
-                         msg.skill === 'double_pierce' || msg.skill === 'triple_pierce')
-    ? { skill: msg.skill }
+                         msg.skill === 'double_pierce' || msg.skill === 'triple_pierce' || msg.skill === 'homing')
+    ? { skill: msg.skill, homingTargets: _animHomingTargets }
     : {};
   const pathResult = computeProjectilePath(msg.startX, msg.startY, msg.angle, msg.power, msg.wind, animSkillOpts);
   const path = pathResult.path;
@@ -1921,20 +2015,36 @@ function startFortAnimation(msg, callback) {
       function runExtras(extIdx, finalCb) {
         const extras = msg.extraShots || [];
         if (extIdx >= extras.length) {
-          // 클러스터 폭발 처리
-          const clusters = msg.clusterImpacts || [];
-          if (clusters.length > 0) {
-            let ci = 0;
-            function nextCluster() {
-              if (ci >= clusters.length) { finalCb && finalCb(); return; }
-              const cl = clusters[ci++];
+          // 땅뚫기 중간 폭발 처리
+          const pierces = msg.pierceHits || [];
+          if (pierces.length > 0) {
+            let pi = 0;
+            function nextPierce() {
+              if (pi >= pierces.length) { runClusters(); return; }
+              const ph = pierces[pi++];
               setTimeout(() => {
-                animateExplosion(cl.impactX, cl.impactY, cl.hitResult, view, nextCluster, null);
-              }, 80);
+                animateExplosion(ph.impactX, ph.impactY, ph.hitResult, view, nextPierce, null);
+              }, 60);
             }
-            nextCluster(); return;
+            nextPierce(); return;
           }
-          finalCb && finalCb(); return;
+          function runClusters() {
+            // 클러스터 폭발 처리
+            const clusters = msg.clusterImpacts || [];
+            if (clusters.length > 0) {
+              let ci = 0;
+              function nextCluster() {
+                if (ci >= clusters.length) { finalCb && finalCb(); return; }
+                const cl = clusters[ci++];
+                setTimeout(() => {
+                  animateExplosion(cl.impactX, cl.impactY, cl.hitResult, view, nextCluster, null);
+                }, 80);
+              }
+              nextCluster(); return;
+            }
+            finalCb && finalCb();
+          }
+          runClusters(); return;
         }
         const shot = extras[extIdx];
         setTimeout(() => {
@@ -2280,7 +2390,9 @@ function _buildSkyCache(w, h) {
   // Build at DPR resolution so drawImage doesn't upscale on Retina displays
   const dpr = window.devicePixelRatio || 1;
   const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
-  const oc = new OffscreenCanvas(pw, ph);
+  const oc = (typeof OffscreenCanvas !== 'undefined')
+    ? new OffscreenCanvas(pw, ph)
+    : (() => { const el = document.createElement('canvas'); el.width = pw; el.height = ph; return el; })();
   const sCtx = oc.getContext('2d');
   sCtx.scale(dpr, dpr);
   const c = sCtx;
@@ -2403,6 +2515,24 @@ function drawSky(ctx, w, h) {
 function drawClouds() { /* merged into drawSky cache */ }
 
 function drawTerrain(ctx, terrain, w, h) {
+  // Cache check: rebuild only when terrain data changes
+  if (!_fortTerrainCache || _fortTerrainCacheVer !== _fortTerrainDirtyVer || _fortTerrainCacheRef !== terrain) {
+    _fortTerrainCache = _buildTerrainCache(terrain, w, h);
+    _fortTerrainCacheVer = _fortTerrainDirtyVer;
+    _fortTerrainCacheRef = terrain;
+  }
+  ctx.drawImage(_fortTerrainCache, 0, 0, w, h);
+}
+
+function _buildTerrainCache(terrain, w, h) {
+  const dpr = window.devicePixelRatio || 1;
+  const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+  const oc = (typeof OffscreenCanvas !== 'undefined')
+    ? new OffscreenCanvas(pw, ph)
+    : (() => { const el = document.createElement('canvas'); el.width = pw; el.height = ph; return el; })();
+  const ctx = oc.getContext('2d');
+  ctx.scale(dpr, dpr);
+
   const B = FORT_BIOMES[_fortCurrentBiome] || FORT_BIOMES.temperate;
   const T = FORT_THEMES[_fortCurrentTheme] || FORT_THEMES.day;
 
@@ -2577,6 +2707,8 @@ function drawTerrain(ctx, terrain, w, h) {
     ctx.beginPath(); ctx.ellipse(x, ty, fogR, fogR * 0.25, 0, 0, Math.PI * 2); ctx.fill();
   }
   ctx.globalAlpha = 1; ctx.restore();
+
+  return oc;
 }
 
 function drawTanks(ctx, players, turnIdx, terrain) {
@@ -2687,13 +2819,16 @@ function drawDeadTank(ctx, player, terrain) {
 }
 
 function darkenColor(hex, factor) {
-  // Convert hex to darker version
   let r, g, b;
   if (hex.startsWith('#')) {
     const c = hex.slice(1);
     r = parseInt(c.substring(0, 2), 16);
     g = parseInt(c.substring(2, 4), 16);
     b = parseInt(c.substring(4, 6), 16);
+  } else if (hex.startsWith('rgba') || hex.startsWith('rgb')) {
+    const m = hex.match(/[\d.]+/g);
+    if (m && m.length >= 3) { r = +m[0]; g = +m[1]; b = +m[2]; }
+    else return '#333';
   } else {
     return '#333';
   }
@@ -3244,8 +3379,9 @@ function closeFortressCleanup() {
     fortCanvas.onmousemove = null;
     fortCanvas.onmouseup = null;
     fortCanvas.onmouseleave = null;
-    fortCanvas.onwheel = null;
+    if (_fortWheelHandler) fortCanvas.removeEventListener('wheel', _fortWheelHandler);
   }
+  _fortWheelHandler = null;
   _fortDrag = null;
   fortState = null;
   window._fortView = null;
@@ -3260,6 +3396,10 @@ function closeFortressCleanup() {
   fortCam.zoom = 2.0;
   _fortSkyCache = null;
   _fortTerrainGrad = null;
+  _fortTerrainCache = null;
+  _fortTerrainCacheRef = null;
+  _fortTerrainCacheVer = -1;
+  _fortTerrainDirtyVer = 0;
   _fortPlayerInfoCache = {};
   _fortCharAnim = {};
   fortBirds = [];
