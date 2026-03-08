@@ -2197,8 +2197,45 @@
       <button class="tama-action-btn" onclick="tamaShowSkills()">
         <span class="icon">⚔️</span><span class="label">스킬</span>
       </button>
+      <button class="tama-action-btn tama-chat-btn" onclick="tamaChatOpen_()">
+        <span class="icon">💬</span><span class="label">대화</span>
+      </button>
+      <button class="tama-action-btn tama-diary-btn" onclick="tamaDiaryOpen_()">
+        <span class="icon">📖</span><span class="label">일기장</span>
+      </button>
     </div>
 
+  </div>
+
+  <!-- Diary Overlay -->
+  <div class="tama-overlay tama-diary-overlay" id="tamaDiaryOverlay">
+    <div class="td-header">
+      <button class="td-back" onclick="tamaDiaryClose()">←</button>
+      <span class="td-title" id="tamaDiaryTitle">📖 일기장</span>
+      <span class="td-gold" id="tamaDiaryGold">🪙 0</span>
+    </div>
+    <div class="td-nav">
+      <button class="td-nav-btn" onclick="tamaDiaryPrev()">◀</button>
+      <span class="td-date-label" id="tamaDiaryDateLabel"></span>
+      <button class="td-nav-btn" id="tamaDiaryNextBtn" onclick="tamaDiaryNext()">▶</button>
+      <button class="td-nav-today" onclick="tamaDiaryToday()">오늘</button>
+    </div>
+    <div class="td-content" id="tamaDiaryContent"></div>
+  </div>
+
+  <!-- Chat Overlay -->
+  <div class="tama-overlay tama-chat-overlay" id="tamaChatOverlay">
+    <div class="tc-header">
+      <button class="tc-back" onclick="tamaChatClose()">←</button>
+      <span class="tc-title" id="tamaChatTitle">💬 대화</span>
+      <button class="tc-clear" onclick="tamaChatClear()" title="대화 초기화">🗑️</button>
+    </div>
+    <div class="tc-msg-list" id="tamaChatMsgList"></div>
+    <div class="tc-typing" id="tamaChatTyping" style="display:none">
+      <div class="tc-pet-avatar-sm" id="tamaChatTypingAvatar">🐉</div>
+      <div class="tc-typing-dots"><span></span><span></span><span></span></div>
+    </div>
+    <div class="tc-emoji-bar" id="tamaChatEmojiBar"></div>
   </div>
 
   <!-- OVERLAYS -->
@@ -2538,7 +2575,14 @@
 <script src="js/games/yahtzee.js?v=20260305b"></script>
 <script src="js/games/emperor.js?v=20260307c"></script>
 <script src="js/games/sutda.js?v=20260306c"></script>
-<script src="js/games/fortress.js?v=20260307i"></script>
+<script src="js/games/fortress-audio.js?v=20260308"></script>
+<script src="js/games/fortress-render.js?v=20260308"></script>
+<script src="js/games/fortress-effects.js?v=20260308"></script>
+<script src="js/games/fortress-physics.js?v=20260308"></script>
+<script src="js/games/fortress-animation.js?v=20260308"></script>
+<script src="js/games/fortress.js?v=20260308b"></script>
+<script src="js/games/fortress-tank.js?v=20260308"></script>
+<script src="js/games/fortress-ui.js?v=20260308"></script>
 <script src="js/games/bombshot.js?v=20260306b"></script>
 <script src="js/games/blackjack.js?v=20260305b"></script>
 <script src="js/games/stairs.js?v=20260305b"></script>
@@ -2548,6 +2592,8 @@
 <script src="js/games/slinkystairs.js?v=20260305b"></script>
 <script src="js/games/pupil.js?v=20260305b"></script>
 <script src="js/games/tamagotchi.js?v=20260305b"></script>
+<script src="js/games/tamaChat.js?v=20260308"></script>
+<script src="js/games/tamaDiary.js?v=20260308"></script>
 <script src="js/games/skills.js?v=20260307"></script>
 <script src="js/games/idol-data.js?v=20260305f"></script>
 <script src="js/games/idol-board-iso.js?v=20260305b"></script>

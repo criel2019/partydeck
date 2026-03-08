@@ -400,6 +400,7 @@ function tamaTick(){
   if(tamaSaveCounter>=TAMA_SAVE_INTERVAL){tamaSaveCounter=0;tamaSave();}
   tamaSpeechCounter++;
   if(tamaSpeechCounter>=TAMA_IDLE_SPEECH_INTERVAL){tamaSpeechCounter=0;tamaRandomSpeech();}
+  if(typeof tamaChatAutoTick==='function') tamaChatAutoTick();
 }
 
 // ── Speech ─────────────────────────────────────────────
@@ -462,7 +463,7 @@ function tamaPlayIdle(){
   }
 }
 function tamaParticle(emoji){
-  const area=_td.tamaPetArea||document.getElementById('tamaPetArea');
+  const area=_td.tamaPetArea;
   if(!area)return;
   const p=document.createElement('div');
   p.className='tama-particle';p.textContent=emoji;
@@ -566,6 +567,7 @@ function tamaFeed(foodId){
   tamaSpeech(tamaPick('feed_after'));
   tamaParticle(food.emoji);
   tamaVibrate(30);
+  if(typeof tamaChatOnFeed==='function') tamaChatOnFeed();
 
   tamaSave();
   tamaRenderNeeds();tamaRenderMood();tamaRenderAffinity();tamaRenderStats();tamaRenderLevel();
@@ -593,6 +595,7 @@ function tamaBathe(){
   tamaSpeech(tamaPick('bath_after'));
   tamaParticle('🫧');
   tamaVibrate(30);
+  if(typeof tamaChatOnBath==='function') tamaChatOnBath();
 
   tamaSave();
   tamaRenderNeeds();tamaRenderMood();tamaRenderAffinity();tamaRenderBathCD();
@@ -632,6 +635,7 @@ function tamaSleep(){
       ovl.classList.remove('active');
       tamaSpeech(tamaPick('sleep_after'));
       tamaVibrate([20,10,20]);
+      if(typeof tamaChatOnSleep==='function') tamaChatOnSleep();
       tamaRenderNeeds();tamaRenderMood();tamaSave();
     }
   },1000);
@@ -672,6 +676,7 @@ function tamaShowTrain(){
       tamaPet.totalPlays++;
       tamaSpeech(tamaPick('play_after'));
       tamaVibrate([30,20,30]);
+      if(typeof tamaChatOnPlay==='function') tamaChatOnPlay();
       tamaSave();tamaRenderNeeds();tamaRenderMood();tamaRenderAffinity();
       setTimeout(()=>ovl.classList.remove('active'),400);
     }
@@ -845,13 +850,16 @@ function tamaRenderSprite(){
 
 function tamaRenderNeeds(){
   if(!tamaPet)return;
-  ['hunger','happiness','hygiene','energy'].forEach(k=>{
-    const f=_td['need_'+k],v=_td['needVal_'+k];if(!f)return;
+  const keys=['hunger','happiness','hygiene','energy'];
+  for(let i=0;i<keys.length;i++){
+    const k=keys[i];
+    const f=_td['need_'+k],v=_td['needVal_'+k];if(!f)continue;
     const val=Math.round(tamaPet.needs[k]);
     f.style.width=val+'%';
-    f.className='tama-need-fill '+(val>=60?'high':val>=30?'mid':'low');
+    const cls='tama-need-fill '+(val>=60?'high':val>=30?'mid':'low');
+    if(f.className!==cls) f.className=cls;
     if(v)v.textContent=val;
-  });
+  }
 }
 
 function tamaRenderMood(){
@@ -1013,6 +1021,7 @@ function startTamagotchi(){
 }
 
 function tamaShowHome(){
+  if(!tamaPet)return;
   document.querySelectorAll('#tamagotchiGame .tama-ftue-screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('#tamagotchiGame .tama-overlay').forEach(s=>s.classList.remove('active'));
   const hf=document.getElementById('tamaHatchFlash');if(hf)hf.classList.remove('active');
@@ -1075,7 +1084,8 @@ function tamaShowInfo(){
   h+='<div class="tama-info-row">나이: '+tamaPetAge()+'</div>';
   h+='<div class="tama-info-row">레벨: Lv.'+tamaPet.level+' (EXP '+tamaPet.exp+'/'+tamaExpReq(tamaPet.level)+')</div>';
   h+='<div class="tama-info-row">스탯: ⚔️'+tamaPet.stats.dmg+' 🛡️'+tamaPet.stats.def+' 💨'+tamaPet.stats.spd+' 💣'+tamaPet.stats.bomb+'</div>';
-  h+='<div class="tama-info-row">호감도: '+tamaAffTier().emoji+' '+tamaAffTier().name+' ('+Math.floor(tamaPet.affinity)+')</div>';
+  const infoTier=tamaAffTier();
+  h+='<div class="tama-info-row">호감도: '+infoTier.emoji+' '+infoTier.name+' ('+Math.floor(tamaPet.affinity)+')</div>';
   if(tamaPet.specType) h+='<div class="tama-info-row">1차 진화: '+tamaPet.specType+'</div>';
   if(tamaPet.evolution2) h+='<div class="tama-info-row">2차 진화: '+tamaPet.evolution2+'</div>';
   h+='<div class="tama-info-row">돌봄: 먹이 '+tamaPet.totalFeedings+'회 · 목욕 '+tamaPet.totalBaths+'회 · 놀기 '+tamaPet.totalPlays+'회</div>';
@@ -1085,7 +1095,7 @@ function tamaShowInfo(){
     h+='<pre class="tama-info-evo">'+tamaEvoCondText()+'</pre>';
   }
   h+='</div>';
-  var diamondCount = typeof getDiamond === 'function' ? getDiamond() : 0;
+  const diamondCount = typeof getDiamond === 'function' ? getDiamond() : 0;
   h+='<div style="text-align:center;margin-top:16px;font-size:12px;color:#aaa;">💎 보유 다이아: <b style="color:#b388ff;">'+diamondCount+'</b>개</div>';
   h+='<div style="text-align:center;margin-top:8px"><button class="tama-reset-btn" onclick="tamaConfirmReset()">펫 초기화 (💎 1개)</button></div>';
   ovl.innerHTML=h;ovl.classList.add('active');
@@ -1096,15 +1106,15 @@ function tamaDismissOffline(){
 }
 
 function tamaConfirmReset(){
-  var cost = 1;
-  var current = typeof getDiamond === 'function' ? getDiamond() : 0;
+  const cost = 1;
+  const current = typeof getDiamond === 'function' ? getDiamond() : 0;
   if(current < cost){
     showToast('💎 다이아 ' + cost + '개가 필요합니다 (보유: ' + current + '개)');
     return;
   }
   if(confirm('💎 다이아 ' + cost + '개를 소모하여 펫을 초기화하시겠습니까?\n모든 데이터가 삭제됩니다.')){
     if(typeof addDiamond === 'function') addDiamond(-cost);
-    var mmDiamond = document.getElementById('mmDiamond');
+    const mmDiamond = document.getElementById('mmDiamond');
     if(mmDiamond && typeof getDiamond === 'function') mmDiamond.textContent = getDiamond();
     showToast('💎 다이아 ' + cost + '개 사용! 펫 초기화 완료');
     tamaCleanup();tamaReset();startTamagotchi();
@@ -1144,6 +1154,6 @@ document.addEventListener('visibilitychange',()=>{
   if(document.hidden){tamaSave();}
   else{
     tamaProcessOffline();
-    tamaRenderHome();
+    if(tamaPet) tamaRenderHome();
   }
 });
