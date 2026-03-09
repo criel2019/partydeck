@@ -115,21 +115,22 @@ function renderPokerView(ps) {
   const me = ps.players.find(p => p.id === state.myId);
   const isMyTurn = ps.players[ps.turnIdx]?.id === state.myId && ps.phase !== 'showdown';
 
-  // Opponents - compact row
+  // All players list (landscape: vertical sidebar with me included)
   const opArea = document.getElementById('opponentsArea');
-  const ops = ps.players.filter(p => p.id !== state.myId);
-  opArea.innerHTML = ops.map(p => {
+  opArea.innerHTML = ps.players.map(p => {
+    const isMe = p.id === state.myId;
     const isTurn = ps.players[ps.turnIdx]?.id === p.id && ps.phase !== 'showdown';
     const ci = ps.players.findIndex(pp => pp.id === p.id);
-    const cardsHtml = p.cards
-      ? p.cards.map(c => pkOppCardHTML(c)).join('')
-      : '<div class="pk-opp-card pk-card-back"><div class="pk-opp-card-pattern"></div></div><div class="pk-opp-card pk-card-back"><div class="pk-opp-card-pattern"></div></div>';
+    const cardsHtml = isMe ? '' :
+      (p.cards
+        ? p.cards.map(c => pkOppCardHTML(c)).join('')
+        : '<div class="pk-opp-card pk-card-back"><div class="pk-opp-card-pattern"></div></div><div class="pk-opp-card pk-card-back"><div class="pk-opp-card-pattern"></div></div>');
     const betStr = p.bet > 0 ? `<span class="pk-opp-bet">${p.bet}</span>` : (p.folded ? '<span class="pk-opp-bet">폴드</span>' : '');
-    return `<div class="pk-opp-slot ${p.folded ? 'fold-overlay' : ''}">
+    return `<div class="pk-opp-slot ${isMe ? 'pk-me-slot' : ''} ${p.folded ? 'fold-overlay' : ''}">
       <div class="pk-opp-avatar ${isTurn ? 'active-turn' : ''}" style="background:${PLAYER_COLORS[ci % PLAYER_COLORS.length]};">${p.avatar}</div>
       <span class="pk-opp-label">${escapeHTML(p.name)}</span>
       <span class="pk-opp-chips">${p.chips}</span>${betStr}
-      <div class="pk-opp-cards">${cardsHtml}</div>
+      ${cardsHtml ? '<div class="pk-opp-cards">' + cardsHtml + '</div>' : ''}
     </div>`;
   }).join('');
 

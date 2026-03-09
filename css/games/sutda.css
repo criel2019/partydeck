@@ -137,6 +137,8 @@
   z-index: 5;
   min-height: 28px;
 }
+/* Hide me-slot in portrait (hero cards already shown separately) */
+.sutda-me-slot { display: none; }
 .sutda-opp-slot {
   display: flex;
   align-items: center;

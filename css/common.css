@@ -438,6 +438,8 @@ body {
   flex-wrap: wrap; padding: 0 2px; z-index: 5;
   min-height: 28px;
 }
+/* Hide me-slot in portrait (hero cards already shown separately) */
+.pk-me-slot { display: none; }
 .pk-opp-slot {
   display: flex; align-items: center; gap: 4px;
   opacity: 0.85;

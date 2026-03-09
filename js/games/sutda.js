@@ -350,10 +350,10 @@ function renderSutdaView(vs) {
     document.getElementById('sutdaTurnIndicator').textContent = '';
   }
 
-  // 상대방 (포커 스타일 컴팩트: 아바타 + 이름 + 칩 + 카드 한 줄)
+  // All players list (landscape: vertical sidebar with me included)
   const oppArea = document.getElementById('sutdaOpponents');
-  const ops = vs.players.filter(p => p.id !== state.myId);
-  oppArea.innerHTML = ops.map(p => {
+  oppArea.innerHTML = vs.players.map(p => {
+    const isMe = p.id === state.myId;
     const isTurn = vs.players[vs.turnIdx]?.id === p.id && vs.phase === 'betting';
     const pIdx = vs.players.findIndex(pp => pp.id === p.id);
     let statusText = '';
@@ -362,16 +362,17 @@ function renderSutdaView(vs) {
     else if (p.allIn) { statusText = '올인'; statusClass = 'bet'; }
     else if (p.bet > 0) { statusText = formatChips(p.bet); statusClass = 'bet'; }
 
-    const cardsHTML = p.cards
-      ? p.cards.map(c => hwatuCardHTML(c, false)).join('')
-      : hwatuCardHTML(null, false) + hwatuCardHTML(null, false);
+    const cardsHTML = isMe ? '' :
+      (p.cards
+        ? p.cards.map(c => hwatuCardHTML(c, false)).join('')
+        : hwatuCardHTML(null, false) + hwatuCardHTML(null, false));
 
-    return '<div class="sutda-opp-slot' + (p.died ? ' died' : '') + '">' +
+    return '<div class="sutda-opp-slot' + (isMe ? ' sutda-me-slot' : '') + (p.died ? ' died' : '') + '">' +
       '<div class="sutda-opp-avatar' + (isTurn ? ' active-turn' : '') + '" style="background:' + PLAYER_COLORS[pIdx % PLAYER_COLORS.length] + ';">' + p.avatar + '</div>' +
       '<div class="sutda-opp-name">' + escapeHTML(p.name) + '</div>' +
       '<div class="sutda-opp-chips">' + formatChips(p.chips) + '</div>' +
       '<div class="sutda-opp-status ' + statusClass + '">' + statusText + '</div>' +
-      '<div class="sutda-opp-cards">' + cardsHTML + '</div>' +
+      (cardsHTML ? '<div class="sutda-opp-cards">' + cardsHTML + '</div>' : '') +
       (p.rank && vs.phase === 'showdown' ? '<span style="font-size:10px;color:#ff1744;font-weight:700;margin-left:2px;">' + p.rank.name + '</span>' : '') +
       '</div>';
   }).join('');
