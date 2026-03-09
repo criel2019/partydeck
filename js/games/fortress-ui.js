@@ -73,21 +73,30 @@ function renderFortressView(view) {
   }
   if (windValue) windValue.textContent = Math.abs(view.wind);
 
-  // Players bar
+  // Players bar — 딜레이 순으로 정렬하여 좌측 세로 패널에 표시
   const bar = document.getElementById('fortPlayersBar');
   if (bar) {
-    bar.innerHTML = view.players.map((p, i) => {
+    // 딜레이 기준 정렬 (낮은 순 = 다음 턴 우선)
+    const sorted = view.players.map((p, i) => ({ ...p, origIdx: i }))
+      .sort((a, b) => {
+        if (a.alive !== b.alive) return a.alive ? -1 : 1;
+        return (a.delay || 0) - (b.delay || 0);
+      });
+
+    bar.innerHTML = sorted.map((p, rank) => {
       const hpPct = Math.max(0, (p.hp / FORT_MAX_HP) * 100);
       let hpClass = '';
       if (hpPct <= 30) hpClass = 'low';
       else if (hpPct <= 60) hpClass = 'mid';
       const itemClass = 'fort-player-hp-item' +
-        (i === view.turnIdx ? ' active-turn' : '') +
+        (p.origIdx === view.turnIdx ? ' active-turn' : '') +
         (!p.alive ? ' dead' : '');
       const statusIcons = (p.poison > 0 ? `<span class="fort-status-icon" title="독 (${p.poison}턴)">☠️</span>` : '') +
                           (p.frozen > 0 ? `<span class="fort-status-icon" title="빙결 (${p.frozen}턴)">❄️</span>` : '') +
                           (p.shield > 0 ? `<span class="fort-status-icon" title="방어막">🛡️</span>` : '');
-      return `<div class="${itemClass}">
+      const orderNum = p.alive ? (rank + 1) : '-';
+      return `<div class="${itemClass}" data-player-id="${p.id}">
+        <span class="fort-turn-order-num">${orderNum}</span>
         <div class="fort-player-avatar">${p.avatar}</div>
         <div class="fort-player-info">
           <div class="fort-player-name">${escapeHTML(p.name)}${statusIcons}</div>
@@ -189,6 +198,7 @@ function showFortressGameOver(msg) {
 
 // ===== CLEANUP =====
 function closeFortressCleanup() {
+  fortClearTurnTimer();
   const overlay = document.getElementById('fortGameOver');
   if (overlay) overlay.style.display = 'none';
   if (fortAnimId) { cancelAnimationFrame(fortAnimId); fortAnimId = null; }
@@ -276,6 +286,10 @@ function fortUpdateSkillBar() {
 
   bar.classList.add('visible');
 
+  // 쉴드 활성 상태: 이번 턴에 쉴드를 썼으면 기본 포탄만 허용
+  const currentPlayer = view.players[view.turnIdx];
+  const shieldActive = currentPlayer && currentPlayer.shield > 0;
+
   // 기본 포탄 버튼 + 장착 스킬 버튼
   const items = [{ id: null, emoji: '💫', name: '기본 포탄' }];
   for (let i = 0; i < _fortEquippedSkills.length; i++) {
@@ -286,15 +300,15 @@ function fortUpdateSkillBar() {
     }
   }
 
-  // 상태 해시: active 스킬 + 사용횟수가 바뀔 때만 DOM 교체
-  const stateKey = (_fortActiveSkill || '') + '|' + items.map(i => i.id + ':' + (_fortSkillUsage[i.id] || 0)).join(',');
+  // 상태 해시: active 스킬 + 사용횟수 + 쉴드 상태가 바뀔 때만 DOM 교체
+  const stateKey = (_fortActiveSkill || '') + '|' + (shieldActive ? 'S' : '') + '|' + items.map(i => i.id + ':' + (_fortSkillUsage[i.id] || 0)).join(',');
   if (stateKey === _fortSkillBarState) return;
   _fortSkillBarState = stateKey;
 
   bar.innerHTML = items.map(item => {
     const uses = item.id ? (_fortSkillUsage[item.id] || 0) : 0;
     const remaining = item.id ? (SKILL_MAX_USES - uses) : null;
-    const depleted = item.id && remaining <= 0;
+    const depleted = item.id && (remaining <= 0 || shieldActive);
     const isActive = _fortActiveSkill === item.id;
     const usesHtml = item.id
       ? `<span class="fort-skill-uses${remaining === SKILL_MAX_USES ? ' full' : ''}">${remaining}/${SKILL_MAX_USES}</span>`
@@ -329,7 +343,9 @@ function fortSelectSkill(skillId) {
     _fortActiveSkill = null;
   } else {
     const uses = skillId ? (_fortSkillUsage[skillId] || 0) : 0;
-    if (skillId && uses >= SKILL_MAX_USES) return; // 사용 횟수 초과
+    if (skillId && uses >= SKILL_MAX_USES) return;
+    const cp = window._fortView?.players[window._fortView?.turnIdx];
+    if (skillId && cp && cp.shield > 0) return; // 쉴드 활성 → 스킬 선택 차단
     _fortActiveSkill = skillId;
   }
   fortUpdateSkillBar();

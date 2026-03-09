@@ -1,5 +1,5 @@
 // =============================================
-// ===== FORTRESS (요새) — Turn-based Artillery
+// ===== PET BATTLE (펫 대전) — Turn-based Artillery
 // =============================================
 
 // ===== CONSTANTS =====
@@ -17,6 +17,15 @@ const FORT_CRATER_RADIUS = 35;
 const FORT_MOVE_SPEED = 3;
 const FORT_MOVE_LIMIT = 60; // pixels per turn
 const FORT_MOVE_FUEL = 60;
+const FORT_TURN_TIME = 30; // 30초 턴 제한
+
+// ===== DELAY SYSTEM =====
+const FORT_DELAY_BASE = 100;       // 기본 공격 딜레이
+const FORT_DELAY_SKILL = 150;      // 스킬 공격 딜레이
+const FORT_DELAY_INSTANT = 120;    // 즉발 스킬 (힐/쉴드) 딜레이
+const FORT_DELAY_MOVE_PER = 2;     // 이동 1연료당 딜레이
+let _fortTurnTimer = null;         // 턴 타이머 interval
+let _fortTurnTimeLeft = 0;         // 남은 시간
 
 const FORT_TANK_COLORS = [
   '#ff6b35', '#00b8d4', '#ff2d78', '#ffd700',
@@ -370,6 +379,23 @@ function destroyTerrain(terrain, impactX, impactY, radius) {
   }
 }
 
+// ===== FALL DEATH CHECK =====
+// 지형 파괴 후 탱크 아래 땅이 캔버스 바닥에 도달하면 낙사
+function fortCheckFallDeath() {
+  if (!fortState) return;
+  const FALL_THRESHOLD = FORT_CANVAS_H - 15; // 이 높이 이상이면 "바닥"으로 판단
+  fortState.players.forEach(p => {
+    if (!p.alive) return;
+    const tx = Math.floor(Math.max(0, Math.min(p.x, fortState.canvasW - 1)));
+    const terrainY = fortState.terrain[tx];
+    if (terrainY >= FALL_THRESHOLD) {
+      p.alive = false;
+      p.hp = 0;
+      fortState.deathOrder.push(p.id);
+    }
+  });
+}
+
 // ===== HOST: GAME INIT =====
 function startFortress() {
   fortLoadTamaPet(); // load local player's tama for character rendering
@@ -400,6 +426,7 @@ function startFortress() {
     poison: 0,
     frozen: 0,
     shield: 0,
+    delay: 0,
   }));
 
   fortState = {
@@ -455,6 +482,9 @@ function startFortress() {
   // Start camera loop
   if (_fortCamLoopId) cancelAnimationFrame(_fortCamLoopId);
   _fortCamLoopId = requestAnimationFrame(fortCameraLoop);
+
+  // 첫 턴 타이머 시작
+  fortStartTurnTimer();
 }
 
 // ===== KEYBOARD CONTROLS =====
@@ -463,7 +493,21 @@ function setupFortressKeyboard() {
 
   _fortKeyDown = function(e) {
     const view = window._fortView;
-    if (!view || view.phase !== 'aiming') return;
+    if (!view) return;
+
+    // 각도 조정은 다른 플레이어 턴에서도 가능 (내 탱크 각도 미리 조정)
+    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+      e.preventDefault();
+      fortAngleStep(1);
+      return;
+    } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+      e.preventDefault();
+      fortAngleStep(-1);
+      return;
+    }
+
+    // 나머지 행동은 내 턴 + aiming 상태에서만 가능
+    if (view.phase !== 'aiming') return;
     const isMyTurn = view.players[view.turnIdx]?.id === state.myId;
     if (!isMyTurn) return;
 
@@ -473,12 +517,6 @@ function setupFortressKeyboard() {
     } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
       e.preventDefault();
       fortStartMove(1);
-    } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
-      e.preventDefault();
-      fortAngleStep(1);
-    } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
-      e.preventDefault();
-      fortAngleStep(-1);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       fortFire();
@@ -605,6 +643,7 @@ function createFortressView() {
       poison: p.poison || 0,
       frozen: p.frozen || 0,
       shield: p.shield || 0,
+      delay: p.delay || 0,
     })),
     terrain: fortState.terrain,
     wind: fortState.wind,
@@ -921,37 +960,65 @@ function handleFortInstantSkill(peerId, msg) {
 
   let flashText = '';
   if (FORT_HEAL_MAP[skill] !== undefined) {
+    // 힐 스킬: 딜레이 적용 + 턴 종료
+    const moveDelay = (FORT_MOVE_FUEL - (current.moveFuel || 0)) * FORT_DELAY_MOVE_PER;
+    current.delay = (current.delay || 0) + moveDelay + FORT_DELAY_INSTANT;
+    fortClearTurnTimer();
+
     const pct = FORT_HEAL_MAP[skill];
     const heal = Math.floor(FORT_MAX_HP * pct);
     const before = current.hp;
     current.hp = Math.min(FORT_MAX_HP, current.hp + heal);
     const actual = current.hp - before;
     flashText = `💚 ${current.name} HP +${actual} (${Math.round(pct * 100)}%)`;
+
+    // 결과 브로드캐스트
+    broadcast({
+      type: 'fort-instant-effect',
+      skill,
+      playerId: current.id,
+      playerName: current.name,
+      flashText,
+      hp: current.hp,
+      shield: current.shield || 0,
+    });
+    _fortShowSkillFlash(flashText);
+
+    // 턴 진행 (발사 없이 턴 종료)
+    fortState.phase = 'animating';
+    setTimeout(() => {
+      if (!fortState) return;
+      advanceFortTurn();
+    }, 1200);
+
   } else if (skill === 'shield') {
-    current.shield = 1; // 1턴간 1회 방어
-    flashText = `🛡️ ${current.name} 방어막 활성화!`;
+    if (current.shield > 0) return; // 이미 쉴드 활성 → 중복 사용 차단
+    fortClearTurnTimer();
+    current.shield = 1;
+    current.delay = (current.delay || 0) + 50;
+    flashText = `🛡️ ${current.name} 방어막 활성화! 공격하세요!`;
+
+    // 결과 브로드캐스트
+    broadcast({
+      type: 'fort-instant-effect',
+      skill,
+      playerId: current.id,
+      playerName: current.name,
+      flashText,
+      hp: current.hp,
+      shield: current.shield,
+    });
+    _fortShowSkillFlash(flashText);
+
+    // 쉴드 후 aiming 상태로 복귀 (턴 유지, 일반 공격 가능)
+    fortState.phase = 'animating'; // 잠시 animating으로 전환 (플래시 표시 대기)
+    setTimeout(() => {
+      if (!fortState) return;
+      fortState.phase = 'aiming';
+      broadcastFortressState();
+      fortStartTurnTimer();
+    }, 1200);
   }
-
-  // 결과 브로드캐스트
-  broadcast({
-    type: 'fort-instant-effect',
-    skill,
-    playerId: current.id,
-    playerName: current.name,
-    flashText,
-    hp: current.hp,
-    shield: current.shield || 0,
-  });
-
-  // 스킬 플래시 표시
-  _fortShowSkillFlash(flashText);
-
-  // 턴 진행 (발사 없이 턴 종료)
-  fortState.phase = 'animating';
-  setTimeout(() => {
-    if (!fortState) return;
-    advanceFortTurn();
-  }, 1200);
 }
 
 // ===== HOST: HANDLE FIRE (스킬 지원) =====
@@ -962,9 +1029,19 @@ function handleFortFire(peerId, msg) {
   if (!current || !current.alive) return;
   if (peerId !== current.id && !(current.id.startsWith('ai-') && peerId === state.myId)) return;
 
-  const angle = Math.max(-90, Math.min(180, parseInt(msg.angle) || 45));
-  const power = Math.max(10, Math.min(100, parseInt(msg.power) || 50));
-  const skill  = (typeof msg.skill === 'string') ? msg.skill : null;
+  const rawAngle = parseInt(msg.angle);
+  const angle = Math.max(-90, Math.min(180, Number.isFinite(rawAngle) ? rawAngle : 45));
+  const rawPower = parseInt(msg.power);
+  const power = Math.max(10, Math.min(100, Number.isFinite(rawPower) ? rawPower : 50));
+  const skill  = (typeof msg.skill === 'string' && !(current.shield > 0)) ? msg.skill : null;
+
+  // 딜레이 적용: 이동량 + 공격/스킬 딜레이
+  const moveDelay = (FORT_MOVE_FUEL - (current.moveFuel || 0)) * FORT_DELAY_MOVE_PER;
+  const actionDelay = skill ? FORT_DELAY_SKILL : FORT_DELAY_BASE;
+  current.delay = (current.delay || 0) + moveDelay + actionDelay;
+
+  // 턴 타이머 정리
+  fortClearTurnTimer();
 
   fortState.phase = 'animating';
 
@@ -1065,6 +1142,17 @@ function handleFortFire(peerId, msg) {
   applyDamage(mainHit);
   extraHits.forEach(hr => applyDamage(hr));
 
+  // ── 일반 넉백: 피격된 모든 탱크를 폭발 반대 방향으로 밀어냄 ──
+  const FORT_KNOCKBACK_DIST = 15; // 기본 넉백 거리 (px)
+  if (skill !== 'knockback') { // knockback 스킬은 이미 별도 처리됨
+    hitIdSet.forEach(hitId => {
+      const p = fortState.players.find(pp => pp.id === hitId);
+      if (!p || !p.alive) return;
+      const dir = (p.x - pathResult.impactX) >= 0 ? 1 : -1;
+      p.x = Math.max(20, Math.min(FORT_CANVAS_W - 20, p.x + dir * FORT_KNOCKBACK_DIST));
+    });
+  }
+
   // ── 땅뚫기 중간 관통 지점 데미지 & 지형 파괴 ─────────
   const pierceHits = [];
   if ((skill === 'double_pierce' || skill === 'triple_pierce') && pathResult.pierceImpacts) {
@@ -1107,6 +1195,9 @@ function handleFortFire(peerId, msg) {
       clusterImpacts.push({ impactX: cp.impactX, impactY: cp.impactY, hitResult: chr });
     }
   }
+
+  // ── 낙사 체크: 지형 파괴로 땅이 사라진 위치의 탱크 즉시 사망 ──
+  fortCheckFallDeath();
 
   const shooterTribe = (current.tama && current.tama.tribe) ? current.tama.tribe : 'fire';
   const animMsg = {
@@ -1164,13 +1255,18 @@ function advanceFortTurn() {
   if (!fortState) return;
 
   const n = fortState.players.length;
-  let nextIdx = (fortState.turnIdx + 1) % n;
-  let tries = 0;
-  // 살아있는 다음 플레이어 탐색
-  while (!fortState.players[nextIdx].alive && tries < n) {
-    nextIdx = (nextIdx + 1) % n;
-    tries++;
+
+  // 딜레이 기반 턴 순서: 살아있는 플레이어 중 delay가 가장 낮은 플레이어 선택
+  let nextIdx = -1;
+  let minDelay = Infinity;
+  for (let i = 0; i < n; i++) {
+    const p = fortState.players[i];
+    if (p.alive && (p.delay || 0) < minDelay) {
+      minDelay = p.delay || 0;
+      nextIdx = i;
+    }
   }
+  if (nextIdx === -1) return; // 모두 사망
 
   if (nextIdx <= fortState.turnIdx) fortState.round++;
 
@@ -1237,6 +1333,57 @@ function advanceFortTurn() {
   }
 
   broadcastFortressState();
+
+  // 30초 턴 타이머 시작
+  fortStartTurnTimer();
+}
+
+// ===== TURN TIMER =====
+function fortStartTurnTimer() {
+  fortClearTurnTimer();
+  if (!state.isHost) return;
+  _fortTurnTimeLeft = FORT_TURN_TIME;
+  // 타이머 UI 갱신 브로드캐스트
+  broadcast({ type: 'fort-timer', time: _fortTurnTimeLeft });
+  fortUpdateTimerUI(_fortTurnTimeLeft);
+
+  _fortTurnTimer = setInterval(() => {
+    _fortTurnTimeLeft--;
+    broadcast({ type: 'fort-timer', time: _fortTurnTimeLeft });
+    fortUpdateTimerUI(_fortTurnTimeLeft);
+    if (_fortTurnTimeLeft <= 0) {
+      fortClearTurnTimer();
+      // 시간 초과: 아무 행동 없이 턴 종료 (기본 딜레이만 적용)
+      if (fortState && fortState.phase === 'aiming') {
+        const current = fortState.players[fortState.turnIdx];
+        if (current && current.alive) {
+          const moveDelay = (FORT_MOVE_FUEL - (current.moveFuel || 0)) * FORT_DELAY_MOVE_PER;
+          current.delay = (current.delay || 0) + moveDelay + FORT_DELAY_BASE;
+        }
+        fortState.phase = 'animating';
+        broadcast({ type: 'fort-timeout', playerId: current ? current.id : null });
+        _fortShowSkillFlash(`⏰ ${current ? current.name : ''} 시간 초과!`);
+        setTimeout(() => {
+          if (fortState) advanceFortTurn();
+        }, 1200);
+      }
+    }
+  }, 1000);
+}
+
+function fortClearTurnTimer() {
+  if (_fortTurnTimer) {
+    clearInterval(_fortTurnTimer);
+    _fortTurnTimer = null;
+  }
+}
+
+function fortUpdateTimerUI(sec) {
+  const el = document.getElementById('fortTurnTimer');
+  if (!el) return;
+  el.textContent = sec + 's';
+  el.classList.toggle('fort-timer-warn', sec <= 10);
+  el.classList.toggle('fort-timer-danger', sec <= 5);
 }
 
 

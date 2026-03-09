@@ -80,7 +80,7 @@
     <button class="btn btn-accent2 btn-small" onclick="joinRoom()" style="width:auto; padding:14px 20px;">참가</button>
   </div>
 
-  <button class="tama-menu-btn" id="tamaMenuBtn" onclick="tamaQuickAccess()">🥚 내 다마고치 키우기</button>
+  <button class="tama-menu-btn" id="tamaMenuBtn" onclick="tamaQuickAccess()">🥚 내 펫 키우기</button>
 
   <button class="btn btn-accent2" onclick="startPracticeMode()" style="max-width:380px;">🤖 연습 모드 (AI 대전)</button>
 
@@ -101,7 +101,7 @@
       <button class="debug-game-btn" onclick="debugGame('yahtzee')">🎲 야추</button>
       <button class="debug-game-btn" onclick="debugGame('updown')">🃏 업다운</button>
       <button class="debug-game-btn" onclick="debugGame('truth')">⭕ 진실게임</button>
-      <button class="debug-game-btn" onclick="debugGame('fortress')">🏰 요새</button>
+      <button class="debug-game-btn" onclick="debugGame('fortress')">🏰 펫 대전</button>
       <button class="debug-game-btn" disabled style="opacity:0.35;pointer-events:none;">🪜 무한계단</button>
       <button class="debug-game-btn" disabled style="opacity:0.35;pointer-events:none;">🧩 테트리스</button>
       <button class="debug-game-btn" onclick="debugGame('jewel')">💎 보석맞추기</button>
@@ -109,7 +109,7 @@
       <button class="debug-game-btn" onclick="debugGame('slinkystairs')">🌀 슬링키</button>
       <button class="debug-game-btn" onclick="debugGame('pupil')">👁 동공탐지</button>
       <button class="debug-game-btn" onclick="debugGame('blackjack')">🃏 블랙잭</button>
-      <button class="debug-game-btn" onclick="debugGame('tamagotchi')">🐉 다마고치</button>
+      <button class="debug-game-btn" onclick="debugGame('tamagotchi')">🐉 펫 키우기</button>
       <button class="debug-game-btn" onclick="debugGame('idol')">🎤 아이돌</button>
       <button class="debug-game-btn" onclick="debugGame('idol')">📺 전광판/아이돌</button>
       <button class="debug-game-btn" onclick="debugGame('drinkpoker')">🍶 술피하기</button>
@@ -142,7 +142,7 @@
       <button class="practice-game-btn" onclick="startPracticeGame('yahtzee')">🎲 야추</button>
       <button class="practice-game-btn" onclick="startPracticeGame('updown')">🃏 업다운</button>
       <button class="practice-game-btn" onclick="startPracticeGame('truth')">⭕ 진실게임</button>
-      <button class="practice-game-btn" onclick="startPracticeGame('fortress')">🏰 요새</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('fortress')">🏰 펫 대전</button>
       <button class="practice-game-btn" onclick="startPracticeGame('bombshot')">🍺 폭탄주</button>
       <button class="practice-game-btn" onclick="startPracticeGame('blackjack')">🃏 블랙잭</button>
       <button class="practice-game-btn" disabled style="opacity:0.35;pointer-events:none;">🪜 무한계단</button>
@@ -1189,6 +1189,7 @@
       <span class="fort-round-badge" id="fortRoundBadge">ROUND 1</span>
       <span class="fort-turn-name" id="fortTurnName">플레이어의 차례</span>
     </div>
+    <span class="fort-turn-timer" id="fortTurnTimer">30s</span>
     <div class="fort-wind-badge" id="fortWindBadge">
       <span id="fortWindArrow">→</span>
       <span id="fortWindValue">0</span>
@@ -1212,10 +1213,10 @@
       <button class="fort-ctrl-btn" id="fortMoveRight" ontouchstart="fortStartMove(1)" ontouchend="fortStopMove()" onmousedown="fortStartMove(1)" onmouseup="fortStopMove()" onmouseleave="fortStopMove()">▶</button>
     </div>
     <div class="fort-ctrl-sep"></div>
-    <div class="fort-ctrl-grp">
-      <button class="fort-ctrl-btn" ontouchstart="fortAngleStart(-1)" ontouchend="fortAngleStop()" onmousedown="fortAngleStart(-1)" onmouseup="fortAngleStop()" onmouseleave="fortAngleStop()">‹</button>
+    <div class="fort-ctrl-grp fort-angle-grp">
+      <button class="fort-ctrl-btn fort-angle-btn" ontouchstart="fortAngleStart(-1)" ontouchend="fortAngleStop()" onmousedown="fortAngleStart(-1)" onmouseup="fortAngleStop()" onmouseleave="fortAngleStop()">‹</button>
       <div class="fort-val"><span class="fort-val-lbl">각도</span><span id="fortAngleValue" class="fort-val-num">45</span></div>
-      <button class="fort-ctrl-btn" ontouchstart="fortAngleStart(1)" ontouchend="fortAngleStop()" onmousedown="fortAngleStart(1)" onmouseup="fortAngleStop()" onmouseleave="fortAngleStop()">›</button>
+      <button class="fort-ctrl-btn fort-angle-btn" ontouchstart="fortAngleStart(1)" ontouchend="fortAngleStop()" onmousedown="fortAngleStart(1)" onmouseup="fortAngleStop()" onmouseleave="fortAngleStop()">›</button>
     </div>
     <div class="fort-ctrl-sep"></div>
     <div class="fort-ctrl-grp">
@@ -2348,7 +2349,7 @@
         <span class="game-emoji">⭕</span>진실게임
       </div>
       <div class="game-option" data-game="fortress" onclick="selectGame(this)">
-        <span class="game-emoji">🏰</span>요새
+        <span class="game-emoji">🏰</span>펫 대전
       </div>
       <div class="game-option" data-game="bombshot" onclick="selectGame(this)">
         <span class="game-emoji">🍺</span>폭탄주

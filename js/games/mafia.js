@@ -316,8 +316,8 @@ function mfAssignRoles(playerCount) {
 function startMafia() {
   if (!state.isHost) return;
   const n = state.players.length;
-  if (n < 4) {
-    showToast('마피아는 최소 4명이 필요합니다');
+  if (n < 5) {
+    showToast('마피아는 최소 5명 이상이 필요합니다');
     return;
   }
   if (!mfSetupDone) {

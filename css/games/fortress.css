@@ -92,6 +92,35 @@
   text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
 }
 
+/* ===== Turn Timer ===== */
+.fort-turn-timer {
+  font-family: 'Oswald', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0,0,0,0.5);
+  padding: 2px 8px;
+  border-radius: 8px;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  min-width: 32px;
+  text-align: center;
+  transition: color 0.3s, background 0.3s;
+}
+.fort-turn-timer.fort-timer-warn {
+  color: #ffab00;
+  background: rgba(255,171,0,0.2);
+}
+.fort-turn-timer.fort-timer-danger {
+  color: #ff1744;
+  background: rgba(255,23,68,0.25);
+  animation: fortTimerPulse 0.5s ease infinite;
+}
+@keyframes fortTimerPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
 .fort-wind-badge {
   display: flex;
   align-items: center;
@@ -111,19 +140,20 @@
   transition: transform 0.3s;
 }
 
-/* ===== Players Bar — floating chips below header, no background bar ===== */
+/* ===== Players Bar — 좌측 세로 턴 순서 패널 ===== */
 .fort-players-bar {
   position: absolute;
   top: 44px;
-  left: 0;
-  right: 0;
+  left: 4px;
   display: flex;
-  gap: 4px;
-  padding: 0 6px;
-  overflow-x: auto;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0;
   z-index: 5;
-  scrollbar-width: none;
   pointer-events: none;
+  max-height: calc(100% - 100px);
+  overflow-y: auto;
+  scrollbar-width: none;
 }
 .fort-players-bar::-webkit-scrollbar { display: none; }
 
@@ -131,21 +161,33 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 2px 5px;
+  padding: 3px 6px;
   border-radius: 8px;
-  background: rgba(0,0,0,0.5);
-  min-width: 58px;
+  background: rgba(0,0,0,0.55);
+  min-width: 70px;
+  max-width: 120px;
   flex-shrink: 0;
-  transition: background 0.3s;
+  transition: transform 0.4s ease, background 0.3s, box-shadow 0.3s, opacity 0.3s;
+  position: relative;
 }
 
 .fort-player-hp-item.active-turn {
-  background: rgba(0,0,0,0.65);
-  box-shadow: 0 0 0 1.5px rgba(255,215,0,0.6);
+  background: rgba(0,0,0,0.7);
+  box-shadow: 0 0 0 1.5px rgba(255,215,0,0.7), 0 0 8px rgba(255,215,0,0.3);
+  transform: translateX(4px);
 }
 
 .fort-player-hp-item.dead {
-  opacity: 0.35;
+  opacity: 0.3;
+}
+
+.fort-turn-order-num {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--fort-gold, #ffd700);
+  min-width: 12px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .fort-player-avatar {
@@ -204,6 +246,12 @@
   font-weight: 600;
 }
 
+.fort-delay-text {
+  font-size: 7px;
+  color: rgba(255,255,255,0.45);
+  font-weight: 600;
+}
+
 /* ===== Controls — floating overlay bottom, no background bar ===== */
 .fort-controls {
   position: absolute;
@@ -226,6 +274,14 @@
 .fort-controls.fort-disabled .fort-fire-btn {
   opacity: 0.3;
   pointer-events: none;
+}
+/* 각도 버튼은 다른 플레이어 턴에서도 조작 가능 */
+.fort-controls.fort-disabled .fort-angle-btn {
+  opacity: 0.8;
+  pointer-events: all;
+}
+.fort-controls.fort-disabled .fort-angle-grp .fort-val {
+  opacity: 0.8;
 }
 
 .fort-ctrl-grp {

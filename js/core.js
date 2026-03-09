@@ -647,6 +647,8 @@ function handleMessage(peerId, raw) {
     'fort-move': () => { if(state.isHost) handleFortMove(peerId, msg); },
     'fort-anim': () => { startFortAnimation(msg); },
     'fort-result': () => { showFortressGameOver(msg); },
+    'fort-timer': () => { if(typeof fortUpdateTimerUI==='function') fortUpdateTimerUI(msg.time); },
+    'fort-timeout': () => { if(typeof _fortShowSkillFlash==='function') _fortShowSkillFlash(`⏰ 시간 초과!`); },
     // BombShot handlers
     'bs-state': () => { showScreen('bombshotGame'); initBSCanvas(); renderBSView(msg); },
     'bs-submit': () => { if(state.isHost) processBSSubmit(peerId, msg.cardIndices); },

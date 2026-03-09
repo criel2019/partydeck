@@ -392,13 +392,25 @@ function processKingScoring() {
   var tEnd = setTimeout(function() {
     if (!kingState) return;
     if (kingState.round < kingState.maxRounds) {
-      processKingRoundEnd();
+      // 다음라운드 버튼 클릭 대기 (자동으로 진행하지 않음)
+      kingState.phase = 'round-end';
+      broadcastKingState();
     } else {
       kingState.phase = 'gameover';
       broadcastKingState();
     }
   }, delay);
   _kingTimers.push(tEnd);
+}
+
+// ===== NEXT ROUND BUTTON HANDLER =====
+function kingNextRound() {
+  if (state.isHost) {
+    if (!kingState || kingState.phase !== 'round-end') return;
+    processKingRoundEnd();
+  } else {
+    sendToHost({ type: 'king-next-round' });
+  }
 }
 
 // ===== HOST: ROUND END =====
@@ -532,6 +544,8 @@ function renderKingView(view) {
   html += '<div class="king-turn-indicator">';
   if (view.phase === 'gameover') {
     html += '<span class="king-turn-text">\uac8c\uc784 \uc885\ub8cc!</span>';
+  } else if (view.phase === 'round-end') {
+    html += '<span class="king-turn-text">\ud83d\udcca \ub77c\uc6b4\ub4dc ' + view.round + ' \uacb0\uc0b0 \uc644\ub8cc! \uacb0\uacfc\ub97c \ud655\uc778\ud558\uc138\uc694.</span>';
   } else if (view.phase === 'scoring') {
     html += '<span class="king-turn-text">\uacb0\uc0b0 \uc911...</span>';
   } else if (view.phase === 'placed' && view.lastRoll) {
@@ -690,6 +704,9 @@ function renderKingView(view) {
 
   } else if (view.phase === 'scoring') {
     html += '<div class="king-scoring-text">\ud83d\udcca \uacb0\uc0b0 \uc911...</div>';
+
+  } else if (view.phase === 'round-end') {
+    html += '<button class="king-next-round-btn" onclick="kingNextRound()">\ud83d\udc51 \ub2e4\uc74c \ub77c\uc6b4\ub4dc \uc2dc\uc791</button>';
   }
 
   html += '</div>'; // .king-action-area
@@ -891,5 +908,9 @@ function handleKingAction(peerId, msg) {
     processKingRoll(peerId);
   } else if (msg.type === 'king-place') {
     processKingPlace(peerId, msg.diceValue, msg.landId);
+  } else if (msg.type === 'king-next-round') {
+    if (kingState && kingState.phase === 'round-end') {
+      processKingRoundEnd();
+    }
   }
 }
