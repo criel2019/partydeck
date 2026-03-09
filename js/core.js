@@ -158,16 +158,11 @@ function _tryFullscreen() {
     } catch(e) {}
   }
 }
-// Auto-request fullscreen on first user touch/click (needs user gesture)
-document.addEventListener('click', function _fsClick() {
-  _tryFullscreen();
-  document.removeEventListener('click', _fsClick);
-}, { once: true });
-document.addEventListener('touchstart', function _fsTouch() {
-  _tryFullscreen();
-  document.removeEventListener('touchstart', _fsTouch);
-}, { once: true, passive: true });
-// Re-enter fullscreen when navigating to a game screen (user may have exited)
+// Persistent: try fullscreen on every user tap (safe — _tryFullscreen bails if already fullscreen)
+// This handles: first visit, returning from background, exiting fullscreen via swipe, etc.
+document.addEventListener('click', function() { _tryFullscreen(); }, true);
+document.addEventListener('touchend', function() { _tryFullscreen(); }, { passive: true });
+// Re-enter fullscreen when navigating to a game screen
 function _ensureFullscreenForGame() {
   _tryFullscreen();
 }
