@@ -200,6 +200,7 @@ function showFortressGameOver(msg) {
 
 // ===== CLEANUP =====
 function closeFortressCleanup() {
+  if (typeof FortPerf !== 'undefined') FortPerf.hide();
   fortClearTurnTimer();
   const overlay = document.getElementById('fortGameOver');
   if (overlay) overlay.style.display = 'none';

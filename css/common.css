@@ -151,6 +151,72 @@ body {
   border: 1px solid rgba(255,255,255,0.1);
 }
 
+/* ===== 게임 목록 버튼 (블링블링) ===== */
+.btn-game-catalog {
+  background: linear-gradient(135deg, #6e3aff, #00e5ff, #ff6b35, #ffd700);
+  background-size: 300% 300%;
+  animation: catalogGradient 4s ease infinite, catalogPulse 2s ease-in-out infinite;
+  color: #fff;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 15px rgba(110,58,255,0.4),
+    0 0 30px rgba(0,229,255,0.2),
+    0 4px 20px rgba(0,0,0,0.3);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.btn-game-catalog::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.3),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: catalogShine 3s ease-in-out infinite;
+}
+
+.btn-game-catalog:hover {
+  transform: scale(1.03);
+  box-shadow:
+    0 0 25px rgba(110,58,255,0.6),
+    0 0 50px rgba(0,229,255,0.3),
+    0 0 15px rgba(255,215,0,0.3),
+    0 6px 30px rgba(0,0,0,0.4);
+}
+
+.btn-game-catalog:active {
+  transform: scale(0.98);
+}
+
+@keyframes catalogGradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes catalogShine {
+  0%   { left: -60%; opacity: 0; }
+  20%  { opacity: 1; }
+  100% { left: 120%; opacity: 0; }
+}
+
+@keyframes catalogPulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(110,58,255,0.4), 0 0 30px rgba(0,229,255,0.2), 0 4px 20px rgba(0,0,0,0.3); }
+  50%      { box-shadow: 0 0 20px rgba(110,58,255,0.6), 0 0 40px rgba(0,229,255,0.35), 0 0 10px rgba(255,215,0,0.25), 0 4px 20px rgba(0,0,0,0.3); }
+}
+
 .btn-accent2 {
   background: linear-gradient(135deg, var(--accent2), #00b8d4);
   color: var(--bg-dark);

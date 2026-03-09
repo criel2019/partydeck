@@ -1104,6 +1104,9 @@ function mfBuildView(playerId) {
     }
   }
 
+  // Does this role have a chat panel?
+  const hasChatRole = (myRole === 'mafia' || myRole === 'spy' || (myRole === 'lover' && me.loverPartnerId));
+
   // Spy dead role info
   const spyDeadRoles = (myRole === 'spy') ? ms.spyKnownRoles : {};
 
@@ -1156,6 +1159,7 @@ function mfBuildView(playerId) {
     nightActionDone,
     chatPartners,
     chatData,
+    hasChatRole,
     spyDeadRoles,
     votes: ms.votes,
     mySnipesLeft,
@@ -1304,14 +1308,21 @@ function mfProcessAction(senderId, data) {
       clearInterval(mfTimer);
 
       if (ms.phase === 'day-discuss') {
-        // Majority discuss-skip — move immediately to vote phase
+        // Majority discuss-skip — skip vote entirely, go to night
         setTimeout(() => {
           if (!mfState || mfState.phase !== 'day-discuss') return;
           ms._discussToVoteScheduled = false;
+          ms.announcements = [{
+            type: 'safe',
+            icon: '⏭️',
+            text: '토론이 스킵되었습니다. 밤으로 넘어갑니다.'
+          }];
+          ms._nightResults = null;
+          ms.votes = {};
           ms.voteSkipVotes = {};
           ms.voteSkipPassed = false;
-          ms.phase = 'day-vote';
-          mfSetPhaseTimer(MF_VOTE_DURATION);
+          ms.phase = 'vote-result';
+          mfSetPhaseTimer(MF_VOTE_RESULT_DURATION);
           mfBroadcastState();
         }, 1200);
       } else {
@@ -1597,7 +1608,7 @@ function mfRenderView() {
     }
 
     // Chat panel
-    if (v.chatPartners && v.chatPartners.length > 0) {
+    if (v.hasChatRole) {
       html += mfRenderChat(v);
     }
 
@@ -1662,7 +1673,7 @@ function mfRenderView() {
     }
 
     // Chat panel
-    if (v.chatPartners && v.chatPartners.length > 0) {
+    if (v.hasChatRole) {
       html += mfRenderChat(v);
     }
 
@@ -1697,7 +1708,7 @@ function mfRenderView() {
     html += mfRenderVoteSkipPanel(v);
 
     // Chat panel
-    if (v.chatPartners && v.chatPartners.length > 0) {
+    if (v.hasChatRole) {
       html += mfRenderChat(v);
     }
   }
@@ -1803,7 +1814,27 @@ function mfRenderPlayerGrid(v, selectable, mode) {
 
 function mfRenderChat(v) {
   const partners = v.chatPartners || [];
-  if (partners.length === 0) return '';
+
+  // No partners — show empty placeholder
+  if (partners.length === 0) {
+    let emptyMsg = '채팅 상대가 없습니다';
+    if (v.myRole === 'mafia') emptyMsg = '다른 마피아가 없습니다';
+    else if (v.myRole === 'spy') emptyMsg = '아직 접선한 마피아가 없습니다';
+    else if (v.myRole === 'lover') emptyMsg = '연인이 사망했습니다';
+
+    return `
+      <div class="mf-chat-panel empty">
+        <div class="mf-chat-header">
+          <span>💬</span>
+          <span>비밀 채팅</span>
+        </div>
+        <div class="mf-chat-empty">
+          <div class="mf-chat-empty-icon">${v.myRole === 'mafia' ? '🔇' : v.myRole === 'spy' ? '🕵️' : '💔'}</div>
+          <div class="mf-chat-empty-text">${emptyMsg}</div>
+        </div>
+      </div>
+    `;
+  }
 
   // Auto-select first available partner if none selected
   if (!mfActiveChatPartner || !partners.find(p => p.id === mfActiveChatPartner)) {
@@ -1912,7 +1943,7 @@ function mfRenderVoteSkipPanel(v) {
   const passedClass = passed ? ' passed' : '';
   const statusText = passed
     ? (isDiscussPhase
-      ? '✅ 토론 스킵 통과! 투표 단계로 이동합니다...'
+      ? '✅ 토론 스킵 통과! 밤으로 넘어갑니다...'
       : '✅ 투표 스킵 통과! 밤으로 넘어갑니다...')
     : '';
 
