@@ -182,9 +182,10 @@ function drawDeadTank(ctx, player, terrain) {
     const coverScale = Math.max(2 * R / natW, 2 * R / natH) * 1.22;
     const dw = natW * coverScale;
     const dh = natH * coverScale;
-    ctx.filter = 'grayscale(0.8) brightness(0.5)';
+    // Avoid ctx.filter (forces GPU recomposite). Darken via overlay rect instead.
     ctx.drawImage(tamaImg, centerX - dw * 0.5, centerY - dh * 0.58, dw, dh);
-    ctx.filter = 'none';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(centerX - R, centerY - R, R * 2, R * 2);
   } else {
     ctx.font = `bold ${Math.floor(R * 1.1)}px sans-serif`;
     ctx.textAlign = 'center';
@@ -535,21 +536,42 @@ function drawHPBars(ctx, players, terrain) {
   }
 }
 
+// Per-player name bitmap cache  { canvas, w, h }
+const _fortNameBitmapCache = {};
+
+function _buildNameBitmap(name) {
+  const font = 'bold 10px sans-serif';
+  // Measure on a scratch canvas
+  const scratch = document.createElement('canvas');
+  const sc = scratch.getContext('2d');
+  sc.font = font;
+  const tw = sc.measureText(name).width;
+  const PAD = 3;
+  const W = Math.ceil(tw + PAD * 2 + 4);  // +4 for stroke overhang
+  const H = 16;
+  scratch.width = W; scratch.height = H;
+  sc.font = font;
+  sc.textAlign = 'center';
+  sc.textBaseline = 'top';
+  sc.strokeStyle = 'rgba(0,0,0,0.6)';
+  sc.lineWidth = 2;
+  sc.strokeText(name, W / 2, 2);
+  sc.fillStyle = 'rgba(255,255,255,0.9)';
+  sc.fillText(name, W / 2, 2);
+  return { canvas: scratch, w: W, h: H };
+}
+
 function drawNames(ctx, players, terrain) {
-  ctx.save();
-  ctx.font = 'bold 10px sans-serif';
-  ctx.textAlign = 'center';
   for (let i = 0; i < players.length; i++) {
     const p = players[i];
     if (!p.alive) continue;
+    if (!_fortNameBitmapCache[p.id] || _fortNameBitmapCache[p.id].name !== p.name) {
+      _fortNameBitmapCache[p.id] = { ..._buildNameBitmap(p.name), name: p.name };
+    }
+    const bmp = _fortNameBitmapCache[p.id];
     const x = p.x;
     const tx = Math.floor(Math.max(0, Math.min(x, FORT_CANVAS_W - 1)));
     const terrainY = terrain[tx] || 380;
-    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-    ctx.lineWidth = 2;
-    ctx.strokeText(p.name, x, terrainY + 14);
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.fillText(p.name, x, terrainY + 14);
+    ctx.drawImage(bmp.canvas, Math.round(x - bmp.w / 2), Math.round(terrainY + 6));
   }
-  ctx.restore();
 }

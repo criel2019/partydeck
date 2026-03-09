@@ -192,21 +192,39 @@ function updateWindParticles(wind) {
 function drawWindParticles(ctx, wind) {
   if (wind === 0 || fortWindParticles.length === 0) return;
   const dir = wind > 0 ? 1 : -1;
-  // Keep line width constant in screen pixels regardless of zoom
   const lw = 1 / (fortCam.zoom || 1);
 
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineWidth = lw;
+  ctx.strokeStyle = '#fff';
+
+  // Batch particles into 8 alpha buckets to cut 40 stroke() calls → ≤8
+  const buckets = new Float32Array(8);      // alpha value per bucket
+  const bucketPaths = [];                   // [moveTo/lineTo pairs] per bucket
+  for (let b = 0; b < 8; b++) bucketPaths.push([]);
+
   for (let i = 0; i < fortWindParticles.length; i++) {
     const p = fortWindParticles[i];
     const a = p.alpha * p.life;
-    ctx.strokeStyle = `rgba(255, 255, 255, ${a})`;
+    const bi = Math.min(7, Math.floor(a * 8));   // bucket 0-7
+    buckets[bi] = (bi + 1) / 8;                  // representative alpha
+    bucketPaths[bi].push(p.x, p.y, p.x - p.length * dir, p.y);
+  }
+
+  for (let b = 0; b < 8; b++) {
+    const pts = bucketPaths[b];
+    if (pts.length === 0) continue;
+    ctx.globalAlpha = buckets[b];
     ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    ctx.lineTo(p.x - p.length * dir, p.y);
+    for (let i = 0; i < pts.length; i += 4) {
+      ctx.moveTo(pts[i], pts[i + 1]);
+      ctx.lineTo(pts[i + 2], pts[i + 3]);
+    }
     ctx.stroke();
   }
+
+  ctx.globalAlpha = 1;
   ctx.restore();
 }
 
@@ -255,8 +273,17 @@ function updateFortBirds() {
   }
 }
 
+let _fortBirdFrameSkip = 0;
 function drawFortBirds(ctx) {
+  // Birds move slowly — render every other frame to halve draw cost
+  _fortBirdFrameSkip ^= 1;
+  if (_fortBirdFrameSkip) return;
+
   const now = Date.now() * 0.005;
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 1.5;
+
   for (const bird of fortBirds) {
     ctx.save();
     ctx.translate(bird.x, bird.y);
@@ -264,28 +291,26 @@ function drawFortBirds(ctx) {
     if (bird.dir < 0) ctx.scale(-1, 1);
     ctx.scale(bird.size, bird.size);
 
-    // Wing flap
     const wingUp = bird.falling ? -0.8 : Math.sin(now * 5 + bird.phase) * 6 - 2;
+    const bodyColor = bird.falling ? 'rgba(100,70,40,0.6)' : '#4a3728';
+    const strokeColor = bird.falling ? 'rgba(80,50,30,0.7)' : 'rgba(40,30,20,0.85)';
 
-    ctx.strokeStyle = bird.falling ? 'rgba(80,50,30,0.7)' : 'rgba(40,30,20,0.85)';
-    ctx.lineWidth = 1.5;
-    ctx.lineCap = 'round';
+    // Body
+    ctx.fillStyle = bodyColor;
+    ctx.strokeStyle = strokeColor;
     ctx.beginPath();
-    // Body (small oval)
     ctx.ellipse(0, 0, 5, 2.5, 0, 0, Math.PI * 2);
-    ctx.fillStyle = bird.falling ? 'rgba(100,70,40,0.6)' : '#4a3728';
     ctx.fill();
     ctx.stroke();
-    // Left wing
+
+    // Wings + head in a single stroke call
     ctx.beginPath();
     ctx.moveTo(-1, 0);
     ctx.quadraticCurveTo(-7, wingUp - 2, -13, wingUp);
-    ctx.stroke();
-    // Right wing
-    ctx.beginPath();
     ctx.moveTo(1, 0);
     ctx.quadraticCurveTo(7, wingUp - 2, 13, wingUp);
     ctx.stroke();
+
     // Head
     ctx.fillStyle = '#3a2a1a';
     ctx.beginPath(); ctx.arc(5, -1, 2.5, 0, Math.PI * 2); ctx.fill();
@@ -295,6 +320,7 @@ function drawFortBirds(ctx) {
 
     ctx.restore();
   }
+  ctx.restore();
 }
 
 // ===== FALLING FEATHERS =====
@@ -378,12 +404,13 @@ function drawSkyPlatforms(ctx) {
       ctx.beginPath(); ctx.moveTo(lx, y + 2); ctx.lineTo(lx - 3, y + h - 2); ctx.stroke();
     }
 
-    // Drop shadow
-    ctx.shadowColor = 'rgba(0,0,0,0.35)';
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetY = 4;
-    ctx.fillStyle = 'transparent';
-    ctx.beginPath(); ctx.rect(x - w/2, y, w, h); ctx.fill(); // just trigger shadow
+    // Drop shadow (painted manually — avoids expensive canvas shadow compositing)
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(x, y + h + 3, w * 0.42, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
 }

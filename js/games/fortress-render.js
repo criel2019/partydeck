@@ -158,8 +158,8 @@ function _ftDrawMountains(c, W, H, T, B) {
 }
 
 function _buildSkyCache(w, h) {
-  // Build at DPR resolution so drawImage doesn't upscale on Retina displays
-  const dpr = window.devicePixelRatio || 1;
+  // Cap DPR at 2 — beyond that the canvas is too large (3375px+ on 2.8 DPR devices)
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
   const oc = (typeof OffscreenCanvas !== 'undefined')
     ? new OffscreenCanvas(pw, ph)
@@ -296,7 +296,8 @@ function drawTerrain(ctx, terrain, w, h) {
 }
 
 function _buildTerrainCache(terrain, w, h) {
-  const dpr = window.devicePixelRatio || 1;
+  // Cap DPR at 2 — prevents 3375×1575px offscreen canvas on high-DPR mobile (2.8×)
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
   const oc = (typeof OffscreenCanvas !== 'undefined')
     ? new OffscreenCanvas(pw, ph)
