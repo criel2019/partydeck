@@ -21,6 +21,7 @@ function drawTrajectoryPreview(ctx, startX, startY, angleDeg, wind) {
 
 // skillOpts: { skill, homingTargets }
 function computeProjectilePath(startX, startY, angleDeg, power, wind, skillOpts) {
+  FortPerf.begin('computePath');
   const skill = (skillOpts && skillOpts.skill) || null;
   const rad = angleDeg * Math.PI / 180;
 
@@ -168,6 +169,7 @@ function computeProjectilePath(startX, startY, angleDeg, power, wind, skillOpts)
   }
 
   const path = { xs, ys, length: len };
+  FortPerf.end('computePath');
   return {
     path, impactX: x, impactY: y,
     hitTerrain: exitReason === 'terrain' || exitReason === 'platform',

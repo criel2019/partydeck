@@ -107,6 +107,7 @@ function startFortAnimation(msg, callback) {
 
   function animLoop() {
     if (!view) { if (callback) callback(); return; }
+    FortPerf.frameStart();
 
     // Camera lerp: track projectile
     if (frameIdx < path.length) {
@@ -248,6 +249,7 @@ function startFortAnimation(msg, callback) {
       ctx.restore(); // end camera transform
     }
 
+    FortPerf.frameEnd();
     frameIdx += speed;
 
     if (frameIdx >= path.length) {
@@ -382,6 +384,7 @@ function animateExplosion(x, y, hitResult, view, callback, terrainAfter) {
   let shakeIntensity = 8;
 
   function explodeLoop() {
+    FortPerf.frameStart();
     // Apply terrain destruction after flash fades (frame 5)
     if (!terrainApplied && frame >= 5 && terrainAfter && view) {
       view.terrain = terrainAfter;
@@ -493,6 +496,7 @@ function animateExplosion(x, y, hitResult, view, callback, terrainAfter) {
       ctx.restore(); // undo screen shake
     }
 
+    FortPerf.frameEnd();
     frame++;
     if (frame >= totalFrames) {
       fortAnimId = null;

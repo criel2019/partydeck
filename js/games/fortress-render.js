@@ -278,7 +278,7 @@ function _buildSkyCache(w, h) {
 }
 
 function drawSky(ctx, w, h) {
-  if (!_fortSkyCache) _fortSkyCache = _buildSkyCache(w, h);
+  if (!_fortSkyCache) _fortSkyCache = FortPerf.once('buildSkyCache', () => _buildSkyCache(w, h));
   // Draw at logical size — ctx already has DPR base transform applied
   ctx.drawImage(_fortSkyCache, 0, 0, w, h);
 }
@@ -288,7 +288,7 @@ function drawClouds() { /* merged into drawSky cache */ }
 function drawTerrain(ctx, terrain, w, h) {
   // Cache check: rebuild only when terrain data changes
   if (!_fortTerrainCache || _fortTerrainCacheVer !== _fortTerrainDirtyVer || _fortTerrainCacheRef !== terrain) {
-    _fortTerrainCache = _buildTerrainCache(terrain, w, h);
+    _fortTerrainCache = FortPerf.once('buildTerrainCache', () => _buildTerrainCache(terrain, w, h));
     _fortTerrainCacheVer = _fortTerrainDirtyVer;
     _fortTerrainCacheRef = terrain;
   }

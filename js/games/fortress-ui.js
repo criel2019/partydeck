@@ -4,6 +4,7 @@
 // ===== UI RENDERING =====
 function renderFortressView(view) {
   if (!view) return;
+  FortPerf.begin('renderView.DOM');
   window._fortView = view;
 
   // non-host 첫 렌더 시 스킬 로드
@@ -131,6 +132,7 @@ function renderFortressView(view) {
 
   // 스킬바 업데이트 (내 턴일 때만 보임)
   if (typeof fortUpdateSkillBar === 'function') fortUpdateSkillBar();
+  FortPerf.end('renderView.DOM');
 
   renderFortressScene(view);
 }

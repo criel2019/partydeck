@@ -53,6 +53,7 @@ function spawnSmoke(x, y, count) {
 }
 
 function updateParticles() {
+  FortPerf.begin('particles.update');
   // In-place compact (avoids new array allocation every frame)
   let j = 0;
   for (let i = 0; i < fortParticles.length; i++) {
@@ -77,9 +78,11 @@ function updateParticles() {
     if (p.life > 0) fortSmoke[j++] = p;
   }
   fortSmoke.length = j;
+  FortPerf.end('particles.update');
 }
 
 function drawParticles(ctx) {
+  FortPerf.begin('particles.draw');
   // Fire particles — batch by color where possible, minimize state changes
   let lastColor = null;
   for (let i = 0; i < fortParticles.length; i++) {
@@ -123,6 +126,7 @@ function drawParticles(ctx) {
   }
 
   ctx.globalAlpha = 1;
+  FortPerf.end('particles.draw');
 }
 
 // ===== WIND PARTICLE SYSTEM =====

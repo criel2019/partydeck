@@ -214,6 +214,7 @@ let _fortCamLastTs = 0;
 function fortCameraLoop(ts) {
   const view = window._fortView;
   if (view && view.phase === 'aiming') {
+    FortPerf.frameStart();
     // Frame-rate independent lerp (normalized to 60fps)
     const dt = Math.min(ts - _fortCamLastTs, 50); // cap at 50ms to handle tab switch
     _fortCamLastTs = ts;
@@ -227,6 +228,7 @@ function fortCameraLoop(ts) {
     }
     // Always render so wind particles animate even when camera is stationary
     renderFortressScene(view);
+    FortPerf.frameEnd();
   }
   _fortCamLoopId = requestAnimationFrame(fortCameraLoop);
 }
@@ -263,6 +265,7 @@ function fortCameraSnap(px, py) {
 
 // ===== TERRAIN GENERATION =====
 function generateFortressTerrain(width, height, playerCount) {
+  FortPerf.begin('terrainGen');
   const terrain = new Array(width);
   const baseHeight = height * 0.62;
   const minHeight = height * 0.38;
@@ -352,6 +355,7 @@ function generateFortressTerrain(width, height, playerCount) {
     }
   }
 
+  FortPerf.end('terrainGen');
   return terrain;
 }
 
@@ -1023,7 +1027,8 @@ function handleFortInstantSkill(peerId, msg) {
 
 // ===== HOST: HANDLE FIRE (스킬 지원) =====
 function handleFortFire(peerId, msg) {
-  if (!fortState || fortState.phase !== 'aiming') return;
+  FortPerf.begin('handleFire');
+  if (!fortState || fortState.phase !== 'aiming') { FortPerf.end('handleFire'); return; }
 
   const current = fortState.players[fortState.turnIdx];
   if (!current || !current.alive) return;
@@ -1224,6 +1229,7 @@ function handleFortFire(peerId, msg) {
     pierceHits,
     clusterImpacts,
   };
+  FortPerf.end('handleFire');
   broadcast(animMsg);
 
   startFortAnimation(animMsg, () => {

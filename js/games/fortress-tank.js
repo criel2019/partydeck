@@ -60,6 +60,7 @@ function _fortGetSquashScale(anim, now) {
 // ===== SCENE RENDERING =====
 function renderFortressScene(view) {
   if (!fortCtx || !view) return;
+  FortPerf.begin('renderScene');
   const ctx = fortCtx;
   const w = FORT_CANVAS_W;
   const h = FORT_CANVAS_H;
@@ -71,23 +72,54 @@ function renderFortressScene(view) {
   ctx.clearRect(0, 0, w, h);
 
   // Update wind particles each frame
+  FortPerf.begin('windUpdate');
   updateWindParticles(view.wind || 0);
+  FortPerf.end('windUpdate');
 
   // All world-space drawing under camera transform
   ctx.save();
   applyCameraTransform(ctx);
-  drawSky(ctx, w, h);  // world-space: sky/mountains scroll & zoom with camera
+
+  FortPerf.begin('drawSky');
+  drawSky(ctx, w, h);
+  FortPerf.end('drawSky');
+
+  FortPerf.begin('drawPlatforms');
   drawSkyPlatforms(ctx);
+  FortPerf.end('drawPlatforms');
+
+  FortPerf.begin('birds');
   updateFortBirds();
   drawFortBirds(ctx);
+  FortPerf.end('birds');
+
+  FortPerf.begin('feathers');
   updateFallingFeathers();
   drawFallingFeathers(ctx);
+  FortPerf.end('feathers');
+
+  FortPerf.begin('drawTerrain');
   drawTerrain(ctx, terrain, w, h);
-  drawWindParticles(ctx, view.wind || 0);  // world-space: moves with camera
+  FortPerf.end('drawTerrain');
+
+  FortPerf.begin('windDraw');
+  drawWindParticles(ctx, view.wind || 0);
+  FortPerf.end('windDraw');
+
+  FortPerf.begin('drawTanks');
   drawTanks(ctx, view.players, view.turnIdx, terrain);
+  FortPerf.end('drawTanks');
+
+  FortPerf.begin('drawHPBars');
   drawHPBars(ctx, view.players, terrain);
+  FortPerf.end('drawHPBars');
+
+  FortPerf.begin('drawNames');
   drawNames(ctx, view.players, terrain);
+  FortPerf.end('drawNames');
+
   ctx.restore();
+  FortPerf.end('renderScene');
 }
 
 // ===== TANK DRAWING =====
