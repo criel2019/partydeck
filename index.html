@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
-<title>파티덱 - P2P 미니게임</title>
+<title>팟플 - P2P 미니게임</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a0a12">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -62,7 +62,7 @@
 <!-- LOADING -->
 <div class="screen active" id="loadingScreen">
   <div class="logo-icon">🎲</div>
-  <div class="logo-title">파티덱</div>
+  <div class="logo-title">팟플</div>
   <div class="loading-text" id="loadingText">연결 준비 중...</div>
   <div class="loading-bar"><div class="loading-bar-inner" id="loadingBar"></div></div>
 </div>
@@ -71,7 +71,7 @@
 <div class="screen" id="mainMenu">
   <div class="logo-area">
     <div class="logo-icon">🎲</div>
-    <div class="logo-title">파티덱</div>
+    <div class="logo-title">팟플</div>
     <div class="logo-sub">서버 없이 즐기는 P2P 미니게임</div>
   </div>
 
@@ -196,7 +196,7 @@
         <button class="share-btn" onclick="copyRoomCode()">📋 코드 복사</button>
         <button class="share-btn" onclick="shareLink()">🔗 링크 공유</button>
       </div>
-      <div id="qrCodeDisplay" style="margin:8px auto;width:100px;height:100px;"></div>
+      <div id="qrCodeDisplay" style="margin:8px auto;max-width:100px;overflow:hidden;"></div>
     </div>
 
   <div class="players-section">

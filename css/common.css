@@ -56,11 +56,13 @@ body {
 /* ===== MAIN MENU ===== */
 #mainMenu {
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 24px;
   gap: 20px;
   overflow-y: auto;
 }
+#mainMenu > :first-child { margin-top: auto; }
+#mainMenu > :last-child { margin-bottom: auto; }
 
 .logo-area { text-align: center; margin-bottom: 12px; }
 .logo-icon { font-size: 64px; animation: float 3s ease-in-out infinite; }

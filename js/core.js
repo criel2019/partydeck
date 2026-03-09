@@ -863,7 +863,7 @@ async function createRoom() {
         qrDiv.innerHTML = '';
         new QRCode(qrDiv, {
           text: location.origin + location.pathname + '?room=' + state.roomCode,
-          width: 180, height: 180,
+          width: 100, height: 100,
           colorDark: '#e8e8f0', colorLight: '#14142a'
         });
       }
@@ -1201,7 +1201,7 @@ function copyRoomCode() {
 function shareLink() {
   const url = location.origin + location.pathname + '?room=' + state.roomCode;
   if(navigator.share) {
-    navigator.share({ title: '파티덱', text: '파티덱 게임에 참가하세요! 코드: ' + state.roomCode, url: url });
+    navigator.share({ title: '팟플', text: '팟플 게임에 참가하세요! 코드: ' + state.roomCode, url: url });
   } else {
     navigator.clipboard?.writeText(url).then(() => showToast('링크가 복사되었습니다'));
   }
@@ -1210,7 +1210,7 @@ function shareLink() {
 function shareApp() {
   const url = location.origin + location.pathname;
   if(navigator.share) {
-    navigator.share({ title: '파티덱', text: '파티덱 - 서버 없이 즐기는 미니게임!', url: url });
+    navigator.share({ title: '팟플', text: '팟플 - 서버 없이 즐기는 미니게임!', url: url });
   } else {
     navigator.clipboard?.writeText(url).then(() => showToast('링크가 복사되었습니다'));
   }
