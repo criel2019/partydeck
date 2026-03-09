@@ -158,32 +158,31 @@ function _ensureFullscreenForGame() {
   _tryFullscreen();
 }
 
-// ===== LANDSCAPE MODE SYSTEM =====
+// ===== ORIENTATION LOCK SYSTEM =====
 const LANDSCAPE_GAMES = ['pokerGame', 'yahtzeeGame', 'sutdaGame', 'fortressGame'];
 let _landscapeOrientHandler = null;
 let _landscapeResizeHandler = null;
 
+function _lockPortrait() {
+  try { screen.orientation.lock('portrait').catch(function(){}); } catch(e) {}
+}
+
 function _checkLandscapeOverlay() {
   const overlay = document.getElementById('landscapeOverlay');
   if(!overlay) return;
-  // Portrait = height > width
   const isPortrait = window.innerHeight > window.innerWidth;
   overlay.style.display = isPortrait ? 'flex' : 'none';
 }
 
 function _enterLandscapeMode() {
-  // Remove any existing listeners first to prevent duplicates leaking
   if(_landscapeOrientHandler) {
     window.removeEventListener('orientationchange', _landscapeOrientHandler);
   }
   if(_landscapeResizeHandler) {
     window.removeEventListener('resize', _landscapeResizeHandler);
   }
-  // Try Screen Orientation API first (Android Chrome, etc.)
   try { screen.orientation.lock('landscape').catch(function(){}); } catch(e) {}
-  // Fallback: show overlay if portrait (iOS Safari, unsupported browsers)
   _checkLandscapeOverlay();
-  // Register listeners for orientation changes
   _landscapeOrientHandler = function() { _checkLandscapeOverlay(); };
   _landscapeResizeHandler = function() { _checkLandscapeOverlay(); };
   window.addEventListener('orientationchange', _landscapeOrientHandler);
@@ -191,11 +190,10 @@ function _enterLandscapeMode() {
 }
 
 function _exitLandscapeMode() {
-  try { screen.orientation.unlock(); } catch(e) {}
-  // Hide overlay
+  // Switch back to portrait lock (not just unlock)
+  _lockPortrait();
   var overlay = document.getElementById('landscapeOverlay');
   if(overlay) overlay.style.display = 'none';
-  // Remove listeners
   if(_landscapeOrientHandler) {
     window.removeEventListener('orientationchange', _landscapeOrientHandler);
     _landscapeOrientHandler = null;
@@ -205,6 +203,9 @@ function _exitLandscapeMode() {
     _landscapeResizeHandler = null;
   }
 }
+
+// Lock portrait on app start
+document.addEventListener('DOMContentLoaded', function() { _lockPortrait(); });
 
 function showScreen(id) {
   const prev = document.querySelector('.screen.active');
