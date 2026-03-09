@@ -1680,10 +1680,7 @@
     flex: 1;
   }
 
-  /* Scorecard: restrict height */
-  .yahtzee-scorecard-area {
-    max-height: 40vh;
-  }
+  /* Scorecard: no height restriction (grid layout in mobile.css handles it) */
 
   /* Hold bar compact */
   .yahtzee-hold-bar {

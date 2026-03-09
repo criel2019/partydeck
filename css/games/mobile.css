@@ -452,17 +452,20 @@
     grid-row: 2;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    padding: 4px !important;
+    padding: 3px !important;
     margin: 0 !important;
     min-height: 0 !important;
+    max-height: none !important;
+    height: 100% !important;
     border-radius: 0 !important;
     border-right: 1px solid rgba(255,255,255,0.08);
+    gap: 2px !important;
   }
 
-  .yahtzee-scorecard-title { font-size: 10px !important; margin-bottom: 2px !important; padding: 1px 4px !important; }
+  .yahtzee-scorecard-title { font-size: 9px !important; margin-bottom: 1px !important; padding: 0 4px !important; }
   .yahtzee-score-table { font-size: 10px !important; }
-  .yahtzee-score-table th { padding: 2px 3px !important; font-size: 9px !important; }
-  .yahtzee-score-row td { padding: 3px 4px !important; }
+  .yahtzee-score-table th { padding: 1px 3px !important; font-size: 8px !important; }
+  .yahtzee-score-row td { padding: 1px 3px !important; }
   .yahtzee-cat-name {
     font-size: 10px !important;
     white-space: nowrap !important;
@@ -470,15 +473,20 @@
     text-overflow: ellipsis !important;
     max-width: 90px !important;
   }
-  .yahtzee-cat-score { font-size: 12px !important; min-width: 28px !important; }
-  .yahtzee-subtotal-row td, .yahtzee-bonus-row td, .yahtzee-total-row td { padding: 2px 4px !important; font-size: 9px !important; }
-  .yahtzee-total-row td:last-child { font-size: 13px !important; }
-  .yahtzee-divider-row td { padding: 1px !important; }
+  .yahtzee-cat-score { font-size: 11px !important; min-width: 24px !important; }
+  .ysc-cell { padding: 1px 2px !important; font-size: 10px !important; }
+  .ysc-player { padding: 1px 2px !important; font-size: 8px !important; }
+  .yahtzee-subtotal-row td, .yahtzee-bonus-row td { padding: 1px 3px !important; font-size: 9px !important; }
+  .yahtzee-total-row td { padding: 2px 3px !important; font-size: 9px !important; }
+  .yahtzee-total-row td:last-child { font-size: 12px !important; }
+  .yahtzee-total-row { margin-top: 2px !important; }
+  .yahtzee-divider-row { height: 3px !important; }
+  .yahtzee-divider-row td { padding: 0 !important; }
   .yahtzee-score-btn {
-    min-height: 28px !important;
-    padding: 5px 8px !important;
-    font-size: 11px !important;
-    margin-top: 4px !important;
+    min-height: 24px !important;
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+    margin-top: 2px !important;
   }
 
   /* === RIGHT: Dice area — canvas + controls side by side === */
