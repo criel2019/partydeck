@@ -842,7 +842,7 @@ async function createRoom() {
     });
 
     document.getElementById('roomCodeDisplay').textContent = state.roomCode;
-    document.getElementById('gameCatalogBtn').style.display = 'block';
+    document.getElementById('gameCatalogBtn').style.display = 'flex';
     document.getElementById('startGameBtn').style.display = 'none';
     document.getElementById('waitingMsg').style.display = 'none';
     showScreen('lobby');
@@ -886,7 +886,7 @@ async function joinRoom() {
 
     // 로비 화면 먼저 표시 (연결 상태 표시용)
     document.getElementById('roomCodeDisplay').textContent = code;
-    document.getElementById('gameCatalogBtn').style.display = 'block';
+    document.getElementById('gameCatalogBtn').style.display = 'flex';
     document.getElementById('startGameBtn').style.display = 'none';
     document.getElementById('waitingMsg').style.display = 'block';
     document.getElementById('waitingText').textContent = '호스트에 연결 중...';
