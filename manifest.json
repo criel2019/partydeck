@@ -3,7 +3,7 @@
   "short_name": "파티덱",
   "description": "서버 없이 즐기는 P2P 미니게임 플랫폼",
   "start_url": "./index.html",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#0a0a12",
   "theme_color": "#0a0a12",

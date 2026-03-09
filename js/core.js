@@ -134,6 +134,30 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
+// ===== FULLSCREEN MODE (hide address bar) =====
+function _tryFullscreen() {
+  // Already fullscreen?
+  if(document.fullscreenElement || document.webkitFullscreenElement) return;
+  var el = document.documentElement;
+  var rfs = el.requestFullscreen || el.webkitRequestFullscreen;
+  if(rfs) {
+    try { rfs.call(el).catch(function(){}); } catch(e) {}
+  }
+}
+// Auto-request fullscreen on first user touch/click (needs user gesture)
+document.addEventListener('click', function _fsClick() {
+  _tryFullscreen();
+  document.removeEventListener('click', _fsClick);
+}, { once: true });
+document.addEventListener('touchstart', function _fsTouch() {
+  _tryFullscreen();
+  document.removeEventListener('touchstart', _fsTouch);
+}, { once: true, passive: true });
+// Re-enter fullscreen when navigating to a game screen (user may have exited)
+function _ensureFullscreenForGame() {
+  _tryFullscreen();
+}
+
 // ===== LANDSCAPE MODE SYSTEM =====
 const LANDSCAPE_GAMES = ['pokerGame', 'yahtzeeGame', 'sutdaGame', 'fortressGame'];
 let _landscapeOrientHandler = null;
@@ -210,6 +234,10 @@ function showScreen(id) {
   var _catalog = document.getElementById('gameCatalogOverlay');
   if (_catalog) _catalog.style.display = 'none';
   // === Init when entering a screen ===
+  // Re-enter fullscreen when navigating to any game screen
+  if(id !== 'mainMenu' && id !== 'loadingScreen') {
+    _ensureFullscreenForGame();
+  }
   // Landscape mode for supported games
   if(LANDSCAPE_GAMES.indexOf(id) !== -1) {
     _enterLandscapeMode();
