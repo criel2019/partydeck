@@ -146,11 +146,13 @@ function _tryFullscreen() {
     try {
       var p = rfs.call(el);
       if(p && p.then) p.then(function() {
-        // Fullscreen achieved — now orientation lock works, apply portrait lock
-        // (unless currently in a landscape game)
+        // Fullscreen achieved — orientation API now works
+        // Re-apply current orientation mode so API lock takes effect + overlay hides
         var active = document.querySelector('.screen.active');
-        if(!active || LANDSCAPE_GAMES.indexOf(active.id) === -1) {
-          _lockPortrait();
+        if(active && LANDSCAPE_GAMES.indexOf(active.id) !== -1) {
+          _enterLandscapeMode();
+        } else {
+          _enterPortraitMode();
         }
       }).catch(function(){});
     } catch(e) {}
@@ -172,52 +174,56 @@ function _ensureFullscreenForGame() {
 
 // ===== ORIENTATION LOCK SYSTEM =====
 const LANDSCAPE_GAMES = ['pokerGame', 'yahtzeeGame', 'sutdaGame', 'fortressGame'];
-let _landscapeOrientHandler = null;
-let _landscapeResizeHandler = null;
+let _orientCheckFn = null;
+
+function _clearOrientListeners() {
+  if(_orientCheckFn) {
+    window.removeEventListener('orientationchange', _orientCheckFn);
+    window.removeEventListener('resize', _orientCheckFn);
+    _orientCheckFn = null;
+  }
+}
 
 function _lockPortrait() {
   try { screen.orientation.lock('portrait').catch(function(){}); } catch(e) {}
 }
 
-function _checkLandscapeOverlay() {
-  const overlay = document.getElementById('landscapeOverlay');
-  if(!overlay) return;
-  const isPortrait = window.innerHeight > window.innerWidth;
-  overlay.style.display = isPortrait ? 'flex' : 'none';
-}
-
 function _enterLandscapeMode() {
-  if(_landscapeOrientHandler) {
-    window.removeEventListener('orientationchange', _landscapeOrientHandler);
-  }
-  if(_landscapeResizeHandler) {
-    window.removeEventListener('resize', _landscapeResizeHandler);
-  }
+  _clearOrientListeners();
+  // Hide portrait overlay
+  var pOverlay = document.getElementById('portraitOverlay');
+  if(pOverlay) pOverlay.style.display = 'none';
+  // Try API lock (works in fullscreen)
   try { screen.orientation.lock('landscape').catch(function(){}); } catch(e) {}
-  _checkLandscapeOverlay();
-  _landscapeOrientHandler = function() { _checkLandscapeOverlay(); };
-  _landscapeResizeHandler = function() { _checkLandscapeOverlay(); };
-  window.addEventListener('orientationchange', _landscapeOrientHandler);
-  window.addEventListener('resize', _landscapeResizeHandler);
+  // Overlay fallback: show "rotate to landscape" if portrait
+  _orientCheckFn = function() {
+    var overlay = document.getElementById('landscapeOverlay');
+    if(overlay) overlay.style.display = (window.innerHeight > window.innerWidth) ? 'flex' : 'none';
+  };
+  _orientCheckFn();
+  window.addEventListener('orientationchange', _orientCheckFn);
+  window.addEventListener('resize', _orientCheckFn);
 }
 
-function _exitLandscapeMode() {
-  // Switch back to portrait lock (not just unlock)
+function _enterPortraitMode() {
+  _clearOrientListeners();
+  // Hide landscape overlay
+  var lOverlay = document.getElementById('landscapeOverlay');
+  if(lOverlay) lOverlay.style.display = 'none';
+  // Try API lock (works in fullscreen)
   _lockPortrait();
-  var overlay = document.getElementById('landscapeOverlay');
-  if(overlay) overlay.style.display = 'none';
-  if(_landscapeOrientHandler) {
-    window.removeEventListener('orientationchange', _landscapeOrientHandler);
-    _landscapeOrientHandler = null;
-  }
-  if(_landscapeResizeHandler) {
-    window.removeEventListener('resize', _landscapeResizeHandler);
-    _landscapeResizeHandler = null;
-  }
+  // Overlay fallback: show "rotate to portrait" if landscape
+  _orientCheckFn = function() {
+    var overlay = document.getElementById('portraitOverlay');
+    if(overlay) overlay.style.display = (window.innerWidth > window.innerHeight) ? 'flex' : 'none';
+  };
+  _orientCheckFn();
+  window.addEventListener('orientationchange', _orientCheckFn);
+  window.addEventListener('resize', _orientCheckFn);
 }
 
-// Portrait lock is applied after fullscreen is achieved (see _tryFullscreen callback)
-// and on every showScreen() call for non-landscape screens.
+// Alias for backward compat
+function _exitLandscapeMode() { _enterPortraitMode(); }
 
 function showScreen(id) {
   const prev = document.querySelector('.screen.active');
@@ -236,10 +242,7 @@ function showScreen(id) {
     if(prevId === 'tamagotchiGame' && id !== 'tamagotchiGame') {
       if(typeof tamaCleanup === 'function') tamaCleanup();
     }
-    // Exit landscape mode when leaving a landscape game for a non-landscape screen
-    if(LANDSCAPE_GAMES.indexOf(prevId) !== -1 && LANDSCAPE_GAMES.indexOf(id) === -1) {
-      _exitLandscapeMode();
-    }
+    // Orientation cleanup is handled below by entering the new mode
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -255,7 +258,7 @@ function showScreen(id) {
   if(LANDSCAPE_GAMES.indexOf(id) !== -1) {
     _enterLandscapeMode();
   } else {
-    _lockPortrait();
+    _enterPortraitMode();
   }
   // Init Three.js scene when entering yahtzee
   if(id === 'yahtzeeGame') {
