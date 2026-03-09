@@ -46,11 +46,14 @@
   border: 1px solid rgba(255,255,255,0.15) !important;
   border-radius: 6px !important;
   color: #f5f5dc !important;
-  width: 32px !important;
-  height: 32px !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  touch-action: manipulation;
 }
 
 .roulette-title {
@@ -95,10 +98,23 @@
 }
 
 .setup-slider::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+  -webkit-appearance: none; width: 44px; height: 44px; border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #7a7a88, #4a4d55);
   cursor: pointer; border: 2px solid #5a5d65;
   box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 8px rgba(90,93,101,0.3);
+}
+
+.setup-slider::-moz-range-thumb {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #7a7a88, #4a4d55);
+  cursor: pointer; border: 2px solid #5a5d65;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 8px rgba(90,93,101,0.3);
+}
+
+.setup-slider::-moz-range-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(90deg, #2d3139, #3a3d45);
+  border: none;
 }
 
 .setup-value {
@@ -410,5 +426,161 @@
   align-items: center;
   justify-content: center;
   margin: 0 auto;
+}
+
+/* ===== MOBILE RESPONSIVE (max-width: 430px) ===== */
+@media (max-width: 430px) {
+
+  /* -- Header -- */
+  .roulette-header {
+    padding: 6px 10px;
+  }
+  .roulette-title {
+    font-size: 16px;
+  }
+  .roulette-survivors {
+    font-size: 14px;
+  }
+
+  /* -- Setup panel -- */
+  .roulette-setup {
+    padding: 10px;
+    margin: 6px 8px;
+  }
+  .setup-card {
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+  .setup-label {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .setup-slider {
+    height: 6px;
+  }
+  .setup-value {
+    font-size: 18px;
+  }
+
+  /* -- Cylinder area -- */
+  .cylinder-area {
+    padding: 8px;
+    gap: 10px;
+  }
+  .cylinder-container {
+    width: min(200px, 55vw) !important;
+    height: min(200px, 55vw) !important;
+    max-width: 200px;
+    max-height: 200px;
+  }
+  .cylinder {
+    border-width: 4px;
+  }
+  .cylinder-center {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  .chamber-indicator {
+    width: 28px;
+    height: 28px;
+  }
+  .chamber-indicator.bullet::after {
+    width: 10px;
+    height: 10px;
+  }
+  .current-turn-display {
+    font-size: 13px;
+    padding: 6px 14px;
+  }
+  .cylinder-info {
+    font-size: 11px;
+  }
+
+  /* -- Survivors list -- */
+  .survivors-list {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 5px;
+    padding: 0 8px;
+    max-height: 150px;
+  }
+  .survivor-item {
+    padding: 8px 4px 6px;
+  }
+  .survivor-avatar-sm {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    border-width: 2px;
+  }
+  .survivor-name {
+    font-size: 11px;
+    max-width: 60px;
+  }
+  .survivor-item.dead::after {
+    font-size: 28px;
+  }
+  .survivor-order {
+    font-size: 8px;
+    padding: 1px 5px;
+  }
+
+  /* -- Action buttons: touch-friendly -- */
+  .roulette-actions {
+    padding: 6px 10px 10px;
+    gap: 6px;
+  }
+  #spinBtn, .roulette-actions .btn-secondary {
+    padding: 12px 28px;
+    font-size: 16px;
+    min-height: 48px !important;
+    touch-action: manipulation;
+  }
+  .btn-danger {
+    padding: 16px 32px;
+    font-size: 22px;
+    min-height: 48px;
+  }
+  .rr-trigger-btn {
+    width: 90px !important;
+    height: 90px !important;
+  }
+  #restartBtn {
+    min-height: 48px !important;
+    font-size: 16px;
+    touch-action: manipulation;
+  }
+
+  /* -- Flash overlay -- */
+  .flash-icon {
+    font-size: 80px;
+  }
+  .flash-text {
+    font-size: 48px;
+  }
+
+  /* -- Lottery/Roulette wheel (lotteryGame context) -- */
+  #lotteryGame .roulette-wheel-container {
+    max-width: min(260px, 70vw);
+  }
+  #lotteryGame .roulette-wheel {
+    max-width: min(240px, 65vw);
+  }
+  #lotteryGame #rouletteCanvas {
+    width: min(240px, 65vw) !important;
+    height: min(240px, 65vw) !important;
+  }
+  #lotteryGame .roulette-spin-btn {
+    padding: 12px 24px;
+    font-size: 16px;
+    min-height: 48px !important;
+    touch-action: manipulation;
+  }
+  #lotteryGame .roulette-result-display {
+    padding: 10px;
+  }
+  #lotteryGame .result-text {
+    font-size: 18px;
+  }
 }
 

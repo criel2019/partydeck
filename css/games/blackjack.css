@@ -465,3 +465,344 @@
   max-width: 320px;
   width: 100%;
 }
+
+/* ===== MOBILE RESPONSIVE — 430px 이하 ===== */
+@media screen and (max-width: 430px) {
+
+  /* --- 닫기 버튼: 44px 터치 타겟 확보 --- */
+  .bj-close-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  /* --- 규칙/페이즈 뱃지: 터치 최소 높이 확보 --- */
+  .bj-phase-badge {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* --- 칩 디스플레이 가독성 --- */
+  .bj-chip-display {
+    font-size: clamp(12px, 3.5vw, 14px);
+    padding: 4px 8px;
+  }
+
+  /* --- 딜러 영역 --- */
+  .bj-dealer-area {
+    padding: 8px 6px;
+  }
+  .bj-dealer-label {
+    font-size: 12px;
+  }
+  .bj-dealer-total {
+    font-size: 14px;
+    padding: 2px 10px;
+  }
+  .bj-dealer-cards {
+    gap: 4px;
+    min-height: 62px;
+  }
+
+  /* --- 카드 크기 모바일 조정 --- */
+  .bj-card {
+    width: 42px;
+    height: 60px;
+    border-radius: 5px;
+  }
+  .bj-card-big {
+    width: 60px;
+    height: 86px;
+    border-radius: 7px;
+  }
+  .bj-card-rank {
+    font-size: 11px;
+  }
+  .bj-card-big .bj-card-rank {
+    font-size: 14px;
+  }
+  .bj-card-suit-sm {
+    font-size: 8px;
+  }
+  .bj-card-big .bj-card-suit-sm {
+    font-size: 10px;
+  }
+  .bj-card-center {
+    font-size: 18px;
+  }
+  .bj-card-big .bj-card-center {
+    font-size: 26px;
+  }
+
+  /* --- 상대 플레이어 패널: 스크롤 개선 --- */
+  .bj-opponents {
+    padding: 4px 6px;
+    gap: 6px;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.3) transparent;
+  }
+  .bj-opponents::-webkit-scrollbar {
+    height: 4px;
+  }
+  .bj-opponents::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .bj-opponents::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3);
+    border-radius: 4px;
+  }
+  .bj-opp-slot {
+    min-width: 62px;
+    padding: 4px 3px;
+  }
+  .bj-opp-name {
+    font-size: 11px;
+    max-width: 62px;
+  }
+  .bj-opp-chips {
+    font-size: clamp(10px, 2.8vw, 12px);
+  }
+  .bj-opp-bet {
+    font-size: clamp(10px, 2.8vw, 12px);
+  }
+  .bj-opp-status {
+    font-size: clamp(10px, 2.8vw, 12px);
+  }
+
+  /* --- 내 카드 영역 --- */
+  .bj-my-area {
+    padding: 6px;
+    gap: 6px;
+  }
+  .bj-my-cards {
+    gap: 6px;
+    min-height: 88px;
+  }
+  .bj-my-total {
+    font-size: clamp(18px, 5vw, 24px);
+  }
+
+  /* --- 하단 패널 --- */
+  .bj-bottom-panel {
+    padding: 6px 8px 12px;
+    gap: 6px;
+  }
+
+  /* --- 배팅 영역 --- */
+  .bj-bet-area {
+    padding: 10px;
+    gap: 6px;
+  }
+  .bj-bet-row {
+    max-width: 100%;
+    gap: 6px;
+  }
+  .bj-bet-input {
+    padding: 10px 8px;
+    font-size: 16px; /* iOS 줌 방지: 16px 유지 */
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  /* --- 빠른 배팅 버튼: 터치 타겟 확보 --- */
+  .bj-bet-quick {
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .bj-bet-quick-btn {
+    padding: 10px 14px;
+    font-size: 12px;
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  /* --- 배팅 확인 / 딜 버튼 --- */
+  .bj-bet-confirm {
+    padding: 12px 20px;
+    font-size: 15px;
+    min-height: 44px;
+    width: 100%;
+    max-width: 280px;
+  }
+  .bj-deal-btn {
+    padding: 12px 24px;
+    font-size: 15px;
+    min-height: 44px;
+  }
+
+  /* --- 액션 버튼 (Hit/Stand/Double) --- */
+  .bj-action-btn {
+    padding: 12px 16px;
+    font-size: 14px;
+    min-width: 72px;
+    min-height: 44px;
+  }
+
+  /* --- 결과 오버레이 --- */
+  .bj-result-overlay {
+    padding: 16px;
+    gap: 12px;
+  }
+  .bj-result-title {
+    font-size: clamp(22px, 6vw, 28px);
+  }
+  .bj-result-list {
+    max-width: min(340px, calc(100vw - 32px));
+  }
+  .bj-result-row {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .bj-result-total {
+    font-size: 12px;
+  }
+  .bj-result-btns {
+    max-width: min(320px, calc(100vw - 32px));
+  }
+  .bj-result-btns > button {
+    min-height: 44px;
+    font-size: 14px;
+  }
+  .bj-result-dealer-cards {
+    gap: 3px;
+  }
+}
+
+/* ===== SMALL PHONE — 360px 이하 ===== */
+@media screen and (max-width: 360px) {
+
+  /* --- 상단 바 좁은 화면 대응 --- */
+  .bj-top-bar {
+    padding: 6px 8px;
+  }
+  .bj-top-info {
+    gap: 6px;
+  }
+  .bj-chip-display {
+    font-size: 12px;
+    padding: 3px 6px;
+  }
+  .bj-phase-badge {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  /* --- 카드 더 작게 --- */
+  .bj-card {
+    width: 36px;
+    height: 52px;
+    border-radius: 4px;
+  }
+  .bj-card-big {
+    width: 52px;
+    height: 74px;
+    border-radius: 6px;
+  }
+  .bj-card-rank {
+    font-size: 10px;
+  }
+  .bj-card-big .bj-card-rank {
+    font-size: 13px;
+  }
+  .bj-card-suit-sm {
+    font-size: 7px;
+  }
+  .bj-card-big .bj-card-suit-sm {
+    font-size: 9px;
+  }
+  .bj-card-center {
+    font-size: 15px;
+  }
+  .bj-card-big .bj-card-center {
+    font-size: 22px;
+  }
+  .bj-card-corner {
+    top: 2px;
+    left: 3px;
+  }
+  .bj-card-corner-br {
+    bottom: 2px;
+    right: 3px;
+  }
+
+  /* --- 상대 플레이어 더 컴팩트 --- */
+  .bj-opp-slot {
+    min-width: 56px;
+    padding: 3px 2px;
+  }
+  .bj-opp-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 15px;
+  }
+  .bj-opp-name {
+    font-size: 10px;
+    max-width: 56px;
+  }
+
+  /* --- 딜러 영역 --- */
+  .bj-dealer-area {
+    padding: 6px 4px;
+  }
+  .bj-dealer-cards {
+    gap: 3px;
+    min-height: 54px;
+  }
+  .bj-dealer-total {
+    font-size: 13px;
+  }
+
+  /* --- 내 영역 --- */
+  .bj-my-cards {
+    gap: 4px;
+    min-height: 76px;
+  }
+  .bj-my-total {
+    font-size: clamp(16px, 5vw, 20px);
+  }
+
+  /* --- 배팅 빠른 버튼 좁은 화면 --- */
+  .bj-bet-quick-btn {
+    padding: 8px 10px;
+    font-size: 11px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  /* --- 액션 버튼 좁은 화면 --- */
+  .bj-action-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+    min-width: 64px;
+    min-height: 40px;
+  }
+
+  /* --- 결과 오버레이 좁은 화면 --- */
+  .bj-result-overlay {
+    padding: 12px;
+    gap: 10px;
+  }
+  .bj-result-title {
+    font-size: 20px;
+  }
+  .bj-result-row {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .bj-result-list {
+    max-width: calc(100vw - 24px);
+  }
+  .bj-result-btns {
+    max-width: calc(100vw - 24px);
+  }
+}

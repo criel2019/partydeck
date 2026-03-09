@@ -3,6 +3,12 @@
 // 제거 시 이 파일 + 각 파일의 FortPerf.begin/end 호출만 삭제
 
 const FortPerf = (() => {
+  if (typeof GamePerf === 'undefined') {
+    // GamePerf 미로드 시 no-op 스텁
+    const noop = () => {};
+    return { enabled: false, frameStart: noop, frameEnd: noop, begin: noop, end: noop,
+             once: (_, fn) => fn(), save: noop, history: () => [], reset: noop, show: noop, hide: noop };
+  }
   const _inst = GamePerf.create({
     name: 'fortress',
     reportEvery: 60,

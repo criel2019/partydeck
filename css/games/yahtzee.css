@@ -927,3 +927,774 @@
   text-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
 }
 
+/* ======================================================== */
+/* MOBILE RESPONSIVE - 480px, 430px, 360px breakpoints      */
+/* ======================================================== */
+
+/* --- Scorecard table: always allow horizontal scroll --- */
+.yahtzee-scorecard-area {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===== 480px: Phone landscape / small tablets ===== */
+@media (max-width: 480px) {
+
+  /* Root game container */
+  #yahtzeeGame.active {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  /* Header */
+  .yahtzee-header {
+    padding: 6px 8px;
+    border-radius: 6px;
+  }
+
+  .yahtzee-turn-text {
+    font-size: 14px;
+  }
+
+  .yahtzee-current-player {
+    font-size: clamp(10px, 2.8vw, 12px);
+  }
+
+  .yahtzee-rolls-left {
+    font-size: 15px;
+    padding: 6px 12px;
+    min-width: 50px;
+  }
+
+  /* Help button: 44px touch target */
+  .yah-help-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  /* Help close button: 44px touch target */
+  .yahtzee-help-close {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  /* Players bar */
+  .yahtzee-players-bar {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .yahtzee-player-mini {
+    min-width: 48px;
+    padding: 5px 4px;
+  }
+
+  /* Player avatar: 44px touch target */
+  .yahtzee-player-mini-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+
+  .yahtzee-player-mini-name {
+    font-size: clamp(10px, 2.8vw, 12px);
+    max-width: 52px;
+  }
+
+  .yahtzee-player-mini-score {
+    font-size: 12px;
+  }
+
+  /* CRITICAL: Dice area - vertical stack */
+  .yahtzee-dice-area {
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px;
+  }
+
+  /* 3D canvas: fixed height for visibility */
+  #yahtzeeThreeContainer {
+    min-height: 200px;
+    flex: none;
+    height: 35vh;
+    border-radius: 10px;
+  }
+
+  /* CRITICAL: Controls panel - full width horizontal */
+  .yahtzee-controls-panel {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  .yahtzee-controls-title {
+    width: 100%;
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-bottom: 0;
+  }
+
+  .yahtzee-rolls-indicator {
+    padding: 2px 0;
+  }
+
+  .yahtzee-roll-btn {
+    width: auto;
+    flex: 1;
+    min-width: 120px;
+    max-width: 200px;
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+
+  .yahtzee-roll-hint {
+    width: 100%;
+    font-size: 10px;
+  }
+
+  /* Hold bar */
+  .yahtzee-hold-bar {
+    min-height: 44px;
+    padding: 6px;
+    gap: 4px;
+    border-radius: 8px;
+  }
+
+  /* Hold dice: scale down to fit 5 in a row */
+  .yahtzee-held-die {
+    width: 44px;
+    height: 44px;
+    border-radius: 6px;
+    padding: 5px;
+  }
+
+  .yahtzee-held-die .held-pip {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Combo label */
+  .yahtzee-combo-label {
+    font-size: 15px;
+  }
+
+  /* Scorecard area */
+  .yahtzee-scorecard-area {
+    padding: 10px;
+    border-radius: 10px;
+    gap: 6px;
+  }
+
+  .yahtzee-scorecard-title {
+    font-size: 16px;
+  }
+
+  /* Score table */
+  .yahtzee-score-table {
+    font-size: clamp(12px, 3.2vw, 14px);
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .yahtzee-score-table th {
+    padding: 6px;
+    font-size: clamp(11px, 3vw, 13px);
+  }
+
+  .yahtzee-score-row td {
+    padding: 6px 4px;
+  }
+
+  .yahtzee-cat-name {
+    font-size: clamp(11px, 3vw, 13px);
+  }
+
+  .ysc-player {
+    font-size: clamp(10px, 2.8vw, 12px);
+    padding: 4px 3px !important;
+    min-width: 32px;
+  }
+
+  .ysc-cell {
+    font-size: clamp(11px, 3vw, 13px);
+    padding: 4px 3px;
+  }
+
+  /* Score confirm button */
+  .yahtzee-score-btn {
+    max-width: 100%;
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  /* Total row */
+  .yahtzee-total-row td {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  /* Subtotal / Bonus rows */
+  .yahtzee-subtotal-row td,
+  .yahtzee-bonus-row td {
+    padding: 6px 8px;
+  }
+
+  /* Game over screen */
+  .yahtzee-game-over {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .yahtzee-final-title {
+    font-size: 26px;
+  }
+
+  .yahtzee-final-scores {
+    padding: 16px;
+    max-width: 100%;
+  }
+
+  .yahtzee-rank-item {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .yahtzee-rank-name {
+    font-size: 14px;
+  }
+
+  .yahtzee-rank-score {
+    font-size: 16px;
+  }
+
+  /* Help modal */
+  .yahtzee-help-modal {
+    max-width: 100%;
+    padding: 16px 14px 14px;
+  }
+
+  .yahtzee-help-overlay {
+    padding: 10px;
+  }
+}
+
+/* ===== 430px: Standard phones (iPhone 14/15 etc.) ===== */
+@media (max-width: 430px) {
+
+  #yahtzeeGame.active {
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .yahtzee-header {
+    padding: 5px 6px;
+  }
+
+  .yahtzee-turn-text {
+    font-size: 13px;
+  }
+
+  .yahtzee-rolls-left {
+    font-size: 14px;
+    padding: 5px 10px;
+    min-width: 44px;
+    border-radius: 16px;
+  }
+
+  /* Players bar: tighter spacing */
+  .yahtzee-players-bar {
+    gap: 4px;
+    padding: 5px;
+  }
+
+  .yahtzee-player-mini {
+    min-width: 44px;
+    padding: 4px 3px;
+    gap: 2px;
+  }
+
+  .yahtzee-player-mini-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .yahtzee-player-mini-name {
+    font-size: 10px;
+    max-width: 44px;
+  }
+
+  .yahtzee-player-mini-score {
+    font-size: 11px;
+  }
+
+  /* 3D canvas height */
+  #yahtzeeThreeContainer {
+    height: 32vh;
+    min-height: 180px;
+  }
+
+  /* Controls panel: tighter */
+  .yahtzee-controls-panel {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .yahtzee-roll-btn {
+    padding: 10px 14px;
+    font-size: 14px;
+    min-width: 100px;
+    border-radius: 8px;
+  }
+
+  /* Hold dice: smaller */
+  .yahtzee-held-die {
+    width: 40px;
+    height: 40px;
+    padding: 4px;
+  }
+
+  .yahtzee-held-die .held-pip {
+    width: 5.5px;
+    height: 5.5px;
+  }
+
+  /* Scorecard */
+  .yahtzee-scorecard-area {
+    padding: 8px;
+    border-radius: 8px;
+  }
+
+  .yahtzee-scorecard-title {
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+
+  .yahtzee-score-table th {
+    padding: 5px 4px;
+  }
+
+  .yahtzee-score-row td {
+    padding: 5px 3px;
+  }
+
+  .yahtzee-cat-name {
+    font-size: clamp(10px, 2.6vw, 12px);
+  }
+
+  .ysc-player {
+    font-size: clamp(9px, 2.5vw, 11px);
+    min-width: 28px;
+    padding: 3px 2px !important;
+  }
+
+  .ysc-cell {
+    font-size: clamp(10px, 2.6vw, 12px);
+    padding: 3px 2px;
+  }
+
+  /* Total */
+  .yahtzee-total-row td {
+    font-size: 13px;
+    padding: 6px;
+  }
+
+  /* Score button */
+  .yahtzee-score-btn {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  /* Game over */
+  .yahtzee-final-title {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+
+  .yahtzee-rank-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  .yahtzee-rank-number {
+    font-size: 18px;
+    min-width: 22px;
+  }
+}
+
+/* ===== 360px: Small phones (Galaxy S series, iPhone SE) ===== */
+@media (max-width: 360px) {
+
+  #yahtzeeGame.active {
+    padding: 3px;
+    gap: 3px;
+  }
+
+  .yahtzee-header {
+    padding: 4px 5px;
+    border-radius: 5px;
+  }
+
+  .yahtzee-turn-text {
+    font-size: 12px;
+  }
+
+  .yahtzee-current-player {
+    font-size: 10px;
+  }
+
+  .yahtzee-rolls-left {
+    font-size: 13px;
+    padding: 4px 8px;
+    min-width: 40px;
+  }
+
+  /* Help button: maintain 44px */
+  .yah-help-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .yah-header-left {
+    gap: 4px;
+  }
+
+  /* Players bar */
+  .yahtzee-players-bar {
+    gap: 3px;
+    padding: 4px;
+  }
+
+  .yahtzee-player-mini {
+    min-width: 40px;
+    padding: 3px 2px;
+    gap: 1px;
+    border-radius: 6px;
+    border-width: 1.5px;
+  }
+
+  .yahtzee-player-mini-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .yahtzee-player-mini-name {
+    font-size: 9px;
+    max-width: 40px;
+  }
+
+  .yahtzee-player-mini-score {
+    font-size: 10px;
+  }
+
+  /* 3D canvas */
+  #yahtzeeThreeContainer {
+    height: 28vh;
+    min-height: 160px;
+    border-radius: 8px;
+  }
+
+  /* Controls panel */
+  .yahtzee-controls-panel {
+    padding: 6px;
+    gap: 5px;
+    border-radius: 8px;
+  }
+
+  .yahtzee-controls-title {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+  }
+
+  .yahtzee-rolls-indicator .roll-pip {
+    width: 8px;
+    height: 8px;
+  }
+
+  .yahtzee-roll-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+    min-width: 90px;
+  }
+
+  .yahtzee-roll-hint {
+    font-size: 9px;
+  }
+
+  /* Hold bar */
+  .yahtzee-hold-bar {
+    min-height: 40px;
+    padding: 4px;
+    gap: 3px;
+    border-radius: 6px;
+  }
+
+  .yahtzee-hold-bar::before {
+    font-size: 8px;
+    top: -7px;
+    left: 8px;
+  }
+
+  .yahtzee-hold-bar:empty::after {
+    font-size: 10px;
+  }
+
+  /* Hold dice: even smaller but remain tappable */
+  .yahtzee-held-die {
+    width: 36px;
+    height: 36px;
+    padding: 4px;
+    border-radius: 5px;
+  }
+
+  .yahtzee-held-die .held-pip {
+    width: 5px;
+    height: 5px;
+  }
+
+  /* Combo label */
+  .yahtzee-combo-label {
+    font-size: 13px;
+    top: 5px;
+  }
+
+  /* Scorecard */
+  .yahtzee-scorecard-area {
+    padding: 6px;
+    border-radius: 6px;
+    gap: 4px;
+  }
+
+  .yahtzee-scorecard-title {
+    font-size: 13px;
+  }
+
+  .yahtzee-score-table {
+    font-size: 12px;
+  }
+
+  .yahtzee-score-table th {
+    padding: 4px 3px;
+    font-size: 10px;
+  }
+
+  .yahtzee-score-row td {
+    padding: 4px 2px;
+  }
+
+  .yahtzee-cat-name {
+    font-size: 10px;
+  }
+
+  .ysc-player {
+    font-size: 9px;
+    min-width: 24px;
+    max-width: 40px;
+    padding: 3px 1px !important;
+  }
+
+  .ysc-cell {
+    font-size: 10px;
+    padding: 3px 1px;
+  }
+
+  .yahtzee-score-row.selected .yahtzee-cat-score {
+    font-size: 13px;
+  }
+
+  /* Total */
+  .yahtzee-total-row td {
+    font-size: 12px;
+    padding: 5px 4px;
+  }
+
+  .yahtzee-subtotal-row td,
+  .yahtzee-bonus-row td {
+    padding: 5px 6px;
+    font-size: 11px;
+  }
+
+  /* Score button */
+  .yahtzee-score-btn {
+    padding: 11px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  /* Game over */
+  .yahtzee-game-over {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .yahtzee-final-title {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .yahtzee-final-scores {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .yahtzee-rank-item {
+    padding: 8px;
+    gap: 8px;
+    border-radius: 8px;
+  }
+
+  .yahtzee-rank-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .yahtzee-rank-name {
+    font-size: 13px;
+  }
+
+  .yahtzee-rank-score {
+    font-size: 15px;
+  }
+
+  .yahtzee-rank-number {
+    font-size: 16px;
+    min-width: 20px;
+  }
+
+  /* Help modal */
+  .yahtzee-help-modal {
+    padding: 14px 10px 12px;
+    border-radius: 12px;
+  }
+
+  .yahtzee-help-overlay {
+    padding: 6px;
+  }
+
+  .yahtzee-help-title {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .yahtzee-help-intro {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+
+  .yahtzee-help-table {
+    font-size: 10.5px;
+  }
+
+  .yahtzee-help-table td {
+    padding: 4px 3px;
+  }
+
+  .yahtzee-help-bonus {
+    font-size: 10.5px;
+    padding: 6px 8px;
+  }
+
+  .yahtzee-help-tip {
+    font-size: 10.5px;
+    padding: 6px 8px;
+  }
+
+  .yahtzee-help-section-title {
+    font-size: 11px;
+  }
+}
+
+/* ===== Landscape phone: horizontal layout adjustments ===== */
+@media (max-height: 500px) and (orientation: landscape) {
+
+  /* In landscape, revert to row layout for dice area */
+  .yahtzee-dice-area {
+    flex-direction: row;
+  }
+
+  /* Controls panel: narrow column in landscape */
+  .yahtzee-controls-panel {
+    width: 140px;
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+
+  .yahtzee-roll-btn {
+    width: 100%;
+    min-width: unset;
+    max-width: unset;
+  }
+
+  /* Compact header in landscape */
+  .yahtzee-header {
+    padding: 4px 8px;
+  }
+
+  .yahtzee-turn-text {
+    font-size: 13px;
+  }
+
+  .yahtzee-rolls-left {
+    font-size: 13px;
+    padding: 4px 10px;
+  }
+
+  /* Players bar: compact */
+  .yahtzee-players-bar {
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .yahtzee-player-mini {
+    padding: 3px;
+    min-width: 44px;
+  }
+
+  .yahtzee-player-mini-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .yahtzee-player-mini-name {
+    font-size: 9px;
+  }
+
+  /* 3D canvas */
+  #yahtzeeThreeContainer {
+    min-height: unset;
+    height: auto;
+    flex: 1;
+  }
+
+  /* Scorecard: restrict height */
+  .yahtzee-scorecard-area {
+    max-height: 40vh;
+  }
+
+  /* Hold bar compact */
+  .yahtzee-hold-bar {
+    min-height: 36px;
+    padding: 4px;
+  }
+
+  .yahtzee-held-die {
+    width: 36px;
+    height: 36px;
+    padding: 4px;
+  }
+}
+

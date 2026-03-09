@@ -28,7 +28,7 @@
 }
 .cc-hud-label {
   font-family: 'Outfit', 'Oswald', sans-serif;
-  font-size: 10px;
+  font-size: clamp(11px, 2.8vw, 13px);
   font-weight: 600;
   color: #555;
   letter-spacing: 2px;
@@ -135,7 +135,7 @@
 }
 .cc-side-label {
   font-family: 'Outfit', 'Oswald', sans-serif;
-  font-size: 9px;
+  font-size: clamp(11px, 2.8vw, 12px);
   font-weight: 600;
   color: #444;
   text-transform: uppercase;
@@ -148,7 +148,7 @@
 }
 .cc-side-info {
   font-family: 'Outfit', 'Oswald', sans-serif;
-  font-size: 9px;
+  font-size: clamp(11px, 2.8vw, 12px);
   color: #444;
   text-align: center;
   letter-spacing: 1px;
@@ -241,7 +241,7 @@
 
 .cc-controls-hint {
   font-family: 'Outfit', 'Oswald', sans-serif;
-  font-size: 10px;
+  font-size: clamp(11px, 2.8vw, 13px);
   color: #333;
   text-align: center;
   line-height: 1.8;
@@ -486,7 +486,7 @@
 }
 .cc-go-stat-label {
   font-family: 'Outfit', 'Oswald', sans-serif;
-  font-size: 9px;
+  font-size: clamp(11px, 2.8vw, 12px);
   font-weight: 600;
   color: #555;
   letter-spacing: 2px;

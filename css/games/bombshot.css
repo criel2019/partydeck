@@ -43,8 +43,8 @@
 }
 
 .bs-top-bar .back-btn {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: none;
   background: rgba(255,255,255,0.1);
@@ -177,8 +177,8 @@
 }
 
 .bs-opp-card-back {
-  width: 16px;
-  height: 22px;
+  width: 20px;
+  height: 28px;
   border-radius: 3px;
   background: linear-gradient(145deg, #a02040 0%, #5c0e1a 100%);
   border: 1px solid rgba(255,215,0,0.3);
@@ -706,7 +706,7 @@
   .bs-hand-area { padding: 4px 8px; }
   .bs-opponents { padding: 4px 6px 2px; }
   .bs-opp { padding: 4px 8px; min-width: 64px; }
-  .bs-opp-card-back { width: 14px; height: 19px; }
+  .bs-opp-card-back { width: 18px; height: 24px; }
   .bs-joker-guide { padding: 2px 8px; font-size: 10px; }
   .bs-action-bar { padding: 6px 12px 8px; }
   .bs-status { padding: 2px 8px; min-height: 20px; font-size: 12px; }
@@ -735,7 +735,7 @@
   .bs-canvas-wrap { max-height: 130px; }
   .bs-card { width: 40px; height: 58px; margin: 0 -4px; }
   .bs-card-emoji { font-size: 18px; }
-  .bs-opp-card-back { width: 12px; height: 16px; }
+  .bs-opp-card-back { width: 16px; height: 22px; }
   .bs-btn { padding: 8px 4px; font-size: 13px; border-radius: 8px; }
   .bs-action-bar { padding: 4px 10px 6px; gap: 6px; }
   .bs-status { display: none; }

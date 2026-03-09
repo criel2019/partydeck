@@ -35,7 +35,7 @@
   gap: 8px;
 }
 .jwl-score-label {
-  font-size: 9px;
+  font-size: clamp(11px, 2.8vw, 12px);
   text-transform: uppercase;
   letter-spacing: 2px;
   color: rgba(255,255,255,.3);
@@ -90,7 +90,7 @@
 .jwl-progress-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: clamp(11px, 2.8vw, 12px);
   color: rgba(255,255,255,.25);
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -122,7 +122,7 @@
   justify-content: center;
 }
 .jwl-mode-badge {
-  font-size: 10px;
+  font-size: clamp(11px, 2.8vw, 13px);
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -397,7 +397,7 @@
   z-index: 1;
 }
 .jwl-title-sub {
-  font-size: 10px;
+  font-size: clamp(11px, 2.8vw, 13px);
   letter-spacing: 6px;
   text-transform: uppercase;
   color: rgba(234,128,252,.5);
@@ -465,7 +465,7 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
+  font-size: clamp(11px, 2.8vw, 13px);
   color: rgba(255,255,255,.35);
   cursor: pointer;
   background: none;
@@ -541,7 +541,7 @@
   line-height: 1;
 }
 .jwl-go-score-label {
-  font-size: 9px;
+  font-size: clamp(11px, 2.8vw, 12px);
   letter-spacing: 3px;
   text-transform: uppercase;
   color: rgba(255,255,255,.25);
@@ -564,7 +564,7 @@
   color: #ea80fc;
 }
 .jwl-go-stat-label {
-  font-size: 9px;
+  font-size: clamp(11px, 2.8vw, 12px);
   color: rgba(255,255,255,.25);
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -728,7 +728,7 @@
 .jwl-timer-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: clamp(11px, 2.8vw, 12px);
   color: rgba(255,255,255,.25);
   letter-spacing: 1px;
   text-transform: uppercase;

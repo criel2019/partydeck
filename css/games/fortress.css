@@ -54,14 +54,14 @@
   background: rgba(0,0,0,0.45);
   border: none;
   color: #fff;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 18px;
   flex-shrink: 0;
   pointer-events: all;
   text-shadow: 0 1px 3px rgba(0,0,0,0.8);
@@ -143,7 +143,7 @@
 /* ===== Players Bar — 좌측 세로 턴 순서 패널 ===== */
 .fort-players-bar {
   position: absolute;
-  top: 44px;
+  top: 52px;
   left: 4px;
   display: flex;
   flex-direction: column;
@@ -252,7 +252,7 @@
   font-weight: 600;
 }
 
-/* ===== Controls — floating overlay bottom, no background bar ===== */
+/* ===== Controls — floating overlay bottom ===== */
 .fort-controls {
   position: absolute;
   bottom: env(safe-area-inset-bottom, 0px);
@@ -261,10 +261,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 5px 6px;
+  gap: 5px;
+  padding: 6px 8px;
   z-index: 10;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -285,6 +285,9 @@
 }
 
 .fort-ctrl-grp {
+  background: rgba(0,0,0,0.5);
+  border-radius: 10px;
+  padding: 3px;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -292,29 +295,17 @@
 }
 
 .fort-ctrl-sep {
-  width: 1px;
-  height: 22px;
-  background: rgba(255,255,255,0.15);
-  flex-shrink: 0;
-}
-
-.fort-ctrl-grp {
-  background: rgba(0,0,0,0.5);
-  border-radius: 10px;
-  padding: 3px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
+  display: none; /* separators no longer needed with grouped backgrounds */
 }
 
 .fort-ctrl-btn {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border: none;
-  border-radius: 7px;
+  border-radius: 9px;
   background: rgba(255,255,255,0.1);
   color: #fff;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -327,14 +318,18 @@
   transition: background 0.1s;
 }
 
+.fort-ctrl-btn:active {
+  background: rgba(255,255,255,0.28);
+}
+
 .fort-zoom-btn {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   border: none;
-  border-radius: 7px;
+  border-radius: 9px;
   background: rgba(255,255,255,0.1);
   color: rgba(255,255,255,0.85);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 400;
   cursor: pointer;
   display: flex;
@@ -347,21 +342,6 @@
   line-height: 1;
 }
 .fort-zoom-btn:active { background: rgba(255,255,255,0.25); }
-
-/* Small screen: shrink controls to prevent overflow */
-@media (max-width: 380px) {
-  .fort-ctrl-btn { width: 30px; height: 30px; font-size: 14px; }
-  .fort-zoom-btn { width: 26px; height: 26px; font-size: 16px; }
-  .fort-fire-btn { min-width: 54px; height: 30px; font-size: 11px; }
-  .fort-controls { gap: 3px; padding: 4px 3px; }
-  .fort-ctrl-grp { padding: 2px; gap: 1px; }
-  .fort-val { min-width: 24px; }
-  .fort-val-num { font-size: 11px; }
-}
-
-.fort-ctrl-btn:active {
-  background: rgba(255,255,255,0.28);
-}
 
 .fort-fuel-mini {
   width: 4px;
@@ -378,10 +358,6 @@
   border-radius: 2px;
   background: linear-gradient(0deg, #4fc3f7, #81d4fa);
   transition: height 0.2s ease;
-}
-
-.fort-ctrl-sep {
-  display: none; /* separators no longer needed with grouped backgrounds */
 }
 
 .fort-val {
@@ -406,13 +382,13 @@
 }
 
 .fort-fire-btn {
-  min-width: 64px;
-  height: 34px;
+  min-width: 68px;
+  height: 44px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #ff4500, #ff6b35);
   color: #fff;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 900;
   cursor: pointer;
   box-shadow: 0 2px 10px rgba(255,69,0,0.5), 0 0 0 1px rgba(255,100,0,0.3);
@@ -533,4 +509,243 @@
 @keyframes fortDmgFloat {
   0% { opacity: 1; transform: translateY(0) scale(1.2); }
   100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+}
+
+/* ============================================== */
+/* RESPONSIVE MEDIA QUERIES                       */
+/* 모든 미디어쿼리는 기본 스타일 아래에 배치       */
+/* ============================================== */
+
+/* ===== 768px 이하 — 태블릿/큰 폰 ===== */
+@media (max-width: 768px) {
+  .fort-players-bar {
+    max-width: 110px;
+  }
+  .fort-player-hp-item {
+    max-width: 110px;
+  }
+}
+
+/* ===== 480px 이하 — 일반 스마트폰 ===== */
+@media (max-width: 480px) {
+  .fort-header {
+    padding: 4px 6px;
+  }
+  .fort-controls {
+    gap: 4px;
+    padding: 5px 4px;
+  }
+  .fort-ctrl-grp {
+    padding: 2px;
+    gap: 2px;
+  }
+  /* 44px 터치 타겟 유지 */
+  .fort-ctrl-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+  .fort-zoom-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+  .fort-fire-btn {
+    min-width: 62px;
+    height: 44px;
+    font-size: 12px;
+  }
+  .fort-val {
+    min-width: 26px;
+  }
+  .fort-val-num {
+    font-size: 12px;
+  }
+  .fort-players-bar {
+    top: 48px;
+    max-width: 100px;
+  }
+  .fort-player-hp-item {
+    max-width: 100px;
+    padding: 2px 4px;
+    gap: 2px;
+  }
+  .fort-player-name {
+    font-size: 8px;
+  }
+  .fort-player-avatar {
+    font-size: 11px;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* ===== 430px 이하 — 작은 스마트폰 ===== */
+@media (max-width: 430px) {
+  .fort-controls {
+    gap: 3px;
+    padding: 4px 3px;
+  }
+  .fort-ctrl-grp {
+    padding: 2px;
+    gap: 1px;
+  }
+  /* 44px 터치 타겟 유지, 간격만 조정 */
+  .fort-ctrl-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 15px;
+    border-radius: 8px;
+  }
+  .fort-zoom-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 17px;
+    border-radius: 8px;
+  }
+  .fort-fire-btn {
+    min-width: 58px;
+    height: 44px;
+    font-size: 11px;
+    border-radius: 10px;
+  }
+  .fort-val {
+    min-width: 22px;
+  }
+  .fort-val-num {
+    font-size: 11px;
+  }
+  .fort-val-lbl {
+    font-size: 8px;
+  }
+  .fort-fuel-mini {
+    width: 3px;
+    height: 18px;
+  }
+  .fort-players-bar {
+    max-width: 90px;
+  }
+  .fort-player-hp-item {
+    max-width: 90px;
+  }
+}
+
+/* ===== 380px 이하 — 매우 작은 폰 ===== */
+@media (max-width: 380px) {
+  .fort-header .back-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  .fort-controls {
+    gap: 2px;
+    padding: 3px 2px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .fort-ctrl-grp {
+    padding: 2px;
+    gap: 1px;
+  }
+  /* 380px 이하에서도 최소 40px 터치 타겟 확보 (기존 30px/26px에서 크게 개선) */
+  .fort-ctrl-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+  .fort-zoom-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+  .fort-fire-btn {
+    min-width: 54px;
+    height: 40px;
+    font-size: 11px;
+  }
+  .fort-val {
+    min-width: 20px;
+  }
+  .fort-val-num {
+    font-size: 10px;
+  }
+  .fort-val-lbl {
+    font-size: 7px;
+  }
+  .fort-fuel-mini {
+    width: 3px;
+    height: 16px;
+  }
+  .fort-players-bar {
+    max-width: 80px;
+    top: 44px;
+  }
+  .fort-player-hp-item {
+    max-width: 80px;
+    padding: 2px 3px;
+  }
+  .fort-player-name {
+    font-size: 7px;
+  }
+  .fort-turn-order-num {
+    font-size: 8px;
+    min-width: 10px;
+  }
+  .fort-hp-bar {
+    height: 2px;
+  }
+}
+
+/* ===== 가로 모드 + 낮은 높이 — 화면 높이가 부족한 경우 ===== */
+@media (max-height: 450px) and (orientation: landscape) {
+  .fort-header {
+    padding: 2px 6px;
+  }
+  .fort-header .back-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+  .fort-round-badge {
+    font-size: 10px;
+  }
+  .fort-turn-name {
+    font-size: 9px;
+  }
+  .fort-turn-timer {
+    font-size: 12px;
+    padding: 1px 6px;
+  }
+  .fort-controls {
+    padding: 3px 6px;
+    gap: 4px;
+  }
+  .fort-ctrl-grp {
+    padding: 2px;
+  }
+  .fort-ctrl-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 14px;
+  }
+  .fort-zoom-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  .fort-fire-btn {
+    min-width: 56px;
+    height: 38px;
+    font-size: 11px;
+  }
+  .fort-val-num {
+    font-size: 11px;
+  }
+  .fort-players-bar {
+    top: 32px;
+    max-width: 90px;
+  }
+  .fort-player-hp-item {
+    padding: 2px 4px;
+  }
 }

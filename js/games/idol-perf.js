@@ -5,6 +5,12 @@
 (function () {
   'use strict';
 
+  if (typeof GamePerf === 'undefined') {
+    console.warn('[idolPerf] GamePerf not loaded — profiler disabled');
+    window.idolPerf = { download(){}, report(){}, reset(){}, show(){}, hide(){} };
+    return;
+  }
+
   // ── 래핑 대상 함수 목록 ──
   const WRAP_TARGETS = [
     // 보드 렌더링 (idol-board-iso.js)

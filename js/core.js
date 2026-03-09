@@ -134,31 +134,81 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
+// ===== LANDSCAPE MODE SYSTEM =====
+const LANDSCAPE_GAMES = ['pokerGame', 'yahtzeeGame', 'sutdaGame', 'fortressGame'];
+let _landscapeOrientHandler = null;
+let _landscapeResizeHandler = null;
+
+function _checkLandscapeOverlay() {
+  const overlay = document.getElementById('landscapeOverlay');
+  if(!overlay) return;
+  // Portrait = height > width
+  const isPortrait = window.innerHeight > window.innerWidth;
+  overlay.style.display = isPortrait ? 'flex' : 'none';
+}
+
+function _enterLandscapeMode() {
+  // Try Screen Orientation API first (Android Chrome, etc.)
+  try { screen.orientation.lock('landscape').catch(function(){}); } catch(e) {}
+  // Fallback: show overlay if portrait (iOS Safari, unsupported browsers)
+  _checkLandscapeOverlay();
+  // Register listeners for orientation changes
+  _landscapeOrientHandler = function() { _checkLandscapeOverlay(); };
+  _landscapeResizeHandler = function() { _checkLandscapeOverlay(); };
+  window.addEventListener('orientationchange', _landscapeOrientHandler);
+  window.addEventListener('resize', _landscapeResizeHandler);
+}
+
+function _exitLandscapeMode() {
+  try { screen.orientation.unlock(); } catch(e) {}
+  // Hide overlay
+  var overlay = document.getElementById('landscapeOverlay');
+  if(overlay) overlay.style.display = 'none';
+  // Remove listeners
+  if(_landscapeOrientHandler) {
+    window.removeEventListener('orientationchange', _landscapeOrientHandler);
+    _landscapeOrientHandler = null;
+  }
+  if(_landscapeResizeHandler) {
+    window.removeEventListener('resize', _landscapeResizeHandler);
+    _landscapeResizeHandler = null;
+  }
+}
+
 function showScreen(id) {
-  // Destroy Three.js scene when leaving yahtzee
   const prev = document.querySelector('.screen.active');
-  if(prev && prev.id === 'yahtzeeGame' && id !== 'yahtzeeGame') {
-    if(typeof destroyYahtzeeThree === 'function') destroyYahtzeeThree();
-    // Unlock orientation when leaving yahtzee
-    try { screen.orientation.unlock(); } catch(e) {}
-  }
-  // Cleanup pupil camera/mediapipe when leaving
-  if(prev && prev.id === 'pupilGame' && id !== 'pupilGame') {
-    if(typeof pplCleanup === 'function') pplCleanup();
-  }
-  // Cleanup tamagotchi tick/save when leaving
-  if(prev && prev.id === 'tamagotchiGame' && id !== 'tamagotchiGame') {
-    if(typeof tamaCleanup === 'function') tamaCleanup();
+  // === Cleanup when leaving a screen ===
+  if(prev) {
+    const prevId = prev.id;
+    // Destroy Three.js scene when leaving yahtzee
+    if(prevId === 'yahtzeeGame' && id !== 'yahtzeeGame') {
+      if(typeof destroyYahtzeeThree === 'function') destroyYahtzeeThree();
+    }
+    // Cleanup pupil camera/mediapipe when leaving
+    if(prevId === 'pupilGame' && id !== 'pupilGame') {
+      if(typeof pplCleanup === 'function') pplCleanup();
+    }
+    // Cleanup tamagotchi tick/save when leaving
+    if(prevId === 'tamagotchiGame' && id !== 'tamagotchiGame') {
+      if(typeof tamaCleanup === 'function') tamaCleanup();
+    }
+    // Exit landscape mode when leaving a landscape game for a non-landscape screen
+    if(LANDSCAPE_GAMES.indexOf(prevId) !== -1 && LANDSCAPE_GAMES.indexOf(id) === -1) {
+      _exitLandscapeMode();
+    }
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   // 게임 카탈로그 오버레이가 열려있으면 닫기
   var _catalog = document.getElementById('gameCatalogOverlay');
   if (_catalog) _catalog.style.display = 'none';
+  // === Init when entering a screen ===
+  // Landscape mode for supported games
+  if(LANDSCAPE_GAMES.indexOf(id) !== -1) {
+    _enterLandscapeMode();
+  }
   // Init Three.js scene when entering yahtzee
   if(id === 'yahtzeeGame') {
-    // Force landscape orientation
-    try { screen.orientation.lock('landscape').catch(()=>{}); } catch(e) {}
     if(typeof initYahtzeeThree === 'function') {
       const canvas = document.getElementById('yahtzeeCanvas');
       if(canvas) setTimeout(() => initYahtzeeThree(canvas), 300);

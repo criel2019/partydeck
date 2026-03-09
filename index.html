@@ -39,6 +39,15 @@
 </head>
 <body>
 
+<!-- Landscape mode overlay (for games requiring horizontal orientation) -->
+<div id="landscapeOverlay" style="display:none;">
+  <div class="landscape-prompt">
+    <div class="landscape-icon">📱↻</div>
+    <p>화면을 가로로 돌려주세요</p>
+    <p class="landscape-sub">이 게임은 가로 모드에서만 플레이할 수 있습니다</p>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- LOADING -->
@@ -61,7 +70,7 @@
     <div class="profile-section">
       <div class="avatar" id="myAvatar" onclick="cycleAvatar()">😎</div>
       <div class="profile-info">
-        <input class="input-field" id="nameInput" placeholder="닉네임 입력" maxlength="8" style="padding:10px 12px; font-size:15px; font-weight:700;">
+        <input class="input-field" id="nameInput" placeholder="닉네임 입력" maxlength="8" style="padding:10px 12px; font-size:16px; font-weight:700;">
         <div class="profile-stats" id="profileStats">전적 로딩 중...</div>
       </div>
     </div>
@@ -444,7 +453,7 @@
 <div class="screen" id="truthGame">
   <!-- 상단 바 -->
   <div class="truth-top-bar">
-    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">✕</button>
+    <button class="back-btn" onclick="leaveGame()">✕</button>
     <div class="truth-round-display">
       <span class="truth-round-badge" id="truthRoundBadge">ROUND 1</span>
     </div>
@@ -564,7 +573,7 @@
 <!-- QUICK DRAW GAME -->
 <div class="screen" id="quickDrawGame">
   <div class="qd-header">
-    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">✕</button>
+    <button class="back-btn" onclick="leaveGame()">✕</button>
     <div class="qd-title">🤠 서부 총잡이</div>
     <div class="qd-round">라운드 <span id="qdRoundNum">1</span></div>
   </div>
@@ -588,7 +597,7 @@
 <!-- RUSSIAN ROULETTE -->
 <div class="screen" id="rouletteGame">
   <div class="roulette-header">
-    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">✕</button>
+    <button class="back-btn" onclick="leaveGame()">✕</button>
     <div class="roulette-title">🔫 러시안 룰렛</div>
     <div class="roulette-survivors">
       <span id="rouletteSurvivors">6</span>/<span id="rouletteTotalPlayers">6</span>
@@ -667,7 +676,7 @@
 <div class="screen" id="lotteryGame">
   <!-- Top Bar -->
   <div class="lottery-top-bar">
-    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">✕</button>
+    <button class="back-btn" onclick="leaveGame()">✕</button>
     <div class="lottery-title">🎰 뽑기 & 룰렛</div>
     <div style="width:40px;"></div>
   </div>
@@ -775,7 +784,7 @@
       <div class="ud-turn-name" id="updownTurnName">플레이어</div>
       <div class="ud-deck-count" id="updownDeckCount">남은 카드: 52</div>
       <button onclick="toggleHandRanking('updown')" style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;cursor:pointer;">규칙</button>
-      <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">&#10005;</button>
+      <button class="back-btn" onclick="leaveGame()">&#10005;</button>
     </div>
 
     <!-- Cards area: previous (small) + current (hero) -->
@@ -858,7 +867,7 @@
 <div class="screen" id="yahtzeeGame">
   <div class="yahtzee-header">
     <div class="yah-header-left">
-      <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">&#10005;</button>
+      <button class="back-btn" onclick="leaveGame()">&#10005;</button>
       <button class="yah-help-btn" onclick="showYahHelp()">?</button>
     </div>
     <div class="yahtzee-turn-info">
@@ -987,7 +996,7 @@
 <div class="screen" id="ecardGame">
   <!-- Compact Header: combines top bar + score + role + opponent -->
   <div class="ecard-compact-header">
-    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">&#10005;</button>
+    <button class="back-btn" onclick="leaveGame()">&#10005;</button>
     <button onclick="toggleHandRanking('ecard')" style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;cursor:pointer;">규칙</button>
     <div class="ecard-header-round">G<span id="ecardRound">1</span>/4</div>
     <div class="ecard-header-score">
@@ -1184,7 +1193,7 @@
 <!-- FORTRESS GAME -->
 <div class="screen" id="fortressGame">
   <div class="fort-header">
-    <button class="back-btn" style="font-size:18px;padding:4px;" onclick="leaveGame()">&#10005;</button>
+    <button class="back-btn" onclick="leaveGame()">&#10005;</button>
     <div class="fort-header-info">
       <span class="fort-round-badge" id="fortRoundBadge">ROUND 1</span>
       <span class="fort-turn-name" id="fortTurnName">플레이어의 차례</span>
@@ -1310,7 +1319,7 @@
       <div class="st-score-value" id="stScore">0</div>
     </div>
     <div class="st-hud-right">
-      <button class="back-btn" style="font-size:16px;padding:4px;" onclick="leaveGame()">&#10005;</button>
+      <button class="back-btn" onclick="leaveGame()">&#10005;</button>
       <div class="st-combo" id="stCombo">🔥 x1.5</div>
       <div class="st-step-display" id="stStep">0층</div>
     </div>

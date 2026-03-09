@@ -25,7 +25,7 @@
   min-width: 60px;
 }
 .tet-hud-label {
-  font-size: 9px;
+  font-size: clamp(11px, 2.8vw, 12px);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   color: rgba(255,255,255,.3);
@@ -49,7 +49,7 @@
 
 /* ===== Mode badge ===== */
 .tet-mode-badge {
-  font-size: 10px;
+  font-size: clamp(11px, 2.8vw, 13px);
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -88,7 +88,7 @@
   text-align: center;
 }
 .tet-side-label {
-  font-size: 8px;
+  font-size: clamp(11px, 2.8vw, 12px);
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: rgba(255,255,255,.25);
@@ -100,7 +100,7 @@
   margin: 0 auto;
 }
 .tet-side-info {
-  font-size: 8px;
+  font-size: clamp(11px, 2.8vw, 12px);
   text-transform: uppercase;
   letter-spacing: 1px;
   color: rgba(255,255,255,.2);
@@ -242,7 +242,7 @@
   background-clip: text;
 }
 .tet-mode-sub {
-  font-size: 10px;
+  font-size: clamp(11px, 2.8vw, 13px);
   letter-spacing: 6px;
   text-transform: uppercase;
   color: rgba(126,200,227,.5);
@@ -375,7 +375,7 @@
   line-height: 1;
 }
 .tet-go-score-label {
-  font-size: 9px;
+  font-size: clamp(11px, 2.8vw, 12px);
   letter-spacing: 3px;
   text-transform: uppercase;
   color: rgba(255,255,255,.25);
@@ -400,7 +400,7 @@
   color: #7ec8e3;
 }
 .tet-go-stat-label {
-  font-size: 8px;
+  font-size: clamp(11px, 2.8vw, 12px);
   color: rgba(255,255,255,.25);
   letter-spacing: 1px;
   text-transform: uppercase;

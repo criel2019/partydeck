@@ -1013,3 +1013,68 @@ body {
   gap: 10px;
 }
 
+/* ===== LANDSCAPE MODE OVERLAY ===== */
+#landscapeOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(10, 10, 18, 0.97);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.landscape-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  padding: 32px;
+}
+
+.landscape-icon {
+  font-size: 72px;
+  animation: landscapeRotate 2.5s ease-in-out infinite;
+  line-height: 1.2;
+}
+
+@keyframes landscapeRotate {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(90deg); }
+  40% { transform: rotate(90deg); }
+  60% { transform: rotate(0deg); }
+  80% { transform: rotate(0deg); }
+}
+
+.landscape-prompt p {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px;
+  color: #e8e8f0;
+  letter-spacing: 1px;
+}
+
+.landscape-sub {
+  font-family: 'Noto Sans KR', sans-serif !important;
+  font-size: 14px !important;
+  color: #7a7a9a !important;
+  font-weight: 400;
+}
+
+/* ===== SAFE-AREA (notch / home indicator) ===== */
+@supports (padding: env(safe-area-inset-top)) {
+  #mainMenu {
+    padding:
+      max(24px, env(safe-area-inset-top))
+      max(24px, env(safe-area-inset-right))
+      max(24px, env(safe-area-inset-bottom))
+      max(24px, env(safe-area-inset-left));
+  }
+
+  .screen {
+    padding-top: env(safe-area-inset-top);
+  }
+
+}
+
