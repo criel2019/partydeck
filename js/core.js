@@ -135,13 +135,25 @@ function showToast(msg) {
 }
 
 // ===== FULLSCREEN MODE (hide address bar) =====
+function _isFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
 function _tryFullscreen() {
-  // Already fullscreen?
-  if(document.fullscreenElement || document.webkitFullscreenElement) return;
+  if(_isFullscreen()) return;
   var el = document.documentElement;
   var rfs = el.requestFullscreen || el.webkitRequestFullscreen;
   if(rfs) {
-    try { rfs.call(el).catch(function(){}); } catch(e) {}
+    try {
+      var p = rfs.call(el);
+      if(p && p.then) p.then(function() {
+        // Fullscreen achieved — now orientation lock works, apply portrait lock
+        // (unless currently in a landscape game)
+        var active = document.querySelector('.screen.active');
+        if(!active || LANDSCAPE_GAMES.indexOf(active.id) === -1) {
+          _lockPortrait();
+        }
+      }).catch(function(){});
+    } catch(e) {}
   }
 }
 // Auto-request fullscreen on first user touch/click (needs user gesture)
@@ -204,8 +216,8 @@ function _exitLandscapeMode() {
   }
 }
 
-// Lock portrait on app start
-document.addEventListener('DOMContentLoaded', function() { _lockPortrait(); });
+// Portrait lock is applied after fullscreen is achieved (see _tryFullscreen callback)
+// and on every showScreen() call for non-landscape screens.
 
 function showScreen(id) {
   const prev = document.querySelector('.screen.active');
@@ -239,9 +251,11 @@ function showScreen(id) {
   if(id !== 'mainMenu' && id !== 'loadingScreen') {
     _ensureFullscreenForGame();
   }
-  // Landscape mode for supported games
+  // Orientation lock: landscape for supported games, portrait for everything else
   if(LANDSCAPE_GAMES.indexOf(id) !== -1) {
     _enterLandscapeMode();
+  } else {
+    _lockPortrait();
   }
   // Init Three.js scene when entering yahtzee
   if(id === 'yahtzeeGame') {
