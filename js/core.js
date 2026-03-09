@@ -148,6 +148,13 @@ function _checkLandscapeOverlay() {
 }
 
 function _enterLandscapeMode() {
+  // Remove any existing listeners first to prevent duplicates leaking
+  if(_landscapeOrientHandler) {
+    window.removeEventListener('orientationchange', _landscapeOrientHandler);
+  }
+  if(_landscapeResizeHandler) {
+    window.removeEventListener('resize', _landscapeResizeHandler);
+  }
   // Try Screen Orientation API first (Android Chrome, etc.)
   try { screen.orientation.lock('landscape').catch(function(){}); } catch(e) {}
   // Fallback: show overlay if portrait (iOS Safari, unsupported browsers)
