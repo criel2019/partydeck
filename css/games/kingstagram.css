@@ -1175,6 +1175,19 @@
   color: var(--king-neutral);
 }
 
+/* Scoring action button container (inside scoring overlay) */
+.king-scoring-btn-container {
+  margin-top: 12px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.king-scoring-action-btn {
+  width: 100%;
+  max-width: 300px;
+}
+
 /* Scoring fade-in animation (used inline by JS) */
 @keyframes kingScoreFadeIn {
   from {

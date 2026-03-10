@@ -7,10 +7,10 @@
 :root {
   --dp-bg: #0a0a12;
   --dp-surface: #12121e;
-  --dp-card-w: 60px;
-  --dp-card-h: 84px;
-  --dp-card-sm-w: 40px;
-  --dp-card-sm-h: 56px;
+  --dp-card-w: 76px;
+  --dp-card-h: 106px;
+  --dp-card-sm-w: 52px;
+  --dp-card-sm-h: 73px;
   --dp-card-back: #2a1f5e;
   --dp-card-back-accent: #3d2f8a;
   --dp-soju: #4dd0e1;
@@ -322,10 +322,10 @@
   align-items: center;
 }
 
-/* Center card: 1.5x scale (was 2.5x — much more compact) */
+/* Center card: 1.6x scale */
 .dp-center-card .dp-card-drawn {
-  width: calc(var(--dp-card-w) * 1.5);
-  height: calc(var(--dp-card-h) * 1.5);
+  width: calc(var(--dp-card-w) * 1.6);
+  height: calc(var(--dp-card-h) * 1.6);
   margin: 0;
   border-width: 2px;
   box-shadow:
@@ -529,7 +529,7 @@
 }
 
 .dp-card-emoji {
-  font-size: 26px;
+  font-size: 32px;
   line-height: 1;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
@@ -670,12 +670,12 @@
   border-radius: 12px;
 }
 
-/* Face-up badge sizes: opponent area (compact) */
+/* Face-up badge sizes: opponent area (larger for visibility) */
 .dp-opp-faceup .dp-faceup-badge {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
-  padding: 1px 4px;
-  border-radius: 8px;
+  padding: 2px 6px;
+  border-radius: 10px;
 }
 
 /* ===== MY HAND (compact badge inside info bar) ===== */

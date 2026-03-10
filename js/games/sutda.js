@@ -206,6 +206,7 @@ function startSutda() {
     lastRaiser: -1,
     seryukPlayerId: null,
     seryukCanChaos: false,
+    foldWin: false,
   };
 
   // 기본 판돈 차감
@@ -285,9 +286,9 @@ function buildSutdaView(forPlayerId) {
       died: p.died,
       allIn: p.allIn,
       seatIdx: p.seatIdx,
-      // 자기 패만 보임, showdown이면 전원 공개 (죽은 사람도)
-      cards: (p.id === forPlayerId || isShowdown) ? p.cards : null,
-      rank: (p.id === forPlayerId || isShowdown) ? p.rank : null,
+      // 자기 패만 보임, showdown이면 전원 공개 (단, 폴드 승리 시 비공개)
+      cards: (p.id === forPlayerId || (isShowdown && !gs.foldWin)) ? p.cards : null,
+      rank: (p.id === forPlayerId || (isShowdown && !gs.foldWin)) ? p.rank : null,
       seryukChoice: p.seryukChoice,
     })),
     pot: gs.pot,
@@ -656,6 +657,10 @@ function endSutdaRound(winner) {
   winner.chips += gs.pot;
   gs.phase = 'showdown';
 
+  // 폴드 승리 판별: 생존자가 1명뿐이면 카드를 공개하지 않음
+  const aliveCount = gs.players.filter(p => !p.died).length;
+  gs.foldWin = (aliveCount <= 1);
+
   // 먼저 showdown 뷰를 브로드캐스트
   broadcastSutdaState();
 
@@ -668,21 +673,23 @@ function endSutdaRound(winner) {
   }
   alive.forEach(p => { if (!revealOrder.includes(p.id)) revealOrder.push(p.id); });
 
+  const isFoldWin = gs.foldWin;
   const result = {
     type: 'sutda-result',
     winnerId: winner.id,
     winnerName: winner.name,
     winnerAvatar: winner.avatar,
-    winnerCards: winner.cards,
-    winnerRank: winner.rank,
+    winnerCards: isFoldWin ? null : winner.cards,
+    winnerRank: isFoldWin ? null : winner.rank,
     pot: gs.pot,
+    foldWin: isFoldWin,
     revealOrder: revealOrder,
     allHands: gs.players.map(p => ({
       id: p.id,
       name: p.name,
       avatar: p.avatar,
-      cards: p.cards,
-      rank: p.rank,
+      cards: isFoldWin ? null : p.cards,
+      rank: isFoldWin ? null : p.rank,
       died: p.died,
       seatIdx: p.seatIdx,
     })),
@@ -705,10 +712,10 @@ function handleSutdaResult(msg) {
   document.getElementById('sutdaResultTitle').textContent = won ? '승리!' : '패배...';
   document.getElementById('sutdaResultTitle').style.color = won ? 'var(--gold)' : 'var(--text-dim)';
   document.getElementById('sutdaResultWinner').textContent = msg.winnerName + ' ' + msg.winnerAvatar;
-  document.getElementById('sutdaResultRank').textContent = msg.winnerRank ? msg.winnerRank.name : '';
+  document.getElementById('sutdaResultRank').textContent = msg.foldWin ? '전원 다이' : (msg.winnerRank ? msg.winnerRank.name : '');
   document.getElementById('sutdaResultCards').innerHTML = msg.winnerCards
     ? msg.winnerCards.map(c => hwatuCardHTML(c, true)).join('')
-    : '';
+    : (msg.foldWin ? '<div class="hwatu-card hwatu-card-big back"></div><div class="hwatu-card hwatu-card-big back"></div>' : '');
   document.getElementById('sutdaResultPot').textContent = formatChips(msg.pot);
 
   // 전체 결과 표시 (순차 공개: 콜 받은 사람 먼저)

@@ -470,6 +470,113 @@ function launchRouletteConfetti() {
   setTimeout(function() { if(wrapper.parentNode) wrapper.remove(); }, 5000);
 }
 
+// ===== LOTTERY PRESET SAVE / LOAD =====
+
+const LOTTERY_PRESET_KEY = 'partydeck_lottery_presets';
+
+function _getLotteryPresets() {
+  try {
+    return JSON.parse(localStorage.getItem(LOTTERY_PRESET_KEY)) || [];
+  } catch(e) { return []; }
+}
+
+function _saveLotteryPresets(presets) {
+  localStorage.setItem(LOTTERY_PRESET_KEY, JSON.stringify(presets));
+}
+
+function saveLotteryPreset() {
+  const itemsWithCount = getLotteryFieldItemsWithCount('lotteryFieldsContainer');
+  if(itemsWithCount.length < 1) {
+    showToast('저장할 항목이 없습니다');
+    return;
+  }
+
+  const name = prompt('프리셋 이름을 입력하세요:');
+  if(!name || !name.trim()) return;
+
+  const presets = _getLotteryPresets();
+  // 같은 이름이 있으면 덮어쓰기
+  const existIdx = presets.findIndex(p => p.name === name.trim());
+  const preset = { name: name.trim(), items: itemsWithCount, savedAt: Date.now() };
+  if(existIdx >= 0) {
+    presets[existIdx] = preset;
+  } else {
+    presets.push(preset);
+  }
+  _saveLotteryPresets(presets);
+  showToast('프리셋 "' + name.trim() + '" 저장 완료!');
+  // 목록이 열려 있으면 갱신
+  const wrap = document.getElementById('lotteryPresetListWrap');
+  if(wrap && wrap.style.display !== 'none') showLotteryPresetList();
+}
+
+function showLotteryPresetList() {
+  const wrap = document.getElementById('lotteryPresetListWrap');
+  if(!wrap) return;
+
+  const presets = _getLotteryPresets();
+  if(presets.length === 0) {
+    showToast('저장된 프리셋이 없습니다');
+    wrap.style.display = 'none';
+    return;
+  }
+
+  wrap.style.display = 'block';
+  wrap.innerHTML = '<div class="preset-list-title">저장된 프리셋</div>' +
+    presets.map((p, i) =>
+      '<div class="preset-list-item">' +
+        '<span class="preset-item-name" onclick="loadLotteryPreset(' + i + ')">' +
+          escapeHTML(p.name) +
+          ' <span class="preset-item-count">(' + p.items.length + '개 항목)</span>' +
+        '</span>' +
+        '<button class="preset-item-del" onclick="deleteLotteryPreset(' + i + ')">✕</button>' +
+      '</div>'
+    ).join('') +
+    '<div class="preset-list-close" onclick="closeLotteryPresetList()">닫기</div>';
+}
+
+function closeLotteryPresetList() {
+  const wrap = document.getElementById('lotteryPresetListWrap');
+  if(wrap) wrap.style.display = 'none';
+}
+
+function loadLotteryPreset(index) {
+  const presets = _getLotteryPresets();
+  const preset = presets[index];
+  if(!preset) return;
+
+  const container = document.getElementById('lotteryFieldsContainer');
+  if(!container) return;
+
+  // 기존 항목 모두 제거
+  container.innerHTML = '';
+
+  // 프리셋 항목으로 채우기
+  preset.items.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'lottery-field-row';
+    row.innerHTML =
+      '<span class="lottery-field-num">' + (i + 1) + '</span>' +
+      '<input type="text" class="lottery-field-input" maxlength="20" placeholder="항목 입력" value="' + escapeHTML(item.name) + '">' +
+      '<input type="number" class="lottery-field-count" min="1" max="99" value="' + item.count + '" placeholder="개수">' +
+      '<button class="lottery-field-del" onclick="removeLotteryField(this)">✕</button>';
+    container.appendChild(row);
+  });
+
+  closeLotteryPresetList();
+  showToast('"' + preset.name + '" 불러오기 완료!');
+}
+
+function deleteLotteryPreset(index) {
+  const presets = _getLotteryPresets();
+  if(!presets[index]) return;
+  const name = presets[index].name;
+  presets.splice(index, 1);
+  _saveLotteryPresets(presets);
+  showToast('"' + name + '" 삭제됨');
+  showLotteryPresetList();
+}
+
 function switchLotteryMode(mode) {
   lotteryState.mode = mode;
 
@@ -558,7 +665,7 @@ function renderLotteryGame(stateData) {
 
   grid.innerHTML = stateData.grid.map((cell, i) => `
     <div class="lottery-cell" data-cell-index="${i}" onclick="pickLotteryCell(${i})">
-      <div class="cell-content">?</div>
+      <div class="cell-content"><span class="cell-number">${i + 1}</span>?</div>
     </div>
   `).join('');
 }

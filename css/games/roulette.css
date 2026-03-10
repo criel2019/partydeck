@@ -68,13 +68,14 @@
   text-shadow: 0 0 8px rgba(45,138,77,0.5);
 }
 
-/* -- Setup Panel: Dark steel card -- */
+/* -- Setup Panel: Dark steel card (하단 배치) -- */
 .roulette-setup {
   padding: 16px 14px;
   background: rgba(0,0,0,0.5);
   border-radius: 8px;
   border: 2px solid #444;
   margin: 10px 12px;
+  margin-top: auto;
 }
 
 .setup-card {
@@ -302,9 +303,10 @@
   to { opacity: 1; }
 }
 
-/* -- Action Buttons -- */
+/* -- Action Buttons (상단 배치) -- */
 .roulette-actions {
-  display: flex; flex-direction: column; gap: 8px; padding: 8px 14px 14px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; padding: 12px 14px 8px;
 }
 
 /* Spin button: Mockup steel style */
@@ -676,10 +678,10 @@
     padding: 1px 5px;
   }
 
-  /* -- Action buttons: touch-friendly -- */
+  /* -- Action buttons: touch-friendly (상단) -- */
   .roulette-actions {
-    padding: 6px 10px 10px;
-    gap: 6px;
+    padding: 10px 10px 6px;
+    gap: 8px;
   }
   #spinBtn, .roulette-actions .btn-secondary {
     padding: 12px 28px;

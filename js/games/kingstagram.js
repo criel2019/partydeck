@@ -384,32 +384,58 @@ function processKingScoring() {
     scoringResults.push(landResult);
   }
 
-  // Broadcast scoring animation
-  broadcast({ type: 'king-scoring', results: scoringResults });
-  kingShowScoring(scoringResults);
+  // Determine if this is the last round
+  var isLastRound = ks.round >= ks.maxRounds;
 
-  var delay = (ks.lands.length * 800) + 2000;
-  var tEnd = setTimeout(function() {
+  // Broadcast scoring animation
+  broadcast({ type: 'king-scoring', results: scoringResults, isLastRound: isLastRound });
+  kingShowScoring(scoringResults, isLastRound);
+
+  // Change phase after all land animations finish so the button inside overlay works
+  var animDelay = (ks.lands.length * 800) + 400;
+  var tPhase = setTimeout(function() {
     if (!kingState) return;
-    if (kingState.round < kingState.maxRounds) {
-      // 다음라운드 버튼 클릭 대기 (자동으로 진행하지 않음)
-      kingState.phase = 'round-end';
-      broadcastKingState();
-    } else {
+    if (isLastRound) {
       kingState.phase = 'gameover';
-      broadcastKingState();
+    } else {
+      kingState.phase = 'round-end';
     }
-  }, delay);
-  _kingTimers.push(tEnd);
+    // Don't broadcastKingState here - the overlay is still showing
+    // Phase change is needed so kingNextRound() accepts the action
+  }, animDelay);
+  _kingTimers.push(tPhase);
 }
 
 // ===== NEXT ROUND BUTTON HANDLER =====
 function kingNextRound() {
+  // Remove scoring overlay
+  var overlay = document.getElementById('kingScoringOverlay');
+  if (overlay) overlay.remove();
+
   if (state.isHost) {
     if (!kingState || kingState.phase !== 'round-end') return;
     processKingRoundEnd();
   } else {
     sendToHost({ type: 'king-next-round' });
+  }
+}
+
+// ===== VIEW RESULTS (gameover) - remove overlay and show final rankings =====
+function kingViewResults() {
+  // Remove scoring overlay
+  var overlay = document.getElementById('kingScoringOverlay');
+  if (overlay) overlay.remove();
+
+  if (state.isHost) {
+    // Host: ensure phase is gameover and broadcast to all (including self)
+    if (kingState) {
+      kingState.phase = 'gameover';
+      broadcastKingState();
+    }
+  } else {
+    // Client: send to host and wait for broadcast
+    // Host will broadcast gameover state with rankings to all clients
+    sendToHost({ type: 'king-view-results' });
   }
 }
 
@@ -810,7 +836,7 @@ function kingBuildRankingsOverlay(view) {
 }
 
 // ===== CLIENT: SCORING OVERLAY =====
-function kingShowScoring(results) {
+function kingShowScoring(results, isLastRound) {
   if (!results || results.length === 0) return;
 
   var overlay = document.createElement('div');
@@ -873,12 +899,24 @@ function kingShowScoring(results) {
     })(i);
   }
 
-  var closeDelay = results.length * 800 + 1500;
-  var tClose = setTimeout(function() {
-    var el = document.getElementById('kingScoringOverlay');
-    if (el) el.remove();
-  }, closeDelay);
-  _kingTimers.push(tClose);
+  // After all land results are shown, add a button inside the scoring panel
+  var buttonDelay = results.length * 800 + 600;
+  var tBtn = setTimeout(function() {
+    var existingPanel = overlay.querySelector('.king-scoring-panel');
+    if (!existingPanel) return;
+
+    var btnDiv = document.createElement('div');
+    btnDiv.className = 'king-scoring-btn-container';
+
+    if (isLastRound) {
+      btnDiv.innerHTML = '<button class="king-next-round-btn king-scoring-action-btn" onclick="kingViewResults()">\ud83c\udfc6 \uacb0\uacfc \ubcf4\uae30</button>';
+    } else {
+      btnDiv.innerHTML = '<button class="king-next-round-btn king-scoring-action-btn" onclick="kingNextRound()">\ud83d\udc51 \ub2e4\uc74c \ub77c\uc6b4\ub4dc \uc2dc\uc791</button>';
+    }
+    btnDiv.style.animation = 'kingScoreFadeIn 0.4s ease-out';
+    existingPanel.appendChild(btnDiv);
+  }, buttonDelay);
+  _kingTimers.push(tBtn);
 }
 
 // ===== CLEANUP =====
@@ -911,6 +949,10 @@ function handleKingAction(peerId, msg) {
   } else if (msg.type === 'king-next-round') {
     if (kingState && kingState.phase === 'round-end') {
       processKingRoundEnd();
+    }
+  } else if (msg.type === 'king-view-results') {
+    if (kingState && kingState.phase === 'gameover') {
+      broadcastKingState();
     }
   }
 }

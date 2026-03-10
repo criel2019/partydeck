@@ -170,6 +170,7 @@ function _ensureFullscreenForGame() {
 // ===== ORIENTATION LOCK SYSTEM =====
 const LANDSCAPE_GAMES = ['pokerGame', 'yahtzeeGame', 'sutdaGame', 'fortressGame'];
 let _orientCheckFn = null;
+let _orientToastShown = false;
 
 // 모바일 기기 판별 — 터치 + 좁은 화면 (데스크톱/웹에서 오버레이 차단용)
 function _isMobileDevice() {
@@ -192,40 +193,29 @@ function _lockPortrait() {
 
 function _enterLandscapeMode() {
   _clearOrientListeners();
-  // Hide portrait overlay
+  // Hide all overlays — 차단 오버레이 완전 비활성화
   var pOverlay = document.getElementById('portraitOverlay');
   if(pOverlay) pOverlay.style.display = 'none';
+  var lOverlay = document.getElementById('landscapeOverlay');
+  if(lOverlay) lOverlay.style.display = 'none';
   // Try API lock (works in fullscreen)
   try { screen.orientation.lock('landscape').catch(function(){}); } catch(e) {}
-  // 데스크톱/웹에서는 오버레이 불필요 — 모바일만 표시
-  if(!_isMobileDevice()) return;
-  // Overlay fallback: show "rotate to landscape" if portrait
-  _orientCheckFn = function() {
-    var overlay = document.getElementById('landscapeOverlay');
-    if(overlay) overlay.style.display = (window.innerHeight > window.innerWidth) ? 'flex' : 'none';
-  };
-  _orientCheckFn();
-  window.addEventListener('orientationchange', _orientCheckFn);
-  window.addEventListener('resize', _orientCheckFn);
+  // 비차단 토스트로 한 번만 안내 (모바일만)
+  if(_isMobileDevice() && window.innerHeight > window.innerWidth && !_orientToastShown) {
+    _orientToastShown = true;
+    if(typeof showToast === 'function') showToast('📱 가로 모드로 전환하면 더 좋아요!');
+  }
 }
 
 function _enterPortraitMode() {
   _clearOrientListeners();
-  // Hide landscape overlay
+  // Hide all overlays — 차단 오버레이 완전 비활성화
   var lOverlay = document.getElementById('landscapeOverlay');
   if(lOverlay) lOverlay.style.display = 'none';
+  var pOverlay = document.getElementById('portraitOverlay');
+  if(pOverlay) pOverlay.style.display = 'none';
   // Try API lock (works in fullscreen)
   _lockPortrait();
-  // 데스크톱/웹에서는 오버레이 불필요 — 모바일만 표시
-  if(!_isMobileDevice()) return;
-  // Overlay fallback: show "rotate to portrait" if landscape
-  _orientCheckFn = function() {
-    var overlay = document.getElementById('portraitOverlay');
-    if(overlay) overlay.style.display = (window.innerWidth > window.innerHeight) ? 'flex' : 'none';
-  };
-  _orientCheckFn();
-  window.addEventListener('orientationchange', _orientCheckFn);
-  window.addEventListener('resize', _orientCheckFn);
 }
 
 // Alias for backward compat
@@ -802,7 +792,9 @@ function handleMessage(peerId, raw) {
     'king-state': () => { showScreen('kingstagramGame'); renderKingView(msg.state || msg); },
     'king-roll': () => { if(state.isHost) processKingRoll(peerId); },
     'king-place': () => { if(state.isHost) processKingPlace(peerId, msg.diceValue); },
-    'king-scoring': () => { if(typeof kingShowScoring === 'function') kingShowScoring(msg.results); },
+    'king-scoring': () => { if(typeof kingShowScoring === 'function') kingShowScoring(msg.results, msg.isLastRound); },
+    'king-next-round': () => { if(state.isHost && typeof handleKingAction === 'function') handleKingAction(peerId, msg); },
+    'king-view-results': () => { if(state.isHost && typeof handleKingAction === 'function') handleKingAction(peerId, msg); },
     'player-left': () => {
       state.players = state.players.filter(p => p.id !== msg.playerId);
       updateLobbyUI();

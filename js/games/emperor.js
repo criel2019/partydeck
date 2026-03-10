@@ -758,25 +758,25 @@ function ecResolveExchange() {
   var empCard = ec.emperorPlayed;
   var slvCard = ec.slavePlayed;
 
-  // 노예 > 황제
+  // 형사(slave) VS 강도(emperor): 형사가 강도를 잡음 → 형사 Win
   if (empCard === 'emperor' && slvCard === 'slave') {
-    ecApplyGameWin('slave', '형사가 강도를 잡음');
+    ecApplyGameWin('slave', '형사가 강도를 잡았습니다. 형사 Win');
     return;
   }
-  // 황제 > 시민
+  // 강도(emperor) VS 시민: 무고한 시민을 잡음 → 강도 Win (형사 패배)
   if (empCard === 'emperor' && slvCard === 'citizen') {
-    ecApplyGameWin('emperor', '강도가 시민을 제압');
+    ecApplyGameWin('emperor', '무고한 시민을 잡았습니다.. 강도 Win');
     return;
   }
-  // 시민 > 노예
+  // 시민 VS 형사(slave): 시민이 강도에게 금품갈취 → 강도 Win (황제 승)
   if (empCard === 'citizen' && slvCard === 'slave') {
-    ecApplyGameWin('emperor', '시민이 형사를 제압');
+    ecApplyGameWin('emperor', '시민이 강도에게 금품갈취 당했습니다. 강도 Win');
     return;
   }
   // 시민 vs 시민 → 다음 교환으로
   // 4교환 모두 마쳤는데 잡히지 않으면 황제 생존 승리
   if (ec.exchange >= ec.maxExchanges) {
-    ecApplyGameWin('emperor', '강도 도주! 남은 카드 결과 발표');
+    ecApplyGameWin('emperor', '강도가 도주에 성공했습니다! 강도 Win');
     return;
   }
 

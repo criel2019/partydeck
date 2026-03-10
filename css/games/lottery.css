@@ -212,6 +212,64 @@
   outline: none; cursor: pointer;
 }
 
+/* === Preset Save/Load Buttons === */
+.lottery-preset-btns {
+  display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;
+}
+.lottery-preset-btns .btn-secondary { flex: 1; min-width: 80px; }
+.lottery-save-btn { border-color: var(--retro-purple) !important; color: var(--retro-purple) !important; }
+.lottery-load-btn { border-color: var(--retro-orange) !important; color: var(--retro-orange) !important; }
+
+/* === Preset List === */
+.lottery-preset-list-wrap {
+  background: var(--retro-cream);
+  border: 3px solid var(--retro-blue);
+  border-radius: 10px;
+  padding: 8px;
+  margin-bottom: 8px;
+  max-height: 25vh;
+  overflow-y: auto;
+}
+.preset-list-title {
+  font-size: 13px; font-weight: 900; color: var(--retro-red);
+  text-align: center; margin-bottom: 6px;
+  border-bottom: 2px dashed var(--retro-blue);
+  padding-bottom: 4px;
+}
+.preset-list-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px;
+  background: white;
+  border: 2px solid var(--retro-blue);
+  border-radius: 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.preset-list-item:active { transform: scale(0.97); }
+.preset-item-name {
+  flex: 1; font-size: 14px; font-weight: 700; color: #3a2a10;
+}
+.preset-item-count {
+  font-size: 11px; color: var(--retro-blue); font-weight: 400;
+}
+.preset-item-del {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid var(--retro-red);
+  background: rgba(208,0,0,0.1); color: var(--retro-red);
+  font-size: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-left: 6px;
+  transition: all 0.2s;
+}
+.preset-item-del:active { background: var(--retro-red); color: #fff; }
+.preset-list-close {
+  text-align: center; font-size: 12px; font-weight: 700;
+  color: var(--retro-blue); cursor: pointer; padding: 4px 0;
+  margin-top: 2px;
+}
+.preset-list-close:active { color: var(--retro-red); }
+
 /* === Lottery Grid Container — 남은 공간 전부 사용 === */
 .lottery-grid-container {
   flex: 1 1 0;
@@ -298,12 +356,38 @@
   z-index: 1;
 }
 
-/* Question mark */
+/* Question mark — hidden now since cell-content handles the ? text */
 .lottery-cell::after {
-  content: '?'; font-family: 'Black Han Sans', sans-serif;
-  font-size: clamp(10px, 2.5vw, 16px); color: rgba(0,0,0,0.3);
+  content: ''; /* disabled — number + ? rendered in cell-content */
+  display: none;
+}
+
+/* Cell number (top-left corner) */
+.cell-number {
+  position: absolute;
+  top: 1px; left: 2px;
+  font-size: clamp(7px, 1.6vw, 11px);
+  font-weight: 900;
+  color: rgba(0,0,0,0.45);
+  z-index: 3;
+  line-height: 1;
+  pointer-events: none;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* Unrevealed cell-content: show ? in center */
+.lottery-cell:not(.revealed) .cell-content {
+  position: relative;
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: clamp(10px, 2.5vw, 16px);
+  color: rgba(0,0,0,0.3);
   z-index: 2;
 }
+
+/* Hide number after cell is revealed */
+.lottery-cell.revealed .cell-number { display: none; }
 
 /* Cell tap effect */
 .lottery-cell:active {
@@ -804,7 +888,8 @@
   .lottery-grid-container { padding: 4px; border-left-width: 3px; border-right-width: 3px; }
   .lottery-grid { gap: 1.5px; padding: 3px; }
   .lottery-cell { border-width: 1px; border-radius: 2px; }
-  .lottery-cell::after { font-size: clamp(8px, 2vw, 12px); }
+  .cell-number { font-size: clamp(6px, 1.4vw, 9px); }
+  .lottery-cell:not(.revealed) .cell-content { font-size: clamp(8px, 2vw, 12px); }
   .lottery-cell.revealed .cell-content { font-size: clamp(6px, 1.8vw, 10px); }
 
   .lottery-status { padding: 4px 8px; border-width: 2px; }
