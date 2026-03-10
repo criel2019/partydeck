@@ -92,21 +92,21 @@ const TAMA_AFF_TIERS = [
 ];
 
 const TAMA_FOODS = [
-  { id:'bread',    emoji:'🍞', name:'빵',        cat:'basic',  hunger:15, exp:5,  costBase:20, happy:2,  hygiene:0 },
-  { id:'rice',     emoji:'🍚', name:'밥',        cat:'basic',  hunger:20, exp:6,  costBase:25, happy:3,  hygiene:0 },
-  { id:'meat',     emoji:'🍖', name:'고기',      cat:'basic',  hunger:25, exp:8,  costBase:35, happy:5,  hygiene:0 },
-  { id:'fish',     emoji:'🐟', name:'생선',      cat:'basic',  hunger:22, exp:7,  costBase:30, happy:4,  hygiene:0 },
-  { id:'egg',      emoji:'🥚', name:'달걀',      cat:'basic',  hunger:12, exp:4,  costBase:15, happy:1,  hygiene:0 },
-  { id:'salad',    emoji:'🥗', name:'샐러드',    cat:'healthy', hunger:10, exp:10, costBase:40, happy:3,  hygiene:5 },
-  { id:'soup',     emoji:'🍲', name:'수프',      cat:'healthy', hunger:18, exp:12, costBase:45, happy:4,  hygiene:3 },
-  { id:'fruit',    emoji:'🍎', name:'과일',      cat:'healthy', hunger:8,  exp:8,  costBase:30, happy:6,  hygiene:2 },
-  { id:'milk',     emoji:'🥛', name:'우유',      cat:'healthy', hunger:10, exp:9,  costBase:25, happy:5,  hygiene:0 },
-  { id:'vitamin',  emoji:'💊', name:'영양제',    cat:'healthy', hunger:5,  exp:15, costBase:60, happy:1,  hygiene:0 },
-  { id:'cookie',   emoji:'🍪', name:'쿠키',      cat:'snack',  hunger:8,  exp:3,  costBase:15, happy:10, hygiene:-2 },
-  { id:'cake',     emoji:'🍰', name:'케이크',    cat:'snack',  hunger:12, exp:4,  costBase:30, happy:15, hygiene:-3 },
-  { id:'icecream', emoji:'🍦', name:'아이스크림', cat:'snack',  hunger:6,  exp:3,  costBase:20, happy:12, hygiene:-5 },
-  { id:'candy',    emoji:'🍬', name:'사탕',      cat:'snack',  hunger:3,  exp:2,  costBase:10, happy:8,  hygiene:-1 },
-  { id:'chocolate',emoji:'🍫', name:'초콜릿',    cat:'snack',  hunger:5,  exp:3,  costBase:18, happy:12, hygiene:-2 }
+  { id:'bread',    emoji:'🍞', name:'빵',        cat:'basic',  hunger:15, exp:5,  costBase:20, happy:2,  hygiene:0,  statBonus:null },
+  { id:'rice',     emoji:'🍚', name:'밥',        cat:'basic',  hunger:20, exp:6,  costBase:25, happy:3,  hygiene:0,  statBonus:null },
+  { id:'meat',     emoji:'🍖', name:'고기',      cat:'basic',  hunger:25, exp:8,  costBase:35, happy:5,  hygiene:0,  statBonus:{dmg:0.005, def:0.003} },
+  { id:'fish',     emoji:'🐟', name:'생선',      cat:'basic',  hunger:22, exp:7,  costBase:30, happy:4,  hygiene:0,  statBonus:{spd:0.003, def:0.002} },
+  { id:'egg',      emoji:'🥚', name:'달걀',      cat:'basic',  hunger:12, exp:4,  costBase:15, happy:1,  hygiene:0,  statBonus:{def:0.002} },
+  { id:'salad',    emoji:'🥗', name:'샐러드',    cat:'healthy', hunger:10, exp:10, costBase:40, happy:3,  hygiene:5,  statBonus:{spd:0.003} },
+  { id:'soup',     emoji:'🍲', name:'수프',      cat:'healthy', hunger:18, exp:12, costBase:45, happy:4,  hygiene:3,  statBonus:{def:0.003} },
+  { id:'fruit',    emoji:'🍎', name:'과일',      cat:'healthy', hunger:8,  exp:8,  costBase:30, happy:6,  hygiene:2,  statBonus:{spd:0.004} },
+  { id:'milk',     emoji:'🥛', name:'우유',      cat:'healthy', hunger:10, exp:9,  costBase:25, happy:5,  hygiene:0,  statBonus:{spd:0.002} },
+  { id:'vitamin',  emoji:'💊', name:'영양제',    cat:'healthy', hunger:5,  exp:15, costBase:60, happy:1,  hygiene:0,  statBonus:{bomb:0.004} },
+  { id:'cookie',   emoji:'🍪', name:'쿠키',      cat:'snack',  hunger:8,  exp:3,  costBase:15, happy:10, hygiene:-2, statBonus:null },
+  { id:'cake',     emoji:'🍰', name:'케이크',    cat:'snack',  hunger:12, exp:4,  costBase:30, happy:15, hygiene:-3, statBonus:null },
+  { id:'icecream', emoji:'🍦', name:'아이스크림', cat:'snack',  hunger:6,  exp:3,  costBase:20, happy:12, hygiene:-5, statBonus:null },
+  { id:'candy',    emoji:'🍬', name:'사탕',      cat:'snack',  hunger:3,  exp:2,  costBase:10, happy:8,  hygiene:-1, statBonus:null },
+  { id:'chocolate',emoji:'🍫', name:'초콜릿',    cat:'snack',  hunger:5,  exp:3,  costBase:18, happy:12, hygiene:-2, statBonus:{dmg:0.002} }
 ];
 const TAMA_FOOD_CATS = { basic:'기본식', healthy:'건강식', snack:'간식' };
 
@@ -557,6 +557,15 @@ function tamaFeed(foodId){
   tamaPet.needs.happiness=tamaClamp(tamaPet.needs.happiness+(food.happy||0)*mult,0,100);
   tamaPet.needs.hygiene  =tamaClamp(tamaPet.needs.hygiene  +(food.hygiene||0),0,100);
   tamaWelcomeBackBonus=false;
+
+  // 먹이별 스탯 누적 보너스 (펫전쟁 연동)
+  if(food.statBonus){
+    Object.keys(food.statBonus).forEach(k=>{
+      if(tamaPet.stats[k]!==undefined){
+        tamaPet.stats[k]=Math.round((tamaPet.stats[k]+food.statBonus[k])*1000)/1000;
+      }
+    });
+  }
 
   tamaAddExp(food.exp);
   tamaAddAff(5);
@@ -1060,13 +1069,16 @@ function tamaRenderFoodGrid(){
   const grid=document.querySelector('#tamaFeedOverlay .tama-food-grid');if(!grid||!tamaPet)return;
   const gold=tamaGetGold();
   const foods=tamaFeedCat==='all'?TAMA_FOODS:TAMA_FOODS.filter(f=>f.cat===tamaFeedCat);
+  const _statIcon={dmg:'⚔️',def:'🛡️',spd:'💨',bomb:'💣'};
   grid.innerHTML=foods.map(f=>{
     const cost=tamaFoodCost(f,tamaPet.level);
     const ok=gold>=cost;
-    return '<div class="tama-food-item'+(ok?'':' disabled')+'" onclick="tamaFeedAndClose(\''+f.id+'\')" title="포만+'+f.hunger+' 행복+'+f.happy+' EXP+'+f.exp+'">'+
+    const statText=f.statBonus?Object.keys(f.statBonus).map(k=>_statIcon[k]+(f.statBonus[k]>0?'+':'')+f.statBonus[k]).join(' '):'';
+    return '<div class="tama-food-item'+(ok?'':' disabled')+'" onclick="tamaFeedAndClose(\''+f.id+'\')" title="포만+'+f.hunger+' 행복+'+f.happy+' EXP+'+f.exp+(statText?' | 스탯: '+statText:'')+'">'+
       '<span class="tama-food-emoji">'+f.emoji+'</span>'+
       '<span class="tama-food-name">'+f.name+'</span>'+
       '<span class="tama-food-info">포만+'+f.hunger+' 행복+'+f.happy+'</span>'+
+      (statText?'<span class="tama-food-stat">'+statText+'</span>':'')+
       '<span class="tama-food-cost">🪙 '+cost.toLocaleString()+'</span></div>';
   }).join('');
 }

@@ -609,13 +609,32 @@
     </div>
   </div>
 
-  <!-- 액션 버튼 (총 스타일) — 상단 배치: 엄지/검지 접근성 -->
+  <!-- 게임 시작 전 설정 (호스트만) — 발사버튼 위, 실린더 위에 배치 -->
+  <div class="roulette-setup" id="rouletteSetup" style="display:none;">
+    <div class="setup-card">
+      <div class="setup-label">총알 개수</div>
+      <div class="setup-slider-row">
+        <input type="range" class="setup-slider" id="bulletsSlider" min="1" max="3" value="1">
+        <div class="setup-value" id="bulletsValue">1</div>
+      </div>
+    </div>
+    <div class="setup-card">
+      <div class="setup-label">실린더 칸 수</div>
+      <div class="setup-slider-row">
+        <input type="range" class="setup-slider" id="chambersSlider" min="6" max="8" value="6">
+        <div class="setup-value" id="chambersValue">6</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="confirmRouletteSetup()" style="margin-top:12px;">설정 완료 및 시작</button>
+  </div>
+
+  <!-- 액션 버튼 (총 스타일) — 검지로 발사 가능하도록 상단 배치 -->
   <div class="roulette-actions" id="rouletteActions">
-    <button class="btn btn-secondary" id="spinBtn" onclick="spinCylinder()" style="display:none;font-size:18px;padding:16px 32px;">
+    <button class="btn btn-secondary" id="spinBtn" onclick="spinCylinder()" style="display:none;font-size:18px;padding:16px 32px;width:100%;">
       🔄 실린더 돌리기
     </button>
-    <button class="btn btn-danger rr-trigger-btn" id="triggerBtn" onclick="pullTrigger()" style="display:none;font-size:22px;padding:20px 40px;border-radius:50%;width:100px;height:100px;box-shadow:0 0 30px rgba(255,0,0,0.4);animation:rr-pulse 1.5s ease-in-out infinite alternate;">
-      🔫<br><span style="font-size:12px;">발사</span>
+    <button class="btn btn-danger rr-trigger-btn" id="triggerBtn" onclick="pullTrigger()" style="display:none;font-size:28px;padding:20px;border-radius:16px;width:100%;min-height:90px;box-shadow:0 0 30px rgba(255,0,0,0.4);animation:rr-pulse 1.5s ease-in-out infinite alternate;">
+      🔫 발사
     </button>
     <button class="btn btn-primary" id="restartBtn" onclick="restartRoulette()" style="display:none;">
       🔁 다시 하기
@@ -647,25 +666,6 @@
   <!-- 생존자 리스트 -->
   <div class="survivors-list" id="survivorsList">
     <!-- 동적 생성 -->
-  </div>
-
-  <!-- 게임 시작 전 설정 (호스트만) — 하단 배치 -->
-  <div class="roulette-setup" id="rouletteSetup" style="display:none;">
-    <div class="setup-card">
-      <div class="setup-label">총알 개수</div>
-      <div class="setup-slider-row">
-        <input type="range" class="setup-slider" id="bulletsSlider" min="1" max="3" value="1">
-        <div class="setup-value" id="bulletsValue">1</div>
-      </div>
-    </div>
-    <div class="setup-card">
-      <div class="setup-label">실린더 칸 수</div>
-      <div class="setup-slider-row">
-        <input type="range" class="setup-slider" id="chambersSlider" min="6" max="8" value="6">
-        <div class="setup-value" id="chambersValue">6</div>
-      </div>
-    </div>
-    <button class="btn btn-primary" onclick="confirmRouletteSetup()" style="margin-top:12px;">설정 완료 및 시작</button>
   </div>
 </div>
 

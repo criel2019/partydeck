@@ -747,7 +747,10 @@ function renderKingView(view) {
     html += kingBuildRankingsOverlay(view);
   }
 
+  // Save scoring overlay before innerHTML replacement so it persists during scoring
+  var savedOverlay = document.getElementById('kingScoringOverlay');
   container.innerHTML = html;
+  if (savedOverlay) container.appendChild(savedOverlay);
 }
 
 // ===== BUILD GAME OVER HTML =====

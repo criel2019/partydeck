@@ -68,14 +68,13 @@
   text-shadow: 0 0 8px rgba(45,138,77,0.5);
 }
 
-/* -- Setup Panel: Dark steel card (하단 배치) -- */
+/* -- Setup Panel: Dark steel card (발사버튼 위, 실린더 위에 배치) -- */
 .roulette-setup {
   padding: 16px 14px;
   background: rgba(0,0,0,0.5);
   border-radius: 8px;
   border: 2px solid #444;
   margin: 10px 12px;
-  margin-top: auto;
 }
 
 .setup-card {

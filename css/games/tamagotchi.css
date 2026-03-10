@@ -651,6 +651,7 @@
 .tama-food-emoji { font-size: 32px; display: block; margin-bottom: 4px; }
 .tama-food-name { font-size: clamp(12px, 3vw, 14px); color: #fff; font-weight: 600; }
 .tama-food-info { font-size: clamp(11px, 2.8vw, 12px); color: #888; margin-top: 4px; display: block; }
+.tama-food-stat { font-size: clamp(10px, 2.5vw, 11px); color: #64ffda; margin-top: 2px; display: block; font-weight: 700; }
 .tama-food-cost {
   font-size: 11px;
   color: #ffd700;

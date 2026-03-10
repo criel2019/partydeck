@@ -7,10 +7,10 @@
 :root {
   --dp-bg: #0a0a12;
   --dp-surface: #12121e;
-  --dp-card-w: 76px;
-  --dp-card-h: 106px;
-  --dp-card-sm-w: 52px;
-  --dp-card-sm-h: 73px;
+  --dp-card-w: 100px;
+  --dp-card-h: 140px;
+  --dp-card-sm-w: 70px;
+  --dp-card-sm-h: 98px;
   --dp-card-back: #2a1f5e;
   --dp-card-back-accent: #3d2f8a;
   --dp-soju: #4dd0e1;
@@ -153,7 +153,7 @@
   background: rgba(255, 255, 255, 0.04);
   border: 2px solid transparent;
   transition: all 0.3s;
-  min-width: 64px;
+  min-width: 76px;
   position: relative;
   cursor: pointer;
   flex-shrink: 0;
@@ -408,13 +408,13 @@
 }
 .dp-deck-stack {
   position: relative;
-  width: 76px;
-  height: 106px;
+  width: 100px;
+  height: 140px;
 }
 .dp-deck-card {
   position: absolute;
-  width: 76px !important;
-  height: 106px !important;
+  width: 100px !important;
+  height: 140px !important;
   border-radius: 10px !important;
   margin: 0 !important;
   cursor: pointer !important;
@@ -672,9 +672,9 @@
 
 /* Face-up badge sizes: opponent area (larger for visibility) */
 .dp-opp-faceup .dp-faceup-badge {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 800;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 10px;
 }
 

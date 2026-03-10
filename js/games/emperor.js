@@ -765,12 +765,12 @@ function ecResolveExchange() {
   }
   // 강도(emperor) VS 시민: 무고한 시민을 잡음 → 강도 Win (형사 패배)
   if (empCard === 'emperor' && slvCard === 'citizen') {
-    ecApplyGameWin('emperor', '무고한 시민을 잡았습니다.. 강도 Win');
+    ecApplyGameWin('emperor', '무고한 시민을 잡았습니다.. 강도Win');
     return;
   }
   // 시민 VS 형사(slave): 시민이 강도에게 금품갈취 → 강도 Win (황제 승)
   if (empCard === 'citizen' && slvCard === 'slave') {
-    ecApplyGameWin('emperor', '시민이 강도에게 금품갈취 당했습니다. 강도 Win');
+    ecApplyGameWin('emperor', '시민이 강도에게 금품갈취 당했습니다. 강도Win');
     return;
   }
   // 시민 vs 시민 → 다음 교환으로
