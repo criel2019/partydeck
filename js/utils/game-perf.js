@@ -37,7 +37,9 @@ class GamePerf {
     this._acc = {};
     this._frameCount = 0;
     this._frameStart = 0;
-    this._frameTimes = [];
+    this._frameTimes = [];     // 렌더링 코드 실행 시간
+    this._rafIntervals = [];   // rAF 실제 호출 간격 (진짜 FPS용)
+    this._lastRafTs = 0;
     this._enabled = true;
 
     // 히스토리
@@ -73,8 +75,15 @@ class GamePerf {
 
   frameStart() {
     if (!this._enabled) return;
-    if (!this._sessionStart) this._sessionStart = performance.now();
-    this._frameStart = performance.now();
+    const now = performance.now();
+    if (!this._sessionStart) this._sessionStart = now;
+    // rAF 실제 간격 기록 (진짜 FPS)
+    if (this._lastRafTs > 0) {
+      const interval = now - this._lastRafTs;
+      if (interval > 0 && interval < 1000) this._rafIntervals.push(interval);
+    }
+    this._lastRafTs = now;
+    this._frameStart = now;
     this._ensureUI();
   }
 
@@ -196,7 +205,10 @@ class GamePerf {
 
     const avgFrame = this._frameTimes.reduce((s, v) => s + v, 0) / this._frameTimes.length;
     const maxFrame = Math.max(...this._frameTimes);
-    const fps = 1000 / avgFrame;
+    // 진짜 FPS: rAF 호출 간격 기반 (렌더링 코드 속도가 아님)
+    const fps = this._rafIntervals.length > 0
+      ? 1000 / (this._rafIntervals.reduce((s, v) => s + v, 0) / this._rafIntervals.length)
+      : 1000 / avgFrame;
 
     const entries = Object.keys(this._acc).map(label => {
       const a = this._acc[label];
@@ -250,6 +262,7 @@ class GamePerf {
     this._frameCount = 0;
     this._frameStart = 0;
     this._frameTimes = [];
+    this._rafIntervals = [];
     for (const k of Object.keys(this._acc)) delete this._acc[k];
   }
 
@@ -352,6 +365,8 @@ class GamePerf {
     this._frameCount = 0;
     this._frameStart = 0;
     this._frameTimes = [];
+    this._rafIntervals = [];
+    this._lastRafTs = 0;
     this._history.length = 0;
     this._onceLog.length = 0;
     this._sessionStart = 0;

@@ -273,11 +273,7 @@ function updateFortBirds() {
   }
 }
 
-let _fortBirdFrameSkip = 0;
 function drawFortBirds(ctx) {
-  // Birds move slowly — render every other frame to halve draw cost
-  _fortBirdFrameSkip ^= 1;
-  if (_fortBirdFrameSkip) return;
 
   const now = Date.now() * 0.005;
   ctx.save();
