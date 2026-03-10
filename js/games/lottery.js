@@ -12,6 +12,25 @@ let lotteryState = {
   phase: 'setup'
 };
 
+// Spin effect timer handles (for cleanup)
+let _rrSpinTimers = { phase2: null, phase3: null, shake: null, celebClose: null };
+
+function cleanupRouletteEffects() {
+  const celeb = document.getElementById('rouletteCelebration');
+  if(celeb) celeb.remove();
+  const confetti = document.querySelector('.roulette-confetti-wrap');
+  if(confetti) confetti.remove();
+}
+
+function lotteryCleanup() {
+  clearTimeout(_rrSpinTimers.phase2);
+  clearTimeout(_rrSpinTimers.phase3);
+  clearTimeout(_rrSpinTimers.shake);
+  clearTimeout(_rrSpinTimers.celebClose);
+  cleanupRouletteEffects();
+  lotteryState.spinning = false;
+}
+
 function startLottery() {
   if(!state.isHost) {
     showToast('호스트만 게임을 시작할 수 있습니다');
@@ -307,11 +326,14 @@ function handleRouletteSpin(msg) {
   lotteryState.spinning = true;
   lotteryState.currentRotation = msg.totalRotation;
 
-  // Clean up any previous celebration
-  const oldCeleb = document.getElementById('rouletteCelebration');
-  if(oldCeleb) oldCeleb.remove();
-  const oldConfetti = document.querySelector('.roulette-confetti-wrap');
-  if(oldConfetti) oldConfetti.remove();
+  // Cancel any in-flight timers from a previous spin
+  clearTimeout(_rrSpinTimers.phase2);
+  clearTimeout(_rrSpinTimers.phase3);
+  clearTimeout(_rrSpinTimers.shake);
+  clearTimeout(_rrSpinTimers.celebClose);
+
+  // Clean up any previous celebration / confetti DOM
+  cleanupRouletteEffects();
 
   const wheel = document.getElementById('rouletteWheel');
   const btn = document.getElementById('rouletteSpinBtn');
@@ -335,7 +357,7 @@ function handleRouletteSpin(msg) {
   if(navigator.vibrate) navigator.vibrate([30, 20, 30, 20, 30]);
 
   // === Phase 2: Anticipation (~3.2s) ===
-  setTimeout(() => {
+  _rrSpinTimers.phase2 = setTimeout(() => {
     if(pointer) {
       pointer.classList.remove('ticking');
       pointer.classList.add('ticking-slow');
@@ -344,7 +366,7 @@ function handleRouletteSpin(msg) {
   }, 3200);
 
   // === Phase 3: Result (~4s) ===
-  setTimeout(() => {
+  _rrSpinTimers.phase3 = setTimeout(() => {
     lotteryState.spinning = false;
     if(btn) btn.disabled = false;
     if(wheelContainer) wheelContainer.classList.remove('wheel-active');
@@ -356,7 +378,7 @@ function handleRouletteSpin(msg) {
     const displayContainer = document.getElementById('rouletteDisplayContainer');
     if(displayContainer) {
       displayContainer.classList.add('result-shake');
-      setTimeout(() => displayContainer.classList.remove('result-shake'), 600);
+      _rrSpinTimers.shake = setTimeout(() => displayContainer.classList.remove('result-shake'), 600);
     }
 
     // Inline result
@@ -382,6 +404,7 @@ function handleRouletteSpin(msg) {
 function showRouletteCelebration(resultItem) {
   const old = document.getElementById('rouletteCelebration');
   if(old) old.remove();
+  clearTimeout(_rrSpinTimers.celebClose);
 
   const overlay = document.createElement('div');
   overlay.id = 'rouletteCelebration';
@@ -396,19 +419,17 @@ function showRouletteCelebration(resultItem) {
       '<div class="celebration-sub">터치하여 닫기</div>' +
     '</div>';
 
-  overlay.addEventListener('click', function() {
+  function dismissOverlay() {
+    if(!overlay.parentNode || overlay.classList.contains('hiding')) return;
+    clearTimeout(_rrSpinTimers.celebClose);
     overlay.classList.add('hiding');
     setTimeout(function() { if(overlay.parentNode) overlay.remove(); }, 500);
-  });
+  }
 
+  overlay.addEventListener('click', dismissOverlay);
   document.body.appendChild(overlay);
 
-  setTimeout(function() {
-    if(overlay.parentNode && !overlay.classList.contains('hiding')) {
-      overlay.classList.add('hiding');
-      setTimeout(function() { if(overlay.parentNode) overlay.remove(); }, 500);
-    }
-  }, 3500);
+  _rrSpinTimers.celebClose = setTimeout(dismissOverlay, 3500);
 }
 
 function launchRouletteConfetti() {
@@ -416,17 +437,18 @@ function launchRouletteConfetti() {
   wrapper.className = 'roulette-confetti-wrap';
 
   const colors = ['#ff3d71','#ffd700','#00d68f','#0095ff','#ff6f3c','#9b51e0','#ff758f','#00c9db','#FFB800','#F71559'];
+  const frag = document.createDocumentFragment();
 
-  for(var i = 0; i < 80; i++) {
-    var p = document.createElement('div');
-    var c = colors[Math.floor(Math.random() * colors.length)];
-    var x = Math.random() * 100;
-    var d = Math.random() * 0.6;
-    var dur = 1.8 + Math.random() * 2;
-    var sz = 5 + Math.random() * 7;
-    var isRect = Math.random() > 0.4;
-    var rot = Math.floor(Math.random() * 360);
-    var drift = (Math.random() - 0.5) * 120;
+  for(let i = 0; i < 80; i++) {
+    const p = document.createElement('div');
+    const c = colors[Math.floor(Math.random() * colors.length)];
+    const x = Math.random() * 100;
+    const d = Math.random() * 0.6;
+    const dur = 1.8 + Math.random() * 2;
+    const sz = 5 + Math.random() * 7;
+    const isRect = Math.random() > 0.4;
+    const rot = Math.floor(Math.random() * 360);
+    const drift = (Math.random() - 0.5) * 120;
 
     p.style.cssText =
       'position:absolute;top:-10px;' +
@@ -440,9 +462,10 @@ function launchRouletteConfetti() {
       'animation:rrConfettiFall ' + dur + 's ease-in ' + d + 's forwards;' +
       '--drift:' + drift + 'px;';
 
-    wrapper.appendChild(p);
+    frag.appendChild(p);
   }
 
+  wrapper.appendChild(frag);
   document.body.appendChild(wrapper);
   setTimeout(function() { if(wrapper.parentNode) wrapper.remove(); }, 5000);
 }

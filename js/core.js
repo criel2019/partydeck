@@ -1028,6 +1028,7 @@ function returnToLobby() {
   if (typeof idolHideDiceOverlay === 'function') idolHideDiceOverlay();
   // Clean up AI timers (lobby CPU mode)
   if(typeof cleanupAI === 'function') cleanupAI();
+  if(typeof lotteryCleanup === 'function') lotteryCleanup();
   showScreen('lobby');
   updateLobbyUI();
 }

@@ -697,7 +697,7 @@
 
 .celebration-result {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 56px; line-height: 1.2;
+  font-size: clamp(28px, 10vw, 56px); line-height: 1.2;
   color: #ffd700;
   text-shadow:
     0 0 20px rgba(255,215,0,0.6),
