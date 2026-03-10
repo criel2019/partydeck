@@ -373,7 +373,7 @@
 }
 
 .roulette-flash.active { display: flex; pointer-events: auto; }
-.roulette-flash.fading { opacity: 0; }
+.roulette-flash.fading { opacity: 0; pointer-events: none; }
 
 /* -- Phase 1: Suspense -- */
 .roulette-flash.suspense {
@@ -404,6 +404,11 @@
 }
 
 .rr-suspense-dots {
+  font-size: 0;
+}
+.rr-suspense-dots::before {
+  content: '.';
+  font-size: 28px;
   animation: rr-dots 1s step-end infinite;
 }
 

@@ -12,7 +12,7 @@ let rrState = {
 };
 
 // Effect timer handles (for safe cleanup)
-let _rrTimers = { suspense: null, reveal: null, advance: null, flashHide: null, spinAnim: null, spinGlow: null };
+let _rrTimers = { suspense: null, reveal: null, advance: null, flashHide: null, flashReset: null, spinAnim: null, spinGlow: null, spinBroadcast: null };
 
 function rrCleanup() {
   Object.keys(_rrTimers).forEach(k => { clearTimeout(_rrTimers[k]); _rrTimers[k] = null; });
@@ -20,6 +20,8 @@ function rrCleanup() {
   if(flash) flash.className = 'roulette-flash';
   const game = document.getElementById('rouletteGame');
   if(game) game.classList.remove('rr-shake');
+  const resultOverlay = document.getElementById('resultOverlay');
+  if(resultOverlay) resultOverlay.classList.remove('active');
 }
 
 function startRussianRoulette() {
@@ -194,7 +196,7 @@ function spinCylinder() {
   handleRRSpin();
 
   // After animation, broadcast state (shows trigger button)
-  setTimeout(() => {
+  _rrTimers.spinBroadcast = setTimeout(() => {
     broadcastRRState();
   }, 3000);
 }
@@ -308,7 +310,7 @@ function showRouletteFlash(msg) {
     // Hide flash after display period
     _rrTimers.flashHide = setTimeout(() => {
       flash.classList.add('fading');
-      setTimeout(() => { flash.className = 'roulette-flash'; }, 500);
+      _rrTimers.flashReset = setTimeout(() => { flash.className = 'roulette-flash'; }, 500);
     }, 2200);
 
   }, 1200);
