@@ -788,7 +788,7 @@ function renderBSView(view) {
           var penLabel = view.rouletteResultLabel || '벌칙';
           statusContent = '<span class="bs-roulette-result-hit" style="color:#ffaa33;">🔸 ' + escapeHtml(targetName) + ' 벌칙: <strong>' + escapeHtml(penLabel) + '</strong>!</span>' + slotStrip;
         } else {
-          statusContent = '<span class="bs-roulette-result-safe">😮‍💨 ' + escapeHtml(targetName) + ' 세이프! 살았다!</span>' + slotStrip;
+          statusContent = '<span class="bs-roulette-result-safe">😮‍💨 ' + escapeHtml(targetName) + ' 세이프! 휴~ 살았다!</span>' + slotStrip;
         }
       } else {
         statusContent = '';
@@ -876,7 +876,7 @@ function renderBSView(view) {
       var resultEl = document.getElementById('bsRevealResult');
 
       if (titleEl) {
-        titleEl.textContent = (view.liarCallerName || '???') + '이(가) 라이어 선언!';
+        titleEl.textContent = (view.liarCallerName || '???') + '이(가) 라이어 콜!';
       }
 
       if (cardsEl) {
@@ -895,10 +895,10 @@ function renderBSView(view) {
       if (resultEl) {
         if (view.revealResult === 'caught') {
           resultEl.className = 'bs-reveal-result liar-caught';
-          resultEl.textContent = '거짓말 적발! ' + (view.penaltyPlayer ? view.penaltyPlayer.name : '') + ' → 폭탄주 룰렛!';
+          resultEl.textContent = '딱 걸렸다! ' + (view.penaltyPlayer ? view.penaltyPlayer.name : '') + ' → 폭탄주 룰렛!';
         } else {
           resultEl.className = 'bs-reveal-result liar-wrong';
-          resultEl.textContent = '정직했음! ' + (view.penaltyPlayer ? view.penaltyPlayer.name : '') + ' → 폭탄주 룰렛!';
+          resultEl.textContent = '아닌데?! ' + (view.penaltyPlayer ? view.penaltyPlayer.name : '') + ' → 폭탄주 룰렛!';
         }
       }
     } else {

@@ -1,6 +1,6 @@
 /* =============================================
    DRINK-DODGE POKER (술피하기 포커)
-   Dark neon bar theme
+   Dark neon bar theme — Compact layout v2
    ============================================= */
 
 /* -- Design Tokens -- */
@@ -48,7 +48,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 6px 12px;
   background: rgba(0, 0, 0, 0.6);
   border-bottom: 1px solid rgba(77, 208, 225, 0.12);
   z-index: 10;
@@ -56,13 +56,13 @@
 }
 
 .dp-back-btn {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -75,20 +75,20 @@
 
 .dp-header-title {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 17px;
+  font-size: 16px;
   color: var(--dp-neon-cyan);
   text-shadow: 0 0 10px rgba(0, 229, 255, 0.35);
   letter-spacing: 0.5px;
 }
 
 .dp-tracker-btn {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -106,7 +106,7 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  padding: 6px 12px;
+  padding: 5px 12px;
   font-size: 13px;
   font-weight: 700;
   color: var(--text-dim, #aaa);
@@ -114,7 +114,7 @@
   background: rgba(0, 0, 0, 0.3);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   flex-shrink: 0;
-  min-height: 32px;
+  min-height: 28px;
   transition: all 0.3s;
 }
 .dp-turn-indicator.my-turn {
@@ -133,25 +133,30 @@
 .dp-opponents {
   display: flex;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 8px 4px;
+  gap: 4px;
+  padding: 6px 8px 4px;
   flex-shrink: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.dp-opponents::-webkit-scrollbar { display: none; }
 
 .dp-opp {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 6px 10px;
-  border-radius: var(--dp-radius);
+  gap: 2px;
+  padding: 4px 8px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
   border: 2px solid transparent;
   transition: all 0.3s;
-  min-width: 78px;
+  min-width: 64px;
   position: relative;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 /* JS uses dp-opp-active as a class name (not .dp-opp.active) */
@@ -159,7 +164,7 @@
 .dp-opp.dp-opp-active {
   border-color: var(--dp-neon-gold);
   background: rgba(255, 215, 0, 0.1);
-  box-shadow: 0 0 18px rgba(255, 215, 0, 0.25), inset 0 0 10px rgba(255, 215, 0, 0.06);
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.25), inset 0 0 8px rgba(255, 215, 0, 0.06);
   transform: scale(1.04);
 }
 
@@ -178,13 +183,13 @@
 }
 
 .dp-opp-avatar {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 16px;
   border: 2px solid rgba(255, 255, 255, 0.12);
   transition: border-color 0.3s;
 }
@@ -192,33 +197,33 @@
 .dp-opp.active .dp-opp-avatar,
 .dp-opp.dp-opp-active .dp-opp-avatar {
   border-color: var(--dp-neon-gold);
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
 
 .dp-opp-name {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text, #eee);
-  max-width: 68px;
+  max-width: 60px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .dp-opp-hand-count {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-dim, #aaa);
   font-weight: 700;
 }
-.dp-hand-icon { font-size: 14px; }
+.dp-hand-icon { font-size: 12px; }
 
 .dp-opp-faceup {
   display: flex;
-  gap: 3px;
-  margin-top: 2px;
+  gap: 2px;
+  margin-top: 1px;
   justify-content: center;
   flex-wrap: wrap;
-  max-width: 80px;
+  max-width: 72px;
 }
 
 /* ===== FACE-UP BADGES (dpRenderFaceUpBadges output) ===== */
@@ -300,14 +305,15 @@
 
 /* ===== CENTER AREA ===== */
 .dp-center {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 16px 12px;
-  gap: 10px;
-  min-height: 130px;
+  padding: 10px 12px;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .dp-center-card {
@@ -316,31 +322,32 @@
   align-items: center;
 }
 
+/* Center card: 1.5x scale (was 2.5x — much more compact) */
 .dp-center-card .dp-card-drawn {
-  width: calc(var(--dp-card-w) * 2.5);
-  height: calc(var(--dp-card-h) * 2.5);
+  width: calc(var(--dp-card-w) * 1.5);
+  height: calc(var(--dp-card-h) * 1.5);
   margin: 0;
-  border-width: 3px;
+  border-width: 2px;
   box-shadow:
-    0 18px 36px rgba(0, 0, 0, 0.55),
-    0 0 24px rgba(0, 229, 255, 0.22);
+    0 12px 24px rgba(0, 0, 0, 0.5),
+    0 0 18px rgba(0, 229, 255, 0.2);
 }
 
 .dp-center-card .dp-card-drawn .dp-card-emoji {
-  font-size: 64px;
+  font-size: 40px;
 }
 
 .dp-center-card .dp-card-drawn .dp-card-name {
-  font-size: 17px;
-  margin-top: 8px;
+  font-size: 13px;
+  margin-top: 4px;
 }
 
 .dp-center-claim {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   text-align: center;
   color: var(--text, #eee);
-  min-height: 22px;
+  min-height: 20px;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
@@ -354,30 +361,30 @@
 .dp-claim-tag {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 20px;
+  gap: 5px;
+  font-size: 16px;
   font-weight: 900;
   color: var(--dp-neon-gold);
-  padding: 8px 20px;
+  padding: 5px 14px;
   background: rgba(255, 215, 0, 0.08);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 30px;
+  border-radius: 24px;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
-.dp-claim-emoji { font-size: 28px; }
+.dp-claim-emoji { font-size: 22px; }
 
 /* ===== ROUTE DISPLAY ===== */
 .dp-route {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 15px;
+  gap: 6px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text, #eee);
 }
 .dp-route-arrow {
-  font-size: 20px;
+  font-size: 16px;
   color: var(--dp-neon-cyan);
   text-shadow: 0 0 6px rgba(0, 229, 255, 0.4);
 }
@@ -390,10 +397,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
-  padding: 10px;
-  border-radius: 16px;
+  padding: 8px;
+  border-radius: 14px;
   transition: background 0.2s;
 }
 .dp-deck-visual:active {
@@ -401,13 +408,13 @@
 }
 .dp-deck-stack {
   position: relative;
-  width: 100px;
-  height: 140px;
+  width: 76px;
+  height: 106px;
 }
 .dp-deck-card {
   position: absolute;
-  width: 100px !important;
-  height: 140px !important;
+  width: 76px !important;
+  height: 106px !important;
   border-radius: 10px !important;
   margin: 0 !important;
   cursor: pointer !important;
@@ -416,7 +423,7 @@
 .dp-deck-2 { top: -3px; left: 3px; z-index: 2; transform: rotate(3deg) !important; }
 .dp-deck-3 { top: -5px; left: -3px; z-index: 1; transform: rotate(-2deg) !important; opacity: 0.7; }
 .dp-deck-tap {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--dp-neon-gold);
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
@@ -429,13 +436,13 @@
 
 /* ===== PEEK TRAIL ===== */
 .dp-peek-trail {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--dp-neon-purple);
   text-align: center;
-  padding: 6px 12px;
+  padding: 4px 10px;
   background: rgba(179, 136, 255, 0.08);
-  border-radius: 10px;
-  margin-top: 4px;
+  border-radius: 8px;
+  margin-top: 2px;
 }
 .dp-peek-name {
   font-weight: 800;
@@ -444,9 +451,9 @@
 
 /* ===== REVEAL RESULT (in center area) ===== */
 .dp-reveal-result {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
-  padding: 8px 16px;
+  padding: 6px 14px;
   border-radius: 10px;
   text-align: center;
   animation: dp-reveal-pop 0.4s ease-out;
@@ -614,98 +621,101 @@
   opacity: 0.4;
 }
 
-/* ===== MY FACE-UP AREA ===== */
+/* ===== MY INFO BAR (face-up + hand combined) ===== */
+.dp-my-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ===== MY FACE-UP (inside info bar) ===== */
 .dp-my-faceup {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 6px;
-  padding: 6px 12px;
-  flex-shrink: 0;
-  min-height: 44px;
+  padding: 0;
+  flex: 1;
+  min-height: auto;
+  min-width: 0;
 }
 
 .dp-my-faceup-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-dim, #aaa);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
 }
 
 .dp-my-faceup-cards {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   align-items: center;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.dp-my-faceup-cards::-webkit-scrollbar { display: none; }
 
-.dp-my-faceup .dp-faceup-badge,
-.dp-opp-faceup .dp-faceup-badge {
-  font-size: 15px;
+/* Face-up badge sizes: my info bar (slightly larger) */
+.dp-my-faceup .dp-faceup-badge {
+  font-size: 12px;
   font-weight: 900;
-  padding: 5px 10px;
-  border-radius: 14px;
-  border-width: 2px;
+  padding: 3px 7px;
+  border-radius: 12px;
 }
 
-/* ===== MY HAND ===== */
+/* Face-up badge sizes: opponent area (compact) */
+.dp-opp-faceup .dp-faceup-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 8px;
+}
+
+/* ===== MY HAND (compact badge inside info bar) ===== */
 .dp-my-hand {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 16px;
-  flex: 1;
-  min-height: 0;
+  justify-content: flex-end;
+  padding: 0;
+  flex: 0 0 auto;
 }
 
-.dp-hand-stack {
-  position: relative;
-  width: 110px;
-  height: 154px;
+.dp-hand-compact {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--dp-neon-cyan);
+  padding: 4px 12px;
+  background: rgba(0, 229, 255, 0.08);
+  border-radius: 18px;
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  white-space: nowrap;
 }
-.dp-hand-stack-card {
-  position: absolute;
-  width: 110px !important;
-  height: 154px !important;
-  border-radius: 12px !important;
-  margin: 0 !important;
-  cursor: default !important;
-  transform: none !important;
+.dp-hand-compact-empty {
+  color: var(--text-dim, #aaa);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
 }
-.dp-hand-stack-card .dp-card-emoji { font-size: 36px; }
-.dp-stack-1 { top: 0; left: 0; z-index: 4; }
-.dp-stack-2 { top: -3px; left: 4px; z-index: 3; transform: rotate(2deg) !important; }
-.dp-stack-3 { top: -5px; left: -4px; z-index: 2; transform: rotate(-3deg) !important; }
-.dp-stack-4 { top: -6px; left: 6px; z-index: 1; transform: rotate(4deg) !important; opacity: 0.6; }
-.dp-hand-count-badge {
-  position: absolute;
-  bottom: -8px;
-  right: -12px;
-  background: var(--dp-neon-cyan);
-  color: #000;
+.dp-hand-icon-sm { font-size: 15px; }
+.dp-hand-num {
   font-size: 16px;
   font-weight: 900;
-  padding: 4px 12px;
-  border-radius: 20px;
-  z-index: 10;
-  box-shadow: 0 2px 10px rgba(0, 229, 255, 0.4);
-}
-.dp-hand-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-dim, #aaa);
-  text-align: center;
 }
 
+/* Legacy: keep for backwards compat */
 .dp-hand-empty {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-dim, #aaa);
   text-align: center;
-  padding: 16px 0;
   opacity: 0.7;
 }
 
@@ -713,8 +723,8 @@
 .dp-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px 14px 14px;
+  gap: 6px;
+  padding: 8px 14px 12px;
   flex-shrink: 0;
   background: rgba(0, 0, 0, 0.5);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -732,7 +742,7 @@
   font-weight: 700;
   color: var(--text, #eee);
   text-align: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .dp-respond-buttons {
@@ -754,7 +764,7 @@
   font-size: 13px;
   padding: 10px;
   opacity: 0.85;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 /* ===== BUTTONS ===== */
@@ -771,6 +781,7 @@
   position: relative;
   overflow: hidden;
   min-width: 0;
+  touch-action: manipulation;
 }
 .dp-btn:disabled {
   opacity: 0.3;
@@ -836,8 +847,8 @@
 }
 
 .dp-btn-big {
-  padding: 16px 12px;
-  font-size: 17px;
+  padding: 14px 12px;
+  font-size: 16px;
 }
 
 /* ===== WAITING INDICATOR ===== */
@@ -846,7 +857,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 8px 16px;
   font-size: 13px;
   color: var(--text-dim, #aaa);
 }
@@ -1450,9 +1461,9 @@
 /* respond 페이즈: 받는 쪽에서 카드가 도착하는 느낌 */
 .dp-center-card .dp-card-drawn.dp-card-present {
   box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.65),
-    0 0 30px rgba(0, 229, 255, 0.15),
-    0 0 60px rgba(0, 229, 255, 0.08);
+    0 16px 32px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(0, 229, 255, 0.15),
+    0 0 40px rgba(0, 229, 255, 0.08);
   animation: dp-card-arrive 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
@@ -1465,68 +1476,28 @@
 /* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 480px) {
   .dp-header-title {
-    font-size: 15px;
+    font-size: 14px;
   }
   .dp-turn-indicator {
     font-size: 12px;
     padding: 4px 8px;
-    min-height: 28px;
+    min-height: 24px;
   }
 }
 
-@media (max-height: 750px) {
+@media (max-height: 700px) {
   .dp-center {
-    padding: 10px 12px;
-    min-height: 100px;
-  }
-  .dp-card {
-    width: 52px;
-    height: 74px;
-  }
-  .dp-card-emoji {
-    font-size: 22px;
-  }
-  .dp-card-name {
-    font-size: 8px;
-  }
-  .dp-my-hand {
-    padding: 6px 8px 4px;
-  }
-  .dp-opponents {
-    padding: 4px 6px 2px;
-  }
-  .dp-opp {
-    padding: 4px 8px;
-    min-width: 64px;
-  }
-  .dp-opp-avatar {
-    width: 30px;
-    height: 30px;
-    font-size: 16px;
-  }
-  .dp-actions {
-    padding: 6px 12px 10px;
-  }
-  .dp-btn {
-    padding: 10px 6px;
-    font-size: 14px;
-  }
-}
-
-@media (max-height: 650px) {
-  .dp-center {
-    padding: 6px 10px;
-    min-height: 80px;
+    padding: 8px 10px;
     gap: 6px;
   }
-  .dp-card {
-    width: 46px;
-    height: 66px;
-    margin: 0 -4px;
+  .dp-center-card .dp-card-drawn {
+    width: calc(var(--dp-card-w) * 1.3);
+    height: calc(var(--dp-card-h) * 1.3);
   }
-  .dp-card-emoji {
-    font-size: 20px;
-  }
+  .dp-center-card .dp-card-drawn .dp-card-emoji { font-size: 34px; }
+  .dp-center-card .dp-card-drawn .dp-card-name { font-size: 11px; }
+  .dp-deck-stack { width: 66px; height: 92px; }
+  .dp-deck-card { width: 66px !important; height: 92px !important; }
   .dp-opp {
     padding: 3px 6px;
     min-width: 56px;
@@ -1536,61 +1507,78 @@
     height: 26px;
     font-size: 14px;
   }
-  .dp-opp-name {
-    font-size: 10px;
+  .dp-opp-name { font-size: 9px; }
+  .dp-opp-hand-count { font-size: 10px; }
+  .dp-my-info-bar { padding: 4px 10px; }
+  .dp-actions {
+    padding: 6px 12px 10px;
+    gap: 5px;
   }
-  .dp-my-faceup {
+  .dp-btn {
+    padding: 10px 6px;
+    font-size: 14px;
+  }
+  .dp-btn-big { padding: 12px 10px; font-size: 15px; }
+  .dp-claim-tag { font-size: 14px; padding: 4px 12px; }
+  .dp-route { font-size: 12px; gap: 5px; }
+}
+
+@media (max-height: 600px) {
+  .dp-header { padding: 4px 10px; }
+  .dp-turn-indicator {
     padding: 2px 8px;
-    min-height: 24px;
+    font-size: 11px;
+    min-height: 20px;
+  }
+  .dp-center {
+    padding: 6px 8px;
     gap: 4px;
   }
+  .dp-center-card .dp-card-drawn {
+    width: calc(var(--dp-card-w) * 1.15);
+    height: calc(var(--dp-card-h) * 1.15);
+  }
+  .dp-center-card .dp-card-drawn .dp-card-emoji { font-size: 28px; }
+  .dp-center-card .dp-card-drawn .dp-card-name { font-size: 10px; }
+  .dp-deck-stack { width: 56px; height: 78px; }
+  .dp-deck-card { width: 56px !important; height: 78px !important; }
+  .dp-opponents { padding: 3px 6px 2px; gap: 3px; }
+  .dp-my-info-bar { padding: 3px 8px; }
+  .dp-my-faceup .dp-faceup-badge { font-size: 10px; padding: 2px 5px; }
+  .dp-hand-compact { font-size: 12px; padding: 3px 8px; }
+  .dp-hand-num { font-size: 13px; }
   .dp-actions {
     padding: 4px 10px 8px;
-    gap: 6px;
+    gap: 4px;
   }
   .dp-btn {
     padding: 8px 4px;
     font-size: 13px;
     border-radius: 8px;
   }
-  .dp-header {
-    padding: 4px 10px;
-  }
-  .dp-turn-indicator {
-    padding: 2px 8px;
-    font-size: 11px;
-    min-height: 22px;
-  }
+  .dp-btn-big { padding: 10px 8px; font-size: 14px; }
+  .dp-claim-tag { font-size: 13px; padding: 3px 10px; }
+  .dp-reveal-result { font-size: 14px; padding: 4px 10px; }
 }
 
-@media (max-height: 550px) {
+@media (max-height: 500px) {
+  .dp-turn-indicator { display: none; }
   .dp-center {
-    padding: 4px 8px;
-    min-height: 60px;
-    gap: 4px;
+    padding: 4px 6px;
+    gap: 3px;
   }
-  .dp-center-claim {
-    font-size: 12px;
+  .dp-center-card .dp-card-drawn {
+    width: calc(var(--dp-card-w) * 1);
+    height: calc(var(--dp-card-h) * 1);
   }
-  .dp-card {
-    width: 40px;
-    height: 58px;
-    margin: 0 -3px;
-  }
-  .dp-card-emoji {
-    font-size: 18px;
-  }
-  .dp-card-name {
-    font-size: 7px;
-  }
-  .dp-my-faceup {
-    display: none;
-  }
-  .dp-opponents {
-    padding: 2px 4px 0;
-    gap: 4px;
-  }
-  .dp-turn-indicator {
-    display: none;
-  }
+  .dp-center-card .dp-card-drawn .dp-card-emoji { font-size: 24px; }
+  .dp-center-card .dp-card-drawn .dp-card-name { font-size: 9px; }
+  .dp-deck-stack { width: 48px; height: 67px; }
+  .dp-deck-card { width: 48px !important; height: 67px !important; }
+  .dp-opponents { padding: 2px 4px 0; gap: 2px; }
+  .dp-opp { padding: 2px 4px; min-width: 48px; }
+  .dp-opp-avatar { width: 22px; height: 22px; font-size: 12px; }
+  .dp-opp-faceup { display: none; }
+  .dp-claim-tag { font-size: 12px; padding: 2px 8px; }
+  .dp-claim-emoji { font-size: 16px; }
 }

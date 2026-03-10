@@ -447,11 +447,11 @@ function renderDPView(view) {
     } else if (view.phase === 'respond') {
       var isTarget = view.currentCard && view.currentCard.targetId === state.myId;
       if (isTarget) {
-        turnEl.textContent = '🤔 이 주장을 판단하세요!';
+        turnEl.textContent = '🤔 진짜일까? 거짓말일까?';
         turnEl.className = 'dp-turn-indicator my-turn';
       } else {
         var target = dpFindPlayer(view, view.currentCard ? view.currentCard.targetId : null);
-        turnEl.textContent = escapeHTML((target ? target.name : '상대방')) + ' 판단 중...';
+        turnEl.textContent = escapeHTML((target ? target.name : '상대방')) + ' 고민 중...';
         turnEl.className = 'dp-turn-indicator';
       }
     } else if (view.phase === 'peek-pass') {
@@ -559,7 +559,7 @@ function renderDPView(view) {
       if (view.phase === 'reveal' && cc.actualCard) {
         var matched = (cc.actualCard === cc.claim);
         revealResultHtml = '<div class="dp-reveal-result ' + (matched ? 'dp-reveal-true' : 'dp-reveal-false') + '">' +
-          (matched ? '✅ 주장이 맞았다!' : '❌ 거짓이었다!') +
+          (matched ? '✅ 진짜였어!' : '❌ 뻥이었어!') +
           '</div>';
       }
 
@@ -574,8 +574,8 @@ function renderDPView(view) {
 
   var myFuEl = document.getElementById('dpMyFaceUp');
   if (myFuEl && myPlayerView) {
-    var myFuHtml = '<div class="dp-my-faceup-label">내 공개 카드</div>';
-    myFuHtml += '<div class="dp-my-faceup-cards">' + dpRenderFaceUpBadges(myPlayerView.faceUp, true) + '</div>';
+    var myFuHtml = '<span class="dp-my-faceup-label">공개</span>';
+    myFuHtml += '<span class="dp-my-faceup-cards">' + dpRenderFaceUpBadges(myPlayerView.faceUp, true) + '</span>';
     myFuEl.innerHTML = myFuHtml;
   }
 
@@ -583,17 +583,9 @@ function renderDPView(view) {
   if (handEl) {
     var handCount = (typeof view.myHandCount === 'number') ? view.myHandCount : ((view.myHand || []).length);
     if (handCount > 0) {
-      var stackCount = Math.min(handCount, 4);
-      var stackHtml = '<div class="dp-hand-stack">';
-      for (var si = stackCount; si >= 1; si--) {
-        stackHtml += '<div class="dp-card dp-card-back dp-hand-stack-card dp-stack-' + si + '"></div>';
-      }
-      stackHtml += '<div class="dp-hand-count-badge">' + handCount + '장</div>';
-      stackHtml += '</div>';
-      stackHtml += '<div class="dp-hand-label">남은 패</div>';
-      handEl.innerHTML = stackHtml;
+      handEl.innerHTML = '<div class="dp-hand-compact"><span class="dp-hand-icon-sm">🃏</span><span class="dp-hand-num">' + handCount + '</span>장</div>';
     } else {
-      handEl.innerHTML = '<div class="dp-hand-empty">패 없음</div>';
+      handEl.innerHTML = '<div class="dp-hand-compact dp-hand-compact-empty"><span class="dp-hand-icon-sm">🃏</span><span class="dp-hand-num">0</span>장</div>';
     }
   }
 
@@ -620,12 +612,12 @@ function renderDPView(view) {
       }
 
       actionHtml =
-        '<div class="dp-respond-label">이 주장, 어떻게 볼까?</div>' +
+        '<div class="dp-respond-label">믿을까, 말까?</div>' +
         '<div class="dp-respond-main">' +
-        '<button class="dp-btn dp-btn-true" onclick="dpRespond(\'true\')">⭕ 맞다</button>' +
-        '<button class="dp-btn dp-btn-false" onclick="dpRespond(\'false\')">❌ 거짓이다</button>' +
+        '<button class="dp-btn dp-btn-true" onclick="dpRespond(\'true\')">⭕ 진짜!</button>' +
+        '<button class="dp-btn dp-btn-false" onclick="dpRespond(\'false\')">❌ 거짓말!</button>' +
         '</div>' +
-        (canPeek ? '<button class="dp-btn dp-btn-peek dp-btn-peek-full" onclick="dpRespond(\'peek\')">👀 훔쳐보고 다른 사람에게 넘기기</button>' : '');
+        (canPeek ? '<button class="dp-btn dp-btn-peek dp-btn-peek-full" onclick="dpRespond(\'peek\')">👀 몰래 보고 떠넘기기</button>' : '');
     } else if (view.phase === 'peek-pass' && view.currentCard && view.currentCard.fromId === state.myId) {
       actionHtml = '<button class="dp-btn dp-btn-confirm dp-btn-big" onclick="dpPeekPass()">↗️ 다른 사람에게 넘기기</button>';
     } else if (view.phase === 'gameover') {
@@ -641,7 +633,7 @@ function renderDPView(view) {
         waitCtx = (dp2 ? dp2.name : '상대방') + '이(가) 카드를 확인하는 중';
       } else if (view.phase === 'respond') {
         var rt = view.currentCard ? dpFindPlayer(view, view.currentCard.targetId) : null;
-        waitCtx = (rt ? rt.name : '상대방') + '이(가) 판단하는 중';
+        waitCtx = (rt ? rt.name : '상대방') + '이(가) 고민하는 중';
       } else if (view.phase === 'peek-pass') {
         var pk = view.currentCard ? dpFindPlayer(view, view.currentCard.fromId) : null;
         waitCtx = (pk ? pk.name : '상대방') + '이(가) 넘길 대상을 고르는 중';
@@ -1018,10 +1010,10 @@ function handleDPResult(msg) {
     }
 
     if (msg.loserId === state.myId) {
-      titleEl.textContent = '패배... 술을 피하지 못했습니다!';
+      titleEl.textContent = '술을 못 피했다...!';
       titleEl.className = 'dp-gameover-title dp-gameover-lose';
     } else {
-      titleEl.textContent = escapeHTML(loser ? loser.name : '???') + '이(가) 졌습니다!';
+      titleEl.textContent = escapeHTML(loser ? loser.name : '???') + ' 탈락!';
       titleEl.className = 'dp-gameover-title dp-gameover-win';
     }
   }
