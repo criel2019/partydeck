@@ -688,8 +688,8 @@ function dpSend() {
         '<div class="dp-card-name">' + DP_NAMES[card] + '</div>' +
       '</div>' +
     '</div>' +
-    '<div class="dp-modal-section">' +
-      '<div class="dp-modal-label">대상 플레이어</div>' +
+    '<div class="dp-modal-section dp-section-target">' +
+      '<div class="dp-modal-label"><span class="dp-section-step">1</span>누구에게 보낼까?</div>' +
       '<div class="dp-modal-targets" id="dpSendTargets">';
 
   targets.forEach(function(p) {
@@ -699,8 +699,8 @@ function dpSend() {
   });
 
   html += '</div></div>' +
-    '<div class="dp-modal-section">' +
-      '<div class="dp-modal-label">주장할 술 종류</div>' +
+    '<div class="dp-modal-section dp-section-claim">' +
+      '<div class="dp-modal-label"><span class="dp-section-step">2</span>뭐라고 주장할까?</div>' +
       '<div class="dp-modal-claims" id="dpSendClaims">';
 
   DP_TYPES.forEach(function(t) {
@@ -825,8 +825,8 @@ function dpPeekPass() {
     '</div>';
   }
 
-  html += '<div class="dp-modal-section">' +
-    '<div class="dp-modal-label">누구에게 넘길까?</div>' +
+  html += '<div class="dp-modal-section dp-section-target">' +
+    '<div class="dp-modal-label"><span class="dp-section-step">1</span>누구에게 넘길까?</div>' +
     '<div class="dp-modal-targets" id="dpPeekTargets">';
 
   eligible.forEach(function(p) {
@@ -836,8 +836,8 @@ function dpPeekPass() {
   });
 
   html += '</div></div>' +
-    '<div class="dp-modal-section">' +
-      '<div class="dp-modal-label">뭐라고 주장할까?</div>' +
+    '<div class="dp-modal-section dp-section-claim">' +
+      '<div class="dp-modal-label"><span class="dp-section-step">2</span>뭐라고 주장할까?</div>' +
       '<div class="dp-modal-claims" id="dpPeekClaims">';
 
   DP_TYPES.forEach(function(t) {

@@ -424,7 +424,14 @@
 .dp-card-hand-back {
   cursor: default !important;
   transform: none !important;
-  margin: 0 -10px;
+  width: 80px;
+  height: 112px;
+  margin: 0 -8px;
+  border-radius: 10px;
+}
+
+.dp-card-hand-back .dp-card-emoji {
+  font-size: 32px;
 }
 
 .dp-card-hand-back:hover {
@@ -570,19 +577,18 @@
 /* ===== MY HAND ===== */
 .dp-my-hand {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   gap: 0;
-  padding: 8px 12px 6px;
-  flex-shrink: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  padding: 12px 16px;
+  flex: 1;
+  min-height: 0;
+  flex-wrap: wrap;
+  row-gap: 8px;
+  align-content: center;
+  overflow-y: auto;
   perspective: 800px;
 }
-.dp-my-hand::-webkit-scrollbar { display: none; }
 
 .dp-hand-empty {
   font-size: 13px;
@@ -798,15 +804,55 @@
 .dp-modal-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  padding: 14px 12px;
+  border-radius: 14px;
+  position: relative;
+}
+
+/* 1단계: 대상 플레이어 섹션 */
+.dp-modal-section.dp-section-target {
+  background: rgba(0, 229, 255, 0.05);
+  border: 1px solid rgba(0, 229, 255, 0.15);
+}
+
+/* 2단계: 술 종류 선택 섹션 */
+.dp-modal-section.dp-section-claim {
+  background: rgba(255, 183, 77, 0.05);
+  border: 1px solid rgba(255, 183, 77, 0.15);
+}
+
+/* 스텝 넘버 배지 */
+.dp-section-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 900;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.dp-section-target .dp-section-step {
+  background: var(--dp-neon-cyan);
+  color: #000;
+}
+
+.dp-section-claim .dp-section-step {
+  background: var(--dp-whiskey);
+  color: #000;
 }
 
 .dp-modal-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-dim, #aaa);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text, #eee);
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
 }
 
 /* --- Target buttons in modal --- */
@@ -820,17 +866,20 @@
 .dp-target-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text, #eee);
   font-family: 'Noto Sans KR', sans-serif;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
 }
 .dp-target-btn:hover {
   border-color: rgba(0, 229, 255, 0.3);
@@ -838,33 +887,36 @@
 }
 .dp-target-btn.selected {
   border-color: var(--dp-neon-cyan);
-  background: rgba(0, 229, 255, 0.12);
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
+  background: rgba(0, 229, 255, 0.15);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.25);
   color: var(--dp-neon-cyan);
+  transform: scale(1.03);
 }
 
 /* --- Claim buttons in modal --- */
 .dp-modal-claims {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .dp-claim-btn {
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 8px 14px;
+  padding: 10px 16px;
   border-radius: 20px;
   border: 2px solid transparent;
   background: rgba(255, 255, 255, 0.06);
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text, #eee);
   font-family: 'Noto Sans KR', sans-serif;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
 }
 
 /* Claim button drink-type colors via data attribute or secondary class */
@@ -874,12 +926,16 @@
   border-color: rgba(77, 208, 225, 0.2);
 }
 .dp-claim-btn[data-claim="soju"]:hover,
-.dp-claim-btn[data-claim="soju"].selected,
-.dp-claim-btn.soju:hover,
-.dp-claim-btn.soju.selected {
+.dp-claim-btn.soju:hover {
   border-color: var(--dp-soju);
   background: rgba(77, 208, 225, 0.12);
-  box-shadow: 0 0 10px rgba(77, 208, 225, 0.2);
+}
+.dp-claim-btn[data-claim="soju"].selected,
+.dp-claim-btn.soju.selected {
+  border-color: var(--dp-soju);
+  background: rgba(77, 208, 225, 0.18);
+  box-shadow: 0 0 12px rgba(77, 208, 225, 0.3);
+  transform: scale(1.05);
 }
 
 .dp-claim-btn[data-claim="whiskey"],
@@ -888,12 +944,16 @@
   border-color: rgba(255, 183, 77, 0.2);
 }
 .dp-claim-btn[data-claim="whiskey"]:hover,
-.dp-claim-btn[data-claim="whiskey"].selected,
-.dp-claim-btn.whiskey:hover,
-.dp-claim-btn.whiskey.selected {
+.dp-claim-btn.whiskey:hover {
   border-color: var(--dp-whiskey);
   background: rgba(255, 183, 77, 0.12);
-  box-shadow: 0 0 10px rgba(255, 183, 77, 0.2);
+}
+.dp-claim-btn[data-claim="whiskey"].selected,
+.dp-claim-btn.whiskey.selected {
+  border-color: var(--dp-whiskey);
+  background: rgba(255, 183, 77, 0.18);
+  box-shadow: 0 0 12px rgba(255, 183, 77, 0.3);
+  transform: scale(1.05);
 }
 
 .dp-claim-btn[data-claim="beer"],
@@ -902,12 +962,16 @@
   border-color: rgba(255, 213, 79, 0.2);
 }
 .dp-claim-btn[data-claim="beer"]:hover,
-.dp-claim-btn[data-claim="beer"].selected,
-.dp-claim-btn.beer:hover,
-.dp-claim-btn.beer.selected {
+.dp-claim-btn.beer:hover {
   border-color: var(--dp-beer);
   background: rgba(255, 213, 79, 0.12);
-  box-shadow: 0 0 10px rgba(255, 213, 79, 0.2);
+}
+.dp-claim-btn[data-claim="beer"].selected,
+.dp-claim-btn.beer.selected {
+  border-color: var(--dp-beer);
+  background: rgba(255, 213, 79, 0.18);
+  box-shadow: 0 0 12px rgba(255, 213, 79, 0.3);
+  transform: scale(1.05);
 }
 
 .dp-claim-btn[data-claim="makgeolli"],
@@ -916,12 +980,16 @@
   border-color: rgba(200, 230, 201, 0.2);
 }
 .dp-claim-btn[data-claim="makgeolli"]:hover,
-.dp-claim-btn[data-claim="makgeolli"].selected,
-.dp-claim-btn.makgeolli:hover,
-.dp-claim-btn.makgeolli.selected {
+.dp-claim-btn.makgeolli:hover {
   border-color: var(--dp-makgeolli);
   background: rgba(200, 230, 201, 0.12);
-  box-shadow: 0 0 10px rgba(200, 230, 201, 0.2);
+}
+.dp-claim-btn[data-claim="makgeolli"].selected,
+.dp-claim-btn.makgeolli.selected {
+  border-color: var(--dp-makgeolli);
+  background: rgba(200, 230, 201, 0.18);
+  box-shadow: 0 0 12px rgba(200, 230, 201, 0.3);
+  transform: scale(1.05);
 }
 
 /* --- Modal actions row --- */
