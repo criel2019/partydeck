@@ -365,7 +365,6 @@ body {
 .game-option.selected { border-color: var(--accent); background: rgba(255,107,53,0.15); }
 .game-option .game-emoji { font-size: 24px; display: block; }
 .game-option.disabled { opacity: 0.4; pointer-events: none; position: relative; }
-.game-disabled-tag { display: block; font-size: 9px; color: #ff6b6b; margin-top: 2px; }
 
 /* Game Catalog Overlay */
 .game-catalog-overlay {

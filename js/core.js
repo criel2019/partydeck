@@ -51,7 +51,7 @@ function loadPeerJS() {
 }
 
 // ===== CONSTANTS & STATE =====
-const SOLO_GAMES = ['tetris', 'jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil', 'tamagotchi', 'blackjack', 'idol', 'kingstagram', 'updown'];
+const SOLO_GAMES = ['jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil', 'tamagotchi', 'blackjack', 'idol', 'kingstagram', 'updown'];
 const SOLO_ONLY_GAMES = ['pupil', 'tamagotchi']; // 1인 전용 (다인 시 비활성화)
 const AVATARS = ['😎','🤠','👻','🦊','🐱','🐼','🦁','🐸','🎃','🤖','👽','🦄'];
 const SUITS = ['♠','♥','♦','♣'];
@@ -1443,8 +1443,6 @@ const GAME_INFO = {
   fortress: { emoji:'🏰', name:'요새', desc:'탱크 포격전! 각도와 파워를 조절해서 상대 요새를 파괴하세요.', players:'2~14명', time:'5~10분', type:'전략' },
   bombshot: { emoji:'🍺', name:'폭탄주', desc:'거짓말로 술을 섞는 라이어를 찾아라. 거짓말을 간파하고 폭탄주 룰렛을 피하자!', players:'2~4명', time:'5~15분', type:'블러프' },
   blackjack:{ emoji:'🃏', name:'블랙잭', desc:'딜러와의 21점 대결! 히트, 스탠드, 더블로 최적의 전략을 펼치세요.', players:'1~14명', time:'5~15분', type:'카드' },
-  stairs:   { emoji:'🪜', name:'무한계단', desc:'끝없이 올라가는 계단! 좌우 타이밍을 맞춰 최고 기록 도전.', players:'1~14명', time:'3~10분', type:'레이싱' },
-  tetris:   { emoji:'🧩', name:'테트리스', desc:'클래식 퍼즐! 블록을 쌓고 줄을 지워 최고 점수에 도전.', players:'1~14명', time:'5~10분', type:'퍼즐' },
   jewel:    { emoji:'💎', name:'보석맞추기', desc:'같은 보석 3개를 맞춰 제거! 콤보와 연쇄로 고득점.', players:'1~14명', time:'5~10분', type:'퍼즐' },
   colorchain:{ emoji:'🔗', name:'컬러체인', desc:'같은 색 구슬을 연결해서 터뜨려라! 중력과 연쇄 콤보.', players:'1~14명', time:'5~10분', type:'퍼즐' },
   slinkystairs:{ emoji:'🌀', name:'슬링키 스테어즈', desc:'무너지는 계단 위에서 슬링키를 조종해 살아남으세요! 좌우 타이밍이 핵심.', players:'1~14명', time:'3~10분', type:'아케이드' },

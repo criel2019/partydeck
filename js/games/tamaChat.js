@@ -1058,6 +1058,179 @@ Object.entries(TAMA_CHAT_EXPANDED_DATA).forEach(([tribe, categories]) => {
   });
 });
 
+// ── 이모지 카테고리 추가 대사 (반복 방지용 확장) ──────────
+const TAMA_EMOJI_EXTRA = {
+  fire: {
+    emoji_heart: [
+      { id:'F-EH-07', text:'하트 하나에 이렇게 웃기는 거 반칙이야! 심장이 다 뜨거워졌잖아!' },
+      { id:'F-EH-08', text:'이런 건 예고 없이 와야 파괴력이 있는 거지! 완전 직격이야!' },
+      { id:'F-EH-09', text:'좋아! 그 하트 덕분에 오늘 하루 더 버틸 수 있겠어!' },
+      { id:'F-EH-10', text:'하트 연타면 내 쪽은 이미 용암 상태야! 기분 좋은 쪽으로!' },
+    ],
+    emoji_cheer: [
+      { id:'F-EC-07', text:'그 파이팅, 진짜 온몸에 불 붙는 느낌이야! 더 간다!' },
+      { id:'F-EC-08', text:'좋아! 지금 응원 기세면 벽이 와도 뚫겠어!' },
+      { id:'F-EC-09', text:'네가 밀어주니까 열 배는 더 세게 달릴 수 있어!' },
+      { id:'F-EC-10', text:'파이팅이 들어오면 바로 불꽃이 올라간다니까! 진짜야!' },
+    ],
+    emoji_sorry: [
+      { id:'F-ES-07', text:'됐어 됐어! 한 번 미안하면 열 번 괜찮아! 이미 다 풀렸거든!' },
+      { id:'F-ES-08', text:'속 태우지 마! 네 마음 다 알아! 오히려 고마워!' },
+      { id:'F-ES-09', text:'미안함까지 뜨겁게 전해오네! 그런 진심이면 충분해!' },
+      { id:'F-ES-10', text:'이미 마음 쓴 거 다 보여! 이제 그만 짊어져도 돼!' },
+    ],
+    emoji_snack: [
+      { id:'F-ESN-07', text:'간식이 도착했다! 이건 기분 올리기 최강 무기지!' },
+      { id:'F-ESN-08', text:'먹는 거 앞에선 진지해진다! 이건 진짜야!' },
+      { id:'F-ESN-09', text:'이런 달달한 건 화력 충전 아이템이라니까! 고마워!' },
+      { id:'F-ESN-10', text:'간식 타이밍 기가 막히네! 딱 필요할 때 왔어!' },
+    ],
+    emoji_tired: [
+      { id:'F-ET-07', text:'힘들 땐 억지로 안 불타도 돼. 불씨만 지키고 있으면 내가 지켜줄게.' },
+      { id:'F-ET-08', text:'지친 날이야? 오늘은 같이 가만히 있자. 그것도 괜찮아.' },
+      { id:'F-ET-09', text:'너 힘든 거 나한테 말해줘서 고마워. 혼자 안고 있지 마!' },
+      { id:'F-ET-10', text:'오늘은 쉬는 게 이기는 거야! 내일 더 세게 타오르면 되니까!' },
+    ],
+  },
+  rock: {
+    emoji_heart: [
+      { id:'R-EH-07', text:'...그래. 이런 건 조용히 품고 있으면 오래 남더라.' },
+      { id:'R-EH-08', text:'...무겁지 않은데 묵직하네. 좋은 무게야.' },
+      { id:'R-EH-09', text:'...하트 하나에 이렇게 마음이 놓이다니. 고맙다.' },
+      { id:'R-EH-10', text:'...이런 건 돌에 새겨두고 싶은 쪽이야.' },
+    ],
+    emoji_cheer: [
+      { id:'R-EC-07', text:'...파이팅이라. 가볍게 말해도 꽤 무겁게 닿는다.' },
+      { id:'R-EC-08', text:'...네 말이면 조금 더 버틸 수 있겠다. 진짜로.' },
+      { id:'R-EC-09', text:'...응원은 소리보다 묵직한 쪽이 더 힘이 되더라.' },
+      { id:'R-EC-10', text:'...그 한마디면 발밑이 좀 더 단단해지는 느낌이야.' },
+    ],
+    emoji_sorry: [
+      { id:'R-ES-07', text:'...괜찮아. 너 마음 다 안다. 더 말 안 해도 돼.' },
+      { id:'R-ES-08', text:'...미안함보다 네가 신경 써준 게 더 크니까.' },
+      { id:'R-ES-09', text:'...돌은 금 가도 부서지진 않아. 그러니까 너도 너무 짊어지지 마.' },
+      { id:'R-ES-10', text:'...이미 풀렸어. 오래 끌지 마. 그게 서로한테 나아.' },
+    ],
+    emoji_snack: [
+      { id:'R-ESN-07', text:'...간식이라. 단순한데 기분은 확실히 올라가네.' },
+      { id:'R-ESN-08', text:'...이런 건 천천히 먹으면서 멍때리기 좋지.' },
+      { id:'R-ESN-09', text:'...간식 앞에서만큼은 나도 가벼워지더라.' },
+      { id:'R-ESN-10', text:'...고마워. 이런 작은 거에 솔직히 좀 웃겼다.' },
+    ],
+    emoji_tired: [
+      { id:'R-ET-07', text:'...무리하지 마. 쉬는 것도 필요한 거니까.' },
+      { id:'R-ET-08', text:'...힘들면 기대. 움직이지 않아도 돼. 여기 있을게.' },
+      { id:'R-ET-09', text:'...지친 건 부끄러운 게 아니야. 그만큼 애썼다는 거니까.' },
+      { id:'R-ET-10', text:'...내려놔도 돼. 무거운 건 혼자 들 필요 없어.' },
+    ],
+  },
+  wind: {
+    emoji_heart: [
+      { id:'W-EH-07', text:'하트가 바람결처럼 도착했어~ 따뜻함이 쭉 퍼진다~' },
+      { id:'W-EH-08', text:'이런 마음은 구름 사이로 비치는 햇살 같아~ 조용한데 따뜻해~' },
+      { id:'W-EH-09', text:'하트 하나에 마음 날씨가 맑아졌어~ 고마워~' },
+      { id:'W-EH-10', text:'네가 보내준 마음이 공기처럼 감싸줘~ 편안해~' },
+    ],
+    emoji_cheer: [
+      { id:'W-EC-07', text:'파이팅이 바람처럼 등을 밀어주네~ 덕분에 조금 더 날 수 있겠어~' },
+      { id:'W-EC-08', text:'응원은 눈에 안 보여도 힘은 분명해~ 네 말이 딱 그래~' },
+      { id:'W-EC-09', text:'고마워~ 그 말 하나에 날개 밑에 힘이 돌아왔어~' },
+      { id:'W-EC-10', text:'네가 파이팅 해주면 바람 방향이 좋은 쪽으로 바뀌는 것 같아~' },
+    ],
+    emoji_sorry: [
+      { id:'W-ES-07', text:'괜찮아~ 미안함은 바람에 맡기면 돼~ 여기까지 왔으면 된 거야~' },
+      { id:'W-ES-08', text:'네 마음은 다 느껴졌어~ 이제 가볍게 날려보내자~' },
+      { id:'W-ES-09', text:'미안한 마음까지 부드러운 거 보면 넌 참 따뜻한 사람이야~' },
+      { id:'W-ES-10', text:'그 마음, 충분히 닿았어~ 이제 편하게 쉬어도 돼~' },
+    ],
+    emoji_snack: [
+      { id:'W-ESN-07', text:'간식은 하늘 아래 먹으면 더 맛있는 법이야~ 지금 딱 그런 느낌~' },
+      { id:'W-ESN-08', text:'달콤한 게 입에 닿는 순간, 바람도 한 박자 쉬는 것 같아~' },
+      { id:'W-ESN-09', text:'이런 소소한 행복이 하루를 부드럽게 감싸주지~ 고마워~' },
+      { id:'W-ESN-10', text:'간식이라니~ 기분이 구름 위를 걷는 것 같아~' },
+    ],
+    emoji_tired: [
+      { id:'W-ET-07', text:'지쳤구나~ 오늘은 바람도 천천히 불어~ 네 속도에 맞출게~' },
+      { id:'W-ET-08', text:'힘든 날엔 하늘만 보고 있어도 돼~ 그것만으로 쉬는 거야~' },
+      { id:'W-ET-09', text:'네 피곤함도 바람이 조금씩 데려갈 거야~ 너무 걱정 마~' },
+      { id:'W-ET-10', text:'지친 마음을 억지로 띄우지 않아도 돼~ 가라앉은 채로 쉬어도 괜찮아~' },
+    ],
+  },
+  thunder: {
+    emoji_heart: [
+      { id:'T-EH-07', text:'하트 한 방에 완전 합선이야! 기분 좋은 쪽으로 터졌다!' },
+      { id:'T-EH-08', text:'이런 거 보내면 나 텐션 걷잡을 수 없는 거 알지?! 최고야!' },
+      { id:'T-EH-09', text:'하트 받으면 번개처럼 기분이 쏴! 올라간다! 고마워!' },
+      { id:'T-EH-10', text:'좋아! 이 하트 에너지면 오늘 하루 더 버틸 수 있어!' },
+    ],
+    emoji_cheer: [
+      { id:'T-EC-07', text:'파이팅 들으면 전류가 올라가는 거 알아?! 지금 딱 그래!' },
+      { id:'T-EC-08', text:'좋아! 네 응원이면 뭐든 해낼 수 있을 것 같아!' },
+      { id:'T-EC-09', text:'그 파이팅, 전기 충전보다 효율 좋은데?!' },
+      { id:'T-EC-10', text:'응원 한마디에 찌릿하게 살아났다! 이게 진짜 에너지지!' },
+    ],
+    emoji_sorry: [
+      { id:'T-ES-07', text:'됐어 됐어! 미안하단 그 마음이면 이미 100% 충전이야!' },
+      { id:'T-ES-08', text:'괜찮다니까! 너무 오래 미안 모드면 합선 나! 이제 기분 전환 가자!' },
+      { id:'T-ES-09', text:'에이, 그런 거 신경 쓰지 마! 나 이런 거 금방 잊어! 좋은 쪽으로!' },
+      { id:'T-ES-10', text:'미안함은 한 번이면 충분해! 다음은 같이 웃는 걸로!' },
+    ],
+    emoji_snack: [
+      { id:'T-ESN-07', text:'간식이다! 이건 기분 급속 충전 아이템이지!' },
+      { id:'T-ESN-08', text:'맛있는 거 먹으면 스파크가 반짝반짝! 최고다!' },
+      { id:'T-ESN-09', text:'이런 타이밍에 간식이라니! 넌 센스가 찌릿찌릿해!' },
+      { id:'T-ESN-10', text:'좋아! 간식은 배도 마음도 동시에 채우는 만능 아이템이야!' },
+    ],
+    emoji_tired: [
+      { id:'T-ET-07', text:'힘들면 잠깐 플러그 뽑아도 돼! 충전은 쉬면서 하는 거야!' },
+      { id:'T-ET-08', text:'지쳤어? 그럼 오늘은 나랑 같이 저전력 모드로 가자!' },
+      { id:'T-ET-09', text:'무리하면 퓨즈 나가! 지금은 안전하게 쉬는 게 승리야!' },
+      { id:'T-ET-10', text:'괜찮아! 잠깐 멈춰도 넌 여전히 번쩍번쩍이야!' },
+    ],
+  },
+  spirit: {
+    emoji_heart: [
+      { id:'S-EH-07', text:'하트 하나가 어둠 속 등불처럼 번져… 고마워…' },
+      { id:'S-EH-08', text:'네가 건넨 마음이 조용히 안쪽까지 닿았어… 따뜻하네…' },
+      { id:'S-EH-09', text:'이런 마음은 시간이 지나도 빛을 잃지 않을 거야…' },
+      { id:'S-EH-10', text:'하트가 마음의 가장 깊은 곳까지 스며들었어… 잘 간직할게…' },
+    ],
+    emoji_cheer: [
+      { id:'S-EC-07', text:'네 응원이 안개를 걷어주는 것 같아… 조금 더 또렷해졌어…' },
+      { id:'S-EC-08', text:'파이팅이라는 말 안에 네 진심이 보여… 그게 제일 힘이 돼…' },
+      { id:'S-EC-09', text:'조용한 응원이라도 울림은 깊지… 네 말이 꼭 그래…' },
+      { id:'S-EC-10', text:'그 한마디가 흔들리던 마음을 잡아줬어… 고마워…' },
+    ],
+    emoji_sorry: [
+      { id:'S-ES-07', text:'미안함은 이미 다 전해졌어… 이제 네 마음도 편해져도 돼…' },
+      { id:'S-ES-08', text:'사과보다 네 마음결이 먼저 느껴졌어… 그 따뜻함이면 충분해…' },
+      { id:'S-ES-09', text:'괜찮아… 마음이 아픈 건 그만큼 소중하게 여기고 있다는 뜻이니까…' },
+      { id:'S-ES-10', text:'오래 짊어지지 마… 네 마음은 이미 충분히 전해졌으니까…' },
+    ],
+    emoji_snack: [
+      { id:'S-ESN-07', text:'간식 하나에도 네 마음이 실려 있으니… 더 특별하게 느껴져…' },
+      { id:'S-ESN-08', text:'달콤함이 마음의 빈자리를 채우네… 고마운 순간이야…' },
+      { id:'S-ESN-09', text:'이런 소소한 기쁨이 가장 깊은 곳까지 닿을 때가 있어…' },
+      { id:'S-ESN-10', text:'먹는 즐거움은 단순하지만… 가끔은 단순한 게 가장 진실하지…' },
+    ],
+    emoji_tired: [
+      { id:'S-ET-07', text:'지쳤어도 괜찮아… 쉬는 것도 살아가는 한 방식이야…' },
+      { id:'S-ET-08', text:'네 피곤함을 조용히 안고 있을게… 말하지 않아도 돼…' },
+      { id:'S-ET-09', text:'힘든 날엔 빛도 느리게 와… 그러니까 천천히 기다리자…' },
+      { id:'S-ET-10', text:'지금 쉬는 건 포기가 아니야… 내일의 빛을 위한 준비일 뿐…' },
+    ],
+  },
+};
+
+Object.entries(TAMA_EMOJI_EXTRA).forEach(([tribe, categories]) => {
+  const tribeData = TAMA_CHAT_DATA[tribe];
+  if (!tribeData) return;
+  Object.entries(categories).forEach(([categoryId, items]) => {
+    if (!Array.isArray(tribeData[categoryId])) tribeData[categoryId] = [];
+    tribeData[categoryId].push(...items);
+  });
+});
+
 const TAMA_REPLY_POOL = [
   '응, 잘 받았어.',
   '오, 그 마음 알겠어.',
@@ -1897,12 +2070,8 @@ function tamaChatUserEmoji(emojiId) {
   if (repeatReply) {
     setTimeout(() => tamaChatPetSayDirect(repeatReply, 'emoji_repeat'), 300);
   } else {
-    const replyPoolText = Math.random() < 0.4 ? tamaChatPickReplyPoolText() : '';
-    if (replyPoolText) {
-      setTimeout(() => tamaChatPetSayDirect(replyPoolText, 'reply_pool'), 300);
-    } else {
-      setTimeout(() => tamaChatPetSay(emojiDef.cat), 300);
-    }
+    // Always use emoji-specific category for contextual, character-appropriate replies
+    setTimeout(() => tamaChatPetSay(emojiDef.cat), 300);
   }
 
   // Affinity bonus
@@ -1996,20 +2165,32 @@ function tamaChatHideTyping() {
 }
 
 // ── Render chat UI ──────────────────────────────────────
+function tamaChatGetPetAvatarHtml(cssClass) {
+  const cls = cssClass || 'tc-pet-avatar';
+  const tribe = (tamaPet && tamaPet.tribe) || 'fire';
+  const tribeInfo = TAMA_TRIBES[tribe] || TAMA_TRIBES.fire;
+  if (typeof tamaStageVisual === 'function' && tamaPet) {
+    const vis = tamaStageVisual(tamaPet);
+    if (vis && vis.img) {
+      return `<div class="${cls} tc-avatar-img"><img src="${vis.img}" alt="${tribeInfo.name}" draggable="false"></div>`;
+    }
+  }
+  return `<div class="${cls}">${tribeInfo.emoji}</div>`;
+}
+
 function tamaChatRender() {
   const container = document.getElementById('tamaChatMsgList');
   if (!container) return;
 
   let html = '';
   const petName = (tamaPet && tamaPet.name) || '펫';
-  const tribe = (tamaPet && tamaPet.tribe) || 'fire';
-  const tribeInfo = TAMA_TRIBES[tribe] || TAMA_TRIBES.fire;
+  const avatarHtml = tamaChatGetPetAvatarHtml('tc-pet-avatar');
 
   tamaChatMessages.forEach(msg => {
     const timeStr = new Date(msg.time).toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
     if (msg.sender === 'pet') {
       html += `<div class="tc-msg tc-pet">
-        <div class="tc-pet-avatar">${tribeInfo.emoji}</div>
+        ${avatarHtml}
         <div class="tc-bubble-wrap">
           <div class="tc-pet-name">${petName}</div>
           <div class="tc-bubble tc-bubble-pet">${msg.text}</div>
@@ -2042,14 +2223,30 @@ function tamaChatOpen_() {
   const ovl = document.getElementById('tamaChatOverlay');
   if (ovl) ovl.classList.add('active');
 
-  // Update title and typing avatar
+  // Update title and typing avatar with character image
   const tribe = (tamaPet && tamaPet.tribe) || 'fire';
   const tribeInfo = TAMA_TRIBES[tribe] || TAMA_TRIBES.fire;
   const petName = (tamaPet && tamaPet.name) || '펫';
+  const vis = (typeof tamaStageVisual === 'function' && tamaPet) ? tamaStageVisual(tamaPet) : null;
+  const petImgSrc = (vis && vis.img) || '';
+
   const titleEl = document.getElementById('tamaChatTitle');
-  if (titleEl) titleEl.textContent = tribeInfo.emoji + ' ' + petName + '와의 대화';
+  if (titleEl) {
+    const titleImg = petImgSrc
+      ? `<img class="tc-title-icon" src="${petImgSrc}" alt="${tribeInfo.name}" draggable="false"> `
+      : tribeInfo.emoji + ' ';
+    titleEl.innerHTML = titleImg + petName + '와의 대화';
+  }
   const avatarEl = document.getElementById('tamaChatTypingAvatar');
-  if (avatarEl) avatarEl.textContent = tribeInfo.emoji;
+  if (avatarEl) {
+    if (petImgSrc) {
+      avatarEl.innerHTML = `<img src="${petImgSrc}" alt="${tribeInfo.name}" draggable="false">`;
+      avatarEl.classList.add('tc-avatar-img');
+    } else {
+      avatarEl.textContent = tribeInfo.emoji;
+      avatarEl.classList.remove('tc-avatar-img');
+    }
+  }
 
   tamaChatRender();
   tamaChatRenderEmojis();
