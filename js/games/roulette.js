@@ -11,6 +11,17 @@ let rrState = {
   lastResult: null,
 };
 
+// Effect timer handles (for safe cleanup)
+let _rrTimers = { suspense: null, reveal: null, advance: null, flashHide: null, spinAnim: null, spinGlow: null };
+
+function rrCleanup() {
+  Object.keys(_rrTimers).forEach(k => { clearTimeout(_rrTimers[k]); _rrTimers[k] = null; });
+  const flash = document.getElementById('rouletteFlash');
+  if(flash) flash.className = 'roulette-flash';
+  const game = document.getElementById('rouletteGame');
+  if(game) game.classList.remove('rr-shake');
+}
+
 function startRussianRoulette() {
   if(!state.isHost) return;
 
@@ -114,11 +125,11 @@ function renderRouletteView(data) {
     const indicator = document.createElement('div');
     indicator.className = 'chamber-indicator empty';
     const angle = i * angleStep;
-    const radius = 80;
-    const x = 100 + radius * Math.cos((angle - 90) * Math.PI / 180);
-    const y = 100 + radius * Math.sin((angle - 90) * Math.PI / 180);
-    indicator.style.left = x + 'px';
-    indicator.style.top = y + 'px';
+    const radiusPct = 33;
+    const x = 50 + radiusPct * Math.cos((angle - 90) * Math.PI / 180);
+    const y = 50 + radiusPct * Math.sin((angle - 90) * Math.PI / 180);
+    indicator.style.left = x + '%';
+    indicator.style.top = y + '%';
     cylinder.appendChild(indicator);
   }
 
@@ -178,15 +189,36 @@ function spinCylinder() {
 
   rrState.phase = 'spinning';
 
-  const cylinder = document.getElementById('cylinder');
-  cylinder.classList.add('spinning');
+  // Broadcast spin animation to all clients
+  broadcast({ type: 'rr-spin' });
+  handleRRSpin();
 
+  // After animation, broadcast state (shows trigger button)
   setTimeout(() => {
-    cylinder.classList.remove('spinning');
     broadcastRRState();
   }, 3000);
+}
 
-  broadcastRRState();
+function handleRRSpin() {
+  const cylinder = document.getElementById('cylinder');
+  const container = document.querySelector('.cylinder-container');
+
+  if(cylinder) {
+    cylinder.classList.add('spinning');
+    _rrTimers.spinAnim = setTimeout(() => cylinder.classList.remove('spinning'), 3000);
+  }
+  if(container) {
+    container.classList.add('rr-spin-active');
+    _rrTimers.spinGlow = setTimeout(() => container.classList.remove('rr-spin-active'), 3000);
+  }
+
+  // Update UI without full re-render
+  const spinBtn = document.getElementById('spinBtn');
+  const cylinderInfo = document.getElementById('cylinderInfo');
+  if(spinBtn) spinBtn.style.display = 'none';
+  if(cylinderInfo) cylinderInfo.textContent = '실린더가 돌고 있다...';
+
+  if(navigator.vibrate) navigator.vibrate([20, 15, 20, 15, 20]);
 }
 
 function pullTrigger() {
@@ -201,43 +233,85 @@ function pullTrigger() {
   if(isBullet) {
     currentPlayer.alive = false;
     rrState.lastResult = { playerId: currentPlayer.id, result: 'dead' };
-
-    if(navigator.vibrate) navigator.vibrate([100, 50, 300, 100, 200]);
-
-    showRouletteFlash('bang', '💥', '탕!');
-
-    setTimeout(() => {
-      rrState.currentChamber = (rrState.currentChamber + 1) % rrState.chambers;
-      advanceRouletteTurn();
-    }, 2000);
-
   } else {
     rrState.lastResult = { playerId: currentPlayer.id, result: 'safe' };
-
-    if(navigator.vibrate) navigator.vibrate(50);
-    showRouletteFlash('safe', '😮‍💨', '찰칵... 살았다!');
-
-    setTimeout(() => {
-      rrState.currentChamber = (rrState.currentChamber + 1) % rrState.chambers;
-      advanceRouletteTurn();
-    }, 2000);
   }
 
-  broadcastRRState();
+  // Broadcast dramatic flash to ALL clients
+  const flashMsg = {
+    type: 'rr-flash',
+    result: isBullet ? 'dead' : 'safe',
+    playerName: currentPlayer.name,
+  };
+  broadcast(flashMsg);
+  showRouletteFlash(flashMsg);
+
+  // After suspense reveal (1.3s), update state behind overlay
+  _rrTimers.reveal = setTimeout(() => {
+    broadcastRRState();
+  }, 1300);
+
+  // Advance turn after full effect
+  _rrTimers.advance = setTimeout(() => {
+    rrState.currentChamber = (rrState.currentChamber + 1) % rrState.chambers;
+    advanceRouletteTurn();
+  }, 4000);
 }
 
-function showRouletteFlash(type, icon, text) {
+function showRouletteFlash(msg) {
+  clearTimeout(_rrTimers.suspense);
+  clearTimeout(_rrTimers.flashHide);
+
   const flash = document.getElementById('rouletteFlash');
   const flashIcon = document.getElementById('flashIcon');
   const flashText = document.getElementById('flashText');
+  const triggerBtn = document.getElementById('triggerBtn');
+  const cylinderInfo = document.getElementById('cylinderInfo');
 
-  flash.className = 'roulette-flash active ' + type;
-  flashIcon.textContent = icon;
-  flashText.textContent = text;
+  // Hide trigger button immediately
+  if(triggerBtn) triggerBtn.style.display = 'none';
+  if(cylinderInfo) cylinderInfo.textContent = '';
 
-  setTimeout(() => {
-    flash.classList.remove('active', type);
-  }, 800);
+  // === Phase 1: Suspense (1.2s) ===
+  flash.className = 'roulette-flash active suspense';
+  flashIcon.textContent = '🔫';
+  flashText.innerHTML = escapeHTML(msg.playerName) + '<span class="rr-suspense-dots">...</span>';
+
+  if(navigator.vibrate) navigator.vibrate([30, 80, 30]);
+
+  // === Phase 2: Result reveal ===
+  _rrTimers.suspense = setTimeout(() => {
+    if(msg.result === 'dead') {
+      // BANG!
+      flash.className = 'roulette-flash active bang';
+      flashIcon.textContent = '💥';
+      flashText.innerHTML = '<span class="rr-bang-text">탕!</span><br><span class="rr-sub-text">' + escapeHTML(msg.playerName) + ' 탈락!</span>';
+
+      // Screen shake
+      const game = document.getElementById('rouletteGame');
+      if(game) {
+        game.classList.add('rr-shake');
+        setTimeout(() => game.classList.remove('rr-shake'), 600);
+      }
+
+      if(navigator.vibrate) navigator.vibrate([100, 30, 200, 50, 300, 100, 200]);
+
+    } else {
+      // Safe!
+      flash.className = 'roulette-flash active safe';
+      flashIcon.textContent = '😮‍💨';
+      flashText.innerHTML = '<span class="rr-safe-text">찰칵...</span><br><span class="rr-sub-text">' + escapeHTML(msg.playerName) + ' 생존!</span>';
+
+      if(navigator.vibrate) navigator.vibrate([30, 20, 30]);
+    }
+
+    // Hide flash after display period
+    _rrTimers.flashHide = setTimeout(() => {
+      flash.classList.add('fading');
+      setTimeout(() => { flash.className = 'roulette-flash'; }, 500);
+    }, 2200);
+
+  }, 1200);
 }
 
 function advanceRouletteTurn() {

@@ -692,6 +692,8 @@ function handleMessage(peerId, raw) {
     'roulette-state': () => { showScreen('rouletteGame'); renderRouletteView(msg); },
     'rr-action': () => { if(state.isHost) processRRAction(peerId, msg.action); },
     'rr-result': () => handleRRResult(msg),
+    'rr-spin': () => { if(typeof handleRRSpin === 'function') handleRRSpin(); },
+    'rr-flash': () => { if(typeof showRouletteFlash === 'function') showRouletteFlash(msg); },
     'lottery-state': () => handleLotteryMessage(peerId, msg),
     'lottery-pick-request': () => handleLotteryMessage(peerId, msg),
     'lottery-pick': () => handleLotteryMessage(peerId, msg),
@@ -1039,6 +1041,7 @@ function returnToLobby() {
   if (typeof idolHideDiceOverlay === 'function') idolHideDiceOverlay();
   // Clean up AI timers (lobby CPU mode)
   if(typeof cleanupAI === 'function') cleanupAI();
+  if(typeof rrCleanup === 'function') rrCleanup();
   if(typeof lotteryCleanup === 'function') lotteryCleanup();
   showScreen('lobby');
   updateLobbyUI();
