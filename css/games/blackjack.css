@@ -3,6 +3,7 @@
 #blackjackGame {
   background: radial-gradient(ellipse at 50% 40%, #0a4d2e 0%, #062a18 60%, #021008 100%);
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -11,13 +12,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 6px 10px;
   background: rgba(0,0,0,0.4);
   z-index: 10;
+  flex-shrink: 0;
 }
 .bj-top-info {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
 }
 .bj-chip-display {
@@ -27,8 +29,8 @@
   background: rgba(255,215,0,0.15);
   border: 1px solid rgba(255,215,0,0.3);
   border-radius: 20px;
-  padding: 4px 10px;
-  font-size: 14px;
+  padding: 3px 10px;
+  font-size: 13px;
   font-weight: 700;
   color: #ffd700;
 }
@@ -36,7 +38,7 @@
   background: rgba(255,255,255,0.12);
   border-radius: 12px;
   padding: 3px 10px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #fff;
 }
@@ -51,46 +53,46 @@
   cursor: pointer;
 }
 
-/* Dealer area */
+/* ===== DEALER AREA — compact ===== */
 .bj-dealer-area {
   text-align: center;
-  padding: 12px 8px;
+  padding: 6px 8px 4px;
   flex-shrink: 0;
 }
 .bj-dealer-label {
-  font-size: 13px;
-  color: rgba(255,255,255,0.6);
-  margin-bottom: 6px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 3px;
   font-weight: 600;
 }
 .bj-dealer-cards {
   display: flex;
   justify-content: center;
-  gap: 6px;
-  min-height: 70px;
+  gap: 4px;
+  min-height: 52px;
 }
 .bj-dealer-total {
   display: inline-block;
-  margin-top: 6px;
+  margin-top: 3px;
   background: rgba(0,0,0,0.5);
   color: #fff;
   font-weight: 700;
-  font-size: 16px;
-  padding: 2px 12px;
-  border-radius: 12px;
+  font-size: 14px;
+  padding: 1px 10px;
+  border-radius: 10px;
 }
 .bj-dealer-status {
-  font-size: 14px;
+  font-size: 12px;
   color: #ff5252;
   font-weight: 700;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
-/* Opponents */
+/* ===== OPPONENTS — compact horizontal strip ===== */
 .bj-opponents {
   display: flex;
-  gap: 8px;
-  padding: 4px 8px;
+  gap: 6px;
+  padding: 3px 8px;
   overflow-x: auto;
   flex-shrink: 0;
   justify-content: center;
@@ -99,23 +101,23 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  min-width: 70px;
-  padding: 6px 4px;
-  border-radius: 10px;
+  gap: 1px;
+  min-width: 56px;
+  padding: 4px 3px;
+  border-radius: 8px;
   background: rgba(255,255,255,0.05);
 }
 .bj-opp-slot.bust {
   opacity: 0.4;
 }
 .bj-opp-avatar {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 14px;
   border: 2px solid transparent;
   transition: border-color 0.3s;
 }
@@ -124,60 +126,69 @@
   box-shadow: 0 0 8px rgba(255,215,0,0.5);
 }
 .bj-opp-name {
-  font-size: 11px;
+  font-size: 10px;
   color: #ccc;
   font-weight: 600;
-  max-width: 70px;
+  max-width: 56px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .bj-opp-chips {
-  font-size: 10px;
+  font-size: 9px;
   color: #ffd700;
 }
 .bj-opp-bet {
-  font-size: 10px;
+  font-size: 9px;
   color: #ff9100;
   font-weight: 600;
 }
 .bj-opp-cards {
   display: flex;
   gap: 2px;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 .bj-opp-status {
-  font-size: 10px;
+  font-size: 9px;
   color: #00e676;
   font-weight: 700;
 }
 
-/* My area */
+/* ===== MY AREA — dominant, fills remaining space ===== */
 .bj-my-area {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 8px;
-  gap: 8px;
+  padding: 4px 8px;
+  gap: 4px;
+  min-height: 0;
+  position: relative;
 }
+
+/* Fan-style card container */
 .bj-my-cards {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  min-height: 100px;
+  align-items: flex-end;
+  min-height: 0;
+  flex: 1;
+  width: 100%;
+  position: relative;
+  padding: 8px 0;
 }
+
 .bj-my-total {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 900;
   color: #fff;
   text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  flex-shrink: 0;
 }
 .bj-my-total.bj-21 {
   color: #ffd700;
-  text-shadow: 0 0 12px rgba(255,215,0,0.6);
+  text-shadow: 0 0 16px rgba(255,215,0,0.6);
 }
 .bj-my-total.bj-bust {
   color: #ff5252;
@@ -186,24 +197,109 @@
   font-size: 14px;
   font-weight: 700;
   color: #00e676;
+  flex-shrink: 0;
 }
 
-/* Cards */
+/* ===== CARDS — base (dealer / opponents) ===== */
 .bj-card {
-  width: 48px;
-  height: 68px;
-  border-radius: 6px;
+  width: 40px;
+  height: 58px;
+  border-radius: 5px;
   position: relative;
   display: inline-flex;
   flex-direction: column;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-  transition: transform 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
 }
+
+/* ===== MY CARDS — huge, real card feel ===== */
 .bj-card-big {
-  width: 72px;
-  height: 102px;
-  border-radius: 8px;
+  /* Use viewport-relative sizing for real card feel */
+  width: clamp(100px, 28vw, 160px);
+  height: clamp(150px, 42vw, 240px);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(255,255,255,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
+/* Fan layout for my cards */
+.bj-my-cards .bj-card-big {
+  margin: 0 -12px;
+  transform-origin: bottom center;
+}
+
+/* Fan rotation for each card position */
+.bj-my-cards .bj-card-big:nth-child(1) { z-index: 1; }
+.bj-my-cards .bj-card-big:nth-child(2) { z-index: 2; }
+.bj-my-cards .bj-card-big:nth-child(3) { z-index: 3; }
+.bj-my-cards .bj-card-big:nth-child(4) { z-index: 4; }
+.bj-my-cards .bj-card-big:nth-child(5) { z-index: 5; }
+.bj-my-cards .bj-card-big:nth-child(6) { z-index: 6; }
+
+/* 2 cards — slight spread */
+.bj-my-cards .bj-card-big:first-child:nth-last-child(2) {
+  transform: rotate(-6deg) translateY(-4px);
+}
+.bj-my-cards .bj-card-big:first-child:nth-last-child(2) ~ .bj-card-big {
+  transform: rotate(6deg) translateY(-4px);
+}
+
+/* 3 cards — wider fan */
+.bj-my-cards .bj-card-big:first-child:nth-last-child(3) {
+  transform: rotate(-10deg) translateY(-2px);
+}
+.bj-my-cards .bj-card-big:first-child:nth-last-child(3) + .bj-card-big {
+  transform: rotate(0deg) translateY(-6px);
+}
+.bj-my-cards .bj-card-big:first-child:nth-last-child(3) + .bj-card-big + .bj-card-big {
+  transform: rotate(10deg) translateY(-2px);
+}
+
+/* 4 cards */
+.bj-my-cards .bj-card-big:first-child:nth-last-child(4) {
+  transform: rotate(-12deg) translateY(0px);
+}
+.bj-my-cards .bj-card-big:first-child:nth-last-child(4) + .bj-card-big {
+  transform: rotate(-4deg) translateY(-5px);
+}
+.bj-my-cards .bj-card-big:first-child:nth-last-child(4) + .bj-card-big + .bj-card-big {
+  transform: rotate(4deg) translateY(-5px);
+}
+.bj-my-cards .bj-card-big:first-child:nth-last-child(4) + .bj-card-big + .bj-card-big + .bj-card-big {
+  transform: rotate(12deg) translateY(0px);
+}
+
+/* 5+ cards — tighter overlap */
+.bj-my-cards .bj-card-big:first-child:nth-last-child(n+5) {
+  transform: rotate(-14deg) translateY(2px);
+  margin: 0 -18px;
+}
+.bj-my-cards .bj-card-big:first-child:nth-last-child(n+5) + .bj-card-big {
+  transform: rotate(-7deg) translateY(-3px);
+  margin: 0 -18px;
+}
+.bj-my-cards .bj-card-big:first-child:nth-last-child(n+5) + .bj-card-big + .bj-card-big {
+  transform: rotate(0deg) translateY(-6px);
+  margin: 0 -18px;
+}
+.bj-my-cards .bj-card-big:first-child:nth-last-child(n+5) + .bj-card-big + .bj-card-big + .bj-card-big {
+  transform: rotate(7deg) translateY(-3px);
+  margin: 0 -18px;
+}
+.bj-my-cards .bj-card-big:first-child:nth-last-child(n+5) + .bj-card-big + .bj-card-big + .bj-card-big + .bj-card-big {
+  transform: rotate(14deg) translateY(2px);
+  margin: 0 -18px;
+}
+.bj-my-cards .bj-card-big:first-child:nth-last-child(n+5) + .bj-card-big + .bj-card-big + .bj-card-big + .bj-card-big ~ .bj-card-big {
+  transform: rotate(18deg) translateY(6px);
+  margin: 0 -18px;
+}
+
+/* Card back */
 .bj-card-back {
   background: linear-gradient(135deg, #1a237e, #283593);
   border: 2px solid #3949ab;
@@ -215,6 +311,16 @@
   border: 1px solid rgba(255,255,255,0.15);
   background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.05) 4px, rgba(255,255,255,0.05) 8px);
 }
+.bj-card-big.bj-card-back .bj-card-back-pattern {
+  inset: 8px;
+  border-radius: 8px;
+  border: 2px solid rgba(255,255,255,0.12);
+  background:
+    repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.04) 6px, rgba(255,255,255,0.04) 12px),
+    radial-gradient(circle at center, rgba(255,255,255,0.06) 0%, transparent 70%);
+}
+
+/* Card face colors */
 .bj-card.bj-red {
   background: #fff;
   border: 1px solid #ddd;
@@ -225,6 +331,18 @@
   border: 1px solid #ddd;
   color: #212121;
 }
+
+/* Big card enhanced face */
+.bj-card-big.bj-red {
+  background: linear-gradient(160deg, #ffffff 0%, #fff5f5 100%);
+  border: 1.5px solid #e0e0e0;
+}
+.bj-card-big.bj-black {
+  background: linear-gradient(160deg, #ffffff 0%, #f5f5f5 100%);
+  border: 1.5px solid #e0e0e0;
+}
+
+/* Card corners */
 .bj-card-corner {
   position: absolute;
   top: 3px;
@@ -241,48 +359,82 @@
   right: 4px;
   transform: rotate(180deg);
 }
+
+/* Small card text */
 .bj-card-rank {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
 }
-.bj-card-big .bj-card-rank {
-  font-size: 16px;
-}
 .bj-card-suit-sm {
-  font-size: 9px;
-}
-.bj-card-big .bj-card-suit-sm {
-  font-size: 12px;
+  font-size: 8px;
 }
 .bj-card-center {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 22px;
-}
-.bj-card-big .bj-card-center {
-  font-size: 32px;
+  font-size: 18px;
 }
 
-/* Bottom panel */
+/* Big card text — proportionally large */
+.bj-card-big .bj-card-corner {
+  top: 8px;
+  left: 10px;
+}
+.bj-card-big .bj-card-corner-br {
+  bottom: 8px;
+  right: 10px;
+}
+.bj-card-big .bj-card-rank {
+  font-size: clamp(22px, 6vw, 32px);
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+.bj-card-big .bj-card-suit-sm {
+  font-size: clamp(14px, 4vw, 20px);
+}
+.bj-card-big .bj-card-center {
+  font-size: clamp(44px, 12vw, 72px);
+  opacity: 0.85;
+}
+
+/* New card deal animation */
+@keyframes bjCardDeal {
+  from {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.7) rotate(0deg);
+  }
+  to {
+    opacity: 1;
+  }
+}
+.bj-my-cards .bj-card-big {
+  animation: bjCardDeal 0.4s ease-out both;
+}
+.bj-my-cards .bj-card-big:nth-child(2) { animation-delay: 0.1s; }
+.bj-my-cards .bj-card-big:nth-child(3) { animation-delay: 0.2s; }
+.bj-my-cards .bj-card-big:nth-child(4) { animation-delay: 0.3s; }
+.bj-my-cards .bj-card-big:nth-child(5) { animation-delay: 0.4s; }
+
+/* ===== BOTTOM PANEL ===== */
 .bj-bottom-panel {
-  padding: 8px 12px 16px;
+  padding: 6px 12px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   z-index: 10;
+  flex-shrink: 0;
 }
 
 /* Betting area */
 .bj-bet-area {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
   background: rgba(0,0,0,0.3);
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px;
 }
 .bj-bet-row {
   display: flex;
@@ -356,12 +508,12 @@
 }
 .bj-action-btn {
   border: none;
-  border-radius: 10px;
-  padding: 12px 20px;
-  font-size: 15px;
+  border-radius: 12px;
+  padding: 14px 24px;
+  font-size: 16px;
   font-weight: 800;
   cursor: pointer;
-  min-width: 80px;
+  min-width: 88px;
   transition: transform 0.1s, opacity 0.2s;
 }
 .bj-action-btn:active {
@@ -384,7 +536,7 @@
   color: #000;
 }
 
-/* Result overlay */
+/* ===== RESULT OVERLAY ===== */
 .bj-result-overlay {
   position: fixed;
   inset: 0;
@@ -466,155 +618,110 @@
   width: 100%;
 }
 
-/* ===== MOBILE RESPONSIVE — 430px 이하 ===== */
+/* ===== MOBILE — 430px ===== */
 @media screen and (max-width: 430px) {
 
-  /* --- 닫기 버튼: 44px 터치 타겟 확보 --- */
   .bj-close-btn {
     width: 44px;
     height: 44px;
     font-size: 18px;
   }
-
-  /* --- 규칙/페이즈 뱃지: 터치 최소 높이 확보 --- */
   .bj-phase-badge {
     padding: 6px 12px;
-    font-size: 12px;
+    font-size: 11px;
     min-height: 32px;
     display: inline-flex;
     align-items: center;
   }
-
-  /* --- 칩 디스플레이 가독성 --- */
   .bj-chip-display {
     font-size: clamp(12px, 3.5vw, 14px);
-    padding: 4px 8px;
+    padding: 3px 8px;
   }
 
-  /* --- 딜러 영역 --- */
+  /* Dealer compact */
   .bj-dealer-area {
-    padding: 8px 6px;
+    padding: 4px 6px 2px;
   }
-  .bj-dealer-label {
-    font-size: 12px;
-  }
-  .bj-dealer-total {
-    font-size: 14px;
-    padding: 2px 10px;
-  }
+  .bj-dealer-label { font-size: 10px; }
+  .bj-dealer-total { font-size: 12px; padding: 1px 8px; }
   .bj-dealer-cards {
-    gap: 4px;
-    min-height: 62px;
+    gap: 3px;
+    min-height: 46px;
   }
 
-  /* --- 카드 크기 모바일 조정 --- */
+  /* Dealer/opp small cards */
   .bj-card {
-    width: 42px;
-    height: 60px;
-    border-radius: 5px;
-  }
-  .bj-card-big {
-    width: 60px;
-    height: 86px;
-    border-radius: 7px;
-  }
-  .bj-card-rank {
-    font-size: 11px;
-  }
-  .bj-card-big .bj-card-rank {
-    font-size: 14px;
-  }
-  .bj-card-suit-sm {
-    font-size: 8px;
-  }
-  .bj-card-big .bj-card-suit-sm {
-    font-size: 10px;
-  }
-  .bj-card-center {
-    font-size: 18px;
-  }
-  .bj-card-big .bj-card-center {
-    font-size: 26px;
-  }
-
-  /* --- 상대 플레이어 패널: 스크롤 개선 --- */
-  .bj-opponents {
-    padding: 4px 6px;
-    gap: 6px;
-    justify-content: flex-start;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.3) transparent;
-  }
-  .bj-opponents::-webkit-scrollbar {
-    height: 4px;
-  }
-  .bj-opponents::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .bj-opponents::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.3);
+    width: 34px;
+    height: 50px;
     border-radius: 4px;
   }
+  .bj-card-rank { font-size: 10px; }
+  .bj-card-suit-sm { font-size: 7px; }
+  .bj-card-center { font-size: 15px; }
+
+  /* My cards — HUGE on mobile */
+  .bj-card-big {
+    width: clamp(90px, 30vw, 140px);
+    height: clamp(135px, 45vw, 210px);
+    border-radius: 10px;
+  }
+  .bj-card-big .bj-card-rank {
+    font-size: clamp(20px, 5.5vw, 28px);
+  }
+  .bj-card-big .bj-card-suit-sm {
+    font-size: clamp(12px, 3.5vw, 18px);
+  }
+  .bj-card-big .bj-card-center {
+    font-size: clamp(36px, 10vw, 60px);
+  }
+  .bj-card-big .bj-card-corner {
+    top: 6px;
+    left: 8px;
+  }
+  .bj-card-big .bj-card-corner-br {
+    bottom: 6px;
+    right: 8px;
+  }
+
+  .bj-my-total { font-size: clamp(22px, 6vw, 28px); }
+
+  /* Opponents */
+  .bj-opponents {
+    padding: 2px 6px;
+    gap: 4px;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .bj-opponents::-webkit-scrollbar { height: 0; display: none; }
   .bj-opp-slot {
-    min-width: 62px;
-    padding: 4px 3px;
+    min-width: 50px;
+    padding: 3px 2px;
   }
-  .bj-opp-name {
-    font-size: 11px;
-    max-width: 62px;
-  }
-  .bj-opp-chips {
-    font-size: clamp(10px, 2.8vw, 12px);
-  }
-  .bj-opp-bet {
-    font-size: clamp(10px, 2.8vw, 12px);
-  }
-  .bj-opp-status {
-    font-size: clamp(10px, 2.8vw, 12px);
-  }
+  .bj-opp-avatar { width: 24px; height: 24px; font-size: 12px; }
+  .bj-opp-name { font-size: 9px; max-width: 50px; }
+  .bj-opp-chips { font-size: 8px; }
+  .bj-opp-bet { font-size: 8px; }
+  .bj-opp-status { font-size: 8px; }
 
-  /* --- 내 카드 영역 --- */
-  .bj-my-area {
-    padding: 6px;
-    gap: 6px;
-  }
-  .bj-my-cards {
-    gap: 6px;
-    min-height: 88px;
-  }
-  .bj-my-total {
-    font-size: clamp(18px, 5vw, 24px);
-  }
-
-  /* --- 하단 패널 --- */
+  /* Bottom panel */
   .bj-bottom-panel {
-    padding: 6px 8px 12px;
-    gap: 6px;
+    padding: 4px 8px 10px;
+    gap: 4px;
   }
 
-  /* --- 배팅 영역 --- */
   .bj-bet-area {
-    padding: 10px;
+    padding: 8px;
     gap: 6px;
   }
-  .bj-bet-row {
-    max-width: 100%;
-    gap: 6px;
-  }
+  .bj-bet-row { max-width: 100%; gap: 6px; }
   .bj-bet-input {
     padding: 10px 8px;
-    font-size: 16px; /* iOS 줌 방지: 16px 유지 */
+    font-size: 16px;
     min-height: 44px;
     box-sizing: border-box;
   }
-
-  /* --- 빠른 배팅 버튼: 터치 타겟 확보 --- */
-  .bj-bet-quick {
-    gap: 4px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+  .bj-bet-quick { gap: 4px; flex-wrap: wrap; }
   .bj-bet-quick-btn {
     padding: 10px 14px;
     font-size: 12px;
@@ -625,8 +732,6 @@
     justify-content: center;
     box-sizing: border-box;
   }
-
-  /* --- 배팅 확인 / 딜 버튼 --- */
   .bj-bet-confirm {
     padding: 12px 20px;
     font-size: 15px;
@@ -639,8 +744,73 @@
     font-size: 15px;
     min-height: 44px;
   }
+  .bj-action-btn {
+    padding: 14px 20px;
+    font-size: 15px;
+    min-width: 80px;
+    min-height: 48px;
+  }
 
-  /* --- 액션 버튼 (Hit/Stand/Double) --- */
+  /* Result overlay */
+  .bj-result-overlay { padding: 16px; gap: 12px; }
+  .bj-result-title { font-size: clamp(22px, 6vw, 28px); }
+  .bj-result-list { max-width: min(340px, calc(100vw - 32px)); }
+  .bj-result-row { padding: 8px 10px; font-size: 13px; }
+  .bj-result-total { font-size: 12px; }
+  .bj-result-btns { max-width: min(320px, calc(100vw - 32px)); }
+  .bj-result-btns > button { min-height: 44px; font-size: 14px; }
+  .bj-result-dealer-cards { gap: 3px; }
+}
+
+/* ===== SMALL PHONE — 360px ===== */
+@media screen and (max-width: 360px) {
+
+  .bj-top-bar { padding: 4px 6px; }
+  .bj-top-info { gap: 6px; }
+  .bj-chip-display { font-size: 11px; padding: 2px 6px; }
+  .bj-phase-badge { padding: 4px 8px; font-size: 10px; }
+
+  /* Dealer/opp cards even smaller */
+  .bj-card {
+    width: 28px;
+    height: 42px;
+    border-radius: 3px;
+  }
+  .bj-card-rank { font-size: 9px; }
+  .bj-card-suit-sm { font-size: 6px; }
+  .bj-card-center { font-size: 13px; }
+  .bj-card-corner { top: 2px; left: 2px; }
+  .bj-card-corner-br { bottom: 2px; right: 2px; }
+
+  /* My cards — still large! */
+  .bj-card-big {
+    width: clamp(80px, 28vw, 120px);
+    height: clamp(120px, 42vw, 180px);
+    border-radius: 8px;
+  }
+  .bj-card-big .bj-card-rank { font-size: clamp(18px, 5vw, 24px); }
+  .bj-card-big .bj-card-suit-sm { font-size: clamp(11px, 3vw, 16px); }
+  .bj-card-big .bj-card-center { font-size: clamp(32px, 9vw, 50px); }
+  .bj-card-big .bj-card-corner { top: 5px; left: 6px; }
+  .bj-card-big .bj-card-corner-br { bottom: 5px; right: 6px; }
+
+  /* Opponents micro */
+  .bj-opp-slot { min-width: 44px; padding: 2px 2px; }
+  .bj-opp-avatar { width: 22px; height: 22px; font-size: 11px; }
+  .bj-opp-name { font-size: 8px; max-width: 44px; }
+
+  .bj-dealer-area { padding: 3px 4px 1px; }
+  .bj-dealer-cards { gap: 2px; min-height: 44px; }
+  .bj-dealer-total { font-size: 11px; }
+
+  .bj-my-total { font-size: clamp(18px, 5vw, 22px); }
+
+  .bj-bet-quick-btn {
+    padding: 8px 10px;
+    font-size: 11px;
+    min-width: 40px;
+    min-height: 40px;
+  }
   .bj-action-btn {
     padding: 12px 16px;
     font-size: 14px;
@@ -648,161 +818,9 @@
     min-height: 44px;
   }
 
-  /* --- 결과 오버레이 --- */
-  .bj-result-overlay {
-    padding: 16px;
-    gap: 12px;
-  }
-  .bj-result-title {
-    font-size: clamp(22px, 6vw, 28px);
-  }
-  .bj-result-list {
-    max-width: min(340px, calc(100vw - 32px));
-  }
-  .bj-result-row {
-    padding: 8px 10px;
-    font-size: 13px;
-  }
-  .bj-result-total {
-    font-size: 12px;
-  }
-  .bj-result-btns {
-    max-width: min(320px, calc(100vw - 32px));
-  }
-  .bj-result-btns > button {
-    min-height: 44px;
-    font-size: 14px;
-  }
-  .bj-result-dealer-cards {
-    gap: 3px;
-  }
-}
-
-/* ===== SMALL PHONE — 360px 이하 ===== */
-@media screen and (max-width: 360px) {
-
-  /* --- 상단 바 좁은 화면 대응 --- */
-  .bj-top-bar {
-    padding: 6px 8px;
-  }
-  .bj-top-info {
-    gap: 6px;
-  }
-  .bj-chip-display {
-    font-size: 12px;
-    padding: 3px 6px;
-  }
-  .bj-phase-badge {
-    padding: 5px 8px;
-    font-size: 11px;
-  }
-
-  /* --- 카드 더 작게 --- */
-  .bj-card {
-    width: 36px;
-    height: 52px;
-    border-radius: 4px;
-  }
-  .bj-card-big {
-    width: 52px;
-    height: 74px;
-    border-radius: 6px;
-  }
-  .bj-card-rank {
-    font-size: 10px;
-  }
-  .bj-card-big .bj-card-rank {
-    font-size: 13px;
-  }
-  .bj-card-suit-sm {
-    font-size: 7px;
-  }
-  .bj-card-big .bj-card-suit-sm {
-    font-size: 9px;
-  }
-  .bj-card-center {
-    font-size: 15px;
-  }
-  .bj-card-big .bj-card-center {
-    font-size: 22px;
-  }
-  .bj-card-corner {
-    top: 2px;
-    left: 3px;
-  }
-  .bj-card-corner-br {
-    bottom: 2px;
-    right: 3px;
-  }
-
-  /* --- 상대 플레이어 더 컴팩트 --- */
-  .bj-opp-slot {
-    min-width: 56px;
-    padding: 3px 2px;
-  }
-  .bj-opp-avatar {
-    width: 30px;
-    height: 30px;
-    font-size: 15px;
-  }
-  .bj-opp-name {
-    font-size: 10px;
-    max-width: 56px;
-  }
-
-  /* --- 딜러 영역 --- */
-  .bj-dealer-area {
-    padding: 6px 4px;
-  }
-  .bj-dealer-cards {
-    gap: 3px;
-    min-height: 54px;
-  }
-  .bj-dealer-total {
-    font-size: 13px;
-  }
-
-  /* --- 내 영역 --- */
-  .bj-my-cards {
-    gap: 4px;
-    min-height: 76px;
-  }
-  .bj-my-total {
-    font-size: clamp(16px, 5vw, 20px);
-  }
-
-  /* --- 배팅 빠른 버튼 좁은 화면 --- */
-  .bj-bet-quick-btn {
-    padding: 8px 10px;
-    font-size: 11px;
-    min-width: 40px;
-    min-height: 40px;
-  }
-
-  /* --- 액션 버튼 좁은 화면 --- */
-  .bj-action-btn {
-    padding: 10px 12px;
-    font-size: 13px;
-    min-width: 64px;
-    min-height: 40px;
-  }
-
-  /* --- 결과 오버레이 좁은 화면 --- */
-  .bj-result-overlay {
-    padding: 12px;
-    gap: 10px;
-  }
-  .bj-result-title {
-    font-size: 20px;
-  }
-  .bj-result-row {
-    padding: 6px 8px;
-    font-size: 12px;
-  }
-  .bj-result-list {
-    max-width: calc(100vw - 24px);
-  }
-  .bj-result-btns {
-    max-width: calc(100vw - 24px);
-  }
+  .bj-result-overlay { padding: 12px; gap: 10px; }
+  .bj-result-title { font-size: 20px; }
+  .bj-result-row { padding: 6px 8px; font-size: 12px; }
+  .bj-result-list { max-width: calc(100vw - 24px); }
+  .bj-result-btns { max-width: calc(100vw - 24px); }
 }
