@@ -94,17 +94,23 @@
   .sutda-pot-label { font-size: 10px; }
   .sutda-pot-amount { font-size: 24px; }
 
-  /* Hwatu cards sized for mobile */
+  /* Hwatu cards sized for mobile — vw 기반으로 최대화 */
   .hwatu-card { width: 40px; height: 60px; border-radius: 5px; }
-  .hwatu-card-big { width: 100px; height: 150px; border-radius: 10px; }
+  .hwatu-card-big {
+    width: min(42vw, 160px);
+    height: min(62vw, 235px);
+    border-radius: 12px;
+  }
   .hwatu-num { font-size: 20px; }
-  .hwatu-card-big .hwatu-num { font-size: 36px; }
+  .hwatu-card-big .hwatu-num { font-size: min(14vw, 52px); }
+  .hwatu-card-big .hwatu-month { font-size: min(4vw, 15px); padding-top: 4px; margin-top: 3px; }
+  .hwatu-card-big .hwatu-gwang-text { font-size: min(3.5vw, 13px); bottom: 6px; }
   .hwatu-card.gwang::before { width: 11px; height: 11px; top: 3px; right: 3px; }
-  .hwatu-card-big.gwang::before { width: 18px; height: 18px; top: 5px; right: 5px; }
+  .hwatu-card-big.gwang::before { width: min(5.5vw, 20px); height: min(5.5vw, 20px); top: 6px; right: 6px; border-width: 2px; }
 
-  .sutda-my-area { padding: 8px 10px; }
-  .sutda-my-cards { gap: 8px; }
-  .sutda-my-rank { margin-top: 6px; font-size: 18px; }
+  .sutda-my-area { padding: 4px 10px 6px; }
+  .sutda-my-cards { gap: min(4vw, 18px); width: 100%; }
+  .sutda-my-rank { margin-top: 6px; font-size: 22px; }
 
   /* Betting bar - 44px min touch targets */
   .sutda-action-bar { padding: 8px; gap: 4px; display: grid; grid-template-columns: repeat(3, 1fr); }
@@ -121,6 +127,34 @@
   .sutda-result-overlay { padding: 16px; }
   .sutda-result-box { padding: 20px; }
   .sutda-result-title { font-size: 32px; }
+}
+
+/* POKER GAME — Portrait mobile 카드 크기 + 중앙 정렬 */
+@media (max-width: 430px) and (orientation: portrait) {
+  /* 카드 크기: 2장 + gap이 화면 너비 안에 들어오도록 vw 기반 */
+  #pokerGame .pk-hero-card {
+    width: min(43vw, 175px);
+    height: min(62vw, 252px);
+  }
+  #pokerGame .pk-my-cards {
+    width: 100%;
+    gap: min(4vw, 18px);
+  }
+  #pokerGame .pk-hero-corner .pk-hero-rank { font-size: min(9vw, 36px); }
+  #pokerGame .pk-hero-corner .pk-hero-suit-sm { font-size: min(6vw, 22px); }
+  #pokerGame .pk-hero-center { font-size: min(20vw, 76px); }
+  #pokerGame .pk-hand-name { font-size: min(6vw, 28px); letter-spacing: 3px; }
+  /* Community cards도 vw 기반 */
+  #pokerGame .pk-comm-card {
+    width: min(13vw, 52px);
+    height: min(19vw, 74px);
+  }
+  #pokerGame .pk-comm-card .pk-comm-rank { font-size: min(3.5vw, 14px); }
+  #pokerGame .pk-comm-card .pk-comm-suit { font-size: min(5vw, 20px); }
+  #pokerGame .pk-comm-placeholder {
+    width: min(13vw, 52px);
+    height: min(19vw, 74px);
+  }
 }
 
 /* E-CARD GAME MOBILE FIXES */
@@ -872,12 +906,14 @@
     width: auto !important;
     border-radius: 0 !important;
   }
+  #sutdaGame .sutda-my-cards { width: 100% !important; }
   #sutdaGame .hwatu-card-big {
-    width: min(48vh, 160px) !important;
-    height: min(68vh, 240px) !important;
+    width: min(50vh, 170px) !important;
+    height: min(72vh, 255px) !important;
   }
-  #sutdaGame .hwatu-card-big .hwatu-num { font-size: min(16vh, 56px) !important; }
-  #sutdaGame .hwatu-card-big .hwatu-month { font-size: min(5vh, 16px) !important; }
+  #sutdaGame .hwatu-card-big .hwatu-num { font-size: min(17vh, 60px) !important; }
+  #sutdaGame .hwatu-card-big .hwatu-month { font-size: min(5vh, 17px) !important; padding-top: 5px !important; }
+  #sutdaGame .hwatu-card-big .hwatu-gwang-text { font-size: min(4vh, 14px) !important; }
   #sutdaGame .sutda-my-rank { font-size: min(8vh, 32px) !important; }
   /* Action buttons — absolute bottom-right vertical stack */
   #sutdaGame .sutda-action-bar {
@@ -1293,20 +1329,25 @@
     width: min(14vh, 46px) !important;
     height: min(20vh, 66px) !important;
   }
-  /* My hero cards: right column, row 3 — BIGGER */
+  /* My hero cards: right column, row 3 — BIGGER + 중앙 정렬 명시 */
   #pokerGame .pk-my-area {
     grid-column: 2 !important;
     grid-row: 3 !important;
     min-height: 0 !important;
     padding-top: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
+  #pokerGame .pk-my-cards { width: 100% !important; }
   #pokerGame .pk-hero-card {
-    width: min(48vh, 200px) !important;
-    height: min(66vh, 280px) !important;
+    width: min(50vh, 210px) !important;
+    height: min(70vh, 294px) !important;
   }
-  #pokerGame .pk-hero-corner .pk-hero-rank { font-size: min(10vh, 40px) !important; }
-  #pokerGame .pk-hero-corner .pk-hero-suit-sm { font-size: min(6vh, 24px) !important; }
-  #pokerGame .pk-hero-center { font-size: min(22vh, 90px) !important; }
+  #pokerGame .pk-hero-corner .pk-hero-rank { font-size: min(11vh, 44px) !important; }
+  #pokerGame .pk-hero-corner .pk-hero-suit-sm { font-size: min(7vh, 26px) !important; }
+  #pokerGame .pk-hero-center { font-size: min(24vh, 96px) !important; }
   #pokerGame .pk-hand-name { font-size: min(7vh, 32px) !important; }
   /* Action buttons: absolute bottom-right */
   #pokerGame .pk-bottom-panel {

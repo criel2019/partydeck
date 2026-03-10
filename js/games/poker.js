@@ -99,7 +99,8 @@ function broadcastPokerState() {
         id: pp.id, name: pp.name, avatar: pp.avatar,
         chips: pp.chips, bet: pp.bet, totalBet: pp.totalBet,
         folded: pp.folded, allIn: pp.allIn, seatIdx: pp.seatIdx,
-        cards: pp.id === p.id ? pp.cards : (ps.phase === 'showdown' && !pp.folded ? pp.cards : null)
+        // foldWin: 폴드 승리 시 상대패 비공개
+        cards: pp.id === p.id ? pp.cards : (ps.phase === 'showdown' && !pp.folded && !ps.foldWin ? pp.cards : null)
       })),
       community: ps.community, pot: ps.pot, currentBet: ps.currentBet,
       minRaise: ps.minRaise, phase: ps.phase, turnIdx: ps.turnIdx,
@@ -447,6 +448,9 @@ function buildSidePots(ps) {
 
 function endPokerHand(winner, potAmount) {
   const ps = state.poker;
+  // 폴드 승리 여부 판별 (남은 미폴드 플레이어가 1명 이하면 상대패 비공개)
+  const active = ps.players.filter(p => !p.folded);
+  ps.foldWin = active.length <= 1;
 
   const result = {
     type: 'poker-result',

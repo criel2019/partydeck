@@ -444,9 +444,11 @@
 .sutda-my-cards {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 18px;
   margin-bottom: 6px;
   perspective: 800px;
+  width: 100%;
 }
 .sutda-my-cards .hwatu-card-big:nth-child(1) { transform: rotate(-3deg); }
 .sutda-my-cards .hwatu-card-big:nth-child(2) { transform: rotate(2deg); }
