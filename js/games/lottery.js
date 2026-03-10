@@ -280,9 +280,10 @@ function spinRoulette() {
     const resultItem = items[randomIndex];
 
     const anglePerItem = 360 / items.length;
-    const targetAngle = randomIndex * anglePerItem;
+    // 슬라이스 중앙에 정확히 멈추도록: 시작각 + 절반
+    const sliceCenter = randomIndex * anglePerItem + anglePerItem / 2;
     const fullRotations = 5 + Math.floor(Math.random() * 3);
-    const totalRotation = lotteryState.currentRotation + (fullRotations * 360) + (360 - targetAngle);
+    const totalRotation = lotteryState.currentRotation + (fullRotations * 360) + (360 - sliceCenter);
 
     const spinData = {
       type: 'roulette-spin',
@@ -306,28 +307,144 @@ function handleRouletteSpin(msg) {
   lotteryState.spinning = true;
   lotteryState.currentRotation = msg.totalRotation;
 
+  // Clean up any previous celebration
+  const oldCeleb = document.getElementById('rouletteCelebration');
+  if(oldCeleb) oldCeleb.remove();
+  const oldConfetti = document.querySelector('.roulette-confetti-wrap');
+  if(oldConfetti) oldConfetti.remove();
+
   const wheel = document.getElementById('rouletteWheel');
   const btn = document.getElementById('rouletteSpinBtn');
   const resultDisplay = document.getElementById('rouletteResultDisplay');
+  const wheelContainer = document.querySelector('.roulette-wheel-container');
+  const pointer = document.querySelector('.roulette-pointer');
+  const statusText = document.querySelector('.roulette-status .status-text');
 
   if(btn) btn.disabled = true;
   if(resultDisplay) resultDisplay.style.display = 'none';
+
+  // === Phase 1: Spinning ===
+  if(wheelContainer) wheelContainer.classList.add('wheel-active');
+  if(pointer) pointer.classList.add('ticking');
+  if(statusText) statusText.textContent = '🎰 돌리는 중...!';
 
   if(wheel) {
     wheel.style.transform = `rotate(${msg.totalRotation}deg)`;
   }
 
+  if(navigator.vibrate) navigator.vibrate([30, 20, 30, 20, 30]);
+
+  // === Phase 2: Anticipation (~3.2s) ===
+  setTimeout(() => {
+    if(pointer) {
+      pointer.classList.remove('ticking');
+      pointer.classList.add('ticking-slow');
+    }
+    if(statusText) statusText.textContent = '🥁 곧 결과가...!';
+  }, 3200);
+
+  // === Phase 3: Result (~4s) ===
   setTimeout(() => {
     lotteryState.spinning = false;
     if(btn) btn.disabled = false;
+    if(wheelContainer) wheelContainer.classList.remove('wheel-active');
+    if(pointer) pointer.classList.remove('ticking', 'ticking-slow');
 
-    if(resultDisplay) {
-      resultDisplay.style.display = 'block';
-      document.getElementById('rouletteResultText').textContent = msg.resultItem;
+    if(navigator.vibrate) navigator.vibrate([50, 30, 100, 50, 200]);
+
+    // Screen shake
+    const displayContainer = document.getElementById('rouletteDisplayContainer');
+    if(displayContainer) {
+      displayContainer.classList.add('result-shake');
+      setTimeout(() => displayContainer.classList.remove('result-shake'), 600);
     }
 
-    showToast(`🎉 결과: ${msg.resultItem}`);
+    // Inline result
+    if(resultDisplay) {
+      resultDisplay.style.display = 'flex';
+      const resultText = document.getElementById('rouletteResultText');
+      if(resultText) {
+        resultText.textContent = msg.resultItem;
+        resultText.classList.remove('show');
+        void resultText.offsetWidth;
+        resultText.classList.add('show');
+      }
+    }
+
+    // Full-screen celebration + confetti
+    showRouletteCelebration(msg.resultItem);
+    launchRouletteConfetti();
+
+    if(statusText) statusText.textContent = '🎉 결과 발표!';
   }, 4000);
+}
+
+function showRouletteCelebration(resultItem) {
+  const old = document.getElementById('rouletteCelebration');
+  if(old) old.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'rouletteCelebration';
+  overlay.className = 'roulette-celebration';
+  overlay.innerHTML =
+    '<div class="celebration-content">' +
+      '<div class="celebration-burst"></div>' +
+      '<div class="celebration-ring"></div>' +
+      '<div class="celebration-emoji">🎊</div>' +
+      '<div class="celebration-label">결과 발표!</div>' +
+      '<div class="celebration-result">' + escapeHTML(resultItem) + '</div>' +
+      '<div class="celebration-sub">터치하여 닫기</div>' +
+    '</div>';
+
+  overlay.addEventListener('click', function() {
+    overlay.classList.add('hiding');
+    setTimeout(function() { if(overlay.parentNode) overlay.remove(); }, 500);
+  });
+
+  document.body.appendChild(overlay);
+
+  setTimeout(function() {
+    if(overlay.parentNode && !overlay.classList.contains('hiding')) {
+      overlay.classList.add('hiding');
+      setTimeout(function() { if(overlay.parentNode) overlay.remove(); }, 500);
+    }
+  }, 3500);
+}
+
+function launchRouletteConfetti() {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'roulette-confetti-wrap';
+
+  const colors = ['#ff3d71','#ffd700','#00d68f','#0095ff','#ff6f3c','#9b51e0','#ff758f','#00c9db','#FFB800','#F71559'];
+
+  for(var i = 0; i < 80; i++) {
+    var p = document.createElement('div');
+    var c = colors[Math.floor(Math.random() * colors.length)];
+    var x = Math.random() * 100;
+    var d = Math.random() * 0.6;
+    var dur = 1.8 + Math.random() * 2;
+    var sz = 5 + Math.random() * 7;
+    var isRect = Math.random() > 0.4;
+    var rot = Math.floor(Math.random() * 360);
+    var drift = (Math.random() - 0.5) * 120;
+
+    p.style.cssText =
+      'position:absolute;top:-10px;' +
+      'left:' + x + '%;' +
+      'width:' + (isRect ? sz * 0.5 : sz) + 'px;' +
+      'height:' + (isRect ? sz * 1.5 : sz) + 'px;' +
+      'background:' + c + ';' +
+      'border-radius:' + (isRect ? '2px' : '50%') + ';' +
+      'opacity:0;' +
+      'transform:rotate(' + rot + 'deg);' +
+      'animation:rrConfettiFall ' + dur + 's ease-in ' + d + 's forwards;' +
+      '--drift:' + drift + 'px;';
+
+    wrapper.appendChild(p);
+  }
+
+  document.body.appendChild(wrapper);
+  setTimeout(function() { if(wrapper.parentNode) wrapper.remove(); }, 5000);
 }
 
 function switchLotteryMode(mode) {
@@ -439,54 +556,161 @@ function drawRouletteWheel(items) {
   const canvas = document.getElementById('rouletteCanvas');
   if(!canvas) return;
 
+  // 고해상도 캔버스 (레티나 대응)
+  const dpr = window.devicePixelRatio || 1;
+  const size = 300;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+
   const ctx = canvas.getContext('2d');
-  const centerX = canvas.width / 2;
-  const centerY = canvas.height / 2;
-  const radius = canvas.width / 2 - 10;
+  ctx.scale(dpr, dpr);
 
-  const anglePerItem = (2 * Math.PI) / items.length;
+  const cx = size / 2;
+  const cy = size / 2;
+  const outerR = size / 2 - 4;
+  const sliceR = outerR - 12; // 핀 안쪽 실제 파이 반지름
+  const arc = (2 * Math.PI) / items.length;
 
-  const colors = [
-    '#ff6b35', '#00e5ff', '#ff2d78', '#ffd700',
-    '#76ff03', '#e040fb', '#ff6e40', '#18ffff',
-    '#ffab40', '#69f0ae', '#ea80fc', '#ff80ab'
+  // 색상 팔레트 — 채도 높고 대비 강한 쌍
+  const palette = [
+    ['#FF3D71','#FF6B8A'], ['#0095FF','#44B4FF'], ['#FFB800','#FFD04D'],
+    ['#00D68F','#33E5A5'], ['#9B51E0','#B87AED'], ['#FF6F3C','#FF9A6C'],
+    ['#00C9DB','#4DDBE5'], ['#F71559','#F9527A'], ['#3366FF','#6B8FFF'],
+    ['#FFC600','#FFD84D'], ['#17C964','#50DC8B'], ['#C850C0','#D880D2']
   ];
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, size, size);
 
+  // ── 외곽 림 (두꺼운 메탈 느낌) ──
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+  const rimGrad = ctx.createRadialGradient(cx, cy, outerR - 14, cx, cy, outerR);
+  rimGrad.addColorStop(0, '#e8e0d4');
+  rimGrad.addColorStop(0.4, '#f5f0e8');
+  rimGrad.addColorStop(0.7, '#d4c8b8');
+  rimGrad.addColorStop(1, '#b0a090');
+  ctx.fillStyle = rimGrad;
+  ctx.fill();
+  // 외곽선
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#8a7a6a';
+  ctx.stroke();
+  ctx.restore();
+
+  // ── 핀 마커 (림 위 작은 원) ──
+  const pinCount = items.length * 2;
+  for(let p = 0; p < pinCount; p++) {
+    const a = (p / pinCount) * Math.PI * 2 - Math.PI / 2;
+    const px = cx + Math.cos(a) * (outerR - 6);
+    const py = cy + Math.sin(a) * (outerR - 6);
+    ctx.beginPath();
+    ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#888';
+    ctx.fill();
+    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = '#666';
+    ctx.stroke();
+  }
+
+  // ── 파이 슬라이스 ──
   items.forEach((item, i) => {
-    const startAngle = i * anglePerItem - Math.PI / 2;
-    const endAngle = startAngle + anglePerItem;
+    const startA = i * arc - Math.PI / 2;
+    const endA = startA + arc;
+    const midA = startA + arc / 2;
+    const cols = palette[i % palette.length];
+
+    // 그라디언트 (안→밖 방사형이 아닌, 슬라이스 방향 선형)
+    const gx1 = cx + Math.cos(midA) * sliceR * 0.15;
+    const gy1 = cy + Math.sin(midA) * sliceR * 0.15;
+    const gx2 = cx + Math.cos(midA) * sliceR * 0.95;
+    const gy2 = cy + Math.sin(midA) * sliceR * 0.95;
+    const grad = ctx.createLinearGradient(gx1, gy1, gx2, gy2);
+    grad.addColorStop(0, cols[0]);
+    grad.addColorStop(1, cols[1]);
 
     ctx.beginPath();
-    ctx.moveTo(centerX, centerY);
-    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, sliceR, startA, endA);
     ctx.closePath();
-
-    ctx.fillStyle = colors[i % colors.length];
+    ctx.fillStyle = grad;
     ctx.fill();
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    // 슬라이스 경계선
     ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
     ctx.stroke();
 
+    // 슬라이스 안쪽 하이라이트 (상단 쪽 밝게)
     ctx.save();
-    ctx.translate(centerX, centerY);
-    ctx.rotate(startAngle + anglePerItem / 2);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, sliceR, startA, endA);
+    ctx.closePath();
+    ctx.clip();
+    const hlGrad = ctx.createLinearGradient(cx, cy - sliceR, cx, cy + sliceR);
+    hlGrad.addColorStop(0, 'rgba(255,255,255,0.18)');
+    hlGrad.addColorStop(0.5, 'rgba(255,255,255,0)');
+    hlGrad.addColorStop(1, 'rgba(0,0,0,0.1)');
+    ctx.fillStyle = hlGrad;
+    ctx.fillRect(0, 0, size, size);
+    ctx.restore();
+
+    // ── 텍스트 ──
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(midA);
+
+    const label = item.length > 6 ? item.slice(0, 5) + '…' : item;
+    const fontSize = items.length <= 4 ? 16 : items.length <= 8 ? 13 : 11;
+    ctx.font = `bold ${fontSize}px "Noto Sans KR", sans-serif`;
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const textX = sliceR * 0.58;
+    // 텍스트 외곽선 (가독성)
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineJoin = 'round';
+    ctx.strokeText(label, textX, 0);
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 14px "Noto Sans KR"';
-    ctx.fillText(item, radius * 0.6, 5);
+    ctx.fillText(label, textX, 0);
     ctx.restore();
   });
 
+  // ── 중앙 허브 ──
+  // 외곽 링
   ctx.beginPath();
-  ctx.arc(centerX, centerY, 20, 0, 2 * Math.PI);
-  ctx.fillStyle = '#1c1c3a';
+  ctx.arc(cx, cy, 24, 0, Math.PI * 2);
+  const hubOuterGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 24);
+  hubOuterGrad.addColorStop(0, '#f0e8dc');
+  hubOuterGrad.addColorStop(1, '#c0b0a0');
+  ctx.fillStyle = hubOuterGrad;
   ctx.fill();
-  ctx.strokeStyle = '#ff6b35';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#8a7a6a';
   ctx.stroke();
+
+  // 내부 원
+  ctx.beginPath();
+  ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+  const hubGrad = ctx.createRadialGradient(cx - 3, cy - 3, 2, cx, cy, 16);
+  hubGrad.addColorStop(0, '#fff');
+  hubGrad.addColorStop(0.3, '#e8ddd0');
+  hubGrad.addColorStop(1, '#a09080');
+  ctx.fillStyle = hubGrad;
+  ctx.fill();
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = '#7a6a5a';
+  ctx.stroke();
+
+  // 중앙 점
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#5a4a3a';
+  ctx.fill();
 }
 
 function handleLotteryMessage(peerId, msg) {
