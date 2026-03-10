@@ -478,7 +478,7 @@ function renderDPView(view) {
         (view.phase === 'peek-pass' && view.currentCard && p.id === view.currentCard.fromId);
       var isSender = view.currentCard && p.id === view.currentCard.fromId && view.phase === 'respond';
       var cls = 'dp-opp' + (isActive ? ' dp-opp-active' : '') + (isSender ? ' dp-opp-sender' : '');
-      var fuHtml = dpRenderFaceUpBadges(p.faceUp, true);
+      var fuHtml = dpRenderFaceUpBadges(p.faceUp, false);
       oppHtml += '<div class="' + cls + '">' +
         '<div class="dp-opp-avatar">' + p.avatar + '</div>' +
         '<div class="dp-opp-name">' + escapeHTML(p.name) + '</div>' +
