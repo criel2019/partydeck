@@ -171,6 +171,13 @@ function _ensureFullscreenForGame() {
 const LANDSCAPE_GAMES = ['pokerGame', 'yahtzeeGame', 'sutdaGame', 'fortressGame'];
 let _orientCheckFn = null;
 
+// 모바일 기기 판별 — 터치 + 좁은 화면 (데스크톱/웹에서 오버레이 차단용)
+function _isMobileDevice() {
+  var hasTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  var isNarrow = Math.min(screen.width, screen.height) <= 820;
+  return hasTouch && isNarrow;
+}
+
 function _clearOrientListeners() {
   if(_orientCheckFn) {
     window.removeEventListener('orientationchange', _orientCheckFn);
@@ -190,6 +197,8 @@ function _enterLandscapeMode() {
   if(pOverlay) pOverlay.style.display = 'none';
   // Try API lock (works in fullscreen)
   try { screen.orientation.lock('landscape').catch(function(){}); } catch(e) {}
+  // 데스크톱/웹에서는 오버레이 불필요 — 모바일만 표시
+  if(!_isMobileDevice()) return;
   // Overlay fallback: show "rotate to landscape" if portrait
   _orientCheckFn = function() {
     var overlay = document.getElementById('landscapeOverlay');
@@ -207,6 +216,8 @@ function _enterPortraitMode() {
   if(lOverlay) lOverlay.style.display = 'none';
   // Try API lock (works in fullscreen)
   _lockPortrait();
+  // 데스크톱/웹에서는 오버레이 불필요 — 모바일만 표시
+  if(!_isMobileDevice()) return;
   // Overlay fallback: show "rotate to portrait" if landscape
   _orientCheckFn = function() {
     var overlay = document.getElementById('portraitOverlay');

@@ -14,11 +14,14 @@
 
   background: linear-gradient(180deg, var(--retro-sky) 0%, var(--retro-cream) 50%, var(--retro-sky) 100%) !important;
   color: #3a2a10;
-  /* 핵심: 화면 전체를 flex column으로 꽉 채우되, 넘치지 않게 */
-  display: flex !important;
-  flex-direction: column !important;
-  height: 100dvh !important;
-  overflow: hidden !important;
+}
+
+/* .screen.active 일 때만 flex 적용 — display:none 을 덮어쓰지 않도록 */
+#lotteryGame.active {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 #lotteryGame .back-btn {
