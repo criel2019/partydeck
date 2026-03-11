@@ -17,6 +17,7 @@ let _pveSelectedPosition = null;
 let _pveOriginalShowGameOver = null;
 let _pveOriginalApplyDamage = null;
 let _pveOriginalRenderView = null;
+let _pveBannerTimers = [];        // 배너 애니메이션 타이머 추적
 
 // ===== PvE CPU NAMES & AVATARS =====
 const PVE_CPU_NAMES = [
@@ -202,8 +203,35 @@ function pveHookGameOver() {
   window.showFortressGameOver = function(msg) {
     if (!_pveMode) { _pveOriginalShowGameOver(msg); return; }
 
-    const playerAlive = msg.players?.find(p => p.id === state.myId && p.alive);
-    const playerData = msg.players?.find(p => p.id === state.myId);
+    // msg.players가 없거나 빈 배열이면 구조 이상 — 기본 처리로 폴백
+    if (!msg || !msg.players || !Array.isArray(msg.players) || msg.players.length === 0) {
+      _pveOriginalShowGameOver(msg);
+      return;
+    }
+
+    const playerData = msg.players.find(p => p.id === state.myId);
+
+    // 플레이어 데이터를 찾을 수 없으면 fortState에서 직접 확인 시도
+    if (!playerData) {
+      const fallback = fortState && fortState.players
+        ? fortState.players.find(p => p.id === state.myId)
+        : null;
+      if (fallback && fallback.alive) {
+        // fortState 기준으로 생존 — 승리 처리
+        _pveRunStats.stagesCleared++;
+        _pvePlayerHp = fallback.hp || FORT_MAX_HP;
+        if (_pveStage + 1 >= PVE_STAGES.length) {
+          pveShowVictory();
+        } else {
+          setTimeout(() => pveShowEvent(), 1500);
+        }
+      } else {
+        pveShowDefeat();
+      }
+      return;
+    }
+
+    const playerAlive = playerData.alive;
 
     if (playerAlive) {
       // 승리
@@ -213,7 +241,7 @@ function pveHookGameOver() {
       if (_pveStage + 1 >= PVE_STAGES.length) {
         pveShowVictory();
       } else {
-        _pveStage++;
+        // _pveStage는 pveShowEvent 진입 시점까지 현재 스테이지(0-indexed)를 유지
         setTimeout(() => pveShowEvent(), 1500);
       }
     } else {
@@ -473,9 +501,17 @@ function pveInitFortress(stageDef) {
 }
 
 // ===== STAGE BANNER =====
+function pveClearBannerTimers() {
+  _pveBannerTimers.forEach(t => clearTimeout(t));
+  _pveBannerTimers = [];
+}
+
 function pveShowStageBanner() {
   const stageDef = PVE_STAGES[_pveStage];
   if (!stageDef) return;
+
+  // 이전 배너 타이머 취소
+  pveClearBannerTimers();
 
   let banner = document.getElementById('pveStageBanner');
   if (!banner) {
@@ -488,22 +524,32 @@ function pveShowStageBanner() {
 
   banner.innerHTML = `<span class="pve-banner-stage">STAGE ${_pveStage + 1}</span> <span class="pve-banner-name">${stageDef.name}</span>`;
   banner.style.display = 'flex';
+  banner.classList.remove('pve-banner-exit');
   banner.classList.add('pve-banner-enter');
 
-  setTimeout(() => {
+  const t1 = setTimeout(() => {
     banner.classList.remove('pve-banner-enter');
     banner.classList.add('pve-banner-exit');
-    setTimeout(() => {
+    const t2 = setTimeout(() => {
       banner.style.display = 'none';
       banner.classList.remove('pve-banner-exit');
     }, 600);
+    _pveBannerTimers.push(t2);
   }, 2500);
+  _pveBannerTimers.push(t1);
 }
 
 // ===== DEBUFF INDICATORS ON PLAYER BAR =====
+let _pveDebuffRafId = null;
+
 function pveRenderDebuffIndicators() {
   if (!_pveMode) return;
-  setTimeout(() => {
+
+  // 이전 예약된 프레임이 있으면 취소하여 중복 실행 방지
+  if (_pveDebuffRafId) cancelAnimationFrame(_pveDebuffRafId);
+
+  _pveDebuffRafId = requestAnimationFrame(() => {
+    _pveDebuffRafId = null;
     const bar = document.getElementById('fortPlayersBar');
     if (!bar) return;
     bar.querySelectorAll('.fort-player-hp-item').forEach(el => {
@@ -530,7 +576,7 @@ function pveRenderDebuffIndicators() {
         if (info) info.appendChild(div);
       }
     });
-  }, 50);
+  });
 }
 
 // =============================================
@@ -550,7 +596,7 @@ function pveShowEvent() {
   ovl.innerHTML = `
     <div class="pve-event-box">
       <div class="pve-event-header">
-        <div class="pve-event-stage">STAGE ${_pveStage} / ${PVE_STAGES.length} 클리어!</div>
+        <div class="pve-event-stage">STAGE ${_pveStage + 1} / ${PVE_STAGES.length} 클리어!</div>
         <div class="pve-event-hp">내 HP: <span class="pve-hp-value">${_pvePlayerHp}</span> / ${FORT_MAX_HP}</div>
       </div>
       <div class="pve-event-emoji">${evt.emoji}</div>
@@ -587,8 +633,8 @@ function pveSelectDebuff(eventIdx, choiceIdx) {
     return;
   }
 
-  // 모든 CPU에게 디버프 적용
-  const nextStage = PVE_STAGES[_pveStage];
+  // 모든 CPU에게 디버프 적용 (다음 스테이지 기준)
+  const nextStage = PVE_STAGES[_pveStage + 1];
   if (!nextStage) return;
 
   for (let i = 0; i < nextStage.cpuCount; i++) {
@@ -625,7 +671,7 @@ function pveShowDebuffApplied(text, isHeal) {
 }
 
 function pveRenderDebuffSummary() {
-  const nextStage = PVE_STAGES[_pveStage];
+  const nextStage = PVE_STAGES[_pveStage + 1];
   if (!nextStage) return '';
   let html = '';
   for (let i = 0; i < nextStage.cpuCount; i++) {
@@ -633,7 +679,7 @@ function pveRenderDebuffSummary() {
     const debuff = _pveCpuDebuffs[cpuId];
     if (!debuff) continue;
 
-    const cpuOffset = _pveStage * 3;
+    const cpuOffset = (_pveStage + 1) * 3;
     const name = PVE_CPU_NAMES[(cpuOffset + i) % PVE_CPU_NAMES.length];
     const avatar = PVE_CPU_AVATARS[(cpuOffset + i) % PVE_CPU_AVATARS.length];
 
@@ -662,6 +708,8 @@ function pveRenderDebuffSummary() {
 // =============================================
 
 function pveProceedToPosition() {
+  // 다음 스테이지로 진행 (0-indexed 증가)
+  _pveStage++;
   _pvePhase = 'position';
   const ovl = document.getElementById('pveOverlay');
   if (!ovl) return;
@@ -768,7 +816,18 @@ function pveShowDefeat() {
 function pveRetry() {
   const ovl = document.getElementById('pveOverlay');
   if (ovl) ovl.style.display = 'none';
+
+  // 배너 타이머 취소 (이전 배너 애니메이션 충돌 방지)
+  pveClearBannerTimers();
+
   closeFortressCleanup();
+
+  // 기존 인터셉트를 복원한 뒤 startFortressPvE()가 깨끗하게 재설치하도록 함
+  // 이렇게 하지 않으면 interceptNetworking()의 가드(_originalBroadcast 존재)에 의해
+  // 이미 래핑된 함수가 _originalCloseFortressGame 등에 저장되는 중첩 문제 발생
+  pveUninstallHooks();
+  restoreNetworking();
+
   startFortressPvE();
 }
 
@@ -782,6 +841,8 @@ function pveExit() {
 
 function pveCleanup() {
   pveUninstallHooks();
+  pveClearBannerTimers();
+  if (_pveDebuffRafId) { cancelAnimationFrame(_pveDebuffRafId); _pveDebuffRafId = null; }
   _pveMode = false;
   _pveStage = 0;
   _pvePhase = 'battle';
@@ -822,15 +883,33 @@ function aiFortressPvE() {
     if (d < minDist) { minDist = d; target = e; }
   });
 
-  // 이동 결정
-  const shouldMove = Math.random() < 0.4 || current.x < 50 || current.x > FORT_CANVAS_W - 50;
+  // 이동 결정 — target 방향을 기본 전술로 사용
+  const dxToTarget = target.x - current.x;
+  const distToTarget = Math.abs(dxToTarget);
+
+  // 근접(150px 이내)이면 덜 이동, 멀면(300px+) 적극 이동
+  let moveProbability = 0.4;
+  if (distToTarget > 300) moveProbability = 0.7;
+  else if (distToTarget < 150) moveProbability = 0.2;
+
+  const shouldMove = Math.random() < moveProbability || current.x < 50 || current.x > FORT_CANVAS_W - 50;
   let moveSteps = 0;
 
   if (shouldMove && current.moveFuel > 0) {
     let moveDir;
     if (current.x < 50) moveDir = 1;
     else if (current.x > FORT_CANVAS_W - 50) moveDir = -1;
-    else moveDir = Math.random() > 0.5 ? 1 : -1;
+    else {
+      // target 방향으로 이동 (70% 확률), 나머지는 반대 방향(회피 기동)
+      moveDir = dxToTarget > 0 ? 1 : -1;
+      if (distToTarget < 100 && Math.random() < 0.5) {
+        // 너무 가까우면 뒤로 빠질 수도 있음
+        moveDir = -moveDir;
+      } else if (Math.random() < 0.3) {
+        // 약간의 불예측성 추가
+        moveDir = -moveDir;
+      }
+    }
 
     moveSteps = Math.min(
       Math.floor(Math.random() * 5) + 1,
