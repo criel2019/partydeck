@@ -1086,8 +1086,10 @@
   gap: 10px;
   width: 100%;
   max-width: 360px;
-  max-height: 75vh;
+  max-height: 60vh;
   overflow-y: auto;
+  flex-shrink: 1;
+  min-height: 0;
 }
 
 .king-scoring-title {
@@ -1175,12 +1177,14 @@
   color: var(--king-neutral);
 }
 
-/* Scoring action button container (inside scoring overlay) */
+/* Scoring action button container (outside scrollable panel, always visible) */
 .king-scoring-btn-container {
-  margin-top: 12px;
+  margin-top: 8px;
   width: 100%;
   display: flex;
   justify-content: center;
+  flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .king-scoring-action-btn {

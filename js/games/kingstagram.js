@@ -902,11 +902,11 @@ function kingShowScoring(results, isLastRound) {
     })(i);
   }
 
-  // After all land results are shown, add a button inside the scoring panel
+  // After all land results are shown, add a button OUTSIDE the scrollable panel
+  // so it's always visible at the bottom (not buried inside scroll area)
   var buttonDelay = results.length * 800 + 600;
   var tBtn = setTimeout(function() {
-    var existingPanel = overlay.querySelector('.king-scoring-panel');
-    if (!existingPanel) return;
+    if (!overlay || !overlay.parentNode) return;
 
     var btnDiv = document.createElement('div');
     btnDiv.className = 'king-scoring-btn-container';
@@ -917,7 +917,7 @@ function kingShowScoring(results, isLastRound) {
       btnDiv.innerHTML = '<button class="king-next-round-btn king-scoring-action-btn" onclick="kingNextRound()">\ud83d\udc51 \ub2e4\uc74c \ub77c\uc6b4\ub4dc \uc2dc\uc791</button>';
     }
     btnDiv.style.animation = 'kingScoreFadeIn 0.4s ease-out';
-    existingPanel.appendChild(btnDiv);
+    overlay.appendChild(btnDiv);
   }, buttonDelay);
   _kingTimers.push(tBtn);
 }

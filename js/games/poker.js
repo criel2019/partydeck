@@ -375,7 +375,8 @@ function advancePokerPhase() {
   const canAct = ps.players.filter(p => !p.folded && !p.allIn);
   if(canAct.length <= 1) {
     broadcastPokerState();
-    setTimeout(() => advancePokerPhase(), 800);
+    // 올인 시 커뮤니티 카드 딜링을 천천히 보여줌 (1.5초 간격)
+    setTimeout(() => advancePokerPhase(), 1500);
     return;
   }
   

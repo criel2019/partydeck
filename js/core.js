@@ -1438,8 +1438,8 @@ const GAME_INFO = {
   jewel:    { emoji:'💎', name:'보석맞추기', desc:'같은 보석 3개를 맞춰 제거! 콤보와 연쇄로 고득점.', players:'1~14명', time:'5~10분', type:'퍼즐' },
   colorchain:{ emoji:'🔗', name:'컬러체인', desc:'같은 색 구슬을 연결해서 터뜨려라! 중력과 연쇄 콤보.', players:'1~14명', time:'5~10분', type:'퍼즐' },
   slinkystairs:{ emoji:'🌀', name:'슬링키 스테어즈', desc:'무너지는 계단 위에서 슬링키를 조종해 살아남으세요! 좌우 타이밍이 핵심.', players:'1~14명', time:'3~10분', type:'아케이드' },
-  pupil:{ emoji:'👁', name:'동공 탐지기', desc:'카메라로 동공 반응을 분석하여 진술의 신뢰도를 측정합니다. 혼자서만 플레이 가능!', players:'1명 전용', time:'5~10분', type:'분석' },
-  tamagotchi:{ emoji:'🐉', name:'다마고치', desc:'나만의 포트리스 펫을 키워보세요! 먹이, 돌봄, 훈련으로 성장시키고 진화하세요.', players:'1명 전용', time:'상시', type:'육성' },
+  pupil:{ emoji:'👁', name:'거짓말 탐지기', desc:'카메라로 동공 반응을 분석하여 진술의 신뢰도를 측정합니다. 혼자서만 플레이 가능!', players:'1명 전용', time:'5~10분', type:'분석' },
+  tamagotchi:{ emoji:'🐉', name:'내 펫 키우기', desc:'나만의 포트리스 펫을 키워보세요! 먹이, 돌봄, 훈련으로 성장시키고 진화하세요.', players:'1명 전용', time:'상시', type:'육성' },
   idol:      { emoji:'🎤', name:'아이돌 매니지먼트', desc:'블루마블 보드판에서 내 아이돌을 스타로 키우는 전략 보드게임! 샵을 사고, 훈련하고, 가챠로 역전을 노려라.', players:'1~4명', time:'45~60분', type:'보드게임' },
   drinkpoker:{ emoji:'🍶', name:'술피하기 포커', desc:'바퀴벌레 포커 변형! 술 카드를 상대에게 보내고, 거짓말로 속여라. 같은 종류 5장이 모이면 패배!', players:'2~6명', time:'10~20분', type:'블러프' },
   kingstagram:{ emoji:'👑', name:'킹스타그램', desc:'주사위를 굴려 6개 땅에 배치하고, 팔로워 카드를 획득하라! 4라운드 후 최다 팔로워가 승리.', players:'1~6명', time:'15~25분', type:'주사위' }
@@ -1483,8 +1483,8 @@ function startGame() {
   else if(g === 'jewel') startJewel();
   else if(g === 'colorchain') startColorChain();
   else if(g === 'slinkystairs') startSlinkyStairs();
-  else if(g === 'pupil') { if(state.players.length > 1) { showToast('👁 동공 탐지기는 1인 전용입니다'); return; } startPupil(); }
-  else if(g === 'tamagotchi') { if(state.players.length > 1) { showToast('🐉 다마고치는 1인 전용입니다'); return; } startTamagotchi(); }
+  else if(g === 'pupil') { if(state.players.length > 1) { showToast('👁 거짓말 탐지기는 1인 전용입니다'); return; } startPupil(); }
+  else if(g === 'tamagotchi') { if(state.players.length > 1) { showToast('🐉 내 펫 키우기는 1인 전용입니다'); return; } startTamagotchi(); }
   else if(g === 'idol') startIdolManagement();
   else if(g === 'drinkpoker') startDrinkPoker();
   else if(g === 'kingstagram') startKingstagram();

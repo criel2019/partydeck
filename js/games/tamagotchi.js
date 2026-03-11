@@ -1152,9 +1152,9 @@ function tamaUpdateMenuBtn(){
     if(raw){
       const p=JSON.parse(raw);
       const sp=TAMA_SPRITE_MAP[p.tribe]?TAMA_SPRITE_MAP[p.tribe][tamaStageIdx(p)]:'🥚';
-      btn.innerHTML='<span class="tama-menu-preview">'+sp+'</span> '+(p.name||'내 다마고치')+' (Lv.'+p.level+')';
-    }else btn.innerHTML='🥚 내 다마고치 키우기';
-  }catch(e){btn.innerHTML='🥚 내 다마고치 키우기';}
+      btn.innerHTML='<span class="tama-menu-preview">'+sp+'</span> '+(p.name||'내 펫')+' (Lv.'+p.level+')';
+    }else btn.innerHTML='🥚 내 펫 키우기';
+  }catch(e){btn.innerHTML='🥚 내 펫 키우기';}
 }
 
 // ── Lifecycle ──────────────────────────────────────────

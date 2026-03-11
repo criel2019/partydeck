@@ -385,7 +385,24 @@ function slkDrawHUD(now) {
   ctx.font = '700 11px "Baloo 2",sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillText('칸', W / 2, st + fs + 16);
   if (slkG.best > 0 && slkG.score < slkG.best) { ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillText(`BEST ${slkG.best}`, W / 2, st + fs + 27); }
   if (slkG.combo > 1) { const sz = Math.min(14 + slkG.combo * .25, 26); const cc = slkG.fv ? `hsl(${(now * .3) % 360},90%,65%)` : slkG.combo >= 15 ? SLK_CC[~~(now * .01) % SLK_NC].m : slkG.combo >= 8 ? '#ffd93d' : 'rgba(255,255,255,.5)'; slkST(`${slkG.combo}x`, W / 2, st + fs + 42, `700 ${sz}px "Baloo 2",sans-serif`, cc); }
-  if (!slkG.fv && slkG.fg > 0) { const fW = Math.min(80, W * .2), fH = 3, fX = W / 2 - fW / 2, fY = H - 22; ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(fX, fY, fW, fH); const gr = ctx.createLinearGradient(fX, 0, fX + fW, 0); gr.addColorStop(0, '#ff6b6b'); gr.addColorStop(1, '#ffd93d'); ctx.fillStyle = gr; ctx.fillRect(fX, fY, (slkG.fg / SLK_FV_NEED) * fW, fH); }
+  // === 하단 층 카운팅 (유저 시선이 아래로 향하므로 도파민 유도) ===
+  if (!slkG.dead) {
+    const btmFs = Math.min(52, W * .13);
+    const btmY = H - 28;
+    const btmPulse = slkG.score > 0 && now - slkG.landT < 400 ? Math.sin((now - slkG.landT) / 400 * Math.PI) * .25 : 0;
+    const btmScale = 1 + btmPulse;
+    ctx.save();
+    ctx.translate(W / 2, btmY);
+    ctx.scale(btmScale, btmScale);
+    const btmCol = slkG.fv ? `hsl(${(now * .3) % 360},90%,70%)` : slkG.combo >= 15 ? SLK_CC[~~(now * .008) % SLK_NC].m : slkG.combo >= 8 ? '#ffd93d' : '#fff';
+    ctx.font = `900 ${btmFs}px "Baloo 2",sans-serif`; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillText(`${slkG.score}`, 1, 2);
+    ctx.fillStyle = btmCol; ctx.fillText(`${slkG.score}`, 0, 0);
+    ctx.font = '700 12px "Baloo 2",sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.35)';
+    ctx.fillText('칸', 0, 16);
+    ctx.restore();
+  }
+  if (!slkG.fv && slkG.fg > 0) { const fW = Math.min(80, W * .2), fH = 3, fX = W / 2 - fW / 2, fY = H - 58; ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(fX, fY, fW, fH); const gr = ctx.createLinearGradient(fX, 0, fX + fW, 0); gr.addColorStop(0, '#ff6b6b'); gr.addColorStop(1, '#ffd93d'); ctx.fillStyle = gr; ctx.fillRect(fX, fY, (slkG.fg / SLK_FV_NEED) * fW, fH); }
   // Dead 타이머 바 표시
   if (slkG.clActive && !slkG.dead && slkG.deadProgress > 0) {
     const dW = Math.min(120, W * .3), dH = 6, dX = W / 2 - dW / 2, dY = st + fs + 54;
