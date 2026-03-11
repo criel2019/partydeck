@@ -749,3 +749,382 @@
     padding: 2px 4px;
   }
 }
+
+/* ================================================ */
+/* ===== PvE MODE STYLES ========================== */
+/* ================================================ */
+
+/* ===== PvE Overlay (전체 화면 덮기) ===== */
+.pve-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(6px);
+  animation: pveFadeIn 0.4s ease;
+}
+@keyframes pveFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ===== PvE 공통 버튼 ===== */
+.pve-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 14px 32px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+.pve-btn:active { transform: scale(0.96); }
+.pve-btn-primary {
+  background: linear-gradient(135deg, #ff6b35, #ff2d78);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(255, 45, 120, 0.35);
+}
+.pve-btn-secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ===== Stage Intro ===== */
+.pve-intro-box {
+  text-align: center;
+  color: #fff;
+  max-width: 360px;
+  padding: 32px 24px;
+}
+.pve-intro-stage {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: #ff6b35;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.pve-intro-biome {
+  font-size: 56px;
+  margin: 8px 0 12px;
+  animation: pveBounce 1.5s ease infinite;
+}
+@keyframes pveBounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+.pve-intro-name {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  font-family: 'Black Han Sans', sans-serif;
+}
+.pve-intro-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.pve-intro-info {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 8px;
+}
+.pve-dot { opacity: 0.4; }
+.pve-intro-player-hp {
+  font-size: 13px;
+  color: #69f0ae;
+  margin-bottom: 16px;
+}
+
+/* ===== Stage Banner (게임 중 표시) ===== */
+.pve-stage-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  padding: 14px 28px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 107, 53, 0.4);
+  pointer-events: none;
+}
+.pve-banner-stage {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ff6b35;
+  letter-spacing: 2px;
+}
+.pve-banner-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Black Han Sans', sans-serif;
+}
+.pve-banner-enter {
+  animation: pveBannerIn 0.5s ease;
+}
+.pve-banner-exit {
+  animation: pveBannerOut 0.5s ease forwards;
+}
+@keyframes pveBannerIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes pveBannerOut {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to   { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+}
+
+/* ===== Event Cutscene ===== */
+.pve-event-box {
+  text-align: center;
+  color: #fff;
+  max-width: 400px;
+  padding: 28px 20px;
+}
+.pve-event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+.pve-event-stage {
+  font-size: 12px;
+  font-weight: 700;
+  color: #69f0ae;
+  letter-spacing: 1px;
+}
+.pve-event-hp {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+.pve-hp-value { color: #69f0ae; font-weight: 700; }
+.pve-event-emoji {
+  font-size: 64px;
+  margin: 8px 0 16px;
+  animation: pveBounce 2s ease infinite;
+}
+.pve-event-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  font-family: 'Black Han Sans', sans-serif;
+}
+.pve-event-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+.pve-event-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ===== Choice Button ===== */
+.pve-choice-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 16px;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  font-family: inherit;
+}
+.pve-choice-btn:hover {
+  background: rgba(255, 107, 53, 0.15);
+  border-color: rgba(255, 107, 53, 0.4);
+}
+.pve-choice-btn:active { transform: scale(0.97); }
+.pve-choice-label {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.pve-choice-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ===== Debuff Applied Result ===== */
+.pve-debuff-result-box {
+  text-align: center;
+  color: #fff;
+  max-width: 380px;
+  padding: 28px 20px;
+}
+.pve-debuff-result-text {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+.pve-heal .pve-debuff-result-text { color: #69f0ae; }
+.pve-debuff .pve-debuff-result-text { color: #ff6b35; }
+.pve-debuff-cpu-list {
+  margin-bottom: 24px;
+}
+.pve-cpu-debuff-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.pve-cpu-avatar { font-size: 20px; }
+.pve-cpu-name {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 70px;
+  text-align: left;
+}
+.pve-cpu-debuffs {
+  font-size: 12px;
+  color: #ff8a80;
+  flex: 1;
+  text-align: right;
+}
+.pve-no-debuffs {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ===== Position Selection ===== */
+.pve-position-box {
+  text-align: center;
+  color: #fff;
+  max-width: 400px;
+  padding: 28px 20px;
+}
+.pve-position-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  font-family: 'Black Han Sans', sans-serif;
+}
+.pve-position-desc {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 24px;
+}
+.pve-position-choices {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.pve-position-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 20px 16px;
+  color: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  min-width: 90px;
+  font-family: inherit;
+}
+.pve-position-btn:hover {
+  background: rgba(100, 255, 218, 0.12);
+  border-color: rgba(100, 255, 218, 0.4);
+}
+.pve-position-btn:active { transform: scale(0.95); }
+.pve-pos-icon { font-size: 28px; margin-bottom: 6px; }
+.pve-pos-label {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.pve-pos-detail {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ===== Teleport Animation ===== */
+.pve-teleport-box {
+  text-align: center;
+  color: #fff;
+}
+.pve-teleport-emoji {
+  font-size: 72px;
+  animation: pveTeleportPulse 0.6s ease infinite alternate;
+}
+@keyframes pveTeleportPulse {
+  from { transform: scale(1); filter: brightness(1); }
+  to   { transform: scale(1.15); filter: brightness(1.4); }
+}
+.pve-teleport-text {
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 16px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ===== Victory / Defeat ===== */
+.pve-result-box {
+  text-align: center;
+  color: #fff;
+  max-width: 360px;
+  padding: 32px 24px;
+}
+.pve-result-emoji {
+  font-size: 72px;
+  margin-bottom: 16px;
+}
+.pve-victory-box .pve-result-emoji { animation: pveBounce 1.5s ease infinite; }
+.pve-result-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  font-family: 'Black Han Sans', sans-serif;
+}
+.pve-victory-box .pve-result-title { color: #ffd700; }
+.pve-defeat-box .pve-result-title { color: #ff5252; }
+.pve-result-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 16px;
+}
+.pve-result-stats {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 24px;
+  line-height: 1.8;
+}
+.pve-result-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ===== Debuff Indicators (플레이어 바에 표시) ===== */
+.pve-debuff-icons {
+  display: flex;
+  gap: 2px;
+  margin-top: 2px;
+}
+.pve-debuff-icon {
+  font-size: 10px;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 2px rgba(255, 0, 0, 0.4));
+}

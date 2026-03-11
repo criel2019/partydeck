@@ -934,111 +934,106 @@
   }
 
   /* ───────────────────────────────────────────────
-     E-CARD — Ref: cards LEFT (big), action buttons RIGHT
-     Opponent minimized in top info bar
+     E-CARD — 가로 모드 그리드
+     Row 1: 컴팩트 헤더 (전체 너비)
+     Row 2: 플레이 영역 (전체 너비) — 리빌/제출대기/상태
+     Row 3: 카드 패 (좌) + 컨트롤 사이드바 (우)
      ─────────────────────────────────────────────── */
   #ecardGame.active {
     display: grid !important;
-    grid-template-columns: 1fr auto !important;
-    grid-template-rows: auto auto auto 1fr !important;
+    grid-template-columns: 1fr min(220px, 38vw) !important;
+    grid-template-rows: auto 1fr auto !important;
     gap: 0 !important;
     padding: 0 !important;
   }
-  /* Big cards in landscape */
-  #ecardGame .ecard-card {
-    width: min(22vh, 86px) !important;
-    height: min(32vh, 124px) !important;
-    margin: 0 -10px !important;
-  }
-  #ecardGame .ecard-card-icon { font-size: min(12vh, 38px) !important; }
-  #ecardGame .ecard-card-name { font-size: 11px !important; }
-  /* Row 1: Top bar spans full width */
-  #ecardGame .ecard-top-bar {
+
+  /* Row 1: Compact header — full width */
+  #ecardGame .ecard-compact-header {
     grid-column: 1 / -1 !important;
     grid-row: 1 !important;
-    padding: 4px 10px !important;
+    padding: 3px 8px !important;
+    min-height: 42px !important;
   }
-  /* Row 2: Score + Role + Opponent in compact info strip */
-  #ecardGame .ecard-score {
+
+  /* Row 2: Play area — full width center stage */
+  #ecardGame .ecard-play-area {
     grid-column: 1 / -1 !important;
     grid-row: 2 !important;
-    padding: 3px 8px !important;
-    margin: 0 8px !important;
-    gap: 8px !important;
   }
-  #ecardGame .score-icon { font-size: 16px !important; }
-  #ecardGame .score-value { font-size: 20px !important; }
-  #ecardGame .score-divider { font-size: 16px !important; }
-  /* Row 3: Role badge - compact inline */
-  #ecardGame .ecard-role-display {
+  #ecardGame .ecard-result-text {
     grid-column: 1 / -1 !important;
-    grid-row: 3 !important;
-    padding: 1px 8px !important;
-    margin: 0 !important;
+    grid-row: 2 !important;
+    align-self: start !important;
+    z-index: 2 !important;
+    font-size: 15px !important;
+    padding: 6px 10px !important;
   }
-  #ecardGame .role-badge {
-    padding: 3px 10px !important;
-    gap: 5px !important;
-  }
-  #ecardGame .role-icon { font-size: 16px !important; }
-  #ecardGame .role-text { font-size: 10px !important; }
-  /* Opponent: hidden as separate area in landscape, info is in top bar */
-  #ecardGame .ecard-opponent-area {
+  #ecardGame .ecard-reveal-result {
     grid-column: 1 / -1 !important;
-    grid-row: 3 !important;
-    padding: 2px 8px !important;
-    margin: 0 8px !important;
-    min-height: 0 !important;
-    justify-content: flex-end !important;
+    grid-row: 2 !important;
+    align-self: center !important;
+    z-index: 2 !important;
   }
-  #ecardGame .opponent-avatar { width: 22px !important; height: 22px !important; font-size: 12px !important; }
-  #ecardGame .opponent-name { font-size: 10px !important; }
-  /* Row 4: Cards area (LEFT) + Action buttons (RIGHT) */
+
+  /* Row 3 LEFT: Card hand */
   #ecardGame .ecard-my-cards-area {
     grid-column: 1 !important;
-    grid-row: 4 !important;
+    grid-row: 3 !important;
     padding: 4px 8px !important;
   }
-  #ecardGame .my-cards-label { font-size: 10px !important; margin-bottom: 2px !important; }
+  #ecardGame .my-cards-label { font-size: 11px !important; margin-bottom: 2px !important; }
   #ecardGame .ecard-cards-hand { gap: 0 !important; padding: 4px 4px 8px !important; }
-  /* RIGHT: vertical action buttons */
+
+  /* Card sizing — vh 기반으로 가로 화면에 최적화 */
+  #ecardGame .ecard-card {
+    width: min(20vh, 80px) !important;
+    height: min(29vh, 116px) !important;
+    margin: 0 -10px !important;
+  }
+  #ecardGame .ecard-card-icon { font-size: min(11vh, 36px) !important; }
+  #ecardGame .ecard-card-name { font-size: 11px !important; }
+
+  /* Row 3 RIGHT: 컨트롤 사이드바 (상호배타 — JS가 하나만 표시) */
+  /* ⚠️ display 속성에 !important 금지 — JS display 토글과 충돌 */
   #ecardGame .ecard-action-buttons {
     grid-column: 2 !important;
-    grid-row: 4 !important;
-    display: flex !important;
+    grid-row: 3 !important;
     flex-direction: column !important;
     justify-content: center !important;
-    gap: 8px !important;
-    padding: 12px !important;
-    min-width: 90px !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 8px 10px !important;
+    min-width: 0 !important;
+    border-left: 2px solid rgba(201,168,76,0.2) !important;
+    background: linear-gradient(90deg, rgba(0,0,0,0.10) 0%, transparent 100%) !important;
   }
   #ecardGame .ecard-action-buttons .btn {
     width: 100% !important;
     min-height: 48px !important;
-    padding: 12px 14px !important;
-    font-size: 15px !important;
+    padding: 10px 12px !important;
+    font-size: 14px !important;
   }
-  /* Bet area slides in on right column */
   #ecardGame .ecard-bet-area {
     grid-column: 2 !important;
-    grid-row: 4 !important;
-    padding: 8px !important;
-    display: flex !important;
+    grid-row: 3 !important;
+    padding: 8px 10px !important;
     flex-direction: column !important;
     gap: 6px !important;
+    border-left: 2px solid rgba(201,168,76,0.2) !important;
+    background: linear-gradient(90deg, rgba(0,0,0,0.10) 0%, transparent 100%) !important;
   }
   #ecardGame .ecard-bet-response {
-    grid-column: 1 / -1 !important;
-  }
-  /* Battle area overlay */
-  #ecardGame .ecard-battle-area {
-    grid-column: 1 !important;
-    grid-row: 4 !important;
-    z-index: 10 !important;
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+    padding: 8px 10px !important;
+    border-left: 2px solid rgba(201,168,76,0.2) !important;
+    background: linear-gradient(90deg, rgba(0,0,0,0.10) 0%, transparent 100%) !important;
   }
   #ecardGame .ecard-waiting {
-    grid-column: 1 / -1 !important;
-    grid-row: 4 !important;
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+    border-left: 2px solid rgba(201,168,76,0.2) !important;
+    background: linear-gradient(90deg, rgba(0,0,0,0.10) 0%, transparent 100%) !important;
   }
 
   /* ───────────────────────────────────────────────
@@ -1260,10 +1255,10 @@
   /* ───────────────────────────────────────────────
      POKER — Felt casino layout, landscape: side-by-side
      ─────────────────────────────────────────────── */
-  /* ───── POKER — Left vertical player panel + bigger cards ───── */
+  /* ───── POKER — 3-column grid: players | cards | actions ───── */
   #pokerGame .pk-content {
     display: grid !important;
-    grid-template-columns: 120px 1fr !important;
+    grid-template-columns: 120px 1fr auto !important;
     grid-template-rows: auto auto 1fr !important;
     padding: 4px !important;
     overflow: hidden !important;
@@ -1349,12 +1344,17 @@
   #pokerGame .pk-hero-corner .pk-hero-suit-sm { font-size: min(7vh, 26px) !important; }
   #pokerGame .pk-hero-center { font-size: min(24vh, 96px) !important; }
   #pokerGame .pk-hand-name { font-size: min(7vh, 32px) !important; }
-  /* Action buttons: absolute bottom-right */
+  /* Action buttons: right column (grid col 3), rows 2-3 */
   #pokerGame .pk-bottom-panel {
-    position: absolute !important;
-    bottom: 6px !important; right: 6px !important;
+    position: relative !important;
+    grid-column: 3 !important;
+    grid-row: 2 / 4 !important;
     width: 180px !important;
     z-index: 10 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    padding-bottom: 4px !important;
   }
   #pokerGame .pk-actions {
     flex-direction: column !important;
@@ -1675,7 +1675,7 @@
   }
 
   /* ─── POKER (short landscape) ─── */
-  #pokerGame .pk-content { padding: 3px !important; grid-template-columns: 100px 1fr !important; }
+  #pokerGame .pk-content { padding: 3px !important; grid-template-columns: 100px 1fr auto !important; }
   #pokerGame .pk-bottom-panel { width: 160px !important; }
   #pokerGame .pk-hero-card {
     width: min(40vh, 160px) !important;
@@ -1758,58 +1758,43 @@
 
   /* ─── E-CARD (short landscape) ─── */
   #ecardGame { border-width: 3px !important; }
-  #ecardGame .ecard-top-bar { padding: 2px 8px !important; }
-  #ecardGame .ecard-title { font-size: 14px !important; }
-  #ecardGame .ecard-score {
+  #ecardGame .ecard-compact-header {
     padding: 2px 6px !important;
-    margin: 0 4px !important;
-    gap: 6px !important;
+    min-height: 36px !important;
+    gap: 4px !important;
   }
-  #ecardGame .score-icon { font-size: 14px !important; }
-  #ecardGame .score-value { font-size: 16px !important; }
-  #ecardGame .score-divider { font-size: 14px !important; }
-  #ecardGame .ecard-role-display { padding: 0 4px !important; }
-  #ecardGame .role-badge { padding: 2px 6px !important; gap: 4px !important; }
-  #ecardGame .role-icon { font-size: 14px !important; }
-  #ecardGame .role-text { font-size: 9px !important; }
-  #ecardGame .ecard-opponent-area {
-    padding: 2px 6px !important;
-    margin: 0 4px !important;
-    min-height: 0 !important;
-  }
-  #ecardGame .opponent-avatar { width: 18px !important; height: 18px !important; font-size: 10px !important; }
-  #ecardGame .opponent-name { font-size: 9px !important; }
-  #ecardGame .opponent-cards-count { font-size: 9px !important; }
-  /* Cards still as large as possible relative to viewport height */
+  #ecardGame .ecard-header-round { font-size: 10px !important; }
+  #ecardGame .ecard-hscore-val { font-size: 14px !important; }
+  #ecardGame .ecard-hscore-emperor,
+  #ecardGame .ecard-hscore-slave { font-size: 12px !important; }
+  #ecardGame .ecard-header-role { font-size: 10px !important; padding: 2px 6px !important; }
+  #ecardGame .ecard-header-role span:first-child { font-size: 13px !important; }
+  #ecardGame .ecard-header-role span:last-child { font-size: 10px !important; }
+  #ecardGame .ecard-header-opp .opponent-avatar { width: 20px !important; height: 20px !important; font-size: 11px !important; }
+  #ecardGame .ecard-header-opp .opponent-name { font-size: 10px !important; }
+  #ecardGame .ecard-header-opp .opponent-cards-count { font-size: 9px !important; }
+  /* Cards: vh 기반 — 짧은 화면에서 축소 */
   #ecardGame .ecard-card {
-    width: min(20vh, 72px) !important;
-    height: min(30vh, 104px) !important;
+    width: min(18vh, 66px) !important;
+    height: min(26vh, 96px) !important;
     margin: 0 -8px !important;
   }
-  #ecardGame .ecard-card-icon { font-size: min(11vh, 32px) !important; }
+  #ecardGame .ecard-card-icon { font-size: min(10vh, 28px) !important; }
   #ecardGame .ecard-card-name { font-size: 9px !important; }
-  #ecardGame .ecard-battle-area {
-    padding: 8px !important;
-    min-height: 70px !important;
-    margin: 2px 4px !important;
-  }
-  #ecardGame .battle-vs { font-size: 18px !important; }
-  #ecardGame .ecard-result-text { font-size: 14px !important; padding: 2px 8px !important; }
+  #ecardGame .ecard-result-text { font-size: 13px !important; padding: 2px 8px !important; }
   #ecardGame .ecard-bet-area, #ecardGame .ecard-bet-response {
-    padding: 6px !important;
-    margin: 2px 4px !important;
+    padding: 6px 8px !important;
   }
-  #ecardGame .bet-label { font-size: 11px !important; margin-bottom: 6px !important; }
+  #ecardGame .bet-label { font-size: 11px !important; margin-bottom: 4px !important; }
   #ecardGame .bet-amount { font-size: 14px !important; }
   #ecardGame .ecard-action-buttons {
     padding: 4px 8px !important;
     gap: 4px !important;
-    min-width: 80px !important;
   }
   #ecardGame .ecard-action-buttons .btn {
     min-height: min(10vh, 38px) !important;
     padding: min(2.5vh, 8px) min(3vh, 10px) !important;
-    font-size: min(4vh, 14px) !important;
+    font-size: min(4vh, 13px) !important;
   }
 
   /* ─── SUTDA (small landscape) ─── */

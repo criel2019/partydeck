@@ -801,8 +801,8 @@
   .ecard-header-opp .opponent-name { max-width: 44px; }
 }
 
-/* ===== LANDSCAPE MODE ===== */
-/* Grid: 왼쪽=플레이영역+컨트롤  오른쪽=카드패+제출버튼 */
+/* ===== LANDSCAPE MODE (fallback — mobile.css !important가 우선) ===== */
+/* Grid: Row1=헤더, Row2=플레이영역(전폭), Row3=카드패(좌)+컨트롤(우) */
 @media (orientation: landscape) and (max-height: 500px) {
   #ecardGame.active {
     display: grid;
@@ -810,7 +810,6 @@
     grid-template-rows: auto 1fr auto;
   }
 
-  /* ── 헤더: 전체 너비 (row 1) ── */
   .ecard-compact-header {
     grid-column: 1 / -1;
     grid-row: 1;
@@ -818,19 +817,13 @@
     padding: 3px 8px;
   }
 
-  /* ── 왼쪽 메인 영역 (row 2): 플레이·상태·리빌 ── */
+  /* Row 2: 플레이 영역 — 전체 너비 */
   .ecard-play-area {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 2;
   }
-
-  .ecard-submitted-display {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
   .ecard-result-text {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 2;
     align-self: start;
     z-index: 2;
@@ -838,9 +831,8 @@
     padding: 6px 10px;
     min-height: 28px;
   }
-
   .ecard-reveal-result {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 2;
     align-self: center;
     z-index: 2;
@@ -848,73 +840,48 @@
     min-height: 0;
   }
 
-  /* ── 왼쪽 하단 (row 3): 배팅·대기 (상호배타) ── */
+  /* Row 3 좌: 카드 패 */
+  .ecard-my-cards-area {
+    grid-column: 1;
+    grid-row: 3;
+    padding: 4px 8px;
+  }
+
+  /* Row 3 우: 컨트롤 (상호배타 — JS가 하나만 표시) */
   .ecard-bet-area,
   .ecard-bet-response {
-    grid-column: 1;
+    grid-column: 2;
     grid-row: 3;
-    margin: 2px 8px;
     padding: 8px 10px;
     box-sizing: border-box;
-  }
-
-  .ecard-waiting {
-    grid-column: 1;
-    grid-row: 3;
-    margin: 2px 8px;
-    padding: 6px 10px;
-    min-height: 44px;
-  }
-
-  /* ── 오른쪽 사이드바 (row 2): 카드 패 ── */
-  .ecard-my-cards-area {
-    grid-column: 2;
-    grid-row: 2;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 6px 10px;
-    box-sizing: border-box;
     border-left: 2px solid rgba(201, 168, 76, 0.2);
-    background: linear-gradient(90deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.06) 100%);
   }
-
-  /* ── 오른쪽 하단 (row 3): 제출 버튼 ── */
   .ecard-action-buttons {
     grid-column: 2;
     grid-row: 3;
     padding: 4px 8px 6px;
     border-left: 2px solid rgba(201, 168, 76, 0.2);
-    background: linear-gradient(90deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.06) 100%);
   }
-
-  .ecard-action-buttons .btn {
+  .ecard-action-buttons .btn { min-height: 44px; font-size: 12px; }
+  .ecard-waiting {
+    grid-column: 2;
+    grid-row: 3;
+    padding: 6px 10px;
     min-height: 44px;
-    font-size: 12px;
+    border-left: 2px solid rgba(201, 168, 76, 0.2);
   }
 
-  /* ── 카드 크기 (사이드바용 컴팩트) ── */
-  .ecard-card {
-    width: 44px;
-    height: 64px;
-    margin: 0 -6px;
-    border-width: 2px;
-  }
-  .ecard-card-icon { font-size: 22px; }
-  .ecard-card-name { font-size: 9px; }
+  /* 카드 크기 */
+  .ecard-card { width: min(20vh, 80px); height: min(29vh, 116px); margin: 0 -10px; border-width: 2px; }
+  .ecard-card-icon { font-size: min(11vh, 36px); }
+  .ecard-card-name { font-size: 11px; }
   .ecard-card-back::before { font-size: 24px; }
-  .ecard-card.selected { transform: translateY(-10px) scale(1.08); }
-  .ecard-card:hover    { transform: translateY(-6px) scale(1.04); }
-
-  .ecard-cards-hand {
-    flex: 0;
-    padding: 4px 2px 6px;
-  }
-
+  .ecard-card.selected { transform: translateY(-12px) scale(1.06); }
+  .ecard-card:hover    { transform: translateY(-8px) scale(1.04); }
+  .ecard-cards-hand { padding: 4px 4px 8px; }
   .my-cards-label { font-size: 10px; }
 
-  /* ── 플레이 영역 내부 요소 소형화 ── */
+  /* 플레이 영역 내부 소형화 */
   .ecard-submitted-card-big {
     width: min(22vw, 120px);
     height: min(31vw, 168px);
@@ -926,18 +893,11 @@
     height: min(24vw, 134px);
   }
 
-  /* ── 주사위 오버레이 ── */
+  /* 주사위 오버레이 */
   .ecard-dice-3d-wrap {
     width: min(50vw, 280px);
     height: min(30vw, 160px);
     border-radius: 12px;
   }
   .ecard-dice-result-badge { margin-top: 8px; font-size: 16px; }
-}
-
-/* ── 극소 가로 화면 ── */
-@media (orientation: landscape) and (max-height: 380px) {
-  .ecard-card      { width: 38px; height: 54px; margin: 0 -5px; }
-  .ecard-card-icon { font-size: 18px; }
-  .ecard-card-name { font-size: 8px; }
 }

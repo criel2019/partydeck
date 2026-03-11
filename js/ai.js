@@ -64,6 +64,8 @@ function startPracticeMode() {
 }
 
 function leavePracticeMode() {
+  // PvE 정리
+  if (typeof _pveMode !== 'undefined' && _pveMode && typeof pveCleanup === 'function') pveCleanup();
   practiceMode = false;
   cleanupAI();
   restoreNetworking();
@@ -255,6 +257,11 @@ function interceptNetworking() {
     window._fortView = null;
     fortCtx = null;
     fortCanvas = null;
+    // PvE 모드: pveExit로 전체 정리
+    if (typeof _pveMode !== 'undefined' && _pveMode) {
+      if (typeof pveExit === 'function') pveExit();
+      return;
+    }
     if (practiceMode) {
       showScreen('practiceSelect');
       return;
@@ -484,7 +491,14 @@ function executeAIAction() {
     case 'yahtzee': aiYahtzee(); break;
     case 'truth': aiTruth(); break;
     case 'mafia': aiMafia(); break;
-    case 'fortress': aiFortress(); break;
+    case 'fortress':
+      // PvE 모드: 스킬 사용 강화 AI 우선
+      if (typeof aiFortressPvE === 'function' && typeof _pveMode !== 'undefined' && _pveMode) {
+        aiFortressPvE();
+      } else {
+        aiFortress();
+      }
+      break;
     case 'bombshot': aiBombShot(); break;
     case 'blackjack': aiBlackjack(); break;
     case 'stairs': aiStairs(); break;
