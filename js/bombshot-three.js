@@ -60,6 +60,7 @@
 
   // Rabbit GLB model
   var rabbitModel = null;
+  var sceneGeneration = 0; // guards async GLB loads across scene re-inits
 
   // Bartender reaction
   var btReaction = 'none'; // none, safe, hit
@@ -1430,11 +1431,26 @@
   }
 
   // ===== PUBLIC API =====
-  function loadRabbitBartender() {
-    if (!THREE.GLTFLoader) return;
+  function loadRabbitBartender(gen) {
+    if (!THREE.GLTFLoader) {
+      // GLTFLoader not available — fall back to procedural bartender
+      createBartender();
+      createArms();
+      createHands();
+      updateArms();
+      return;
+    }
     var loader = new THREE.GLTFLoader();
     loader.load('Models/Meshy_AI_Dapper_Bunny_0217095031_texture.glb', function(gltf) {
-      if (!isInitialized || !scene) return;
+      // Guard: ignore stale callbacks from previous scene sessions
+      if (!isInitialized || !scene || gen !== sceneGeneration) return;
+
+      // Remove procedural bartender if somehow present (defensive)
+      if (bartenderGroup && scene) {
+        scene.remove(bartenderGroup);
+        bartenderGroup = null;
+      }
+
       rabbitModel = gltf.scene;
 
       // Convert PBR materials to unlit (MeshBasicMaterial)
@@ -1484,6 +1500,8 @@
 
       scene.add(rabbitModel);
     }, undefined, function(err) {
+      // Guard stale callbacks
+      if (!isInitialized || !scene || gen !== sceneGeneration) return;
       // Fallback: create procedural bartender on load error
       createBartender();
       createArms();
@@ -1536,8 +1554,9 @@
     createBar();
     createGlass();
     createLiquid();
+    sceneGeneration++;
     if (window._bsBartenderType === 'rabbit') {
-      loadRabbitBartender();
+      loadRabbitBartender(sceneGeneration);
     } else {
       createBartender();
       createArms();

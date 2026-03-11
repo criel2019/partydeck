@@ -973,6 +973,8 @@ function bsCallLiar() {
 // ===== HANDLE ANIMATION =====
 function handleBSAnim(msg) {
   if (!msg) return;
+  // Ensure bartender type is set before any 3D init
+  window._bsBartenderType = _bsBartenderType;
   // Ensure Three.js is loaded for 3D animations
   if (typeof loadBombShotThree === 'function') loadBombShotThree();
 
