@@ -1,3 +1,8 @@
+// ===== SERVICE WORKER REGISTRATION =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(function() {});
+}
+
 // ===== BUILD INFO (local build id) =====
 (function() {
   function getLocalBuildId() {
