@@ -1,5 +1,5 @@
 // =============================================
-// COIN STACK (동전쌓기) - 3D Coin Stacking Game
+// COIN DROP (코인 드롭) - 3D Coin Stacking Game
 // Deterministic physics, P2P multiplayer
 // Solo / 1v1 / 2v2 modes
 // =============================================

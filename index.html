@@ -36,6 +36,7 @@
 <link rel="stylesheet" href="css/games/drinkpoker.css?v=20260310c">
 <link rel="stylesheet" href="css/games/kingstagram.css?v=20260305b">
 <link rel="stylesheet" href="css/games/coinstack.css?v=20260312b">
+<link rel="stylesheet" href="css/games/coinswing.css?v=20260312">
 <link rel="stylesheet" href="css/games/mobile.css?v=20260305c">
 </head>
 <body>
@@ -189,7 +190,8 @@
       <button class="practice-game-btn" onclick="startPracticeGame('idol')">🎤 아이돌</button>
       <button class="practice-game-btn" onclick="startPracticeGame('drinkpoker')">🍶 술피하기</button>
       <button class="practice-game-btn" onclick="startPracticeGame('kingstagram')">👑 킹스타그램</button>
-      <button class="practice-game-btn" onclick="startPracticeGame('coinstack')">🪙 동전쌓기</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('coinstack')">🪙 코인 드롭</button>
+      <button class="practice-game-btn" onclick="startPracticeGame('coinswing')">🎯 코인 스윙</button>
     </div>
   </div>
 </div>
@@ -2423,7 +2425,10 @@
         <span class="game-emoji">👑</span>킹스타그램
       </div>
       <div class="game-option" data-game="coinstack" onclick="selectGame(this)">
-        <span class="game-emoji">🪙</span>동전쌓기
+        <span class="game-emoji">🪙</span>코인 드롭
+      </div>
+      <div class="game-option" data-game="coinswing" onclick="selectGame(this)">
+        <span class="game-emoji">🎯</span>코인 스윙
       </div>
     </div>
     <div class="game-info-panel" id="gameInfoPanel" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
@@ -2675,6 +2680,69 @@
   <div class="cs-result-overlay" id="csResultOverlay"></div>
 </div>
 
+<div class="screen" id="coinswingGame">
+  <!-- 3D Canvas -->
+  <div id="swThreeContainer"></div>
+
+  <!-- Back Button -->
+  <button class="sw-back-btn" onclick="leaveGame()">✕</button>
+
+  <!-- HUD -->
+  <div class="sw-hud">
+    <div class="sw-turn-bar" id="swTurnIndicator"></div>
+    <div class="sw-info-bar">
+      <div class="sw-info-item">
+        <span class="sw-info-icon">🪙</span>
+        <span id="swCoinCount">0개</span>
+      </div>
+      <div class="sw-info-item">
+        <span class="sw-info-icon">📊</span>
+        <div class="sw-stability-wrap">
+          <div class="sw-stability-bar" id="swStabilityBar"></div>
+        </div>
+      </div>
+      <div class="sw-info-item sw-speed-indicator" id="swSpeedIndicator"></div>
+      <div class="sw-info-item">
+        <span class="sw-info-icon">🔄</span>
+        <span id="swRoundNum">1R</span>
+      </div>
+      <div class="sw-info-item">
+        <span class="sw-info-icon">⭐</span>
+        <span class="sw-score-display" id="swMyScore">0pt</span>
+      </div>
+    </div>
+    <div class="sw-players-bar" id="swPlayersBar"></div>
+  </div>
+
+  <!-- Guide text -->
+  <div class="sw-guide" id="swGuideText">타이밍에 맞춰 버튼을 눌러 동전을 떨어뜨리세요!</div>
+
+  <!-- Bottom Controls -->
+  <div class="sw-bottom">
+    <div class="sw-emoji-bar" id="swEmojiPanel">
+      <span class="sw-emoji-btn" onclick="swSendEmoji('😂')">😂</span>
+      <span class="sw-emoji-btn" onclick="swSendEmoji('🤣')">🤣</span>
+      <span class="sw-emoji-btn" onclick="swSendEmoji('😱')">😱</span>
+      <span class="sw-emoji-btn" onclick="swSendEmoji('💀')">💀</span>
+      <span class="sw-emoji-btn" onclick="swSendEmoji('🔥')">🔥</span>
+      <span class="sw-emoji-btn" onclick="swSendEmoji('👏')">👏</span>
+      <span class="sw-emoji-btn" onclick="swSendEmoji('😈')">😈</span>
+      <span class="sw-emoji-btn" onclick="swSendEmoji('🤡')">🤡</span>
+      <span class="sw-emoji-btn" onclick="swSendEmoji('💩')">💩</span>
+      <span class="sw-emoji-btn" onclick="swSendEmoji('🙏')">🙏</span>
+      <span class="sw-emoji-btn" onclick="swSendEmoji('😭')">😭</span>
+      <span class="sw-emoji-btn" onclick="swSendEmoji('🫣')">🫣</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="sw-emoji-toggle" onclick="swToggleEmojiPanel()">😜</button>
+      <button class="sw-drop-btn" id="swDropBtn" onclick="swDropCoin()">놓기!</button>
+    </div>
+  </div>
+
+  <!-- Result Overlay -->
+  <div class="sw-result-overlay" id="swResultOverlay"></div>
+</div>
+
 <!-- QR Code library -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="js/dev-console.js?v=20260308a"></script>
@@ -2721,6 +2789,7 @@
 <script src="js/games/drinkpoker.js?v=20260310c"></script>
 <script src="js/games/kingstagram.js?v=20260305b"></script>
 <script src="js/games/coinstack.js?v=20260312b"></script>
+<script src="js/games/coinswing.js?v=20260312"></script>
 <script src="js/ai.js?v=20260305c"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>
