@@ -91,6 +91,28 @@
     </div>
   </div>
 
+  <!-- PWA Install Banner -->
+  <div class="pwa-install-banner" id="pwaInstallBanner" style="display:none;">
+    <div class="pwa-install-glow"></div>
+    <div class="pwa-install-content">
+      <div class="pwa-install-icon">📲</div>
+      <div class="pwa-install-text">
+        <div class="pwa-install-title">홈 화면에 추가하면 더 빠르게!</div>
+        <div class="pwa-install-desc">앱처럼 바로 실행 · 전체화면 · 더 부드러운 플레이</div>
+      </div>
+      <button class="pwa-install-btn" id="pwaInstallBtn" onclick="pwaInstallApp()">설치</button>
+      <button class="pwa-install-close" id="pwaInstallClose" onclick="pwaInstallDismiss()">✕</button>
+    </div>
+    <!-- iOS specific instructions (hidden by default) -->
+    <div class="pwa-ios-guide" id="pwaIosGuide" style="display:none;">
+      <div class="pwa-ios-steps">
+        <span class="pwa-ios-step">① 하단 <strong>공유 버튼</strong> <span class="pwa-ios-share-icon">⎙</span> 탭</span>
+        <span class="pwa-ios-arrow">→</span>
+        <span class="pwa-ios-step">② <strong>"홈 화면에 추가"</strong> 선택</span>
+      </div>
+    </div>
+  </div>
+
   <button class="btn btn-primary" onclick="createRoom()">🏠 방 만들기</button>
 
   <div class="join-row">

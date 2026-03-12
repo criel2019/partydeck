@@ -167,6 +167,80 @@ function _ensureFullscreenForGame() {
   _tryFullscreen();
 }
 
+// ===== PWA INSTALL PROMPT =====
+let _pwaInstallEvent = null;
+
+(function initPwaInstall() {
+  // Already running as installed app? Don't show anything
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) return;
+
+  // Capture Chrome/Android install prompt
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    _pwaInstallEvent = e;
+    _showPwaBanner('android');
+  });
+
+  // Detect iOS Safari
+  var isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  var isSafari = /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(navigator.userAgent);
+
+  if (isIos && isSafari) {
+    // Show after a short delay so the page loads first
+    setTimeout(function() { _showPwaBanner('ios'); }, 1500);
+    return;
+  }
+
+  // Fallback: if no beforeinstallprompt fired after 3s on mobile, still offer
+  // (some browsers support install but don't fire the event)
+  if (/Android|webOS|Mobile/i.test(navigator.userAgent)) {
+    setTimeout(function() {
+      if (!_pwaInstallEvent) _showPwaBanner('generic');
+    }, 3000);
+  }
+})();
+
+function _showPwaBanner(type) {
+  // Check if user dismissed recently (12 hours cooldown)
+  var dismissed = localStorage.getItem('pwa_dismiss_ts');
+  if (dismissed && Date.now() - parseInt(dismissed) < 12 * 60 * 60 * 1000) return;
+
+  var banner = document.getElementById('pwaInstallBanner');
+  var iosGuide = document.getElementById('pwaIosGuide');
+  var installBtn = document.getElementById('pwaInstallBtn');
+  if (!banner) return;
+
+  if (type === 'ios') {
+    installBtn.style.display = 'none';
+    iosGuide.style.display = 'block';
+  } else if (type === 'generic') {
+    installBtn.textContent = '추가';
+    installBtn.onclick = function() {
+      showToast('브라우저 메뉴에서 "홈 화면에 추가"를 선택하세요!');
+    };
+  }
+
+  banner.style.display = 'block';
+}
+
+function pwaInstallApp() {
+  if (_pwaInstallEvent) {
+    _pwaInstallEvent.prompt();
+    _pwaInstallEvent.userChoice.then(function(result) {
+      if (result.outcome === 'accepted') {
+        document.getElementById('pwaInstallBanner').style.display = 'none';
+        showToast('설치 완료! 홈 화면에서 실행하세요 🎲');
+      }
+      _pwaInstallEvent = null;
+    });
+  }
+}
+
+function pwaInstallDismiss() {
+  document.getElementById('pwaInstallBanner').style.display = 'none';
+  localStorage.setItem('pwa_dismiss_ts', String(Date.now()));
+}
+
 // ===== ORIENTATION LOCK SYSTEM =====
 const LANDSCAPE_GAMES = ['pokerGame', 'yahtzeeGame', 'sutdaGame', 'fortressGame'];
 let _orientCheckFn = null;
