@@ -56,6 +56,7 @@ const AI_COUNTS = {
   drinkpoker: 2,
   kingstagram: 3,
   coinstack: 1,
+  coinswing: 0,
 };
 
 // ========== ENTRY / EXIT ==========
@@ -95,6 +96,7 @@ function leavePracticeMode() {
   if (typeof kingState !== 'undefined') kingState = null;
   if (typeof closeKingstagramCleanup === 'function') closeKingstagramCleanup();
   if (typeof closeCoinStackCleanup === 'function') closeCoinStackCleanup();
+  if (typeof closeCoinSwingCleanup === 'function') closeCoinSwingCleanup();
   showScreen('mainMenu');
 }
 
