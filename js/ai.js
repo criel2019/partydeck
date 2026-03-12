@@ -55,6 +55,7 @@ const AI_COUNTS = {
   idol: 2,
   drinkpoker: 2,
   kingstagram: 3,
+  coinstack: 1,
 };
 
 // ========== ENTRY / EXIT ==========
@@ -93,6 +94,7 @@ function leavePracticeMode() {
   if (typeof closeDPCleanup === 'function') closeDPCleanup();
   if (typeof kingState !== 'undefined') kingState = null;
   if (typeof closeKingstagramCleanup === 'function') closeKingstagramCleanup();
+  if (typeof closeCoinStackCleanup === 'function') closeCoinStackCleanup();
   showScreen('mainMenu');
 }
 
@@ -505,6 +507,7 @@ function executeAIAction() {
     case 'idol': aiIdol(); break;
     case 'drinkpoker': aiDrinkPoker(); break;
     case 'kingstagram': aiKingstagram(); break;
+    case 'coinstack': aiCoinStack(); break;
     // lottery: no AI needed
   }
 }
@@ -1753,4 +1756,40 @@ function aiKingstagram() {
     }, 600 + Math.random() * 600);
     _aiTimers.push(t2);
   }
+}
+
+// ========== COINSTACK AI ==========
+
+function aiCoinStack() {
+  if (!csState || csState.phase !== 'playing') return;
+  if (!state.isHost) return;
+
+  var currentId = csState.currentPlayer;
+  if (!currentId || !currentId.startsWith('ai-')) return;
+
+  // AI strategy: place somewhat close to center, more careful as stack grows
+  var spread = CS_MAX_X * 0.6;
+  var coinCount = csState.coins.length;
+
+  // As stack grows, AI plays more conservatively (closer to center)
+  if (coinCount > 3) spread *= 0.7;
+  if (coinCount > 6) spread *= 0.6;
+  if (coinCount > 10) spread *= 0.5;
+
+  // If there are coins already, try to stay near the last coin's x
+  var x;
+  if (coinCount > 0) {
+    var lastX = csState.coins[coinCount - 1].x;
+    x = lastX + (Math.random() - 0.5) * spread;
+  } else {
+    x = (Math.random() - 0.5) * spread * 0.3;
+  }
+  x = Math.max(-CS_MAX_X, Math.min(CS_MAX_X, x));
+
+  var t = setTimeout(function() {
+    if (!isAIActive() || !csState || csState.phase !== 'playing') return;
+    if (csState.currentPlayer !== currentId) return;
+    csProcessDrop(currentId, x);
+  }, 800 + Math.random() * 1000);
+  _aiTimers.push(t);
 }
