@@ -1,4 +1,4 @@
-// ===== COIN SWING THREE.JS - 3D Rendering with Swing Arm =====
+// ===== COIN SWING THREE.JS - 3D Rendering (Timing Game) =====
 
 (function() {
   'use strict';
@@ -10,16 +10,11 @@
   const GRAVITY = 18;
   const BOUNCE = 0.25;
   const FRICTION = 0.92;
-  const DROP_HEIGHT = 6;
-  const GHOST_Y_OFFSET = 1.8;
+  const DROP_HEIGHT = 4;
+  const GHOST_Y_OFFSET = 1.2;
   const PARTICLE_COUNT = 20;
   const MAX_PARTICLES = 60;
   const INTRO_SCATTER_R = 1.8;
-
-  // Swing arm constants
-  const ARM_LENGTH = 2.5;
-  const ARM_PIVOT_Y = 5.5;
-  const ARM_WIDTH = 0.04;
 
   let scene, camera, renderer, rafId, clock;
   let isInitialized = false;
@@ -53,12 +48,6 @@
   let wobbleTarget = 0;
   let wobbleTime = 0;
   let introScatteredCoins = [];
-
-  // Swing arm visuals
-  let swingArmGroup = null;
-  let swingArmLine = null;
-  let swingCoinHolder = null;
-  let swingTrail = [];
 
   // Danger system
   let dangerActive = false;
@@ -246,67 +235,6 @@
     return mesh;
   }
 
-  // ===== SWING ARM =====
-  function _createSwingArm() {
-    swingArmGroup = new THREE.Group();
-
-    // Pivot point (ceiling mount)
-    var pivotGeo = new THREE.SphereGeometry(0.08, 12, 12);
-    var pivotMat = new THREE.MeshStandardMaterial({
-      color: 0x888899, metalness: 0.9, roughness: 0.2, envMap: envMap
-    });
-    var pivot = new THREE.Mesh(pivotGeo, pivotMat);
-    pivot.position.set(0, ARM_PIVOT_Y, 0);
-    swingArmGroup.add(pivot);
-
-    // Arm line (chain/string)
-    var armGeo = new THREE.CylinderGeometry(ARM_WIDTH, ARM_WIDTH, ARM_LENGTH, 8);
-    var armMat = new THREE.MeshStandardMaterial({
-      color: 0x667788, metalness: 0.7, roughness: 0.3, envMap: envMap
-    });
-    swingArmLine = new THREE.Mesh(armGeo, armMat);
-    swingArmLine.position.set(0, ARM_PIVOT_Y - ARM_LENGTH / 2, 0);
-    swingArmGroup.add(swingArmLine);
-
-    // Coin holder (small platform at end of arm)
-    var holderGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.03, 16);
-    var holderMat = new THREE.MeshStandardMaterial({
-      color: 0x888899, metalness: 0.8, roughness: 0.2, envMap: envMap
-    });
-    swingCoinHolder = new THREE.Mesh(holderGeo, holderMat);
-    swingCoinHolder.position.set(0, ARM_PIVOT_Y - ARM_LENGTH, 0);
-    swingArmGroup.add(swingCoinHolder);
-
-    scene.add(swingArmGroup);
-  }
-
-  function _updateSwingArm(ghostX) {
-    if (!swingArmGroup) return;
-
-    var stackH = coinMeshes.length * COIN_H;
-    var armEndY = stackH + COIN_H / 2 + GHOST_Y_OFFSET;
-    var pivotY = armEndY + ARM_LENGTH;
-
-    // Calculate arm angle
-    var angle = Math.atan2(ghostX, ARM_LENGTH);
-
-    // Update arm rotation
-    swingArmLine.rotation.z = angle;
-    var armCenterX = ghostX * 0.5;
-    var armCenterY = pivotY - Math.cos(angle) * ARM_LENGTH * 0.5;
-    swingArmLine.position.set(armCenterX, armCenterY, 0);
-    swingArmLine.scale.y = ARM_LENGTH / ARM_LENGTH; // normalized
-
-    // Update holder position
-    swingCoinHolder.position.set(ghostX, armEndY - 0.02, 0);
-
-    // Update pivot position
-    swingArmGroup.children[0].position.set(0, pivotY, 0);
-
-    // Swing arm visibility
-    swingArmGroup.visible = ghostVisible;
-  }
-
   function _buildEnvironment() {
     var woodTex = createWoodTexture(512);
     woodTex.repeat.set(2, 2);
@@ -463,7 +391,6 @@
 
     coinTexture = createCoinTexture();
     _buildEnvironment();
-    _createSwingArm();
 
     clock = new THREE.Clock();
     isInitialized = true;
@@ -504,8 +431,6 @@
     scene = null; camera = null; renderer = null;
     coinMeshes = []; coinBodies = []; particles = [];
     ghostMesh = null; tableMesh = null; spotLight = null;
-    swingArmGroup = null; swingArmLine = null; swingCoinHolder = null;
-    swingTrail = [];
     introScatteredCoins = [];
     wobbleIntensity = 0; wobbleTarget = 0; wobbleTime = 0;
     dangerActive = false;
@@ -525,18 +450,11 @@
       ghostMesh.visible = show;
       if (show) _updateGhostPosition();
     }
-    if (swingArmGroup) swingArmGroup.visible = show;
   };
 
   window.swThreeSetGhostX = function(x) {
     ghostX = x;
     _updateGhostPosition();
-    _updateSwingArm(x);
-
-    // Add trail point
-    if (ghostVisible && isInitialized) {
-      _addTrailPoint(x);
-    }
   };
 
   function _updateGhostPosition() {
@@ -545,45 +463,6 @@
     ghostMesh.position.x = ghostX;
     ghostMesh.position.y = stackH + COIN_H / 2 + GHOST_Y_OFFSET;
     ghostMesh.position.z = 0;
-  }
-
-  // ===== SWING TRAIL =====
-  function _addTrailPoint(x) {
-    var stackH = coinMeshes.length * COIN_H;
-    var y = stackH + COIN_H / 2 + GHOST_Y_OFFSET;
-
-    var geo = new THREE.SphereGeometry(0.03, 4, 4);
-    var mat = new THREE.MeshBasicMaterial({
-      color: 0x4488ff, transparent: true, opacity: 0.4,
-    });
-    var dot = new THREE.Mesh(geo, mat);
-    dot.position.set(x, y, 0);
-    scene.add(dot);
-
-    swingTrail.push({ mesh: dot, life: 1, decay: 0.04 });
-
-    // Limit trail length
-    while (swingTrail.length > 30) {
-      var old = swingTrail.shift();
-      scene.remove(old.mesh);
-      old.mesh.geometry.dispose();
-      old.mesh.material.dispose();
-    }
-  }
-
-  function _updateTrail(dt) {
-    for (var i = swingTrail.length - 1; i >= 0; i--) {
-      var t = swingTrail[i];
-      t.life -= t.decay;
-      t.mesh.material.opacity = Math.max(0, t.life * 0.3);
-      t.mesh.scale.setScalar(Math.max(0.1, t.life));
-      if (t.life <= 0) {
-        scene.remove(t.mesh);
-        t.mesh.geometry.dispose();
-        t.mesh.material.dispose();
-        swingTrail.splice(i, 1);
-      }
-    }
   }
 
   // ===== DANGER SYSTEM =====
@@ -647,16 +526,8 @@
     dropAnimating = true;
     dropCallback = callback;
 
-    // Hide swing arm during drop
-    if (swingArmGroup) swingArmGroup.visible = false;
-
-    // Clear trail
-    for (var i = 0; i < swingTrail.length; i++) {
-      scene.remove(swingTrail[i].mesh);
-      swingTrail[i].mesh.geometry.dispose();
-      swingTrail[i].mesh.material.dispose();
-    }
-    swingTrail = [];
+    // Hide ghost during drop
+    if (ghostMesh) ghostMesh.visible = false;
 
     const mesh = createCoinMesh(false);
     const startY = targetY + DROP_HEIGHT;
@@ -680,7 +551,9 @@
 
     _spawnImpactParticles(mesh.position.x, mesh.position.y, mesh.position.z);
     shakeIntensity = 0.03 + coinMeshes.length * 0.002;
-    cameraTargetY = Math.max(1.8, coinMeshes.length * COIN_H * 0.7 + 1.5);
+    // Camera follows stack height so ghost coin stays visible
+    var stackH = coinMeshes.length * COIN_H;
+    cameraTargetY = Math.max(1.8, stackH * 0.5 + GHOST_Y_OFFSET * 0.4 + 1.5);
 
     if (dropCallback) {
       var cb = dropCallback;
@@ -719,7 +592,7 @@
     collapseCallback = callback;
     _clearDangerGlow();
 
-    if (swingArmGroup) swingArmGroup.visible = false;
+    if (ghostMesh) ghostMesh.visible = false;
 
     coinBodies = [];
     const level = Math.max(0, collapseLevel);
@@ -845,8 +718,6 @@
       if (introScatteredCoins[sc].geometry) introScatteredCoins[sc].geometry.dispose();
     }
     introScatteredCoins = [];
-
-    if (swingArmGroup) swingArmGroup.visible = false;
 
     var s = seed || 12345;
     function srand() {
@@ -1049,7 +920,8 @@
       scene.add(mesh);
       coinMeshes.push(mesh);
     }
-    cameraTargetY = Math.max(1.8, positions.length * COIN_H * 0.7 + 1.5);
+    var stackH = positions.length * COIN_H;
+    cameraTargetY = Math.max(1.8, stackH * 0.5 + GHOST_Y_OFFSET * 0.4 + 1.5);
   };
 
   // ===== PARTICLES =====
@@ -1133,7 +1005,7 @@
 
   // ===== CAMERA =====
   function _updateCamera(dt) {
-    cameraBaseY += (cameraTargetY - cameraBaseY) * dt * 2;
+    cameraBaseY += (cameraTargetY - cameraBaseY) * dt * 3;
     camera.position.y = cameraBaseY;
 
     if (shakeIntensity > 0.001) {
@@ -1142,7 +1014,9 @@
       shakeIntensity *= shakeDecay;
     }
 
-    var lookY = Math.max(0.4, (cameraBaseY - 1.8) * 0.5 + 0.4);
+    // Look at the middle of the stack so both base and ghost are visible
+    var stackH = coinMeshes.length * COIN_H;
+    var lookY = Math.max(0.4, stackH * 0.5);
     camera.lookAt(0, lookY, 0);
 
     if (spotLight) {
@@ -1185,7 +1059,6 @@
     _animateGhost(dt);
     _updateWobble(dt);
     _updateParticles(dt);
-    _updateTrail(dt);
     if (dangerActive) _updateDangerGlow(dt);
     if (!introPlaying) _updateCamera(dt);
 

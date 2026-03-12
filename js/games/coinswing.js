@@ -627,7 +627,8 @@ function _swAnimateDrop(x, ry, isStable, stability, collapseInfo, scoreInfo) {
         }
 
         if (typeof swThreeSetCameraHeight === 'function') {
-          swThreeSetCameraHeight(Math.max(1.8, coinIndex * SW_COIN_H * 0.7 + 1.5));
+          var stackH = coinIndex * SW_COIN_H;
+          swThreeSetCameraHeight(Math.max(1.8, stackH * 0.5 + 1.98));
         }
 
         setTimeout(function() {
