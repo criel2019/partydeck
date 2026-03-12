@@ -1,0 +1,535 @@
+/* ===== COIN STACK GAME ===== */
+
+#coinstackGame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a15;
+}
+
+/* 3D Canvas Container */
+#csThreeContainer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+#csThreeContainer canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
+}
+
+/* ===== HUD OVERLAY ===== */
+.cs-hud {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  pointer-events: none;
+  padding: env(safe-area-inset-top, 12px) 12px 0 12px;
+}
+
+.cs-hud > * { pointer-events: auto; }
+
+/* Back Button */
+.cs-back-btn {
+  position: absolute;
+  top: env(safe-area-inset-top, 8px);
+  left: 8px;
+  z-index: 20;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Turn Indicator */
+.cs-turn-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  margin: 0 48px;
+}
+
+.cs-turn-avatar {
+  font-size: 28px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+  animation: cs-turn-bounce 0.6s ease;
+}
+
+.cs-turn-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+}
+
+.cs-turn-text.my-turn {
+  color: #ffd700;
+  font-size: 20px;
+  animation: cs-pulse 1s ease-in-out infinite;
+}
+
+@keyframes cs-turn-bounce {
+  0% { transform: scale(0.5) translateY(-10px); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes cs-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+/* Info Bar (coin count, round, stability) */
+.cs-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 4px;
+  padding: 0 12px;
+}
+
+.cs-info-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+
+.cs-info-item .cs-info-icon {
+  font-size: 16px;
+}
+
+/* Stability Meter */
+.cs-stability-wrap {
+  width: 80px;
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.cs-stability-bar {
+  height: 100%;
+  background: #44ff88;
+  border-radius: 3px;
+  transition: width 0.5s ease, background 0.3s;
+  width: 100%;
+}
+
+/* Turn Timer */
+.cs-turn-timer-wrap {
+  width: 100%;
+  max-width: 200px;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 4px auto 0;
+  display: none;
+}
+
+.cs-turn-timer-bar {
+  height: 100%;
+  background: #44ff88;
+  border-radius: 2px;
+  transition: background 0.3s;
+  width: 100%;
+}
+
+/* Player Chips */
+.cs-players-bar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.cs-player-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  min-width: 48px;
+}
+
+.cs-player-chip.active {
+  border-color: #ffd700;
+  background: rgba(255,215,0,0.15);
+  transform: scale(1.1);
+  box-shadow: 0 0 12px rgba(255,215,0,0.3);
+}
+
+.cs-player-chip.team-a {
+  background: rgba(255,100,50,0.12);
+}
+
+.cs-player-chip.team-a.active {
+  border-color: #ff6432;
+  box-shadow: 0 0 12px rgba(255,100,50,0.3);
+}
+
+.cs-player-chip.team-b {
+  background: rgba(0,180,255,0.12);
+}
+
+.cs-player-chip.team-b.active {
+  border-color: #00b4ff;
+  box-shadow: 0 0 12px rgba(0,180,255,0.3);
+}
+
+.cs-chip-avatar {
+  font-size: 22px;
+}
+
+.cs-chip-score {
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  font-weight: 600;
+}
+
+/* ===== BOTTOM CONTROLS ===== */
+.cs-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 10;
+  padding: 0 12px env(safe-area-inset-bottom, 16px) 12px;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cs-bottom > * { pointer-events: auto; }
+
+/* Drop Button */
+.cs-drop-btn {
+  display: none;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd700, #ff9500);
+  border: 3px solid rgba(255,255,255,0.3);
+  color: #1a1a2e;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(255,215,0,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.cs-drop-btn.cs-drop-ready {
+  display: flex;
+  animation: cs-drop-btn-glow 1.5s ease-in-out infinite;
+}
+
+.cs-drop-btn:active {
+  transform: scale(0.9);
+  box-shadow: 0 2px 10px rgba(255,215,0,0.3);
+}
+
+@keyframes cs-drop-btn-glow {
+  0%, 100% { box-shadow: 0 4px 20px rgba(255,215,0,0.4), inset 0 2px 4px rgba(255,255,255,0.3); }
+  50% { box-shadow: 0 4px 30px rgba(255,215,0,0.7), inset 0 2px 4px rgba(255,255,255,0.3), 0 0 40px rgba(255,215,0,0.2); }
+}
+
+/* Emoji Bar */
+.cs-emoji-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease, padding 0.3s;
+  padding: 0 8px;
+}
+
+.cs-emoji-bar.cs-emoji-open {
+  max-height: 50px;
+  padding: 6px 8px;
+}
+
+.cs-emoji-btn {
+  font-size: 24px;
+  cursor: pointer;
+  transition: transform 0.15s;
+  padding: 2px 4px;
+  border-radius: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.cs-emoji-btn:active {
+  transform: scale(1.3);
+}
+
+.cs-emoji-toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  flex-shrink: 0;
+}
+
+/* ===== FLOATING EMOJI ===== */
+.cs-floating-emoji {
+  position: absolute;
+  font-size: 48px;
+  pointer-events: none;
+  z-index: 15;
+  animation: cs-emoji-float 1.5s ease-out forwards;
+}
+
+@keyframes cs-emoji-float {
+  0% { transform: scale(0.3) translateY(0); opacity: 0; }
+  15% { transform: scale(1.2) translateY(-10px); opacity: 1; }
+  30% { transform: scale(1) translateY(-20px); opacity: 1; }
+  100% { transform: scale(0.8) translateY(-120px); opacity: 0; }
+}
+
+/* ===== RESULT OVERLAY ===== */
+.cs-result-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 30;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 20px;
+}
+
+.cs-result-overlay.cs-result-show {
+  animation: cs-result-fade 0.5s ease;
+}
+
+@keyframes cs-result-fade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.cs-result-card {
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+}
+
+.cs-result-emoji {
+  font-size: 72px;
+  margin-bottom: 12px;
+  animation: cs-result-emoji-bounce 0.8s ease;
+}
+
+@keyframes cs-result-emoji-bounce {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.3); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.cs-result-title {
+  font-size: 32px;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+}
+
+.cs-result-score {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffd700;
+  margin-bottom: 4px;
+}
+
+.cs-result-subtitle {
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 20px;
+}
+
+/* Scoreboard */
+.cs-scoreboard {
+  background: rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 8px;
+  margin-bottom: 20px;
+}
+
+.cs-score-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.cs-score-row.loser {
+  background: rgba(255,0,0,0.1);
+  border: 1px solid rgba(255,0,0,0.2);
+}
+
+.cs-score-avatar {
+  font-size: 20px;
+}
+
+.cs-score-name {
+  flex: 1;
+  font-size: 14px;
+  color: rgba(255,255,255,0.85);
+  text-align: left;
+  font-weight: 600;
+}
+
+.cs-score-val {
+  font-size: 14px;
+  color: #ffd700;
+  font-weight: 700;
+}
+
+/* Buttons */
+.cs-result-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.cs-btn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  min-height: 44px;
+}
+
+.cs-btn:active {
+  transform: scale(0.95);
+}
+
+.cs-btn-primary {
+  background: linear-gradient(135deg, #ffd700, #ff9500);
+  color: #1a1a2e;
+  box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+}
+
+.cs-btn-secondary {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* ===== GUIDE TEXT ===== */
+.cs-guide {
+  position: absolute;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  font-size: 14px;
+  color: rgba(255,255,255,0.5);
+  text-align: center;
+  pointer-events: none;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  animation: cs-guide-fade 2s ease-in-out infinite;
+}
+
+@keyframes cs-guide-fade {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
+}
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 430px) {
+  .cs-drop-btn {
+    width: 70px;
+    height: 70px;
+    font-size: 14px;
+  }
+
+  .cs-turn-text {
+    font-size: 14px;
+  }
+
+  .cs-turn-text.my-turn {
+    font-size: 18px;
+  }
+
+  .cs-player-chip {
+    padding: 3px 6px;
+    min-width: 42px;
+  }
+
+  .cs-chip-avatar {
+    font-size: 20px;
+  }
+
+  .cs-result-emoji {
+    font-size: 56px;
+  }
+
+  .cs-result-title {
+    font-size: 26px;
+  }
+}
+
+@media (max-height: 600px) {
+  .cs-info-bar {
+    margin-top: 0;
+  }
+
+  .cs-players-bar {
+    margin-top: 4px;
+  }
+
+  .cs-drop-btn {
+    width: 64px;
+    height: 64px;
+    font-size: 13px;
+  }
+}

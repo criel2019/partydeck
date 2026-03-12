@@ -35,6 +35,7 @@
 <link rel="stylesheet" href="css/games/idol.css?v=20260305f">
 <link rel="stylesheet" href="css/games/drinkpoker.css?v=20260310c">
 <link rel="stylesheet" href="css/games/kingstagram.css?v=20260305b">
+<link rel="stylesheet" href="css/games/coinstack.css?v=20260312">
 <link rel="stylesheet" href="css/games/mobile.css?v=20260305c">
 </head>
 <body>
@@ -2420,6 +2421,9 @@
       <div class="game-option" data-game="kingstagram" onclick="selectGame(this)">
         <span class="game-emoji">👑</span>킹스타그램
       </div>
+      <div class="game-option" data-game="coinstack" onclick="selectGame(this)">
+        <span class="game-emoji">🪙</span>동전쌓기
+      </div>
     </div>
     <div class="game-info-panel" id="gameInfoPanel" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -2600,6 +2604,68 @@
   <!-- Content fully rendered by renderKingView() -->
 </div>
 
+<!-- ===== COIN STACK GAME ===== -->
+<div class="screen" id="coinstackGame">
+  <!-- 3D Canvas -->
+  <div id="csThreeContainer"></div>
+
+  <!-- Back Button -->
+  <button class="cs-back-btn" onclick="leaveGame()">✕</button>
+
+  <!-- HUD -->
+  <div class="cs-hud">
+    <div class="cs-turn-bar" id="csTurnIndicator"></div>
+    <div class="cs-info-bar">
+      <div class="cs-info-item">
+        <span class="cs-info-icon">🪙</span>
+        <span id="csCoinCount">0개</span>
+      </div>
+      <div class="cs-info-item">
+        <span class="cs-info-icon">📊</span>
+        <div class="cs-stability-wrap">
+          <div class="cs-stability-bar" id="csStabilityBar"></div>
+        </div>
+      </div>
+      <div class="cs-info-item">
+        <span class="cs-info-icon">🔄</span>
+        <span id="csRoundNum">1R</span>
+      </div>
+    </div>
+    <div class="cs-turn-timer-wrap" id="csTurnTimerWrap">
+      <div class="cs-turn-timer-bar" id="csTurnTimerBar"></div>
+    </div>
+    <div class="cs-players-bar" id="csPlayersBar"></div>
+  </div>
+
+  <!-- Guide text -->
+  <div class="cs-guide" id="csGuideText">화면을 드래그해서 동전 위치를 조절하세요</div>
+
+  <!-- Bottom Controls -->
+  <div class="cs-bottom">
+    <div class="cs-emoji-bar" id="csEmojiPanel">
+      <span class="cs-emoji-btn" onclick="csSendEmoji('😂')">😂</span>
+      <span class="cs-emoji-btn" onclick="csSendEmoji('🤣')">🤣</span>
+      <span class="cs-emoji-btn" onclick="csSendEmoji('😱')">😱</span>
+      <span class="cs-emoji-btn" onclick="csSendEmoji('💀')">💀</span>
+      <span class="cs-emoji-btn" onclick="csSendEmoji('🔥')">🔥</span>
+      <span class="cs-emoji-btn" onclick="csSendEmoji('👏')">👏</span>
+      <span class="cs-emoji-btn" onclick="csSendEmoji('😈')">😈</span>
+      <span class="cs-emoji-btn" onclick="csSendEmoji('🤡')">🤡</span>
+      <span class="cs-emoji-btn" onclick="csSendEmoji('💩')">💩</span>
+      <span class="cs-emoji-btn" onclick="csSendEmoji('🙏')">🙏</span>
+      <span class="cs-emoji-btn" onclick="csSendEmoji('😭')">😭</span>
+      <span class="cs-emoji-btn" onclick="csSendEmoji('🫣')">🫣</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="cs-emoji-toggle" onclick="csToggleEmojiPanel()">😜</button>
+      <button class="cs-drop-btn" id="csDropBtn" onclick="csDropCoin()">놓기</button>
+    </div>
+  </div>
+
+  <!-- Result Overlay -->
+  <div class="cs-result-overlay" id="csResultOverlay"></div>
+</div>
+
 <!-- QR Code library -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="js/dev-console.js?v=20260308a"></script>
@@ -2645,6 +2711,7 @@
 <script src="js/games/idol-perf.js?v=20260309b"></script>
 <script src="js/games/drinkpoker.js?v=20260310c"></script>
 <script src="js/games/kingstagram.js?v=20260305b"></script>
+<script src="js/games/coinstack.js?v=20260312"></script>
 <script src="js/ai.js?v=20260305c"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>

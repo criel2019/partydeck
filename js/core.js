@@ -56,7 +56,7 @@ function loadPeerJS() {
 }
 
 // ===== CONSTANTS & STATE =====
-const SOLO_GAMES = ['jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil', 'tamagotchi', 'blackjack', 'idol', 'kingstagram', 'updown'];
+const SOLO_GAMES = ['jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil', 'tamagotchi', 'blackjack', 'idol', 'kingstagram', 'updown', 'coinstack'];
 const SOLO_ONLY_GAMES = ['pupil', 'tamagotchi']; // 1인 전용 (다인 시 비활성화)
 const AVATARS = ['😎','🤠','👻','🦊','🐱','🐼','🦁','🐸','🎃','🤖','👽','🦄'];
 const SUITS = ['♠','♥','♦','♣'];
@@ -871,6 +871,11 @@ function handleMessage(peerId, raw) {
     'king-scoring': () => { if(typeof kingShowScoring === 'function') kingShowScoring(msg.results, msg.isLastRound); },
     'king-next-round': () => { if(state.isHost && typeof handleKingAction === 'function') handleKingAction(peerId, msg); },
     'king-view-results': () => { if(state.isHost && typeof handleKingAction === 'function') handleKingAction(peerId, msg); },
+    // CoinStack handlers
+    'cs-state': () => { showScreen('coinstackGame'); csHandleState(msg); },
+    'cs-drop': () => { if(state.isHost) csProcessDrop(peerId, msg.x); },
+    'cs-drop-result': () => { csHandleDropResult(msg); },
+    'cs-emoji': () => { csHandleEmoji(msg); },
     'player-left': () => {
       state.players = state.players.filter(p => p.id !== msg.playerId);
       updateLobbyUI();
@@ -1105,6 +1110,7 @@ function returnToLobby() {
   if (typeof closeBJCleanup === 'function') closeBJCleanup();
   if (typeof closeDPCleanup === 'function') closeDPCleanup();
   if (typeof closeKingstagramCleanup === 'function') closeKingstagramCleanup();
+  if (typeof closeCoinStackCleanup === 'function') closeCoinStackCleanup();
   if (typeof destroyIdolDiceThree === 'function') destroyIdolDiceThree();
   if (typeof idolHideDiceOverlay === 'function') idolHideDiceOverlay();
   // Clean up AI timers (lobby CPU mode)
@@ -1141,6 +1147,7 @@ function restartCurrentGame() {
   else if(g === 'pupil') { pplCleanup(); startPupil(); }
   else if(g === 'drinkpoker') { if(typeof closeDPCleanup==='function') closeDPCleanup(); startDrinkPoker(); }
   else if(g === 'kingstagram') { if(typeof closeKingstagramCleanup==='function') closeKingstagramCleanup(); startKingstagram(); }
+  else if(g === 'coinstack') { if(typeof closeCoinStackCleanup==='function') closeCoinStackCleanup(); startCoinStack(); }
   else { showToast('이 게임은 자동 재시작됩니다'); }
 }
 
@@ -1518,7 +1525,8 @@ const GAME_INFO = {
   tamagotchi:{ emoji:'🐉', name:'내 펫 키우기', desc:'나만의 포트리스 펫을 키워보세요! 먹이, 돌봄, 훈련으로 성장시키고 진화하세요.', players:'1명 전용', time:'상시', type:'육성' },
   idol:      { emoji:'🎤', name:'아이돌 매니지먼트', desc:'블루마블 보드판에서 내 아이돌을 스타로 키우는 전략 보드게임! 샵을 사고, 훈련하고, 가챠로 역전을 노려라.', players:'1~4명', time:'45~60분', type:'보드게임' },
   drinkpoker:{ emoji:'🍶', name:'술피하기 포커', desc:'바퀴벌레 포커 변형! 술 카드를 상대에게 보내고, 거짓말로 속여라. 같은 종류 5장이 모이면 패배!', players:'2~6명', time:'10~20분', type:'블러프' },
-  kingstagram:{ emoji:'👑', name:'킹스타그램', desc:'주사위를 굴려 6개 땅에 배치하고, 팔로워 카드를 획득하라! 4라운드 후 최다 팔로워가 승리.', players:'1~6명', time:'15~25분', type:'주사위' }
+  kingstagram:{ emoji:'👑', name:'킹스타그램', desc:'주사위를 굴려 6개 땅에 배치하고, 팔로워 카드를 획득하라! 4라운드 후 최다 팔로워가 승리.', players:'1~6명', time:'15~25분', type:'주사위' },
+  coinstack:{ emoji:'🪙', name:'동전쌓기', desc:'3D 동전을 하나씩 쌓아올려라! 무너뜨리면 패배. 시간이 갈수록 점점 어려워지는 긴장감 넘치는 밸런스 게임.', players:'1~4명', time:'5~10분', type:'밸런스' }
 };
 
 function updateGameInfoPanel(game) {
@@ -1564,6 +1572,7 @@ function startGame() {
   else if(g === 'idol') startIdolManagement();
   else if(g === 'drinkpoker') startDrinkPoker();
   else if(g === 'kingstagram') startKingstagram();
+  else if(g === 'coinstack') startCoinStack();
   else showToast('준비 중인 게임입니다');
 }
 
@@ -1658,6 +1667,10 @@ function handleGameStart(msg) {
   else if(msg.game === 'kingstagram') {
     showScreen('kingstagramGame');
     if(msg.state) renderKingView(msg.state);
+  }
+  else if(msg.game === 'coinstack') {
+    showScreen('coinstackGame');
+    if(msg.state) renderCoinStackView(msg.state);
   }
 }
 
