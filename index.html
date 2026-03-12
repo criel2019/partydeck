@@ -35,7 +35,7 @@
 <link rel="stylesheet" href="css/games/idol.css?v=20260305f">
 <link rel="stylesheet" href="css/games/drinkpoker.css?v=20260310c">
 <link rel="stylesheet" href="css/games/kingstagram.css?v=20260305b">
-<link rel="stylesheet" href="css/games/coinstack.css?v=20260312">
+<link rel="stylesheet" href="css/games/coinstack.css?v=20260312b">
 <link rel="stylesheet" href="css/games/mobile.css?v=20260305c">
 </head>
 <body>
@@ -2627,9 +2627,14 @@
           <div class="cs-stability-bar" id="csStabilityBar"></div>
         </div>
       </div>
+      <div class="cs-info-item cs-wind-indicator" id="csWindIndicator"></div>
       <div class="cs-info-item">
         <span class="cs-info-icon">🔄</span>
         <span id="csRoundNum">1R</span>
+      </div>
+      <div class="cs-info-item">
+        <span class="cs-info-icon">⭐</span>
+        <span class="cs-score-display" id="csMyScore">0pt</span>
       </div>
     </div>
     <div class="cs-turn-timer-wrap" id="csTurnTimerWrap">
@@ -2662,6 +2667,9 @@
       <button class="cs-drop-btn" id="csDropBtn" onclick="csDropCoin()">놓기</button>
     </div>
   </div>
+
+  <!-- Event Banner -->
+  <div class="cs-event-banner" id="csEventBanner"></div>
 
   <!-- Result Overlay -->
   <div class="cs-result-overlay" id="csResultOverlay"></div>
@@ -2712,7 +2720,7 @@
 <script src="js/games/idol-perf.js?v=20260309b"></script>
 <script src="js/games/drinkpoker.js?v=20260310c"></script>
 <script src="js/games/kingstagram.js?v=20260305b"></script>
-<script src="js/games/coinstack.js?v=20260312"></script>
+<script src="js/games/coinstack.js?v=20260312b"></script>
 <script src="js/ai.js?v=20260305c"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>

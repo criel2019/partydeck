@@ -19,7 +19,7 @@ function loadCoinStackThree() {
 
   function loadCoinStackScene() {
     var s = document.createElement('script');
-    s.src = 'js/coinstack-three.js?v=20260312';
+    s.src = 'js/coinstack-three.js?v=20260312b';
     s.onload = onScriptsReady;
     s.onerror = function() { _csThreeLoaded = false; };
     document.head.appendChild(s);
@@ -39,13 +39,31 @@ function loadCoinStackThree() {
 // ===== CONSTANTS =====
 var CS_COIN_R = 0.44;
 var CS_COIN_H = 0.07;
-var CS_BASE_STABILITY = 0.82;
-var CS_HEIGHT_PENALTY = 0.018;
-var CS_MIN_STABILITY_THRESHOLD = 0.12;
-var CS_TURN_TIME_BASE = 12000;
-var CS_TURN_TIME_MIN = 5000;
-var CS_TURN_TIME_DECAY = 300;
-var CS_MAX_X = 1.3;
+var CS_BASE_STABILITY = 0.85;
+var CS_MIN_STABILITY_THRESHOLD = 0.08;
+var CS_TURN_TIME_BASE = 15000;
+var CS_TURN_TIME_MIN = 4000;
+var CS_TURN_TIME_DECAY = 350;
+var CS_MAX_X = 1.2;
+
+// Wind
+var CS_WIND_BASE = 0.05;
+var CS_WIND_PER_COIN = 0.016;
+var CS_WIND_DRIFT = 0.35;
+
+// Jitter (landing inaccuracy)
+var CS_JITTER_BASE = 0.01;
+var CS_JITTER_PER_COIN = 0.007;
+
+// Scoring
+var CS_SCORE_BASE = 10;
+var CS_SCORE_EDGE_BONUS = 15;
+var CS_SCORE_CENTER_BONUS = 5;
+var CS_EDGE_THRESHOLD = 0.6;
+var CS_CENTER_THRESHOLD = 0.15;
+
+// Events
+var CS_EVENT_INTERVAL = 5;
 
 var CS_EMOJIS = ['😂','🤣','😱','💀','🔥','👏','😈','🤡','💩','🙏','😭','🫣'];
 
@@ -59,6 +77,7 @@ var _csMyTurn = false;
 var _csDropping = false;
 var _csIntroPlayed = false;
 var _csEmojiCooldown = false;
+var _csEventActive = null; // current active event for this turn
 
 // ===== SEEDED PRNG (for deterministic results) =====
 var _csSeed = 0;
@@ -67,7 +86,15 @@ function csRand() {
   return _csSeed / 0x7fffffff;
 }
 
-// ===== STABILITY CHECK (deterministic) =====
+// ===== DIFFICULTY: Non-linear stability penalty =====
+function _csGetMaxOffset(level) {
+  // Accelerating penalty: easy early, brutal late
+  var penalty = Math.pow(level, 1.5) * 0.004;
+  var stability = Math.max(CS_MIN_STABILITY_THRESHOLD, CS_BASE_STABILITY - penalty);
+  return CS_COIN_R * stability;
+}
+
+// ===== STABILITY CHECK (deterministic, with non-linear curve) =====
 function csCheckStability(coins) {
   if (coins.length <= 1) return { stable: true, stability: 1.0, collapseLevel: -1, direction: 0 };
 
@@ -84,14 +111,12 @@ function csCheckStability(coins) {
     }
     cmX /= count;
 
-    // Support point: for level 0, it's the ground center (0)
-    // For level i>0, it's the coin below
+    // Support point
     var supportX = (i === 0) ? 0 : coins[i - 1].x;
     var offset = Math.abs(cmX - supportX);
 
-    // Max allowed offset decreases with height
-    var maxOffset = CS_COIN_R * Math.max(CS_MIN_STABILITY_THRESHOLD,
-      CS_BASE_STABILITY - i * CS_HEIGHT_PENALTY);
+    // Non-linear max offset (gets much smaller at height)
+    var maxOffset = _csGetMaxOffset(i);
 
     var ratio = offset / maxOffset;
     if (ratio > worstRatio) {
@@ -109,32 +134,70 @@ function csCheckStability(coins) {
   return { stable: true, stability: 1 - worstRatio, collapseLevel: -1, direction: 0 };
 }
 
+// ===== WIND UPDATE (deterministic, seeded) =====
+function _csUpdateWind() {
+  // Wind drifts randomly, magnitude increases with height
+  csState.wind += (csRand() - 0.5) * CS_WIND_DRIFT;
+  // Occasional direction flip
+  if (csRand() < 0.15) csState.wind *= -1;
+  // Clamp
+  csState.wind = Math.max(-1, Math.min(1, csState.wind));
+  // Calculate actual force
+  var coinCount = csState.coins.length;
+  csState.windForce = csState.wind * (CS_WIND_BASE + coinCount * CS_WIND_PER_COIN);
+}
+
+// ===== EVENT SYSTEM =====
+var CS_EVENTS = [
+  { id: 'gust', name: '돌풍!', emoji: '🌪️', desc: '바람이 거세집니다!' },
+  { id: 'quake', name: '지진!', emoji: '💥', desc: '테이블이 흔들립니다!' },
+  { id: 'golden', name: '황금코인!', emoji: '✨', desc: '3배 점수!' },
+  { id: 'narrow', name: '좁은 영역!', emoji: '📏', desc: '배치 범위가 줄어듭니다!' },
+  { id: 'heavy', name: '무거운 코인!', emoji: '🏋️', desc: '이번 코인은 무겁습니다!' },
+];
+
+function _csRollEvent() {
+  var idx = Math.floor(csRand() * CS_EVENTS.length);
+  return CS_EVENTS[idx];
+}
+
+function _csGetScoreMultiplier() {
+  var mult = 1;
+  if (csState.streak >= 8) mult = 3.0;
+  else if (csState.streak >= 5) mult = 2.0;
+  else if (csState.streak >= 3) mult = 1.5;
+  if (_csEventActive && _csEventActive.id === 'golden') mult *= 3;
+  return mult;
+}
+
+function _csGetStreakLabel() {
+  if (csState.streak >= 8) return 'MASTER!';
+  if (csState.streak >= 5) return 'ON FIRE!';
+  if (csState.streak >= 3) return 'STREAK!';
+  return '';
+}
+
 // ===== START GAME =====
 function startCoinStack() {
   console.log('[CoinStack] startCoinStack called. isHost:', state.isHost);
 
-  // Determine mode based on player count
   var playerCount = state.players.length;
   var mode = 'solo';
   if (playerCount === 2) mode = 'vs';
-  else if (playerCount === 3) mode = 'vs'; // 3P free-for-all
-  else if (playerCount >= 4) mode = 'team'; // 2v2 (first 4 players)
+  else if (playerCount === 3) mode = 'vs';
+  else if (playerCount >= 4) mode = 'team';
 
   var seed = Math.floor(Math.random() * 999999) + 1;
   _csSeed = seed;
 
-  // Build turn order
   var turnOrder = [];
   if (mode === 'team') {
-    // Team A: players 0,1  Team B: players 2,3
-    // Turn order: A0, B0, A1, B1, A0, B0...
     var teamA = [state.players[0].id, state.players[1].id];
     var teamB = [state.players[2].id, state.players[3].id];
     turnOrder = [teamA[0], teamB[0], teamA[1], teamB[1]];
   } else if (mode === 'solo') {
     turnOrder = [state.myId];
   } else {
-    // vs mode: all players take turns
     turnOrder = state.players.map(function(p) { return p.id; });
   }
 
@@ -145,7 +208,7 @@ function startCoinStack() {
     turnOrder: turnOrder,
     turnIndex: 0,
     currentPlayer: turnOrder[0],
-    phase: 'intro', // intro | playing | gameover
+    phase: 'intro',
     round: 1,
     loser: null,
     loserTeam: null,
@@ -155,24 +218,36 @@ function startCoinStack() {
     } : null,
     lastStability: 1.0,
     scores: {},
+    totalScore: {},
     turnTimeMs: CS_TURN_TIME_BASE,
+    // Wind
+    wind: 0,
+    windForce: 0,
+    // Streak & scoring
+    streak: 0,
+    bestStreak: 0,
+    // Events
+    nextEventAt: CS_EVENT_INTERVAL,
+    pendingEvent: null,
+    // Danger state
+    danger: false,
   };
 
-  // Init scores
-  state.players.forEach(function(p) { csState.scores[p.id] = 0; });
+  state.players.forEach(function(p) {
+    csState.scores[p.id] = 0;
+    csState.totalScore[p.id] = 0;
+  });
 
   showScreen('coinstackGame');
   loadCoinStackThree();
   _ensureFullscreenForGame();
 
-  // Broadcast to clients
   broadcast({
     type: 'game-start',
     game: 'coinstack',
     state: csState
   });
 
-  // Wait for Three.js then play intro
   _csWaitForThreeAndStart();
 }
 
@@ -189,6 +264,7 @@ function _csWaitForThreeAndStart() {
 
 function _csPlayIntro() {
   _csIntroPlayed = false;
+  _csEventActive = null;
   csRenderHUD();
 
   if (typeof csThreePlayIntro === 'function') {
@@ -196,10 +272,10 @@ function _csPlayIntro() {
       _csIntroPlayed = true;
       if (state.isHost) {
         csState.phase = 'playing';
+        _csUpdateWind(); // Initial wind
         csBroadcastState();
         csBeginTurn();
       } else {
-        // Client waits for host state
         csState.phase = 'playing';
         csBeginTurn();
       }
@@ -208,6 +284,7 @@ function _csPlayIntro() {
     _csIntroPlayed = true;
     csState.phase = 'playing';
     if (state.isHost) {
+      _csUpdateWind();
       csBroadcastState();
       csBeginTurn();
     } else {
@@ -230,7 +307,14 @@ function csBroadcastState() {
       loserTeam: csState.loserTeam,
       lastStability: csState.lastStability,
       scores: csState.scores,
+      totalScore: csState.totalScore,
       turnTimeMs: csState.turnTimeMs,
+      wind: csState.wind,
+      windForce: csState.windForce,
+      streak: csState.streak,
+      bestStreak: csState.bestStreak,
+      pendingEvent: csState.pendingEvent,
+      danger: csState.danger,
     }
   });
 }
@@ -248,9 +332,15 @@ function csHandleState(msg) {
   csState.loserTeam = s.loserTeam;
   csState.lastStability = s.lastStability;
   csState.scores = s.scores;
+  csState.totalScore = s.totalScore || s.scores;
   csState.turnTimeMs = s.turnTimeMs;
+  csState.wind = s.wind || 0;
+  csState.windForce = s.windForce || 0;
+  csState.streak = s.streak || 0;
+  csState.bestStreak = s.bestStreak || 0;
+  csState.pendingEvent = s.pendingEvent || null;
+  csState.danger = s.danger || false;
 
-  // Sync 3D coins
   if (typeof csThreeSetCoins === 'function') {
     var positions = csState.coins.map(function(c, i) {
       return { x: c.x, y: CS_COIN_H / 2 + i * CS_COIN_H, z: 0, ry: c.ry || 0 };
@@ -274,28 +364,58 @@ function csBeginTurn() {
   _csGhostX = 0;
   _csMyTurn = (csState.currentPlayer === state.myId);
 
-  // Show/hide ghost coin
-  if (typeof csThreeShowGhost === 'function') {
-    csThreeShowGhost(_csMyTurn);
-    if (_csMyTurn) {
-      csThreeSetGhostX(0);
+  // Check for pending event
+  _csEventActive = csState.pendingEvent;
+  csState.pendingEvent = null;
+
+  // Show event banner
+  if (_csEventActive) {
+    _csShowEventBanner(_csEventActive);
+    // Apply event effects
+    if (_csEventActive.id === 'quake' && typeof csThreeShake === 'function') {
+      csThreeShake(0.2);
+      if (typeof csThreeSetWobble === 'function') csThreeSetWobble(0.8);
+      if (navigator.vibrate) navigator.vibrate([50, 30, 100, 30, 50]);
     }
   }
 
-  // Set wobble based on stability
-  if (typeof csThreeSetWobble === 'function') {
+  // Determine effective max X (narrowed by event)
+  var effectiveMaxX = CS_MAX_X;
+  if (_csEventActive && _csEventActive.id === 'narrow') {
+    effectiveMaxX = CS_MAX_X * 0.5;
+  }
+
+  // Update wind visual
+  if (typeof csThreeSetWind === 'function') {
+    var gustMult = (_csEventActive && _csEventActive.id === 'gust') ? 2.5 : 1;
+    csThreeSetWind(csState.windForce * gustMult);
+  }
+
+  // Ghost coin
+  if (typeof csThreeShowGhost === 'function') {
+    csThreeShowGhost(_csMyTurn);
+    if (_csMyTurn) csThreeSetGhostX(0);
+  }
+
+  // Wobble based on stability
+  if (typeof csThreeSetWobble === 'function' && !(_csEventActive && _csEventActive.id === 'quake')) {
     csThreeSetWobble(1 - csState.lastStability);
   }
 
-  // Update HUD
+  // Danger state visual
+  csState.danger = csState.lastStability < 0.3;
+  if (typeof csThreeSetDanger === 'function') {
+    csThreeSetDanger(csState.danger);
+  }
+
   csRenderHUD();
   _csUpdateDropBtn();
 
-  // Touch callback
+  // Touch callback with effective limits
   if (typeof csThreeSetTouchCallback === 'function') {
     csThreeSetTouchCallback(function(x) {
       if (!_csMyTurn || _csDropping) return;
-      _csGhostX = x;
+      _csGhostX = Math.max(-effectiveMaxX, Math.min(effectiveMaxX, x));
     });
   }
 
@@ -321,14 +441,18 @@ function _csStartTurnTimer() {
 
     if (timerBar) {
       timerBar.style.width = (pct * 100) + '%';
-      if (pct < 0.3) timerBar.style.background = '#ff4444';
-      else if (pct < 0.6) timerBar.style.background = '#ffaa00';
+      if (pct < 0.2) timerBar.style.background = '#ff2222';
+      else if (pct < 0.5) timerBar.style.background = '#ffaa00';
       else timerBar.style.background = '#44ff88';
+    }
+
+    // Warning vibrate at 3 seconds
+    if (remaining < 3000 && remaining > 2900 && navigator.vibrate) {
+      navigator.vibrate(100);
     }
 
     if (remaining <= 0) {
       _csClearTurnTimer();
-      // Auto-drop at current position
       if (_csMyTurn && !_csDropping) {
         csDropCoin();
       }
@@ -352,8 +476,6 @@ function csDropCoin() {
   _csClearTurnTimer();
 
   var x = _csGhostX;
-
-  // Hide ghost
   if (typeof csThreeShowGhost === 'function') csThreeShowGhost(false);
 
   if (state.isHost) {
@@ -368,8 +490,30 @@ function csProcessDrop(playerId, x) {
   if (!state.isHost) return;
   if (playerId !== csState.currentPlayer) return;
 
-  // Clamp x
-  x = Math.max(-CS_MAX_X, Math.min(CS_MAX_X, x));
+  // --- Apply event modifiers ---
+  var gustMult = (_csEventActive && _csEventActive.id === 'gust') ? 2.5 : 1;
+  var effectiveMaxX = CS_MAX_X;
+  if (_csEventActive && _csEventActive.id === 'narrow') effectiveMaxX = CS_MAX_X * 0.5;
+
+  // Clamp x to effective range
+  x = Math.max(-effectiveMaxX, Math.min(effectiveMaxX, x));
+
+  // --- Apply wind displacement ---
+  var windDisp = csState.windForce * gustMult;
+  x += windDisp;
+
+  // --- Apply landing jitter (increases with height) ---
+  var coinCount = csState.coins.length;
+  var jitter = (csRand() - 0.5) * (CS_JITTER_BASE + coinCount * CS_JITTER_PER_COIN);
+  x += jitter;
+
+  // Heavy coin event = wider jitter
+  if (_csEventActive && _csEventActive.id === 'heavy') {
+    x += (csRand() - 0.5) * 0.08;
+  }
+
+  // Final clamp
+  x = Math.max(-CS_MAX_X * 1.1, Math.min(CS_MAX_X * 1.1, x));
 
   // Add coin
   var newCoin = { x: x, ry: csRand() * Math.PI * 2 };
@@ -380,23 +524,56 @@ function csProcessDrop(playerId, x) {
   var result = csCheckStability(testCoins);
 
   if (result.stable) {
-    // Coin placed successfully
+    // === SUCCESS ===
     csState.coins.push(newCoin);
     csState.lastStability = result.stability;
+    csState.streak++;
+    if (csState.streak > csState.bestStreak) csState.bestStreak = csState.streak;
 
-    // Score
+    // Score calculation
+    var absX = Math.abs(x);
+    var baseScore = CS_SCORE_BASE + coinCount; // height bonus built-in
+    var placement = 'normal';
+    if (absX > CS_EDGE_THRESHOLD) {
+      baseScore += CS_SCORE_EDGE_BONUS;
+      placement = 'edge';
+    } else if (absX < CS_CENTER_THRESHOLD) {
+      baseScore += CS_SCORE_CENTER_BONUS;
+      placement = 'center';
+    }
+    var multiplier = _csGetScoreMultiplier();
+    var finalScore = Math.round(baseScore * multiplier);
+
     csState.scores[playerId] = (csState.scores[playerId] || 0) + 1;
+    csState.totalScore[playerId] = (csState.totalScore[playerId] || 0) + finalScore;
 
     // Reduce turn time
     csState.turnTimeMs = Math.max(CS_TURN_TIME_MIN,
       CS_TURN_TIME_BASE - csState.coins.length * CS_TURN_TIME_DECAY);
+
+    // Update wind for next turn
+    _csUpdateWind();
+
+    // Check for event on next turn
+    var nextEvent = null;
+    if (csState.coins.length >= csState.nextEventAt) {
+      nextEvent = _csRollEvent();
+      csState.nextEventAt += CS_EVENT_INTERVAL;
+      // After 15 coins, events come faster
+      if (csState.coins.length > 15) {
+        csState.nextEventAt = csState.coins.length + 3;
+      }
+    }
+    csState.pendingEvent = nextEvent;
+
+    // Danger check
+    csState.danger = result.stability < 0.3;
 
     // Advance turn
     csState.turnIndex = (csState.turnIndex + 1) % csState.turnOrder.length;
     csState.currentPlayer = csState.turnOrder[csState.turnIndex];
     if (csState.turnIndex === 0) csState.round++;
 
-    // Broadcast drop + stable
     broadcast({
       type: 'cs-drop-result',
       x: x,
@@ -407,15 +584,28 @@ function csProcessDrop(playerId, x) {
       turnIndex: csState.turnIndex,
       round: csState.round,
       scores: csState.scores,
+      totalScore: csState.totalScore,
       turnTimeMs: csState.turnTimeMs,
+      wind: csState.wind,
+      windForce: csState.windForce,
+      streak: csState.streak,
+      bestStreak: csState.bestStreak,
+      pendingEvent: nextEvent,
+      danger: csState.danger,
+      // Score display info
+      scoreGained: finalScore,
+      placement: placement,
+      multiplier: multiplier,
     });
 
-    // Host also processes visually
-    _csAnimateDrop(x, newCoin.ry, true, result.stability, null);
+    _csAnimateDrop(x, newCoin.ry, true, result.stability, null, {
+      score: finalScore, placement: placement, multiplier: multiplier,
+    });
   } else {
-    // COLLAPSE!
+    // === COLLAPSE! ===
     csState.loser = playerId;
     csState.phase = 'gameover';
+    csState.streak = 0;
 
     if (csState.mode === 'team' && csState.teams) {
       if (csState.teams.A.indexOf(playerId) !== -1) {
@@ -425,7 +615,6 @@ function csProcessDrop(playerId, x) {
       }
     }
 
-    // Add the coin that caused collapse for visual
     csState.coins.push(newCoin);
 
     broadcast({
@@ -438,12 +627,14 @@ function csProcessDrop(playerId, x) {
       loser: csState.loser,
       loserTeam: csState.loserTeam,
       scores: csState.scores,
+      totalScore: csState.totalScore,
+      bestStreak: csState.bestStreak,
     });
 
     _csAnimateDrop(x, newCoin.ry, false, 0, {
       collapseLevel: result.collapseLevel,
       direction: result.direction,
-    });
+    }, null);
   }
 }
 
@@ -452,57 +643,73 @@ function csHandleDropResult(msg) {
   if (!csState) return;
 
   if (msg.stable) {
-    // Update state
     csState.coins.push({ x: msg.x, ry: msg.ry });
     csState.lastStability = msg.stability;
     csState.currentPlayer = msg.nextPlayer;
     csState.turnIndex = msg.turnIndex;
     csState.round = msg.round;
     csState.scores = msg.scores;
+    csState.totalScore = msg.totalScore || msg.scores;
     csState.turnTimeMs = msg.turnTimeMs;
+    csState.wind = msg.wind || 0;
+    csState.windForce = msg.windForce || 0;
+    csState.streak = msg.streak || 0;
+    csState.bestStreak = msg.bestStreak || 0;
+    csState.pendingEvent = msg.pendingEvent || null;
+    csState.danger = msg.danger || false;
 
-    _csAnimateDrop(msg.x, msg.ry, true, msg.stability, null);
+    _csAnimateDrop(msg.x, msg.ry, true, msg.stability, null, {
+      score: msg.scoreGained, placement: msg.placement, multiplier: msg.multiplier,
+    });
   } else {
-    // Collapse
     csState.coins.push({ x: msg.x, ry: msg.ry });
     csState.loser = msg.loser;
     csState.loserTeam = msg.loserTeam;
     csState.phase = 'gameover';
     csState.scores = msg.scores;
+    csState.totalScore = msg.totalScore || msg.scores;
+    csState.bestStreak = msg.bestStreak || 0;
 
     _csAnimateDrop(msg.x, msg.ry, false, 0, {
       collapseLevel: msg.collapseLevel,
       direction: msg.direction,
-    });
+    }, null);
   }
 }
 
 // ===== ANIMATE DROP =====
-function _csAnimateDrop(x, ry, isStable, stability, collapseInfo) {
+function _csAnimateDrop(x, ry, isStable, stability, collapseInfo, scoreInfo) {
   var coinIndex = csState.coins.length - 1;
   var targetY = CS_COIN_H / 2 + coinIndex * CS_COIN_H;
 
   if (typeof csThreeDropCoin === 'function') {
     csThreeDropCoin(x, targetY, function() {
       if (isStable) {
-        // Wobble effect based on stability
         if (typeof csThreeSetWobble === 'function') {
           csThreeSetWobble(1 - stability);
         }
 
-        // Vibrate on mobile
-        if (navigator.vibrate) navigator.vibrate(30);
+        // Show score popup
+        if (scoreInfo && typeof csThreeShowScorePopup === 'function') {
+          csThreeShowScorePopup(scoreInfo.score, scoreInfo.placement, scoreInfo.multiplier);
+        }
 
-        // Update camera
+        // Vibrate based on stability
+        if (navigator.vibrate) {
+          if (stability < 0.3) navigator.vibrate([50, 20, 80]);
+          else if (stability < 0.5) navigator.vibrate(50);
+          else navigator.vibrate(20);
+        }
+
+        // Camera follow
         if (typeof csThreeSetCameraHeight === 'function') {
           csThreeSetCameraHeight(Math.max(1.8, coinIndex * CS_COIN_H * 0.7 + 1.5));
         }
 
-        // Begin next turn
         setTimeout(function() {
           csBeginTurn();
           csRenderHUD();
-        }, 300);
+        }, 350);
       } else {
         // Collapse!
         if (navigator.vibrate) navigator.vibrate([100, 50, 200, 50, 300]);
@@ -517,13 +724,41 @@ function _csAnimateDrop(x, ry, isStable, stability, collapseInfo) {
       }
     });
   } else {
-    // No Three.js fallback
     if (!isStable) {
       setTimeout(csShowResult, 500);
     } else {
-      setTimeout(function() { csBeginTurn(); csRenderHUD(); }, 300);
+      if (scoreInfo) _csShowScoreDOM(scoreInfo.score, scoreInfo.placement, scoreInfo.multiplier);
+      setTimeout(function() { csBeginTurn(); csRenderHUD(); }, 350);
     }
   }
+}
+
+// ===== SHOW EVENT BANNER =====
+function _csShowEventBanner(evt) {
+  var banner = document.getElementById('csEventBanner');
+  if (!banner) return;
+  banner.innerHTML = '<span class="cs-event-emoji">' + evt.emoji + '</span>' +
+    '<span class="cs-event-name">' + escapeHTML(evt.name) + '</span>' +
+    '<span class="cs-event-desc">' + escapeHTML(evt.desc) + '</span>';
+  banner.classList.add('cs-event-show');
+  setTimeout(function() {
+    banner.classList.remove('cs-event-show');
+  }, 2500);
+}
+
+// ===== SCORE POPUP (DOM fallback) =====
+function _csShowScoreDOM(score, placement, multiplier) {
+  var container = document.getElementById('csThreeContainer');
+  if (!container) return;
+  var el = document.createElement('div');
+  el.className = 'cs-score-popup';
+  var text = '+' + score;
+  if (placement === 'center') text += ' PERFECT!';
+  else if (placement === 'edge') text += ' RISKY!';
+  if (multiplier > 1) text += ' x' + multiplier.toFixed(1);
+  el.textContent = text;
+  container.appendChild(el);
+  setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 1200);
 }
 
 // ===== SHOW RESULT =====
@@ -535,15 +770,28 @@ function csShowResult() {
   var loserName = '';
   var winnerNames = [];
   var isSolo = csState.mode === 'solo';
+  var coinCount = csState.coins.length - 1;
+  var bestStreak = csState.bestStreak || 0;
 
   if (isSolo) {
-    // Solo: show score
+    var myScore = csState.totalScore[state.myId] || 0;
+    // Grade based on coins stacked
+    var grade = '🥉';
+    var gradeText = 'Good';
+    if (coinCount >= 25) { grade = '👑'; gradeText = 'LEGENDARY!'; }
+    else if (coinCount >= 20) { grade = '💎'; gradeText = 'AMAZING!'; }
+    else if (coinCount >= 15) { grade = '🥇'; gradeText = 'GREAT!'; }
+    else if (coinCount >= 10) { grade = '🥈'; gradeText = 'NICE!'; }
+
     overlay.innerHTML =
       '<div class="cs-result-card">' +
-        '<div class="cs-result-emoji">🪙</div>' +
-        '<div class="cs-result-title">게임 오버!</div>' +
-        '<div class="cs-result-score">' + (csState.coins.length - 1) + '개 쌓기 성공!</div>' +
-        '<div class="cs-result-subtitle">동전 ' + (csState.coins.length - 1) + '개를 쌓았습니다</div>' +
+        '<div class="cs-result-emoji">' + grade + '</div>' +
+        '<div class="cs-result-title">' + gradeText + '</div>' +
+        '<div class="cs-result-score">' + coinCount + '개 쌓기 성공!</div>' +
+        '<div class="cs-result-stats">' +
+          '<div class="cs-stat"><span class="cs-stat-label">총 점수</span><span class="cs-stat-val">' + myScore.toLocaleString() + '</span></div>' +
+          '<div class="cs-stat"><span class="cs-stat-label">최고 연속</span><span class="cs-stat-val">' + bestStreak + '개</span></div>' +
+        '</div>' +
         '<div class="cs-result-buttons">' +
           (state.isHost ? '<button class="cs-btn cs-btn-primary" onclick="restartCurrentGame()">다시하기</button>' : '') +
           '<button class="cs-btn cs-btn-secondary" onclick="leaveGame()">나가기</button>' +
@@ -553,12 +801,10 @@ function csShowResult() {
     var loserTeamLabel = csState.loserTeam === 'A' ? 'A팀' : 'B팀';
     var winnerTeamLabel = csState.loserTeam === 'A' ? 'B팀' : 'A팀';
     var winnerTeam = csState.loserTeam === 'A' ? csState.teams.B : csState.teams.A;
-
     winnerNames = winnerTeam.map(function(id) {
       var p = state.players.find(function(pp) { return pp.id === id; });
       return p ? p.name : '???';
     });
-
     var loserPlayer = state.players.find(function(p) { return p.id === csState.loser; });
     loserName = loserPlayer ? loserPlayer.name : '???';
 
@@ -567,7 +813,7 @@ function csShowResult() {
         '<div class="cs-result-emoji">🏆</div>' +
         '<div class="cs-result-title">' + escapeHTML(winnerTeamLabel) + ' 승리!</div>' +
         '<div class="cs-result-score">' + escapeHTML(winnerNames.join(' & ')) + '</div>' +
-        '<div class="cs-result-subtitle">' + escapeHTML(loserName) + '(' + escapeHTML(loserTeamLabel) + ')이 무너뜨림! (동전 ' + (csState.coins.length - 1) + '개)</div>' +
+        '<div class="cs-result-subtitle">' + escapeHTML(loserName) + '(' + escapeHTML(loserTeamLabel) + ')이 무너뜨림! (' + coinCount + '개)</div>' +
         _csRenderScoreboard() +
         '<div class="cs-result-buttons">' +
           (state.isHost ? '<button class="cs-btn cs-btn-primary" onclick="restartCurrentGame()">다시하기</button>' : '') +
@@ -575,13 +821,8 @@ function csShowResult() {
         '</div>' +
       '</div>';
   } else {
-    // VS mode
-    var loserPlayer = state.players.find(function(p) { return p.id === csState.loser; });
-    loserName = loserPlayer ? loserPlayer.name : '???';
-
-    winnerNames = state.players
-      .filter(function(p) { return p.id !== csState.loser; })
-      .map(function(p) { return p.name; });
+    var loserPlayer2 = state.players.find(function(p) { return p.id === csState.loser; });
+    loserName = loserPlayer2 ? loserPlayer2.name : '???';
 
     overlay.innerHTML =
       '<div class="cs-result-card">' +
@@ -589,10 +830,8 @@ function csShowResult() {
         '<div class="cs-result-title">' +
           (csState.loser === state.myId ? '패배...' : '승리!') +
         '</div>' +
-        '<div class="cs-result-score">' +
-          escapeHTML(loserName) + ' 탈락!' +
-        '</div>' +
-        '<div class="cs-result-subtitle">동전 ' + (csState.coins.length - 1) + '개에서 무너짐</div>' +
+        '<div class="cs-result-score">' + escapeHTML(loserName) + ' 탈락!</div>' +
+        '<div class="cs-result-subtitle">' + coinCount + '개에서 무너짐</div>' +
         _csRenderScoreboard() +
         '<div class="cs-result-buttons">' +
           (state.isHost ? '<button class="cs-btn cs-btn-primary" onclick="restartCurrentGame()">다시하기</button>' : '') +
@@ -606,17 +845,20 @@ function csShowResult() {
 }
 
 function _csRenderScoreboard() {
-  if (!csState || !csState.scores) return '';
+  if (!csState || !csState.totalScore) return '';
   var html = '<div class="cs-scoreboard">';
   var sorted = state.players.slice().sort(function(a, b) {
-    return (csState.scores[b.id] || 0) - (csState.scores[a.id] || 0);
+    return (csState.totalScore[b.id] || 0) - (csState.totalScore[a.id] || 0);
   });
-  sorted.forEach(function(p) {
+  sorted.forEach(function(p, rank) {
     var isLoser = p.id === csState.loser;
+    var rankEmoji = rank === 0 ? '🥇' : (rank === 1 ? '🥈' : '🥉');
     html += '<div class="cs-score-row' + (isLoser ? ' loser' : '') + '">' +
+      '<span class="cs-score-rank">' + rankEmoji + '</span>' +
       '<span class="cs-score-avatar">' + escapeHTML(p.avatar) + '</span>' +
       '<span class="cs-score-name">' + escapeHTML(p.name) + '</span>' +
-      '<span class="cs-score-val">' + (csState.scores[p.id] || 0) + '개</span>' +
+      '<span class="cs-score-detail">' + (csState.scores[p.id] || 0) + '개</span>' +
+      '<span class="cs-score-val">' + (csState.totalScore[p.id] || 0).toLocaleString() + 'pt</span>' +
     '</div>';
   });
   html += '</div>';
@@ -639,18 +881,18 @@ function csRenderHUD() {
       var isMe = csState.currentPlayer === state.myId;
       var nameStr = isMe ? 'MY TURN!' : (cp ? cp.name : '???');
       var avatarStr = cp ? cp.avatar : '🪙';
+      var streakLabel = _csGetStreakLabel();
 
       turnEl.innerHTML =
         '<div class="cs-turn-avatar">' + escapeHTML(avatarStr) + '</div>' +
-        '<div class="cs-turn-text' + (isMe ? ' my-turn' : '') + '">' + escapeHTML(nameStr) + '</div>';
+        '<div class="cs-turn-text' + (isMe ? ' my-turn' : '') + '">' + escapeHTML(nameStr) + '</div>' +
+        (streakLabel ? '<div class="cs-streak-badge">' + streakLabel + '</div>' : '');
     }
   }
 
   // Coin count
   var countEl = document.getElementById('csCoinCount');
-  if (countEl) {
-    countEl.textContent = csState.coins.length + '개';
-  }
+  if (countEl) countEl.textContent = csState.coins.length + '개';
 
   // Round
   var roundEl = document.getElementById('csRoundNum');
@@ -663,12 +905,54 @@ function csRenderHUD() {
   if (meterEl) {
     var pct = csState.lastStability * 100;
     meterEl.style.width = pct + '%';
-    if (pct < 30) meterEl.style.background = '#ff4444';
+    if (pct < 20) meterEl.style.background = '#ff2222';
+    else if (pct < 40) meterEl.style.background = '#ff6600';
     else if (pct < 60) meterEl.style.background = '#ffaa00';
     else meterEl.style.background = '#44ff88';
   }
 
-  // Player list (for multiplayer)
+  // Wind indicator
+  var windEl = document.getElementById('csWindIndicator');
+  if (windEl) {
+    var wf = csState.windForce || 0;
+    var absWind = Math.abs(wf);
+    var windDir = wf > 0 ? '→' : (wf < 0 ? '←' : '·');
+    var windStrength = '';
+    if (absWind > 0.25) windStrength = '강풍';
+    else if (absWind > 0.12) windStrength = '바람';
+    else if (absWind > 0.04) windStrength = '미풍';
+    else windStrength = '고요';
+
+    var windBars = Math.min(5, Math.floor(absWind * 15));
+    var barStr = '';
+    for (var i = 0; i < 5; i++) {
+      barStr += '<span class="cs-wind-bar' + (i < windBars ? ' active' : '') + '"></span>';
+    }
+
+    windEl.innerHTML = '<span class="cs-wind-dir">' + windDir + '</span>' +
+      '<span class="cs-wind-bars">' + barStr + '</span>' +
+      '<span class="cs-wind-label">' + windStrength + '</span>';
+    windEl.style.display = 'flex';
+  }
+
+  // Score display
+  var scoreEl = document.getElementById('csMyScore');
+  if (scoreEl) {
+    var myScore = csState.totalScore[state.myId] || 0;
+    scoreEl.textContent = myScore.toLocaleString() + 'pt';
+  }
+
+  // Danger overlay
+  var gameEl = document.getElementById('coinstackGame');
+  if (gameEl) {
+    if (csState.danger) {
+      gameEl.classList.add('cs-danger-active');
+    } else {
+      gameEl.classList.remove('cs-danger-active');
+    }
+  }
+
+  // Player bar
   _csRenderPlayerBar();
 }
 
@@ -690,7 +974,7 @@ function _csRenderPlayerBar() {
     }
     html += '<div class="cs-player-chip' + (isCurrent ? ' active' : '') + teamClass + '">' +
       '<span class="cs-chip-avatar">' + escapeHTML(p.avatar) + '</span>' +
-      '<span class="cs-chip-score">' + (csState.scores[pid] || 0) + '</span>' +
+      '<span class="cs-chip-score">' + (csState.totalScore[pid] || 0) + 'pt</span>' +
     '</div>';
   }
   bar.innerHTML = html;
@@ -714,32 +998,22 @@ function csSendEmoji(emoji) {
   if (_csEmojiCooldown) return;
   _csEmojiCooldown = true;
   setTimeout(function() { _csEmojiCooldown = false; }, 1500);
-
-  // Show locally
-  if (typeof csThreeShowEmoji === 'function') {
-    csThreeShowEmoji(emoji);
-  }
-
-  // Broadcast
+  if (typeof csThreeShowEmoji === 'function') csThreeShowEmoji(emoji);
   broadcast({ type: 'cs-emoji', emoji: emoji, from: state.myId });
 }
 
 function csHandleEmoji(msg) {
-  if (typeof csThreeShowEmoji === 'function') {
-    csThreeShowEmoji(msg.emoji);
-  }
-  // Vibrate on receiving emoji
+  if (typeof csThreeShowEmoji === 'function') csThreeShowEmoji(msg.emoji);
   if (navigator.vibrate) navigator.vibrate(50);
 }
 
-// ===== EMOJI PANEL TOGGLE =====
 function csToggleEmojiPanel() {
   var panel = document.getElementById('csEmojiPanel');
   if (!panel) return;
   panel.classList.toggle('cs-emoji-open');
 }
 
-// ===== RENDER COINSTACK VIEW (called from handleGameStart) =====
+// ===== RENDER COINSTACK VIEW (from handleGameStart) =====
 function renderCoinStackView(s) {
   if (!csState) {
     csState = {
@@ -756,11 +1030,18 @@ function renderCoinStackView(s) {
       teams: s.teams || null,
       lastStability: s.lastStability || 1.0,
       scores: s.scores || {},
+      totalScore: s.totalScore || s.scores || {},
       turnTimeMs: s.turnTimeMs || CS_TURN_TIME_BASE,
+      wind: s.wind || 0,
+      windForce: s.windForce || 0,
+      streak: s.streak || 0,
+      bestStreak: s.bestStreak || 0,
+      pendingEvent: s.pendingEvent || null,
+      nextEventAt: s.nextEventAt || CS_EVENT_INTERVAL,
+      danger: s.danger || false,
     };
   }
   _csSeed = csState.seed;
-
   loadCoinStackThree();
   _csWaitForThreeAndStart();
 }
@@ -773,13 +1054,15 @@ function closeCoinStackCleanup() {
   _csDropping = false;
   _csMyTurn = false;
   _csIntroPlayed = false;
+  _csEventActive = null;
 
-  if (typeof destroyCoinStackThree === 'function') {
-    destroyCoinStackThree();
-  }
+  if (typeof destroyCoinStackThree === 'function') destroyCoinStackThree();
 
   var overlay = document.getElementById('csResultOverlay');
   if (overlay) { overlay.style.display = 'none'; overlay.classList.remove('cs-result-show'); }
+
+  var gameEl = document.getElementById('coinstackGame');
+  if (gameEl) gameEl.classList.remove('cs-danger-active');
 
   csState = null;
   _csView = null;

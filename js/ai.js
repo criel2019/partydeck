@@ -1767,24 +1767,34 @@ function aiCoinStack() {
   var currentId = csState.currentPlayer;
   if (!currentId || !currentId.startsWith('ai-')) return;
 
-  // AI strategy: place somewhat close to center, more careful as stack grows
-  var spread = CS_MAX_X * 0.6;
   var coinCount = csState.coins.length;
+  var spread = CS_MAX_X * 0.6;
 
-  // As stack grows, AI plays more conservatively (closer to center)
+  // AI gets more conservative as stack grows
   if (coinCount > 3) spread *= 0.7;
-  if (coinCount > 6) spread *= 0.6;
-  if (coinCount > 10) spread *= 0.5;
+  if (coinCount > 6) spread *= 0.5;
+  if (coinCount > 10) spread *= 0.4;
+  if (coinCount > 15) spread *= 0.3;
 
-  // If there are coins already, try to stay near the last coin's x
+  // AI compensates for wind (partially — not perfect)
+  var windComp = 0;
+  if (csState.windForce) {
+    windComp = -csState.windForce * (0.5 + Math.random() * 0.3);
+  }
+
   var x;
   if (coinCount > 0) {
     var lastX = csState.coins[coinCount - 1].x;
-    x = lastX + (Math.random() - 0.5) * spread;
+    // AI tries to place near the last coin, counter wind
+    x = lastX * 0.5 + windComp + (Math.random() - 0.5) * spread;
   } else {
-    x = (Math.random() - 0.5) * spread * 0.3;
+    x = windComp + (Math.random() - 0.5) * spread * 0.2;
   }
-  x = Math.max(-CS_MAX_X, Math.min(CS_MAX_X, x));
+
+  // Clamp (respect narrow event)
+  var maxX = CS_MAX_X;
+  if (csState.pendingEvent && csState.pendingEvent.id === 'narrow') maxX = CS_MAX_X * 0.5;
+  x = Math.max(-maxX, Math.min(maxX, x));
 
   var t = setTimeout(function() {
     if (!isAIActive() || !csState || csState.phase !== 'playing') return;

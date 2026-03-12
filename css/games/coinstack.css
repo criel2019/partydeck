@@ -6,6 +6,18 @@
   height: 100%;
   overflow: hidden;
   background: #0a0a15;
+  transition: box-shadow 0.5s ease;
+}
+
+/* Danger mode: red vignette */
+#coinstackGame.cs-danger-active {
+  box-shadow: inset 0 0 60px rgba(255, 0, 0, 0.2), inset 0 0 120px rgba(255, 0, 0, 0.08);
+  animation: cs-danger-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes cs-danger-pulse {
+  0%, 100% { box-shadow: inset 0 0 60px rgba(255, 0, 0, 0.15), inset 0 0 120px rgba(255, 0, 0, 0.05); }
+  50% { box-shadow: inset 0 0 80px rgba(255, 0, 0, 0.3), inset 0 0 160px rgba(255, 0, 0, 0.1); }
 }
 
 /* 3D Canvas Container */
@@ -85,6 +97,25 @@
   animation: cs-pulse 1s ease-in-out infinite;
 }
 
+/* Streak Badge */
+.cs-streak-badge {
+  font-size: 12px;
+  font-weight: 800;
+  color: #ff6600;
+  background: rgba(255, 102, 0, 0.15);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  padding: 2px 8px;
+  border-radius: 10px;
+  animation: cs-streak-flash 0.8s ease;
+  text-shadow: 0 0 8px rgba(255, 102, 0, 0.5);
+}
+
+@keyframes cs-streak-flash {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 @keyframes cs-turn-bounce {
   0% { transform: scale(0.5) translateY(-10px); opacity: 0; }
   60% { transform: scale(1.15); opacity: 1; }
@@ -96,14 +127,15 @@
   50% { opacity: 0.7; transform: scale(1.05); }
 }
 
-/* Info Bar (coin count, round, stability) */
+/* Info Bar */
 .cs-info-bar {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
   margin-top: 4px;
   padding: 0 12px;
+  flex-wrap: wrap;
 }
 
 .cs-info-item {
@@ -135,6 +167,59 @@
   border-radius: 3px;
   transition: width 0.5s ease, background 0.3s;
   width: 100%;
+}
+
+/* Wind Indicator */
+.cs-wind-indicator {
+  display: none;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+}
+
+.cs-wind-dir {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(180, 220, 255, 0.9);
+  min-width: 16px;
+  text-align: center;
+}
+
+.cs-wind-bars {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.cs-wind-bar {
+  width: 4px;
+  height: 8px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 1px;
+  transition: background 0.3s;
+}
+
+.cs-wind-bar.active {
+  background: rgba(100, 180, 255, 0.7);
+}
+
+.cs-wind-bar.active:nth-child(4),
+.cs-wind-bar.active:nth-child(5) {
+  background: rgba(255, 120, 60, 0.8);
+}
+
+.cs-wind-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.4);
+}
+
+/* Score Display */
+.cs-score-display {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffd700;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
 }
 
 /* Turn Timer */
@@ -186,32 +271,103 @@
   box-shadow: 0 0 12px rgba(255,215,0,0.3);
 }
 
-.cs-player-chip.team-a {
-  background: rgba(255,100,50,0.12);
-}
+.cs-player-chip.team-a { background: rgba(255,100,50,0.12); }
+.cs-player-chip.team-a.active { border-color: #ff6432; box-shadow: 0 0 12px rgba(255,100,50,0.3); }
+.cs-player-chip.team-b { background: rgba(0,180,255,0.12); }
+.cs-player-chip.team-b.active { border-color: #00b4ff; box-shadow: 0 0 12px rgba(0,180,255,0.3); }
 
-.cs-player-chip.team-a.active {
-  border-color: #ff6432;
-  box-shadow: 0 0 12px rgba(255,100,50,0.3);
-}
-
-.cs-player-chip.team-b {
-  background: rgba(0,180,255,0.12);
-}
-
-.cs-player-chip.team-b.active {
-  border-color: #00b4ff;
-  box-shadow: 0 0 12px rgba(0,180,255,0.3);
-}
-
-.cs-chip-avatar {
-  font-size: 22px;
-}
-
+.cs-chip-avatar { font-size: 22px; }
 .cs-chip-score {
-  font-size: 11px;
-  color: rgba(255,255,255,0.6);
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
   font-weight: 600;
+}
+
+/* ===== EVENT BANNER ===== */
+.cs-event-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  z-index: 25;
+  background: rgba(0,0,0,0.85);
+  border: 2px solid rgba(255,215,0,0.5);
+  border-radius: 16px;
+  padding: 16px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.cs-event-banner.cs-event-show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  animation: cs-event-pop 2.5s ease forwards;
+}
+
+@keyframes cs-event-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  10% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  20% { transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9) translateY(-20px); }
+}
+
+.cs-event-emoji { font-size: 40px; }
+.cs-event-name {
+  font-size: 22px;
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow: 0 2px 8px rgba(255,215,0,0.4);
+}
+.cs-event-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+}
+
+/* ===== SCORE POPUP ===== */
+.cs-score-popup {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffd700;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 16px rgba(255,215,0,0.3);
+  pointer-events: none;
+  animation: cs-score-float 1.3s ease-out forwards;
+  white-space: nowrap;
+}
+
+.cs-score-popup.cs-score-center {
+  color: #44ff88;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 16px rgba(68,255,136,0.4);
+  font-size: 26px;
+}
+
+.cs-score-popup.cs-score-edge {
+  color: #ff6644;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 16px rgba(255,102,68,0.4);
+  font-size: 24px;
+}
+
+.cs-score-popup.cs-score-multi {
+  font-size: 28px;
+}
+
+@keyframes cs-score-float {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.5) translateY(10px); }
+  15% { opacity: 1; transform: translateX(-50%) scale(1.2) translateY(0); }
+  30% { transform: translateX(-50%) scale(1) translateY(-5px); }
+  100% { opacity: 0; transform: translateX(-50%) scale(0.9) translateY(-60px); }
 }
 
 /* ===== BOTTOM CONTROLS ===== */
@@ -388,7 +544,35 @@
 .cs-result-subtitle {
   font-size: 14px;
   color: rgba(255,255,255,0.6);
+  margin-bottom: 16px;
+}
+
+/* Result Stats */
+.cs-result-stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
   margin-bottom: 20px;
+}
+
+.cs-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.cs-stat-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cs-stat-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffd700;
 }
 
 /* Scoreboard */
@@ -402,7 +586,7 @@
 .cs-score-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 6px 10px;
   border-radius: 8px;
 }
@@ -412,10 +596,8 @@
   border: 1px solid rgba(255,0,0,0.2);
 }
 
-.cs-score-avatar {
-  font-size: 20px;
-}
-
+.cs-score-rank { font-size: 16px; }
+.cs-score-avatar { font-size: 20px; }
 .cs-score-name {
   flex: 1;
   font-size: 14px;
@@ -423,11 +605,16 @@
   text-align: left;
   font-weight: 600;
 }
-
+.cs-score-detail {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+}
 .cs-score-val {
   font-size: 14px;
   color: #ffd700;
   font-weight: 700;
+  min-width: 50px;
+  text-align: right;
 }
 
 /* Buttons */
@@ -448,9 +635,7 @@
   min-height: 44px;
 }
 
-.cs-btn:active {
-  transform: scale(0.95);
-}
+.cs-btn:active { transform: scale(0.95); }
 
 .cs-btn-primary {
   background: linear-gradient(135deg, #ffd700, #ff9500);
@@ -486,50 +671,22 @@
 
 /* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 430px) {
-  .cs-drop-btn {
-    width: 70px;
-    height: 70px;
-    font-size: 14px;
-  }
-
-  .cs-turn-text {
-    font-size: 14px;
-  }
-
-  .cs-turn-text.my-turn {
-    font-size: 18px;
-  }
-
-  .cs-player-chip {
-    padding: 3px 6px;
-    min-width: 42px;
-  }
-
-  .cs-chip-avatar {
-    font-size: 20px;
-  }
-
-  .cs-result-emoji {
-    font-size: 56px;
-  }
-
-  .cs-result-title {
-    font-size: 26px;
-  }
+  .cs-drop-btn { width: 70px; height: 70px; font-size: 14px; }
+  .cs-turn-text { font-size: 14px; }
+  .cs-turn-text.my-turn { font-size: 18px; }
+  .cs-player-chip { padding: 3px 6px; min-width: 42px; }
+  .cs-chip-avatar { font-size: 20px; }
+  .cs-result-emoji { font-size: 56px; }
+  .cs-result-title { font-size: 26px; }
+  .cs-score-popup { font-size: 18px; }
+  .cs-score-popup.cs-score-center,
+  .cs-score-popup.cs-score-multi { font-size: 22px; }
+  .cs-event-name { font-size: 18px; }
+  .cs-event-emoji { font-size: 32px; }
 }
 
 @media (max-height: 600px) {
-  .cs-info-bar {
-    margin-top: 0;
-  }
-
-  .cs-players-bar {
-    margin-top: 4px;
-  }
-
-  .cs-drop-btn {
-    width: 64px;
-    height: 64px;
-    font-size: 13px;
-  }
+  .cs-info-bar { margin-top: 0; }
+  .cs-players-bar { margin-top: 4px; }
+  .cs-drop-btn { width: 64px; height: 64px; font-size: 13px; }
 }

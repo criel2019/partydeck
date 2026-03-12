@@ -3,7 +3,6 @@
 (function() {
   'use strict';
 
-  // ===== CONSTANTS =====
   const COIN_R = 0.44;
   const COIN_H = 0.07;
   const TABLE_R = 2.5;
@@ -15,9 +14,8 @@
   const GHOST_Y_OFFSET = 1.8;
   const PARTICLE_COUNT = 20;
   const MAX_PARTICLES = 60;
-  const INTRO_SCATTER_R = 1.8; // coins scatter OUTSIDE this radius from center
+  const INTRO_SCATTER_R = 1.8;
 
-  // ===== STATE =====
   let scene, camera, renderer, rafId, clock;
   let isInitialized = false;
   let containerEl = null;
@@ -51,7 +49,17 @@
   let wobbleTarget = 0;
   let wobbleTime = 0;
   let dropGuideLine = null;
-  let introScatteredCoins = []; // coins that stay at bottom after intro
+  let introScatteredCoins = [];
+
+  // Wind system
+  let windForce = 0;
+  let windTarget = 0;
+  let windParticles = [];
+  const WIND_PARTICLE_MAX = 40;
+
+  // Danger system
+  let dangerActive = false;
+  let dangerGlowMeshes = [];
 
   // ===== PROCEDURAL TEXTURES =====
 
@@ -59,7 +67,6 @@
     var c = document.createElement('canvas');
     c.width = size; c.height = size;
     var ctx = c.getContext('2d');
-    // Dark wood base
     var grad = ctx.createLinearGradient(0, 0, size, size);
     grad.addColorStop(0, '#3a2210');
     grad.addColorStop(0.3, '#4a3018');
@@ -68,7 +75,6 @@
     grad.addColorStop(1, '#352010');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, size, size);
-    // Wood grain lines
     ctx.strokeStyle = 'rgba(0,0,0,0.15)';
     ctx.lineWidth = 1;
     for (var i = 0; i < 40; i++) {
@@ -80,7 +86,6 @@
       }
       ctx.stroke();
     }
-    // Highlight grain
     ctx.strokeStyle = 'rgba(180,140,80,0.06)';
     ctx.lineWidth = 2;
     for (var j = 0; j < 15; j++) {
@@ -101,14 +106,12 @@
     var c = document.createElement('canvas');
     c.width = size; c.height = size;
     var ctx = c.getContext('2d');
-    // Green felt base
     var grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size * 0.7);
     grad.addColorStop(0, '#2a6e2a');
     grad.addColorStop(0.7, '#1f5a1f');
     grad.addColorStop(1, '#164516');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, size, size);
-    // Felt noise
     var imgData = ctx.getImageData(0, 0, size, size);
     for (var i = 0; i < imgData.data.length; i += 4) {
       var noise = (Math.random() - 0.5) * 12;
@@ -117,7 +120,6 @@
       imgData.data[i+2] += noise;
     }
     ctx.putImageData(imgData, 0, 0);
-    // Center marker circle (subtle)
     ctx.strokeStyle = 'rgba(255,215,0,0.08)';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -126,7 +128,6 @@
     return new THREE.CanvasTexture(c);
   }
 
-  // ===== COIN FACE TEXTURE =====
   function createCoinTexture() {
     const size = 256;
     const c = document.createElement('canvas');
@@ -180,7 +181,6 @@
     return new THREE.CanvasTexture(c);
   }
 
-  // ===== BRIGHT ENV MAP =====
   function createEnvMap() {
     const size = 64;
     const faces = [];
@@ -189,13 +189,13 @@
       c.width = size; c.height = size;
       const ctx = c.getContext('2d');
       const grad = ctx.createLinearGradient(0, 0, 0, size);
-      if (i === 2) { // top - warm ceiling light
+      if (i === 2) {
         grad.addColorStop(0, '#8a7a5a');
         grad.addColorStop(1, '#6a5a3e');
-      } else if (i === 3) { // bottom
+      } else if (i === 3) {
         grad.addColorStop(0, '#3a3a2e');
         grad.addColorStop(1, '#2a2a1e');
-      } else { // sides - warm bar ambiance
+      } else {
         grad.addColorStop(0, '#6a5a4a');
         grad.addColorStop(1, '#3a2a1e');
       }
@@ -208,7 +208,6 @@
     return tex;
   }
 
-  // ===== CREATE COIN MESH =====
   function createCoinMesh(isGhost) {
     const topTex = coinTexture.clone();
     topTex.needsUpdate = true;
@@ -244,9 +243,7 @@
     return mesh;
   }
 
-  // ===== BUILD SCENE ENVIRONMENT =====
   function _buildEnvironment() {
-    // === TABLE with wood texture ===
     var woodTex = createWoodTexture(512);
     woodTex.repeat.set(2, 2);
     var tableGeo = new THREE.CylinderGeometry(TABLE_R, TABLE_R + 0.1, TABLE_H, 64);
@@ -258,7 +255,6 @@
     tableMesh.receiveShadow = true;
     scene.add(tableMesh);
 
-    // Table edge rim (brass)
     var rimGeo = new THREE.TorusGeometry(TABLE_R, 0.05, 8, 64);
     var rimMat = new THREE.MeshStandardMaterial({ color: 0xb8860b, roughness: 0.3, metalness: 0.8, envMap: envMap });
     var rim = new THREE.Mesh(rimGeo, rimMat);
@@ -266,7 +262,6 @@
     rim.position.y = 0.01;
     scene.add(rim);
 
-    // Felt surface
     var feltTex = createFeltTexture(512);
     var feltGeo = new THREE.CircleGeometry(TABLE_R - 0.05, 64);
     var feltMat = new THREE.MeshStandardMaterial({ map: feltTex, roughness: 0.95, metalness: 0 });
@@ -276,7 +271,6 @@
     felt.receiveShadow = true;
     scene.add(felt);
 
-    // === FLOOR under table ===
     var floorTex = createWoodTexture(256);
     floorTex.repeat.set(6, 6);
     var floorGeo = new THREE.PlaneGeometry(30, 30);
@@ -289,7 +283,6 @@
     floor.receiveShadow = true;
     scene.add(floor);
 
-    // Shadow catcher on felt
     var shadowGeo = new THREE.PlaneGeometry(20, 20);
     var shadowMat = new THREE.ShadowMaterial({ opacity: 0.25 });
     var shadow = new THREE.Mesh(shadowGeo, shadowMat);
@@ -298,15 +291,12 @@
     shadow.receiveShadow = true;
     scene.add(shadow);
 
-    // === BACKGROUND WALLS (bar atmosphere) ===
-    // Back wall
     var wallGeo = new THREE.PlaneGeometry(20, 12);
     var wallMat = new THREE.MeshStandardMaterial({ color: 0x2a1a0e, roughness: 0.9, metalness: 0 });
     var backWall = new THREE.Mesh(wallGeo, wallMat);
     backWall.position.set(0, 4, -8);
     scene.add(backWall);
 
-    // Side walls
     var sideWallL = new THREE.Mesh(wallGeo, wallMat);
     sideWallL.position.set(-10, 4, 0);
     sideWallL.rotation.y = Math.PI / 2;
@@ -317,8 +307,6 @@
     sideWallR.rotation.y = -Math.PI / 2;
     scene.add(sideWallR);
 
-    // === DECORATIVE ELEMENTS ===
-    // Warm wall sconces (point lights as decoration)
     var sconce1 = new THREE.PointLight(0xffaa44, 0.4, 10, 2);
     sconce1.position.set(-4, 4, -7.5);
     scene.add(sconce1);
@@ -326,7 +314,6 @@
     sconce2.position.set(4, 4, -7.5);
     scene.add(sconce2);
 
-    // Glowing sconce indicators (small spheres)
     var sconceGeo = new THREE.SphereGeometry(0.1, 8, 8);
     var sconceMat = new THREE.MeshBasicMaterial({ color: 0xffcc66 });
     var s1 = new THREE.Mesh(sconceGeo, sconceMat);
@@ -336,7 +323,6 @@
     s2.position.copy(sconce2.position);
     scene.add(s2);
 
-    // Scattered gold coins on the floor around table (decoration)
     for (var i = 0; i < 8; i++) {
       var angle = (i / 8) * Math.PI * 2 + Math.random() * 0.5;
       var dist = TABLE_R + 0.5 + Math.random() * 1.5;
@@ -377,11 +363,9 @@
     renderer.toneMappingExposure = 1.6;
     containerEl.appendChild(renderer.domElement);
 
-    // Environment
     envMap = createEnvMap();
     scene.environment = envMap;
 
-    // ===== BRIGHT LIGHTING =====
     ambientLight = new THREE.AmbientLight(0xffeedd, 0.7);
     scene.add(ambientLight);
 
@@ -398,30 +382,23 @@
     dirLight.shadow.bias = -0.002;
     scene.add(dirLight);
 
-    // Overhead spotlight (warm, casino-like)
     spotLight = new THREE.SpotLight(0xffd700, 1.2, 18, Math.PI / 4, 0.4, 1);
     spotLight.position.set(0, 8, 0);
     spotLight.castShadow = false;
     scene.add(spotLight);
     scene.add(spotLight.target);
 
-    // Fill light from front
     var fillLight = new THREE.DirectionalLight(0xffeebb, 0.5);
     fillLight.position.set(0, 2, 6);
     scene.add(fillLight);
 
-    // Back rim light (cool blue accent)
     var rimLight = new THREE.DirectionalLight(0x6688cc, 0.4);
     rimLight.position.set(-2, 3, -4);
     scene.add(rimLight);
 
-    // Textures
     coinTexture = createCoinTexture();
-
-    // Build environment (table, floor, walls, decorations)
     _buildEnvironment();
 
-    // Drop guide line
     var guideGeo = new THREE.BufferGeometry();
     var guidePositions = new Float32Array([0, 0, 0, 0, 10, 0]);
     guideGeo.setAttribute('position', new THREE.BufferAttribute(guidePositions, 3));
@@ -475,10 +452,11 @@
       });
     }
     scene = null; camera = null; renderer = null;
-    coinMeshes = []; coinBodies = []; particles = [];
+    coinMeshes = []; coinBodies = []; particles = []; windParticles = [];
     ghostMesh = null; tableMesh = null; spotLight = null; dropGuideLine = null;
-    introScatteredCoins = [];
+    introScatteredCoins = []; dangerGlowMeshes = [];
     wobbleIntensity = 0; wobbleTarget = 0; wobbleTime = 0;
+    windForce = 0; windTarget = 0; dangerActive = false;
     isInitialized = false; introPlaying = false;
     dropAnimating = false; collapseAnimating = false;
     containerEl = null;
@@ -507,7 +485,7 @@
     _updateGhostFromPointer(e);
   }
 
-  function _onPointerUp(e) {
+  function _onPointerUp() {
     _pointerDown = false;
   }
 
@@ -524,7 +502,9 @@
   function _updateGhostPosition() {
     if (!ghostMesh) return;
     const stackH = coinMeshes.length * COIN_H;
-    ghostMesh.position.x = ghostX;
+    // Apply wind sway to ghost preview
+    var sway = windForce * 0.3;
+    ghostMesh.position.x = ghostX + sway;
     ghostMesh.position.y = stackH + COIN_H / 2 + GHOST_Y_OFFSET;
     ghostMesh.position.z = 0;
   }
@@ -549,6 +529,107 @@
 
   window.csThreeSetTouchCallback = function(fn) {
     touchCallback = fn;
+  };
+
+  // ===== WIND SYSTEM =====
+  window.csThreeSetWind = function(force) {
+    windTarget = force || 0;
+  };
+
+  function _spawnWindParticle() {
+    if (!isInitialized || windParticles.length >= WIND_PARTICLE_MAX) return;
+    var absWind = Math.abs(windForce);
+    if (absWind < 0.03) return;
+    if (Math.random() > absWind * 3) return;
+
+    var geo = new THREE.SphereGeometry(0.015, 4, 4);
+    var mat = new THREE.MeshBasicMaterial({
+      color: 0xccddee, transparent: true, opacity: 0.3 + absWind,
+    });
+    var p = new THREE.Mesh(geo, mat);
+    var startX = windForce > 0 ? -3 : 3;
+    var stackH = coinMeshes.length * COIN_H;
+    p.position.set(startX, Math.random() * Math.max(1.5, stackH + 1), (Math.random() - 0.5) * 2);
+    scene.add(p);
+    windParticles.push({
+      mesh: p,
+      vx: windForce * (6 + Math.random() * 4),
+      vy: (Math.random() - 0.5) * 0.5,
+      life: 1,
+      decay: 0.015 + Math.random() * 0.01,
+    });
+  }
+
+  function _updateWindParticles(dt) {
+    for (var i = windParticles.length - 1; i >= 0; i--) {
+      var p = windParticles[i];
+      p.mesh.position.x += p.vx * dt;
+      p.mesh.position.y += p.vy * dt;
+      p.life -= p.decay;
+      p.mesh.material.opacity = Math.max(0, p.life * 0.4);
+      if (p.life <= 0 || Math.abs(p.mesh.position.x) > 5) {
+        scene.remove(p.mesh);
+        p.mesh.geometry.dispose();
+        p.mesh.material.dispose();
+        windParticles.splice(i, 1);
+      }
+    }
+  }
+
+  // ===== DANGER SYSTEM =====
+  window.csThreeSetDanger = function(active) {
+    dangerActive = active;
+  };
+
+  function _updateDangerGlow(dt) {
+    if (!dangerActive || coinMeshes.length < 3) return;
+    // Top coins glow red when danger is active
+    var time = performance.now() * 0.003;
+    var glowAmount = (Math.sin(time * 3) * 0.5 + 0.5) * 0.15;
+    for (var i = Math.max(0, coinMeshes.length - 5); i < coinMeshes.length; i++) {
+      var mesh = coinMeshes[i];
+      var mats = mesh.material;
+      if (Array.isArray(mats)) {
+        var factor = (i - Math.max(0, coinMeshes.length - 5)) / 5;
+        mats.forEach(function(m) {
+          m.emissive = m.emissive || new THREE.Color();
+          m.emissive.setRGB(glowAmount * factor, 0, 0);
+        });
+      }
+    }
+  }
+
+  function _clearDangerGlow() {
+    for (var i = 0; i < coinMeshes.length; i++) {
+      var mats = coinMeshes[i].material;
+      if (Array.isArray(mats)) {
+        mats.forEach(function(m) {
+          if (m.emissive) m.emissive.setRGB(0, 0, 0);
+        });
+      }
+    }
+  }
+
+  // ===== SCORE POPUP =====
+  window.csThreeShowScorePopup = function(score, placement, multiplier) {
+    if (!containerEl) return;
+    var el = document.createElement('div');
+    el.className = 'cs-score-popup';
+    var text = '+' + score;
+    if (placement === 'center') {
+      el.classList.add('cs-score-center');
+      text = 'PERFECT! +' + score;
+    } else if (placement === 'edge') {
+      el.classList.add('cs-score-edge');
+      text = 'RISKY! +' + score;
+    }
+    if (multiplier > 1) {
+      el.classList.add('cs-score-multi');
+      text += ' ×' + multiplier.toFixed(1);
+    }
+    el.textContent = text;
+    containerEl.appendChild(el);
+    setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 1400);
   };
 
   // ===== DROP COIN =====
@@ -578,7 +659,7 @@
     dropAnimating = false;
 
     _spawnImpactParticles(mesh.position.x, mesh.position.y, mesh.position.z);
-    shakeIntensity = 0.04;
+    shakeIntensity = 0.03 + coinMeshes.length * 0.002;
     cameraTargetY = Math.max(1.8, coinMeshes.length * COIN_H * 0.7 + 1.5);
 
     if (dropCallback) {
@@ -590,7 +671,6 @@
 
   function _physicsStep(dt) {
     if (!dropBody || dropBody.settled) return;
-
     dropBody.vy += GRAVITY * dt;
     dropBody.y -= dropBody.vy * dt;
 
@@ -617,12 +697,17 @@
     if (collapseAnimating) return;
     collapseAnimating = true;
     collapseCallback = callback;
+    _clearDangerGlow();
 
     coinBodies = [];
     const level = Math.max(0, collapseLevel);
 
     for (var i = level; i < coinMeshes.length; i++) {
       var mesh = coinMeshes[i];
+      // Clear any emissive glow
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach(function(m) { if (m.emissive) m.emissive.setRGB(0, 0, 0); });
+      }
       var pushX = (dirX || 0) * (2 + Math.random() * 3);
       var pushZ = (Math.random() - 0.5) * 4;
       coinBodies.push({
@@ -675,7 +760,6 @@
         }
       }
 
-      // Cull off-screen (too far)
       var dist = Math.sqrt(b.x * b.x + b.z * b.z);
       if (dist > TABLE_R + 2) {
         b.settled = true;
@@ -709,7 +793,7 @@
     function fadeStep() {
       var t = Math.min(1, (performance.now() - fadeStart) / fadeDuration);
       for (var i = 0; i < bodies.length; i++) {
-        if (!bodies[i].mesh.parent) continue; // already culled
+        if (!bodies[i].mesh.parent) continue;
         var mats = bodies[i].mesh.material;
         if (Array.isArray(mats)) {
           mats.forEach(function(m) { m.transparent = true; m.opacity = 1 - t; });
@@ -729,13 +813,12 @@
     fadeStep();
   }
 
-  // ===== INTRO ANIMATION =====
+  // ===== INTRO =====
   window.csThreePlayIntro = function(seed, callback) {
     if (!isInitialized) { if (callback) callback(); return; }
     introPlaying = true;
     introCallback = callback;
 
-    // Remove any leftover scattered coins from previous intro
     for (var sc = 0; sc < introScatteredCoins.length; sc++) {
       scene.remove(introScatteredCoins[sc]);
       if (introScatteredCoins[sc].geometry) introScatteredCoins[sc].geometry.dispose();
@@ -748,7 +831,6 @@
       return s / 0x7fffffff;
     }
 
-    // Build intro tower (22 coins, taller for drama)
     var introCoinCount = 22;
     var introCoins = [];
     for (var i = 0; i < introCoinCount; i++) {
@@ -780,13 +862,11 @@
       phaseTime += dt;
 
       if (phase === 0) {
-        // Phase 0: Camera orbits around tower (0-2s)
         camAngle += dt * 1.5;
         var camRadius = 4.5 - totalTime * 0.2;
         var camH = 0.8 + totalTime * 0.5;
         camera.position.set(
-          Math.sin(camAngle) * camRadius,
-          camH,
+          Math.sin(camAngle) * camRadius, camH,
           Math.cos(camAngle) * camRadius
         );
         camera.lookAt(0, introCoinCount * COIN_H * 0.4, 0);
@@ -794,22 +874,19 @@
         if (phaseTime > 1.8) {
           phase = 1;
           phaseTime = 0;
-          // Push ALL coins outward radially from center (scatter wide!)
           for (var i = 0; i < introCoins.length; i++) {
             var c = introCoins[i];
-            // Radial direction away from center
             var angle = srand() * Math.PI * 2;
-            var speed = 3 + srand() * 5; // fast outward
+            var speed = 3 + srand() * 5;
             c.vx = Math.cos(angle) * speed;
             c.vz = Math.sin(angle) * speed;
-            c.vy = 1 + srand() * 4; // pop up
+            c.vy = 1 + srand() * 4;
             c.rvx = (srand() - 0.5) * 12;
             c.rvz = (srand() - 0.5) * 12;
           }
           shakeIntensity = 0.15;
         }
       } else if (phase === 1) {
-        // Phase 1: Coins scatter outward and settle at edges (1.8-4.5s)
         var allSettled = true;
         for (var i = 0; i < introCoins.length; i++) {
           var c = introCoins[i];
@@ -824,7 +901,6 @@
           c.rvx *= 0.99;
           c.rvz *= 0.99;
 
-          // Ground collision
           if (c.y < COIN_H / 2) {
             c.y = COIN_H / 2;
             c.vy = Math.abs(c.vy) * BOUNCE * 0.5;
@@ -837,7 +913,6 @@
             }
           }
 
-          // Cull coins that go too far off-screen
           var dist = Math.sqrt(c.x * c.x + c.z * c.z);
           if (dist > TABLE_R + 3) {
             c.culled = true;
@@ -850,7 +925,6 @@
           if (!c.settled) allSettled = false;
         }
 
-        // Camera swoops down
         camAngle += dt * 0.8;
         var pullBackT = Math.min(1, phaseTime / 2.0);
         camera.position.set(
@@ -860,7 +934,6 @@
         );
         camera.lookAt(0, 0.3, 0);
 
-        // Particles during scatter
         if (phaseTime < 1.0 && Math.random() < 0.4) {
           _spawnImpactParticles(
             (srand() - 0.5) * 3, srand() * 0.3, (srand() - 0.5) * 3
@@ -872,33 +945,26 @@
           phaseTime = 0;
         }
       } else if (phase === 2) {
-        // Phase 2: Keep settled coins at edges, fade coins in center zone, camera to game pos
         var fadeT = Math.min(1, phaseTime / 1.0);
 
         for (var i = 0; i < introCoins.length; i++) {
           var c = introCoins[i];
           if (c.culled) continue;
-
           var distFromCenter = Math.sqrt(c.x * c.x + c.z * c.z);
-
           if (distFromCenter < INTRO_SCATTER_R) {
-            // Coins too close to center: fade out and remove
             var mats = c.mesh.material;
             if (Array.isArray(mats)) {
               mats.forEach(function(m) { m.transparent = true; m.opacity = 1 - fadeT; });
             }
           }
-          // Coins outside center: keep visible (decoration)
         }
 
-        // Smooth camera to game position
         camera.position.x += (0 - camera.position.x) * dt * 3;
         camera.position.y += (1.8 - camera.position.y) * dt * 3;
         camera.position.z += (4.5 - camera.position.z) * dt * 3;
         camera.lookAt(0, 0.4, 0);
 
         if (phaseTime > 1.5) {
-          // Remove center coins, keep edge coins as decoration
           for (var j = 0; j < introCoins.length; j++) {
             var ic = introCoins[j];
             if (ic.culled) continue;
@@ -907,7 +973,6 @@
               scene.remove(ic.mesh);
               if (ic.mesh.geometry) ic.mesh.geometry.dispose();
             } else {
-              // Keep as scattered decoration
               introScatteredCoins.push(ic.mesh);
             }
           }
@@ -926,16 +991,14 @@
         }
       }
 
-      if (!introDone) {
-        requestAnimationFrame(introStep);
-      }
+      if (!introDone) requestAnimationFrame(introStep);
     }
 
     introStep();
   };
 
-  // ===== CLEAR ALL COINS =====
   window.csThreeClear = function() {
+    _clearDangerGlow();
     for (var i = 0; i < coinMeshes.length; i++) {
       scene.remove(coinMeshes[i]);
       coinMeshes[i].geometry.dispose();
@@ -948,8 +1011,8 @@
     cameraTargetY = 1.8;
   };
 
-  // ===== SET COINS (sync) =====
   window.csThreeSetCoins = function(positions) {
+    _clearDangerGlow();
     for (var i = 0; i < coinMeshes.length; i++) {
       scene.remove(coinMeshes[i]);
       coinMeshes[i].geometry.dispose();
@@ -1043,8 +1106,8 @@
     wobbleTime += dt;
     for (var i = 0; i < coinMeshes.length; i++) {
       var heightFactor = (i + 1) / Math.max(1, coinMeshes.length);
-      var wobAmp = wobbleIntensity * heightFactor * 0.015;
-      var wobFreq = 4 + wobbleIntensity * 3;
+      var wobAmp = wobbleIntensity * heightFactor * 0.018;
+      var wobFreq = 4 + wobbleIntensity * 4;
       coinMeshes[i].rotation.z = Math.sin(wobbleTime * wobFreq + i * 0.3) * wobAmp;
       coinMeshes[i].rotation.x = Math.cos(wobbleTime * wobFreq * 0.7 + i * 0.5) * wobAmp * 0.5;
     }
@@ -1088,7 +1151,9 @@
     }
     _ghostTime += dt;
     var stackH = coinMeshes.length * COIN_H;
+    var sway = windForce * 0.3 + Math.sin(_ghostTime * 2) * windForce * 0.15;
     var ghostY = stackH + COIN_H / 2 + GHOST_Y_OFFSET + Math.sin(_ghostTime * 3) * 0.05;
+    ghostMesh.position.x = ghostX + sway;
     ghostMesh.position.y = ghostY;
     ghostMesh.rotation.y += dt * 0.5;
 
@@ -1120,18 +1185,24 @@
 
     var dt = Math.min(clock.getDelta(), 0.05);
 
+    // Smooth wind transition
+    windForce += (windTarget - windForce) * dt * 5;
+
     if (dropAnimating && dropBody) _physicsStep(dt);
     if (collapseAnimating) _collapsePhysicsStep(dt);
     _animateGhost(dt);
     _updateWobble(dt);
     _updateParticles(dt);
+    _spawnWindParticle();
+    _updateWindParticles(dt);
+    if (dangerActive) _updateDangerGlow(dt);
     if (!introPlaying) _updateCamera(dt);
 
     renderer.render(scene, camera);
   }
 
   window.csThreeShowResult = function(text) {
-    // Handled by DOM overlay in coinstack.js
+    // Handled by DOM overlay
   };
 
 })();
