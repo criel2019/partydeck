@@ -2,8 +2,14 @@
 // Separated from fortress.js for modularity
 
 // ===== PARTICLE SYSTEM =====
+// Hard caps to prevent unbounded growth on long sessions
+const FORT_PARTICLE_CAP = 200;
+const FORT_DEBRIS_CAP = 80;
+const FORT_SMOKE_CAP = 60;
+
 function spawnExplosionParticles(x, y, count, isBig) {
   for (let i = 0; i < count; i++) {
+    if (fortParticles.length >= FORT_PARTICLE_CAP) break;
     const angle = Math.random() * Math.PI * 2;
     const speed = (isBig ? 2 : 1) + Math.random() * (isBig ? 5 : 3);
     fortParticles.push({
@@ -22,6 +28,7 @@ function spawnExplosionParticles(x, y, count, isBig) {
 
 function spawnDebris(x, y, count) {
   for (let i = 0; i < count; i++) {
+    if (fortDebris.length >= FORT_DEBRIS_CAP) break;
     const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI;
     const speed = 1 + Math.random() * 4;
     fortDebris.push({
@@ -40,6 +47,7 @@ function spawnDebris(x, y, count) {
 
 function spawnSmoke(x, y, count) {
   for (let i = 0; i < count; i++) {
+    if (fortSmoke.length >= FORT_SMOKE_CAP) break;
     fortSmoke.push({
       x: x + (Math.random() - 0.5) * 20,
       y: y + (Math.random() - 0.5) * 10,

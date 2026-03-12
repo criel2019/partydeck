@@ -696,7 +696,8 @@ function initFortCanvas() {
   fortLoadTamaPet();
   if (_fortTamaPet) fortGetTamaImage(_fortTamaPet);
 
-  const dpr = window.devicePixelRatio || 1;
+  // Cap DPR at 2 to prevent massive canvas on high-DPR mobile (e.g. 2.8× → 3375px)
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   fortCanvas.width = FORT_CANVAS_W * dpr;
   fortCanvas.height = FORT_CANVAS_H * dpr;
   fortCtx.setTransform(dpr, 0, 0, dpr, 0, 0);

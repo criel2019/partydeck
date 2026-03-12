@@ -1075,7 +1075,9 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
   gap: 12px;
+  overflow-y: auto;
   animation: kingFadeIn 0.3s ease;
 }
 
@@ -1086,10 +1088,9 @@
   gap: 10px;
   width: 100%;
   max-width: 360px;
-  max-height: 60vh;
-  overflow-y: auto;
-  flex-shrink: 1;
+  flex: 1 1 auto;
   min-height: 0;
+  overflow-y: auto;
 }
 
 .king-scoring-title {
@@ -1181,10 +1182,10 @@
 .king-scoring-btn-container {
   margin-top: 8px;
   width: 100%;
+  max-width: 360px;
   display: flex;
   justify-content: center;
   flex-shrink: 0;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .king-scoring-action-btn {

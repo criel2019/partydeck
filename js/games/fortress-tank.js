@@ -67,7 +67,7 @@ function renderFortressScene(view) {
   const terrain = view.terrain || (fortState ? fortState.terrain : new Array(w).fill(380));
 
   // Reset to DPR base transform before clearRect to avoid ghost strips from any caller-applied translate
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
 
@@ -123,7 +123,11 @@ function renderFortressScene(view) {
 }
 
 // ===== TANK DRAWING =====
+// Frame-level timestamp: set once per drawTanks, used by all drawTank/drawDeadTank calls
+let _fortFrameNow = 0;
+
 function drawTanks(ctx, players, turnIdx, terrain) {
+  _fortFrameNow = Date.now(); // single Date.now() per frame
   // Dead tanks first (behind), then alive tanks on top — single pass each
   for (let i = 0; i < players.length; i++) {
     if (!players[i].alive) drawDeadTank(ctx, players[i], terrain);
@@ -215,7 +219,7 @@ function drawDeadTank(ctx, player, terrain) {
   ctx.save();
   ctx.globalAlpha = 0.18;
   ctx.fillStyle = '#888';
-  const t = Date.now() * 0.001;
+  const t = _fortFrameNow * 0.001;
   for (let i = 0; i < 3; i++) {
     const sy = centerY - R - 5 - Math.sin(t * 0.8 + i * 2) * 8 - i * 6;
     const sx = x - 3 + Math.sin(t * 0.5 + i * 3) * 5;
@@ -232,26 +236,29 @@ function _drawFortChargeAura(ctx, cx, cy, R, ratio, tribe, now) {
   const outerR = R + 10 + ratio * 20;
 
   if (tribe === 'fire') {
-    // Inner glow ring
+    // Inner glow ring — single gradient (cheap)
     const ringGrad = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, outerR);
     ringGrad.addColorStop(0, 'rgba(255,80,0,0)');
     ringGrad.addColorStop(0.5, `rgba(255,140,0,${0.18 + ratio * 0.32})`);
     ringGrad.addColorStop(1, 'rgba(255,40,0,0)');
     ctx.beginPath(); ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
     ctx.fillStyle = ringGrad; ctx.fill();
-    // Orbiting fire particles
-    for (let i = 0; i < 8; i++) {
-      const a = (now * 0.008 + i * Math.PI * 2 / 8) % (Math.PI * 2);
+    // Orbiting fire particles — solid fills (no per-particle gradient)
+    for (let i = 0; i < 6; i++) {
+      const a = (now * 0.008 + i * Math.PI * 2 / 6) % (Math.PI * 2);
       const orbitR = outerR * (0.82 + 0.18 * Math.sin(now * 0.015 + i));
       const px = cx + Math.cos(a) * orbitR;
       const py = cy + Math.sin(a) * orbitR * 0.65;
       const sz = (3 + ratio * 5) * (0.7 + 0.3 * Math.sin(now * 0.022 + i));
-      const g = ctx.createRadialGradient(px, py, 0, px, py, sz);
-      g.addColorStop(0, 'rgba(255,240,100,0.95)');
-      g.addColorStop(0.4, 'rgba(255,100,0,0.7)');
-      g.addColorStop(1, 'rgba(255,0,0,0)');
-      ctx.beginPath(); ctx.arc(px, py, sz, 0, Math.PI * 2);
-      ctx.fillStyle = g; ctx.fill();
+      // Outer soft halo
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = 'rgba(255,100,0,1)';
+      ctx.beginPath(); ctx.arc(px, py, sz * 1.4, 0, Math.PI * 2); ctx.fill();
+      // Inner bright core
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = 'rgba(255,240,100,1)';
+      ctx.beginPath(); ctx.arc(px, py, sz * 0.5, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
     }
 
   } else if (tribe === 'rock') {
@@ -303,8 +310,13 @@ function _drawFortChargeAura(ctx, cx, cy, R, ratio, tribe, now) {
       }
       ctx.strokeStyle = `rgba(200,240,255,${0.75 + ratio * 0.25})`;
       ctx.lineWidth = 1 + ratio * 1.5;
-      ctx.shadowColor = 'rgba(120,200,255,0.95)'; ctx.shadowBlur = 7;
-      ctx.stroke(); ctx.shadowBlur = 0;
+      ctx.stroke();
+      // Second thicker pass for glow effect (replaces expensive shadowBlur)
+      ctx.globalAlpha = 0.3;
+      ctx.lineWidth = 3 + ratio * 3;
+      ctx.strokeStyle = 'rgba(120,200,255,0.5)';
+      ctx.stroke();
+      ctx.globalAlpha = 1;
     }
     // Yellow arc ring
     ctx.beginPath(); ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
@@ -319,19 +331,20 @@ function _drawFortChargeAura(ctx, cx, cy, R, ratio, tribe, now) {
     ringGrad.addColorStop(1, 'rgba(100,0,220,0)');
     ctx.beginPath(); ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
     ctx.fillStyle = ringGrad; ctx.fill();
-    // Orbiting orbs
-    for (let i = 0; i < 5; i++) {
-      const a = (now * 0.005 * (1 + i * 0.18) + i * Math.PI * 2 / 5);
+    // Orbiting orbs — solid fills (no per-particle gradient)
+    for (let i = 0; i < 4; i++) {
+      const a = (now * 0.005 * (1 + i * 0.18) + i * Math.PI * 2 / 4);
       const orbitR = outerR * (0.88 + 0.12 * Math.sin(now * 0.011 + i * 2));
       const px = cx + Math.cos(a) * orbitR;
       const py = cy + Math.sin(a) * orbitR * 0.65;
       const sz = 3 + ratio * 4;
-      const g = ctx.createRadialGradient(px, py, 0, px, py, sz * 2);
-      g.addColorStop(0, 'rgba(220,170,255,0.95)');
-      g.addColorStop(0.5, 'rgba(140,80,240,0.5)');
-      g.addColorStop(1, 'rgba(80,0,200,0)');
-      ctx.beginPath(); ctx.arc(px, py, sz * 2, 0, Math.PI * 2);
-      ctx.fillStyle = g; ctx.fill();
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = 'rgba(140,80,240,1)';
+      ctx.beginPath(); ctx.arc(px, py, sz * 2, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = 'rgba(220,170,255,1)';
+      ctx.beginPath(); ctx.arc(px, py, sz * 0.6, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -364,7 +377,7 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
   const tamaImg = fortGetTamaImage(tamaData);
 
   // --- Float animation ---
-  const now = Date.now();
+  const now = _fortFrameNow;
   const anim = _fortCharAnimGet(player.id);
   const isMoving = fortMoveDir !== 0 && player.id === (state && state.myId);
   const floatAmp  = isMoving ? 3.5 : 2.5;
@@ -412,10 +425,14 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
   ctx.scale(sx, sy);
   ctx.translate(-centerX, -visY);
 
-  // Current turn glow
+  // Current turn glow — manual radial gradient instead of expensive shadowBlur
   if (isCurrentTurn) {
-    ctx.shadowColor = pInfo.glowColor;
-    ctx.shadowBlur = 22;
+    const glowR = R + 18;
+    const glowGrad = ctx.createRadialGradient(centerX, visY, R + 2, centerX, visY, glowR);
+    glowGrad.addColorStop(0, pInfo.glowColor);
+    glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath(); ctx.arc(centerX, visY, glowR, 0, Math.PI * 2);
+    ctx.fillStyle = glowGrad; ctx.fill();
   }
 
   // Circular border (player color ring)
@@ -423,9 +440,8 @@ function drawTank(ctx, player, isCurrentTurn, terrain) {
   ctx.arc(centerX, visY, R + 3, 0, Math.PI * 2);
   ctx.fillStyle = player.color;
   ctx.fill();
-  ctx.shadowBlur = 0;
 
-  // Clip to circle and draw character image
+  // Draw character image via roundRect clip (cheaper than arc clip on mobile)
   ctx.save();
   ctx.beginPath();
   ctx.arc(centerX, visY, R, 0, Math.PI * 2);

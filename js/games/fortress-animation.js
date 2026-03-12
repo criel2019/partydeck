@@ -20,8 +20,11 @@ function _fortAnimateExtraShot(shot, terrainAfter, onDone) {
       ctx.save(); applyCameraTransform(ctx);
       const ti = Math.min(frameIdx, path.length - 1);
       const ptx = path.xs[ti], pty = path.ys[ti];
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = '#ff8800';
+      ctx.beginPath(); ctx.arc(ptx, pty, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
       ctx.fillStyle = '#ffcc00';
-      ctx.shadowColor = '#ff8800'; ctx.shadowBlur = 10;
       ctx.beginPath(); ctx.arc(ptx, pty, 5, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
@@ -188,13 +191,16 @@ function startFortAnimation(msg, callback) {
 
         ctx.save();
         if (tribe === 'fire') {
-          ctx.shadowColor = '#ff6600'; ctx.shadowBlur = 16;
+          // Outer glow (replaces shadowBlur)
+          ctx.globalAlpha = 0.35;
+          ctx.fillStyle = '#ff6600';
+          ctx.beginPath(); ctx.arc(ptx, pty, 10, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = 1;
           ctx.fillStyle = '#ffcc00';
           ctx.beginPath(); ctx.arc(ptx, pty, 5, 0, Math.PI*2); ctx.fill();
-          ctx.shadowBlur = 0;
           ctx.fillStyle = '#ff3300';
           ctx.beginPath(); ctx.arc(ptx, pty, 3, 0, Math.PI*2); ctx.fill();
-          if (frameIdx % 2 === 0) fortParticles.push({ x:ptx, y:pty, vx:(Math.random()-0.5)*2, vy:(Math.random()-0.5)*2, life:0.6, decay:0.05+Math.random()*0.03, size:2+Math.random()*2, color:`hsl(${20+Math.random()*30},100%,${55+Math.random()*25}%)` });
+          if (frameIdx % 2 === 0 && fortParticles.length < FORT_PARTICLE_CAP) fortParticles.push({ x:ptx, y:pty, vx:(Math.random()-0.5)*2, vy:(Math.random()-0.5)*2, life:0.6, decay:0.05+Math.random()*0.03, size:2+Math.random()*2, color:`hsl(${20+Math.random()*30},100%,${55+Math.random()*25}%)` });
 
         } else if (tribe === 'rock') {
           ctx.fillStyle = '#8b7355';
@@ -208,34 +214,37 @@ function startFortAnimation(msg, callback) {
           ctx.closePath(); ctx.fill();
           ctx.fillStyle = 'rgba(200,180,140,0.5)';
           ctx.beginPath(); ctx.arc(ptx-2, pty-2, 2, 0, Math.PI*2); ctx.fill();
-          if (frameIdx % 4 === 0) fortParticles.push({ x:ptx, y:pty, vx:(Math.random()-0.5)*1.5, vy:(Math.random()-0.5)*1.5, life:0.4, decay:0.03, size:1.5+Math.random()*2, color:`hsl(30,40%,40%)` });
+          if (frameIdx % 4 === 0 && fortParticles.length < FORT_PARTICLE_CAP) fortParticles.push({ x:ptx, y:pty, vx:(Math.random()-0.5)*1.5, vy:(Math.random()-0.5)*1.5, life:0.4, decay:0.03, size:1.5+Math.random()*2, color:`hsl(30,40%,40%)` });
 
         } else if (tribe === 'wind') {
           ctx.strokeStyle = 'rgba(150,240,255,0.9)'; ctx.lineWidth = 2;
-          ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 10;
           const vd = Math.atan2(path.ys[Math.min(frameIdx+1,path.length-1)]-pty, path.xs[Math.min(frameIdx+1,path.length-1)]-ptx);
           ctx.save(); ctx.translate(ptx,pty); ctx.rotate(vd);
           ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(8,0); ctx.moveTo(4,-4); ctx.lineTo(8,0); ctx.lineTo(4,4);
           ctx.stroke(); ctx.restore();
-          if (frameIdx % 2 === 0) fortParticles.push({ x:ptx, y:pty, vx:(Math.random()-0.5)*2, vy:-0.5-Math.random(), life:0.5, decay:0.06, size:1+Math.random()*2, color:`rgba(100,230,255,0.7)` });
+          if (frameIdx % 2 === 0 && fortParticles.length < FORT_PARTICLE_CAP) fortParticles.push({ x:ptx, y:pty, vx:(Math.random()-0.5)*2, vy:-0.5-Math.random(), life:0.5, decay:0.06, size:1+Math.random()*2, color:`rgba(100,230,255,0.7)` });
 
         } else if (tribe === 'thunder') {
-          ctx.shadowColor = '#ffff00'; ctx.shadowBlur = 20;
+          // Thick blurred pass for glow (replaces shadowBlur)
+          ctx.globalAlpha = 0.35;
+          ctx.strokeStyle = '#ffff00'; ctx.lineWidth = 8;
+          ctx.beginPath(); ctx.moveTo(ptx-6, pty+6); ctx.lineTo(ptx, pty-2); ctx.lineTo(ptx+3, pty); ctx.lineTo(ptx+8, pty-7);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
           ctx.strokeStyle = '#ffe000'; ctx.lineWidth = 3;
           ctx.beginPath(); ctx.moveTo(ptx-6, pty+6); ctx.lineTo(ptx, pty-2); ctx.lineTo(ptx+3, pty); ctx.lineTo(ptx+8, pty-7);
           ctx.stroke();
           ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
           ctx.beginPath(); ctx.moveTo(ptx-6, pty+6); ctx.lineTo(ptx, pty-2); ctx.lineTo(ptx+3, pty); ctx.lineTo(ptx+8, pty-7);
           ctx.stroke();
-          if (frameIdx % 2 === 0) fortParticles.push({ x:ptx, y:pty, vx:(Math.random()-0.5)*3, vy:(Math.random()-0.5)*3, life:0.4, decay:0.08, size:1+Math.random()*2, color:`hsl(55,100%,70%)` });
+          if (frameIdx % 2 === 0 && fortParticles.length < FORT_PARTICLE_CAP) fortParticles.push({ x:ptx, y:pty, vx:(Math.random()-0.5)*3, vy:(Math.random()-0.5)*3, life:0.4, decay:0.08, size:1+Math.random()*2, color:`hsl(55,100%,70%)` });
 
         } else { // spirit
-          ctx.shadowColor = '#b388ff'; ctx.shadowBlur = 18;
-          const gr = ctx.createRadialGradient(ptx,pty,0,ptx,pty,7);
-          gr.addColorStop(0,'rgba(255,255,255,0.9)'); gr.addColorStop(0.5,'rgba(180,120,255,0.7)'); gr.addColorStop(1,'rgba(100,60,200,0)');
+          const gr = ctx.createRadialGradient(ptx,pty,0,ptx,pty,12);
+          gr.addColorStop(0,'rgba(255,255,255,0.9)'); gr.addColorStop(0.35,'rgba(180,120,255,0.7)'); gr.addColorStop(0.6,'rgba(140,80,240,0.3)'); gr.addColorStop(1,'rgba(100,60,200,0)');
           ctx.fillStyle = gr;
-          ctx.beginPath(); ctx.arc(ptx, pty, 7, 0, Math.PI*2); ctx.fill();
-          if (frameIdx % 3 === 0) {
+          ctx.beginPath(); ctx.arc(ptx, pty, 12, 0, Math.PI*2); ctx.fill();
+          if (frameIdx % 3 === 0 && fortParticles.length < FORT_PARTICLE_CAP) {
             const sa = Math.random()*Math.PI*2, sd = 4+Math.random()*4;
             fortParticles.push({ x:ptx+Math.cos(sa)*sd, y:pty+Math.sin(sa)*sd, vx:Math.cos(sa)*0.5, vy:Math.sin(sa)*0.5, life:0.7, decay:0.04, size:1.5, color:`hsl(${260+Math.random()*40},80%,70%)` });
           }
@@ -283,7 +292,7 @@ function startFortAnimation(msg, callback) {
                 fortCam.targetX = ph.impactX;
                 fortCam.targetY = ph.impactY;
                 // 작은 지면 충격파 파티클 (아래로 쏟아지는 느낌)
-                for (let k = 0; k < 8; k++) {
+                for (let k = 0; k < 8 && fortParticles.length < FORT_PARTICLE_CAP; k++) {
                   fortParticles.push({
                     x: ph.impactX + (Math.random() - 0.5) * 12,
                     y: ph.impactY - Math.random() * 4,
