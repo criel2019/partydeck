@@ -228,6 +228,7 @@ body {
   background: linear-gradient(135deg, #1a1a3e 0%, #0d2137 100%);
   border: 1px solid rgba(0,229,255,0.25);
   flex-shrink: 0;
+  overflow: hidden;
 }
 .pwa-install-banner.pwa-visible {
   display: block !important;
@@ -242,21 +243,8 @@ body {
 .pwa-install-content {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  position: relative;
-  z-index: 1;
-}
-
-.pwa-install-icon {
-  font-size: 32px;
-  flex-shrink: 0;
-  animation: pwaBounce 2s ease-in-out infinite;
-}
-
-@keyframes pwaBounce {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-4px); }
+  gap: 8px;
+  padding: 12px;
 }
 
 .pwa-install-text {
@@ -266,32 +254,31 @@ body {
 
 .pwa-install-title {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   color: #fff;
-  letter-spacing: -0.3px;
   line-height: 1.3;
 }
 
 .pwa-install-desc {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-dim);
   margin-top: 2px;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
 .pwa-install-btn {
   flex-shrink: 0;
-  padding: 8px 18px;
+  padding: 7px 14px;
   border: none;
-  border-radius: 20px;
+  border-radius: 16px;
   background: linear-gradient(135deg, var(--accent2), #00b8d4);
   color: var(--bg-dark);
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 15px;
-  letter-spacing: 1px;
+  font-size: 13px;
+  letter-spacing: 0.5px;
   cursor: pointer;
   transition: all 0.15s;
-  box-shadow: 0 2px 12px rgba(0,229,255,0.35);
+  box-shadow: 0 2px 8px rgba(0,229,255,0.3);
 }
 
 .pwa-install-btn:active {
@@ -300,18 +287,17 @@ body {
 
 .pwa-install-close {
   flex-shrink: 0;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border: none;
   border-radius: 50%;
   background: rgba(255,255,255,0.08);
   color: var(--text-dim);
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s;
 }
 
 .pwa-install-close:active {
