@@ -175,38 +175,35 @@ function _ensureFullscreenForGame() {
 // ===== PWA INSTALL PROMPT =====
 let _pwaInstallEvent = null;
 
-(function initPwaInstall() {
-  // Already running as installed app? Don't show anything
+// Capture beforeinstallprompt early (before DOMContentLoaded)
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  _pwaInstallEvent = e;
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Already installed as PWA? Skip
   if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) return;
 
-  // Capture Chrome/Android install prompt
-  window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
-    _pwaInstallEvent = e;
-    _showPwaBanner('android');
-  });
+  var isMobile = /Android|iPhone|iPad|iPod|webOS|Mobile/i.test(navigator.userAgent);
+  if (!isMobile) return;
 
-  // Detect iOS Safari
-  var isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  var isSafari = /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(navigator.userAgent);
+  // Show banner after 2s (gives page time to render)
+  setTimeout(function() {
+    var isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    var isSafari = /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(navigator.userAgent);
 
-  if (isIos && isSafari) {
-    // Show after a short delay so the page loads first
-    setTimeout(function() { _showPwaBanner('ios'); }, 1500);
-    return;
-  }
-
-  // Fallback: if no beforeinstallprompt fired after 3s on mobile, still offer
-  // (some browsers support install but don't fire the event)
-  if (/Android|webOS|Mobile/i.test(navigator.userAgent)) {
-    setTimeout(function() {
-      if (!_pwaInstallEvent) _showPwaBanner('generic');
-    }, 3000);
-  }
-})();
+    if (_pwaInstallEvent) {
+      _showPwaBanner('android');
+    } else if (isIos && isSafari) {
+      _showPwaBanner('ios');
+    } else {
+      _showPwaBanner('generic');
+    }
+  }, 2000);
+});
 
 function _showPwaBanner(type) {
-  // Check if user dismissed recently (12 hours cooldown)
   var dismissed = localStorage.getItem('pwa_dismiss_ts');
   if (dismissed && Date.now() - parseInt(dismissed) < 12 * 60 * 60 * 1000) return;
 
