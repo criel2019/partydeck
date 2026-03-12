@@ -222,7 +222,7 @@ function _showPwaBanner(type) {
     };
   }
 
-  banner.style.display = 'block';
+  banner.classList.add('pwa-visible');
 }
 
 function pwaInstallApp() {
@@ -230,7 +230,7 @@ function pwaInstallApp() {
     _pwaInstallEvent.prompt();
     _pwaInstallEvent.userChoice.then(function(result) {
       if (result.outcome === 'accepted') {
-        document.getElementById('pwaInstallBanner').style.display = 'none';
+        document.getElementById('pwaInstallBanner').classList.remove('pwa-visible');
         showToast('설치 완료! 홈 화면에서 실행하세요 🎲');
       }
       _pwaInstallEvent = null;
@@ -239,7 +239,7 @@ function pwaInstallApp() {
 }
 
 function pwaInstallDismiss() {
-  document.getElementById('pwaInstallBanner').style.display = 'none';
+  document.getElementById('pwaInstallBanner').classList.remove('pwa-visible');
   localStorage.setItem('pwa_dismiss_ts', String(Date.now()));
 }
 
