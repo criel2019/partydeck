@@ -435,6 +435,7 @@ function loadRabbit() {
       }
       if (!idleClip) idleClip = gltf.animations[0];
       var action = rabbitMixer.clipAction(idleClip);
+      action.timeScale = 0.6;
       action.play();
       console.log('[Tarot] 토끼 Idle 애니메이션 재생:', idleClip.name, 'duration:', idleClip.duration);
       // Debug: count skinned meshes
