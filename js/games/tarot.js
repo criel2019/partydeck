@@ -395,17 +395,15 @@ function loadRabbit() {
     rabbitModel = gltf.scene;
     rabbitModel.traverse(function(c) {
       if (c.isMesh && c.material) {
-        var old = c.material;
-        var nm = new THREE.MeshPhongMaterial({
-          map: old.map || null,
-          color: old.map ? 0xffffff : (old.color || new THREE.Color(0xcccccc)),
-          transparent: old.transparent || false,
-          opacity: old.opacity !== undefined ? old.opacity : 1,
-          side: old.side !== undefined ? old.side : THREE.FrontSide,
-          shininess: 15
-        });
-        if (nm.map) nm.map.encoding = THREE.LinearEncoding;
-        c.material = nm;
+        // SkinnedMesh: preserve original material, just enable skinning
+        if (c.isSkinnedMesh) {
+          if (Array.isArray(c.material)) {
+            c.material.forEach(function(m) { m.skinning = true; if (m.morphTargets !== undefined) m.morphTargets = true; });
+          } else {
+            c.material.skinning = true;
+            if (c.material.morphTargets !== undefined) c.material.morphTargets = true;
+          }
+        }
         c.castShadow = true;
       }
     });
@@ -424,7 +422,9 @@ function loadRabbit() {
     scene.add(rabbitModel);
 
     // Play Idle animation if available
+    console.log('[Tarot] 토끼 모델 로드 성공. 애니메이션 수:', gltf.animations ? gltf.animations.length : 0);
     if (gltf.animations && gltf.animations.length > 0) {
+      console.log('[Tarot] 애니메이션 목록:', gltf.animations.map(function(a){ return a.name; }));
       rabbitMixer = new THREE.AnimationMixer(rabbitModel);
       var idleClip = null;
       for (var i = 0; i < gltf.animations.length; i++) {
@@ -434,7 +434,13 @@ function loadRabbit() {
       if (!idleClip) idleClip = gltf.animations[0];
       var action = rabbitMixer.clipAction(idleClip);
       action.play();
-      console.log('[Tarot] 토끼 Idle 애니메이션 재생:', idleClip.name);
+      console.log('[Tarot] 토끼 Idle 애니메이션 재생:', idleClip.name, 'duration:', idleClip.duration);
+      // Debug: count skinned meshes
+      var skinnedCount = 0;
+      rabbitModel.traverse(function(c) { if (c.isSkinnedMesh) skinnedCount++; });
+      console.log('[Tarot] SkinnedMesh 수:', skinnedCount);
+    } else {
+      console.warn('[Tarot] 토끼 모델에 애니메이션 없음');
     }
   }, undefined, function(err) {
     console.warn('[Tarot] 토끼 모델 로드 실패:', err && err.message ? err.message : err);
@@ -546,6 +552,24 @@ function btAnim_surprised(dt) {
 function animRabbit(dt) {
   if (!rabbitModel) return;
   var s = rabbitScale;
+  // When mixer handles skeletal Idle, only apply gentle root motion
+  if (rabbitMixer) {
+    if (rbAnimState==='talking') {
+      rabbitModel.rotation.y = -0.3+Math.sin(animTime*5)*0.08;
+      rabbitModel.rotation.z = Math.sin(animTime*6.5)*0.06;
+      rabbitModel.position.y = rabbitBaseY+Math.abs(Math.sin(animTime*7))*0.02;
+    } else if (rbAnimState==='excited') {
+      var bounce = Math.abs(Math.sin(animTime*6))*0.06;
+      rabbitModel.position.y = rabbitBaseY+bounce;
+      rabbitModel.rotation.y = -0.3+Math.sin(animTime*4)*0.15;
+    } else {
+      // idle: let mixer handle it, only subtle root sway
+      rabbitModel.position.y = rabbitBaseY+Math.sin(animTime*1.5)*0.005;
+      rabbitModel.rotation.y = -0.3+Math.sin(animTime*0.4)*0.03;
+    }
+    return;
+  }
+  // Fallback: no mixer (manual animation)
   if (rbAnimState==='talking') {
     var sq = 1+Math.sin(animTime*8)*0.06;
     var st = 1+Math.sin(animTime*8+Math.PI)*0.04;
