@@ -87,27 +87,39 @@ var threeLoadedByTarot = false;
 function $t(id) { return document.getElementById(id); }
 
 /* ═══════ THREE.JS BOOTSTRAP ═══════ */
+// Tarot needs r155+ for proper GLB skeletal animation support.
+// Other games use r128, so we save/restore the old THREE on cleanup.
+var TAROT_THREE_VER = '0.155.0';
+var _tarotOldTHREE = null;
+
 function initThree(onReady) {
-  if (typeof THREE !== 'undefined' && THREE.GLTFLoader) { onReady(); return; }
-  if (typeof THREE !== 'undefined' && !THREE.GLTFLoader) {
-    var s2 = document.createElement('script');
-    s2.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
-    s2.onload = function() { onReady(); };
-    s2.onerror = function() { onReady(); };
-    document.head.appendChild(s2);
-    return;
+  var rev = (typeof THREE !== 'undefined' && THREE.REVISION) ? parseInt(THREE.REVISION) : 0;
+
+  // If THREE r150+ with GLTFLoader already loaded, reuse it
+  if (rev >= 150 && typeof THREE.GLTFLoader === 'function') { onReady(); return; }
+
+  // Save old THREE (r128 from another game) to restore in cleanup
+  if (typeof THREE !== 'undefined') {
+    _tarotOldTHREE = THREE;
+    window.THREE = undefined;
   }
+
   var s1 = document.createElement('script');
-  s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  s1.src = 'https://cdn.jsdelivr.net/npm/three@' + TAROT_THREE_VER + '/build/three.min.js';
   s1.onload = function() {
     threeLoadedByTarot = true;
     var s2 = document.createElement('script');
-    s2.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+    s2.src = 'https://cdn.jsdelivr.net/npm/three@' + TAROT_THREE_VER + '/examples/js/loaders/GLTFLoader.js';
     s2.onload = function() { onReady(); };
-    s2.onerror = function() { onReady(); };
+    s2.onerror = function() { console.error('[Tarot] GLTFLoader 로드 실패'); onReady(); };
     document.head.appendChild(s2);
   };
-  s1.onerror = function() { onReady(); };
+  s1.onerror = function() {
+    console.error('[Tarot] Three.js 로드 실패');
+    // Fallback: restore old THREE if available
+    if (_tarotOldTHREE) { window.THREE = _tarotOldTHREE; _tarotOldTHREE = null; }
+    onReady();
+  };
   document.head.appendChild(s1);
 }
 
@@ -393,19 +405,9 @@ function loadRabbit() {
   new THREE.GLTFLoader().load('Models/rabbit.glb', function(gltf) {
     if (!isSceneReady) return;
     rabbitModel = gltf.scene;
+    // r155+: skinning is automatic, keep original materials intact
     rabbitModel.traverse(function(c) {
-      if (c.isMesh && c.material) {
-        // SkinnedMesh: preserve original material, just enable skinning
-        if (c.isSkinnedMesh) {
-          if (Array.isArray(c.material)) {
-            c.material.forEach(function(m) { m.skinning = true; if (m.morphTargets !== undefined) m.morphTargets = true; });
-          } else {
-            c.material.skinning = true;
-            if (c.material.morphTargets !== undefined) c.material.morphTargets = true;
-          }
-        }
-        c.castShadow = true;
-      }
+      if (c.isMesh) c.castShadow = true;
     });
     var box = new THREE.Box3().setFromObject(rabbitModel);
     var sz = new THREE.Vector3(); box.getSize(sz);
@@ -1506,6 +1508,12 @@ function tarotCleanup() {
   el = $t('tarotCardSpotlight'); if(el) el.classList.remove('show');
   el = $t('tarotReadingPanel'); if(el) el.classList.remove('show');
   el = $t('tarotRestartBtn'); if(el) el.classList.remove('show');
+
+  // Restore old THREE (r128) for other games
+  if (_tarotOldTHREE) {
+    window.THREE = _tarotOldTHREE;
+    _tarotOldTHREE = null;
+  }
 }
 window.tarotCleanup = tarotCleanup;
 
