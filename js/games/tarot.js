@@ -20,6 +20,7 @@ var btShoulderL, btShoulderR;
 
 // Rabbit
 var rabbitModel = null, rabbitBaseY = 0, rabbitScale = 1;
+var rabbitMixer = null;
 
 // Character selection
 var selectedChar = null;
@@ -395,15 +396,17 @@ function loadRabbit() {
     rabbitModel.traverse(function(c) {
       if (c.isMesh && c.material) {
         var old = c.material;
-        var nm = new THREE.MeshBasicMaterial({
+        var nm = new THREE.MeshPhongMaterial({
           map: old.map || null,
           color: old.map ? 0xffffff : (old.color || new THREE.Color(0xcccccc)),
           transparent: old.transparent || false,
           opacity: old.opacity !== undefined ? old.opacity : 1,
-          side: old.side !== undefined ? old.side : THREE.FrontSide
+          side: old.side !== undefined ? old.side : THREE.FrontSide,
+          shininess: 15
         });
         if (nm.map) nm.map.encoding = THREE.LinearEncoding;
         c.material = nm;
+        c.castShadow = true;
       }
     });
     var box = new THREE.Box3().setFromObject(rabbitModel);
@@ -419,6 +422,20 @@ function loadRabbit() {
     rabbitBaseY = rabbitModel.position.y;
     rabbitModel.rotation.y = -0.3;
     scene.add(rabbitModel);
+
+    // Play Idle animation if available
+    if (gltf.animations && gltf.animations.length > 0) {
+      rabbitMixer = new THREE.AnimationMixer(rabbitModel);
+      var idleClip = null;
+      for (var i = 0; i < gltf.animations.length; i++) {
+        var clip = gltf.animations[i];
+        if (/idle/i.test(clip.name)) { idleClip = clip; break; }
+      }
+      if (!idleClip) idleClip = gltf.animations[0];
+      var action = rabbitMixer.clipAction(idleClip);
+      action.play();
+      console.log('[Tarot] 토끼 Idle 애니메이션 재생:', idleClip.name);
+    }
   }, undefined, function(err) {
     console.warn('[Tarot] 토끼 모델 로드 실패:', err && err.message ? err.message : err);
   });
@@ -578,6 +595,7 @@ function animate() {
   if (!isSceneReady) return;
   var dt = Math.min(clock.getDelta(), 0.05);
   animTime += dt;
+  if (rabbitMixer) rabbitMixer.update(dt);
   animBartender(dt);
   animRabbit(dt);
   animScene(dt);
@@ -1432,6 +1450,7 @@ function tarotCleanup() {
   btHandL = btHandR = null;
   btHandLPos = btHandRPos = btHandLRest = btHandRRest = null;
   btShoulderL = btShoulderR = null;
+  if (rabbitMixer) { rabbitMixer.stopAllAction(); rabbitMixer = null; }
   rabbitModel = null; crystalBall = null;
   candleFlames = []; bokehParticles = [];
   animTime = 0; idleVariant = 0; idleTimer = 0;
