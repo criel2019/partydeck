@@ -599,6 +599,34 @@
   50% { opacity: 0.9; }
 }
 
+/* ===== PEEK BUTTON (Team Mode) ===== */
+.sw-peek-btn {
+  position: absolute;
+  top: env(safe-area-inset-top, 8px);
+  right: 8px;
+  z-index: 20;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 0.2s, transform 0.15s;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sw-peek-btn:active {
+  transform: scale(0.95);
+  background: rgba(100,136,255,0.3);
+}
+
 /* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 430px) {
   .sw-drop-btn { width: 80px; height: 80px; font-size: 14px; }

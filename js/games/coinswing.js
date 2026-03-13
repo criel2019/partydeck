@@ -20,7 +20,7 @@ function loadCoinSwingThree() {
 
   function loadCoinSwingScene() {
     var s = document.createElement('script');
-    s.src = 'js/coinswing-three.js?v=20260312';
+    s.src = 'js/coinswing-three.js?v=20260312e';
     s.onload = onScriptsReady;
     s.onerror = function() { _swThreeLoaded = false; };
     document.head.appendChild(s);
@@ -85,6 +85,10 @@ var _swSwingRafId = null;
 var _swLastSwingTime = 0;
 var _swCurrentSwingX = 0;
 
+// CPU/AI state
+var _swCpuTimer = null;
+var _swCpuSwingRafId = null;
+
 // ===== SEEDED PRNG =====
 var _swSeed = 0;
 function swRand() {
@@ -135,9 +139,65 @@ function swCheckStability(coins) {
   return { stable: true, stability: 1 - worstRatio, collapseLevel: -1, direction: 0 };
 }
 
+// ===== TEAM HELPERS =====
+function _swGetPlayerTeam(playerId) {
+  if (!swState || !swState.teams) return null;
+  if (swState.teams.A.indexOf(playerId) !== -1) return 'A';
+  if (swState.teams.B.indexOf(playerId) !== -1) return 'B';
+  return null;
+}
+
+function _swGetMyTeam() {
+  return _swGetPlayerTeam(state.myId);
+}
+
+function _swGetTeamCoins(team) {
+  return team === 'A' ? swState.coinsA : swState.coinsB;
+}
+
+function _swGetTeamStability(team) {
+  return team === 'A' ? swState.stabilityA : swState.stabilityB;
+}
+
+// Team peek state
+var _swPeeking = false;
+var _swPeekTimer = null;
+
+function swPeekOpponent() {
+  if (!swState || swState.mode !== 'team' || _swPeeking) return;
+  _swPeeking = true;
+  var myTeam = _swGetMyTeam();
+  var oppTeam = myTeam === 'A' ? 'B' : 'A';
+  if (typeof swThreePeekTeam === 'function') swThreePeekTeam(oppTeam);
+
+  // Update peek button
+  var btn = document.getElementById('swPeekBtn');
+  if (btn) { btn.textContent = '돌아가기'; btn.onclick = swReturnFromPeek; }
+
+  // Auto-return after 3 seconds
+  if (_swPeekTimer) clearTimeout(_swPeekTimer);
+  _swPeekTimer = setTimeout(swReturnFromPeek, 3000);
+}
+
+function swReturnFromPeek() {
+  if (!_swPeeking) return;
+  _swPeeking = false;
+  if (_swPeekTimer) { clearTimeout(_swPeekTimer); _swPeekTimer = null; }
+  if (typeof swThreeReturnToMyTeam === 'function') swThreeReturnToMyTeam();
+
+  var btn = document.getElementById('swPeekBtn');
+  if (btn) { btn.textContent = '상대팀 보기'; btn.onclick = swPeekOpponent; }
+}
+
 // ===== SWING MECHANICS =====
 function _swUpdateSwingParams() {
-  var coinCount = swState.coins.length;
+  var coinCount;
+  if (swState.mode === 'team') {
+    // Use the larger stack's count for difficulty
+    coinCount = Math.max(swState.coinsA.length, swState.coinsB.length);
+  } else {
+    coinCount = swState.coins.length;
+  }
 
   // Speed increases with coins
   _swSwingSpeed = Math.min(SW_SWING_SPEED_MAX,
@@ -245,10 +305,23 @@ function startCoinSwing() {
   _swSeed = seed;
 
   var turnOrder = [];
+  var teamData = null;
   if (mode === 'team') {
-    var teamA = [state.players[0].id, state.players[1].id];
-    var teamB = [state.players[2].id, state.players[3].id];
-    turnOrder = [teamA[0], teamB[0], teamA[1], teamB[1]];
+    // Distribute players evenly into two teams
+    var half = Math.ceil(playerCount / 2);
+    var teamA = [];
+    var teamB = [];
+    for (var ti = 0; ti < playerCount; ti++) {
+      if (ti < half) teamA.push(state.players[ti].id);
+      else teamB.push(state.players[ti].id);
+    }
+    // Interleave turn order: A0, B0, A1, B1, ...
+    var maxLen = Math.max(teamA.length, teamB.length);
+    for (var tj = 0; tj < maxLen; tj++) {
+      if (tj < teamA.length) turnOrder.push(teamA[tj]);
+      if (tj < teamB.length) turnOrder.push(teamB[tj]);
+    }
+    teamData = { A: teamA, B: teamB };
   } else if (mode === 'solo') {
     turnOrder = [state.myId];
   } else {
@@ -266,10 +339,7 @@ function startCoinSwing() {
     round: 1,
     loser: null,
     loserTeam: null,
-    teams: mode === 'team' ? {
-      A: [state.players[0].id, state.players[1].id],
-      B: [state.players[2].id, state.players[3].id]
-    } : null,
+    teams: teamData,
     lastStability: 1.0,
     scores: {},
     totalScore: {},
@@ -278,6 +348,15 @@ function startCoinSwing() {
     danger: false,
     swingSpeed: SW_SWING_SPEED_BASE,
     swingPattern: 0,
+    // Team battle mode
+    coinsA: [],
+    coinsB: [],
+    stabilityA: 1.0,
+    stabilityB: 1.0,
+    dangerA: false,
+    dangerB: false,
+    streakA: 0,
+    streakB: 0,
   };
 
   state.players.forEach(function(p) {
@@ -302,6 +381,14 @@ function _swWaitForThreeAndStart() {
   if (typeof initCoinSwingThree === 'function' && document.getElementById('swThreeContainer')) {
     if (!document.getElementById('swThreeContainer').querySelector('canvas')) {
       initCoinSwingThree('swThreeContainer');
+    }
+    // Set up team mode in Three.js if needed
+    if (swState.mode === 'team' && typeof swThreeSetupTeamMode === 'function') {
+      var myTeam = _swGetMyTeam();
+      swThreeSetupTeamMode(myTeam || 'A');
+      // Show peek button
+      var peekBtn = document.getElementById('swPeekBtn');
+      if (peekBtn) peekBtn.style.display = 'block';
     }
     _swPlayIntro();
   } else {
@@ -343,6 +430,8 @@ function swBroadcastState() {
     type: 'sw-state',
     state: {
       coins: swState.coins,
+      coinsA: swState.coinsA,
+      coinsB: swState.coinsB,
       turnIndex: swState.turnIndex,
       currentPlayer: swState.currentPlayer,
       phase: swState.phase,
@@ -350,6 +439,12 @@ function swBroadcastState() {
       loser: swState.loser,
       loserTeam: swState.loserTeam,
       lastStability: swState.lastStability,
+      stabilityA: swState.stabilityA,
+      stabilityB: swState.stabilityB,
+      dangerA: swState.dangerA,
+      dangerB: swState.dangerB,
+      streakA: swState.streakA,
+      streakB: swState.streakB,
       scores: swState.scores,
       totalScore: swState.totalScore,
       streak: swState.streak,
@@ -366,6 +461,8 @@ function swHandleState(msg) {
   if (!swState) return;
   var s = msg.state;
   swState.coins = s.coins;
+  swState.coinsA = s.coinsA || [];
+  swState.coinsB = s.coinsB || [];
   swState.turnIndex = s.turnIndex;
   swState.currentPlayer = s.currentPlayer;
   swState.phase = s.phase;
@@ -373,6 +470,12 @@ function swHandleState(msg) {
   swState.loser = s.loser;
   swState.loserTeam = s.loserTeam;
   swState.lastStability = s.lastStability;
+  swState.stabilityA = s.stabilityA || 1.0;
+  swState.stabilityB = s.stabilityB || 1.0;
+  swState.dangerA = s.dangerA || false;
+  swState.dangerB = s.dangerB || false;
+  swState.streakA = s.streakA || 0;
+  swState.streakB = s.streakB || 0;
   swState.scores = s.scores;
   swState.totalScore = s.totalScore || s.scores;
   swState.streak = s.streak || 0;
@@ -381,7 +484,16 @@ function swHandleState(msg) {
   _swSwingSpeed = s.swingSpeed || SW_SWING_SPEED_BASE;
   _swSwingPattern = s.swingPattern || 0;
 
-  if (typeof swThreeSetCoins === 'function') {
+  // Set coins in Three.js
+  if (swState.mode === 'team' && typeof swThreeSetCoinsTeam === 'function') {
+    ['A', 'B'].forEach(function(t) {
+      var coins = t === 'A' ? swState.coinsA : swState.coinsB;
+      var positions = coins.map(function(c, i) {
+        return { x: c.x, y: SW_COIN_H / 2 + i * SW_COIN_H, z: 0, ry: c.ry || 0 };
+      });
+      swThreeSetCoinsTeam(t, positions);
+    });
+  } else if (typeof swThreeSetCoins === 'function') {
     var positions = swState.coins.map(function(c, i) {
       return { x: c.x, y: SW_COIN_H / 2 + i * SW_COIN_H, z: 0, ry: c.ry || 0 };
     });
@@ -401,9 +513,20 @@ function swHandleState(msg) {
 function swBeginTurn() {
   if (swState.phase !== 'playing') return;
   _swDropping = false;
+  _swStopCpuTurn();
   _swMyTurn = (swState.currentPlayer === state.myId);
 
   _swUpdateSwingParams();
+
+  // Team mode: set ghost to current player's team
+  if (swState.mode === 'team') {
+    var currentTeam = _swGetPlayerTeam(swState.currentPlayer);
+    if (typeof swThreeSetGhostTeam === 'function' && currentTeam) {
+      swThreeSetGhostTeam(currentTeam);
+    }
+    // Return from peek if we were peeking
+    if (_swPeeking) swReturnFromPeek();
+  }
 
   // Ghost coin
   if (typeof swThreeShowGhost === 'function') {
@@ -412,12 +535,20 @@ function swBeginTurn() {
   }
 
   // Wobble based on stability
+  var stability = swState.mode === 'team'
+    ? _swGetTeamStability(_swGetPlayerTeam(swState.currentPlayer) || 'A')
+    : swState.lastStability;
   if (typeof swThreeSetWobble === 'function') {
-    swThreeSetWobble(1 - swState.lastStability);
+    swThreeSetWobble(1 - stability);
   }
 
   // Danger state
-  swState.danger = swState.lastStability < 0.3;
+  if (swState.mode === 'team') {
+    var myTeam = _swGetMyTeam();
+    swState.danger = myTeam ? (_swGetTeamStability(myTeam) < 0.3) : false;
+  } else {
+    swState.danger = swState.lastStability < 0.3;
+  }
   if (typeof swThreeSetDanger === 'function') {
     swThreeSetDanger(swState.danger);
   }
@@ -429,6 +560,82 @@ function swBeginTurn() {
   if (_swMyTurn) {
     _swStartSwingLoop();
   }
+
+  // CPU/AI turn: host auto-drops after a delay
+  var isCpuTurn = swState.currentPlayer && swState.currentPlayer.toString().indexOf('ai-') === 0;
+  if (isCpuTurn && state.isHost) {
+    _swStartCpuTurn();
+  }
+}
+
+// ===== CPU/AI TURN =====
+function _swStartCpuTurn() {
+  _swStopCpuTurn();
+  if (!swState || swState.phase !== 'playing') return;
+  if (!state.isHost) return;
+
+  var cpuId = swState.currentPlayer;
+  if (!cpuId || cpuId.toString().indexOf('ai-') !== 0) return;
+
+  // CPU swing simulation: swing the ghost visually, then drop after a delay
+  var cpuSwingAngle = 0;
+  var cpuSwingStart = performance.now() / 1000;
+
+  // Determine CPU skill: how close to center they aim (0 = perfect, 1 = random)
+  var team = swState.mode === 'team' ? _swGetPlayerTeam(cpuId) : null;
+  var teamCoins = team ? _swGetTeamCoins(team) : swState.coins;
+  var coinCount = teamCoins.length;
+  // CPU gets worse as stack gets taller (more random)
+  var skill = Math.max(0.15, 0.7 - coinCount * 0.02);
+
+  // Pick a target X: aim somewhat near center with some randomness
+  var targetX = (Math.random() - 0.5) * _swSwingWidth * (1 - skill);
+
+  // Decide how long to wait before dropping (0.8 to 2.5 seconds)
+  var dropDelay = 800 + Math.random() * 1700;
+
+  // Show ghost swinging for CPU
+  if (typeof swThreeShowGhost === 'function') {
+    swThreeShowGhost(true);
+    if (typeof swThreeSetGhostX === 'function') swThreeSetGhostX(0);
+  }
+
+  // Animate swing visually for CPU
+  function cpuSwingStep() {
+    if (!swState || swState.phase !== 'playing') return;
+    if (swState.currentPlayer !== cpuId) return;
+    var now = performance.now() / 1000;
+    cpuSwingAngle = now - cpuSwingStart;
+    var x = _swGetSwingX(cpuSwingAngle);
+    if (typeof swThreeSetGhostX === 'function') swThreeSetGhostX(x);
+    _swCpuSwingRafId = requestAnimationFrame(cpuSwingStep);
+  }
+  _swCpuSwingRafId = requestAnimationFrame(cpuSwingStep);
+
+  // After delay, find X closest to target and drop
+  _swCpuTimer = setTimeout(function() {
+    if (!swState || swState.phase !== 'playing') return;
+    if (swState.currentPlayer !== cpuId) return;
+
+    // Stop CPU swing animation
+    if (_swCpuSwingRafId) { cancelAnimationFrame(_swCpuSwingRafId); _swCpuSwingRafId = null; }
+
+    // Use current swing position (approximate target)
+    var now = performance.now() / 1000;
+    var finalAngle = now - cpuSwingStart;
+    var dropX = _swGetSwingX(finalAngle);
+
+    // Nudge toward target for skill factor
+    dropX = dropX * (1 - skill * 0.5) + targetX * skill * 0.5;
+
+    if (typeof swThreeShowGhost === 'function') swThreeShowGhost(false);
+    swProcessDrop(cpuId, dropX);
+  }, dropDelay);
+}
+
+function _swStopCpuTurn() {
+  if (_swCpuTimer) { clearTimeout(_swCpuTimer); _swCpuTimer = null; }
+  if (_swCpuSwingRafId) { cancelAnimationFrame(_swCpuSwingRafId); _swCpuSwingRafId = null; }
 }
 
 // ===== DROP COIN =====
@@ -436,6 +643,7 @@ function swDropCoin() {
   if (!_swMyTurn || _swDropping || swState.phase !== 'playing') return;
   _swDropping = true;
   _swStopSwingLoop();
+  _swStopCpuTurn();
 
   var x = _swCurrentSwingX;
   if (typeof swThreeShowGhost === 'function') swThreeShowGhost(false);
@@ -452,11 +660,15 @@ function swProcessDrop(playerId, x) {
   if (!state.isHost) return;
   if (playerId !== swState.currentPlayer) return;
 
+  // Determine team
+  var team = swState.mode === 'team' ? _swGetPlayerTeam(playerId) : null;
+  var teamCoins = team ? _swGetTeamCoins(team) : swState.coins;
+
   // Clamp x
   x = Math.max(-SW_MAX_X, Math.min(SW_MAX_X, x));
 
   // Landing jitter
-  var coinCount = swState.coins.length;
+  var coinCount = teamCoins.length;
   var jitter = (swRand() - 0.5) * (SW_JITTER_BASE + coinCount * SW_JITTER_PER_COIN);
   x += jitter;
 
@@ -465,7 +677,7 @@ function swProcessDrop(playerId, x) {
 
   // Add coin
   var newCoin = { x: x, ry: swRand() * Math.PI * 2 };
-  var testCoins = swState.coins.slice();
+  var testCoins = teamCoins.slice();
   testCoins.push(newCoin);
 
   // Check stability
@@ -473,10 +685,20 @@ function swProcessDrop(playerId, x) {
 
   if (result.stable) {
     // === SUCCESS ===
-    swState.coins.push(newCoin);
-    swState.lastStability = result.stability;
-    swState.streak++;
-    if (swState.streak > swState.bestStreak) swState.bestStreak = swState.streak;
+    teamCoins.push(newCoin);
+
+    // Update stability
+    if (team) {
+      if (team === 'A') { swState.stabilityA = result.stability; }
+      else { swState.stabilityB = result.stability; }
+      // Team streak
+      if (team === 'A') { swState.streakA++; }
+      else { swState.streakB++; }
+    } else {
+      swState.lastStability = result.stability;
+      swState.streak++;
+      if (swState.streak > swState.bestStreak) swState.bestStreak = swState.streak;
+    }
 
     // Score calculation - reward center placement
     var absX = Math.abs(x);
@@ -499,7 +721,12 @@ function swProcessDrop(playerId, x) {
     _swUpdateSwingParams();
 
     // Danger check
-    swState.danger = result.stability < 0.3;
+    if (team) {
+      if (team === 'A') swState.dangerA = result.stability < 0.3;
+      else swState.dangerB = result.stability < 0.3;
+    } else {
+      swState.danger = result.stability < 0.3;
+    }
 
     // Advance turn
     swState.turnIndex = (swState.turnIndex + 1) % swState.turnOrder.length;
@@ -510,6 +737,7 @@ function swProcessDrop(playerId, x) {
       type: 'sw-drop-result',
       x: x,
       ry: newCoin.ry,
+      team: team,
       stable: true,
       stability: result.stability,
       nextPlayer: swState.currentPlayer,
@@ -525,10 +753,19 @@ function swProcessDrop(playerId, x) {
       scoreGained: finalScore,
       placement: placement,
       multiplier: multiplier,
+      // Team data
+      coinsA: swState.coinsA,
+      coinsB: swState.coinsB,
+      stabilityA: swState.stabilityA,
+      stabilityB: swState.stabilityB,
+      dangerA: swState.dangerA,
+      dangerB: swState.dangerB,
+      streakA: swState.streakA,
+      streakB: swState.streakB,
     });
 
     _swAnimateDrop(x, newCoin.ry, true, result.stability, null, {
-      score: finalScore, placement: placement, multiplier: multiplier,
+      score: finalScore, placement: placement, multiplier: multiplier, team: team,
     });
   } else {
     // === COLLAPSE! ===
@@ -536,20 +773,21 @@ function swProcessDrop(playerId, x) {
     swState.phase = 'gameover';
     swState.streak = 0;
 
-    if (swState.mode === 'team' && swState.teams) {
-      if (swState.teams.A.indexOf(playerId) !== -1) {
-        swState.loserTeam = 'A';
-      } else {
-        swState.loserTeam = 'B';
-      }
+    if (team) {
+      swState.loserTeam = team;
+      if (team === 'A') swState.streakA = 0;
+      else swState.streakB = 0;
+    } else if (swState.mode === 'team' && swState.teams) {
+      swState.loserTeam = swState.teams.A.indexOf(playerId) !== -1 ? 'A' : 'B';
     }
 
-    swState.coins.push(newCoin);
+    teamCoins.push(newCoin);
 
     broadcast({
       type: 'sw-drop-result',
       x: x,
       ry: newCoin.ry,
+      team: team,
       stable: false,
       collapseLevel: result.collapseLevel,
       direction: result.direction,
@@ -558,11 +796,14 @@ function swProcessDrop(playerId, x) {
       scores: swState.scores,
       totalScore: swState.totalScore,
       bestStreak: swState.bestStreak,
+      coinsA: swState.coinsA,
+      coinsB: swState.coinsB,
     });
 
     _swAnimateDrop(x, newCoin.ry, false, 0, {
       collapseLevel: result.collapseLevel,
       direction: result.direction,
+      team: team,
     }, null);
   }
 }
@@ -572,7 +813,18 @@ function swHandleDropResult(msg) {
   if (!swState) return;
 
   if (msg.stable) {
-    swState.coins.push({ x: msg.x, ry: msg.ry });
+    // Add coin to correct array
+    if (msg.team && swState.mode === 'team') {
+      _swGetTeamCoins(msg.team).push({ x: msg.x, ry: msg.ry });
+      if (msg.stabilityA !== undefined) swState.stabilityA = msg.stabilityA;
+      if (msg.stabilityB !== undefined) swState.stabilityB = msg.stabilityB;
+      if (msg.dangerA !== undefined) swState.dangerA = msg.dangerA;
+      if (msg.dangerB !== undefined) swState.dangerB = msg.dangerB;
+      if (msg.streakA !== undefined) swState.streakA = msg.streakA;
+      if (msg.streakB !== undefined) swState.streakB = msg.streakB;
+    } else {
+      swState.coins.push({ x: msg.x, ry: msg.ry });
+    }
     swState.lastStability = msg.stability;
     swState.currentPlayer = msg.nextPlayer;
     swState.turnIndex = msg.turnIndex;
@@ -587,9 +839,14 @@ function swHandleDropResult(msg) {
 
     _swAnimateDrop(msg.x, msg.ry, true, msg.stability, null, {
       score: msg.scoreGained, placement: msg.placement, multiplier: msg.multiplier,
+      team: msg.team,
     });
   } else {
-    swState.coins.push({ x: msg.x, ry: msg.ry });
+    if (msg.team && swState.mode === 'team') {
+      _swGetTeamCoins(msg.team).push({ x: msg.x, ry: msg.ry });
+    } else {
+      swState.coins.push({ x: msg.x, ry: msg.ry });
+    }
     swState.loser = msg.loser;
     swState.loserTeam = msg.loserTeam;
     swState.phase = 'gameover';
@@ -600,17 +857,30 @@ function swHandleDropResult(msg) {
     _swAnimateDrop(msg.x, msg.ry, false, 0, {
       collapseLevel: msg.collapseLevel,
       direction: msg.direction,
+      team: msg.team,
     }, null);
   }
 }
 
 // ===== ANIMATE DROP =====
 function _swAnimateDrop(x, ry, isStable, stability, collapseInfo, scoreInfo) {
-  var coinIndex = swState.coins.length - 1;
+  var team = (scoreInfo && scoreInfo.team) || (collapseInfo && collapseInfo.team) || null;
+  var teamCoins = team ? _swGetTeamCoins(team) : swState.coins;
+  var coinIndex = teamCoins.length - 1;
   var targetY = SW_COIN_H / 2 + coinIndex * SW_COIN_H;
 
-  if (typeof swThreeDropCoin === 'function') {
-    swThreeDropCoin(x, targetY, function() {
+  // Choose the right drop function
+  var doDrop;
+  if (team && typeof swThreeDropCoinTeam === 'function') {
+    doDrop = function(cb) { swThreeDropCoinTeam(team, x, targetY, cb); };
+  } else if (typeof swThreeDropCoin === 'function') {
+    doDrop = function(cb) { swThreeDropCoin(x, targetY, cb); };
+  } else {
+    doDrop = null;
+  }
+
+  if (doDrop) {
+    doDrop(function() {
       if (isStable) {
         if (typeof swThreeSetWobble === 'function') {
           swThreeSetWobble(1 - stability);
@@ -626,11 +896,6 @@ function _swAnimateDrop(x, ry, isStable, stability, collapseInfo, scoreInfo) {
           else navigator.vibrate(20);
         }
 
-        if (typeof swThreeSetCameraHeight === 'function') {
-          var stackH = coinIndex * SW_COIN_H;
-          swThreeSetCameraHeight(Math.max(1.8, stackH * 0.5 + 1.98));
-        }
-
         setTimeout(function() {
           swBeginTurn();
           swRenderHUD();
@@ -638,7 +903,12 @@ function _swAnimateDrop(x, ry, isStable, stability, collapseInfo, scoreInfo) {
       } else {
         if (navigator.vibrate) navigator.vibrate([100, 50, 200, 50, 300]);
 
-        if (typeof swThreeCollapse === 'function' && collapseInfo) {
+        // Choose right collapse function
+        if (team && typeof swThreeCollapseTeam === 'function' && collapseInfo) {
+          swThreeCollapseTeam(team, collapseInfo.collapseLevel, collapseInfo.direction, function() {
+            swShowResult();
+          });
+        } else if (typeof swThreeCollapse === 'function' && collapseInfo) {
           swThreeCollapse(collapseInfo.collapseLevel, collapseInfo.direction, function() {
             swShowResult();
           });
@@ -675,11 +945,18 @@ function _swShowScoreDOM(score, placement, multiplier) {
 // ===== SHOW RESULT =====
 function swShowResult() {
   _swStopSwingLoop();
+  _swStopCpuTurn();
   var overlay = document.getElementById('swResultOverlay');
   if (!overlay) return;
 
   var isSolo = swState.mode === 'solo';
-  var coinCount = swState.coins.length - 1;
+  var coinCount;
+  if (swState.mode === 'team') {
+    coinCount = Math.max(swState.coinsA.length, swState.coinsB.length) - 1;
+  } else {
+    coinCount = swState.coins.length - 1;
+  }
+  coinCount = Math.max(0, coinCount);
   var bestStreak = swState.bestStreak || 0;
 
   if (isSolo) {
@@ -721,7 +998,7 @@ function swShowResult() {
         '<div class="sw-result-emoji">🏆</div>' +
         '<div class="sw-result-title">' + escapeHTML(winnerTeamLabel) + ' 승리!</div>' +
         '<div class="sw-result-score">' + escapeHTML(winnerNames.join(' & ')) + '</div>' +
-        '<div class="sw-result-subtitle">' + escapeHTML(loserName) + '(' + escapeHTML(loserTeamLabel) + ')이 무너뜨림! (' + coinCount + '개)</div>' +
+        '<div class="sw-result-subtitle">' + escapeHTML(loserName) + '(' + escapeHTML(loserTeamLabel) + ')이 무너뜨림! (A팀 ' + swState.coinsA.length + '개 / B팀 ' + swState.coinsB.length + '개)</div>' +
         _swRenderScoreboard() +
         '<div class="sw-result-buttons">' +
           (state.isHost ? '<button class="sw-btn sw-btn-primary" onclick="restartCurrentGame()">다시하기</button>' : '') +
@@ -798,7 +1075,17 @@ function swRenderHUD() {
   }
 
   var countEl = document.getElementById('swCoinCount');
-  if (countEl) countEl.textContent = swState.coins.length + '개';
+  if (countEl) {
+    if (swState.mode === 'team') {
+      var myTeam = _swGetMyTeam();
+      var myCoins = myTeam ? _swGetTeamCoins(myTeam).length : 0;
+      var oppTeam = myTeam === 'A' ? 'B' : 'A';
+      var oppCoins = _swGetTeamCoins(oppTeam).length;
+      countEl.textContent = myCoins + ' vs ' + oppCoins;
+    } else {
+      countEl.textContent = swState.coins.length + '개';
+    }
+  }
 
   var roundEl = document.getElementById('swRoundNum');
   if (roundEl && swState.mode !== 'solo') {
@@ -807,7 +1094,12 @@ function swRenderHUD() {
 
   var meterEl = document.getElementById('swStabilityBar');
   if (meterEl) {
-    var pct = swState.lastStability * 100;
+    var stab = swState.lastStability;
+    if (swState.mode === 'team') {
+      var myT = _swGetMyTeam();
+      stab = myT ? _swGetTeamStability(myT) : 1.0;
+    }
+    var pct = stab * 100;
     meterEl.style.width = pct + '%';
     if (pct < 20) meterEl.style.background = '#ff2222';
     else if (pct < 40) meterEl.style.background = '#ff6600';
@@ -913,6 +1205,8 @@ function renderCoinSwingView(s) {
       mode: s.mode,
       seed: s.seed,
       coins: s.coins || [],
+      coinsA: s.coinsA || [],
+      coinsB: s.coinsB || [],
       turnOrder: s.turnOrder,
       turnIndex: s.turnIndex || 0,
       currentPlayer: s.currentPlayer || s.turnOrder[0],
@@ -922,6 +1216,12 @@ function renderCoinSwingView(s) {
       loserTeam: s.loserTeam || null,
       teams: s.teams || null,
       lastStability: s.lastStability || 1.0,
+      stabilityA: s.stabilityA || 1.0,
+      stabilityB: s.stabilityB || 1.0,
+      dangerA: s.dangerA || false,
+      dangerB: s.dangerB || false,
+      streakA: s.streakA || 0,
+      streakB: s.streakB || 0,
       scores: s.scores || {},
       totalScore: s.totalScore || s.scores || {},
       streak: s.streak || 0,
@@ -937,6 +1237,7 @@ function renderCoinSwingView(s) {
 // ===== CLEANUP =====
 function closeCoinSwingCleanup() {
   _swStopSwingLoop();
+  _swStopCpuTurn();
   _swTimers.forEach(function(t) { clearTimeout(t); clearInterval(t); });
   _swTimers = [];
   _swDropping = false;
@@ -946,6 +1247,8 @@ function closeCoinSwingCleanup() {
   _swSwingSpeed = SW_SWING_SPEED_BASE;
   _swSwingWidth = SW_SWING_WIDTH_BASE;
   _swCurrentSwingX = 0;
+  _swPeeking = false;
+  if (_swPeekTimer) { clearTimeout(_swPeekTimer); _swPeekTimer = null; }
 
   if (typeof destroyCoinSwingThree === 'function') destroyCoinSwingThree();
 

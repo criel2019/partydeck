@@ -37,6 +37,7 @@
 <link rel="stylesheet" href="css/games/kingstagram.css?v=20260305b">
 <link rel="stylesheet" href="css/games/coinstack.css?v=20260312b">
 <link rel="stylesheet" href="css/games/coinswing.css?v=20260312">
+<link rel="stylesheet" href="css/games/tarot.css?v=20260312">
 <link rel="stylesheet" href="css/games/mobile.css?v=20260305c">
 </head>
 <body>
@@ -2430,6 +2431,9 @@
       <div class="game-option" data-game="coinswing" onclick="selectGame(this)">
         <span class="game-emoji">🎯</span>코인 스윙
       </div>
+      <div class="game-option" data-game="tarot" onclick="selectGame(this)">
+        <span class="game-emoji">🔮</span>별빛 타로
+      </div>
     </div>
     <div class="game-info-panel" id="gameInfoPanel" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -2717,6 +2721,9 @@
   <!-- Guide text -->
   <div class="sw-guide" id="swGuideText">타이밍에 맞춰 버튼을 눌러 동전을 떨어뜨리세요!</div>
 
+  <!-- Peek Button (team mode only) -->
+  <button class="sw-peek-btn" id="swPeekBtn" style="display:none" onclick="swPeekOpponent()">상대팀 보기</button>
+
   <!-- Bottom Controls -->
   <div class="sw-bottom">
     <div class="sw-emoji-bar" id="swEmojiPanel">
@@ -2741,6 +2748,70 @@
 
   <!-- Result Overlay -->
   <div class="sw-result-overlay" id="swResultOverlay"></div>
+</div>
+
+<!-- ========== TAROT (별빛 타로) ========== -->
+<div class="screen" id="tarotGame">
+  <div id="tarotLoader"><div class="tarot-loader-orb"></div><div class="tarot-loader-text">Loading...</div></div>
+  <div class="tarot-stars" id="tarotStars"></div>
+  <canvas id="tarotC3d"></canvas>
+
+  <div id="tarotIntro">
+    <div class="tarot-curtain-rod"></div>
+    <div class="tarot-curtain-l" id="tarotCurtainL"></div>
+    <div class="tarot-curtain-r" id="tarotCurtainR"></div>
+    <div class="tarot-intro-center" id="tarotIntroCenter">
+      <div class="tarot-intro-title">✦ STARLIGHT TAROT ✦</div>
+      <div class="tarot-intro-sub">별빛이 당신의 길을 비춥니다</div>
+    </div>
+  </div>
+
+  <div id="tarotHud"><div class="tarot-hud-title">✦ Starlight Tarot ✦</div></div>
+
+  <div id="tarotCharSelect">
+    <div class="tarot-char-select-inner">
+      <div class="tarot-char-select-title">✦ CHOOSE YOUR READER ✦</div>
+      <div class="tarot-char-select-sub">당신의 이야기를 들어줄 점술사를 선택하세요</div>
+      <div class="tarot-char-select-options">
+        <div class="tarot-char-sel-btn" onclick="tarotSelectChar('bt')">
+          <span class="tarot-char-sel-emoji">🤵</span>
+          <span class="tarot-char-sel-name">Bartender</span>
+          <div class="tarot-char-sel-desc">차분하고 신비로운 바텐더</div>
+        </div>
+        <div class="tarot-char-sel-btn" onclick="tarotSelectChar('rb')">
+          <span class="tarot-char-sel-emoji">🐰</span>
+          <span class="tarot-char-sel-name">Rabbit</span>
+          <div class="tarot-char-sel-desc">장난기 넘치는 토끼 점술사</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tarotDialogue">
+    <div class="tarot-dlg-box" id="tarotDlgBox">
+      <div class="tarot-dlg-header">
+        <div class="tarot-dlg-icon bt" id="tarotDlgIcon">🤵</div>
+        <div class="tarot-dlg-name" id="tarotDlgName">바텐더</div>
+      </div>
+      <div class="tarot-dlg-text" id="tarotDlgText"></div>
+      <div class="tarot-dlg-indicator hidden" id="tarotDlgNext">▼</div>
+    </div>
+  </div>
+
+  <div id="tarotOptions"></div>
+  <div class="tarot-select-panel" id="tarotTopicSelect"></div>
+  <div class="tarot-select-panel" id="tarotSpreadSelect"></div>
+  <div id="tarotCardArea"></div>
+  <div id="tarotCardSpotlight"></div>
+
+  <div id="tarotReadingPanel">
+    <button class="tarot-reading-close" id="tarotReadingClose">✕</button>
+    <div class="tarot-reading-title">✦ READING ✦</div>
+    <div id="tarotReadingContent"></div>
+  </div>
+
+  <button id="tarotRestartBtn">🔮 다시 보기</button>
+  <button class="tarot-back-btn" onclick="leaveGame()">✕</button>
 </div>
 
 <!-- QR Code library -->
@@ -2789,8 +2860,9 @@
 <script src="js/games/drinkpoker.js?v=20260310c"></script>
 <script src="js/games/kingstagram.js?v=20260305b"></script>
 <script src="js/games/coinstack.js?v=20260312b"></script>
-<script src="js/games/coinswing.js?v=20260312b"></script>
-<script src="js/ai.js?v=20260312c"></script>
+<script src="js/games/coinswing.js?v=20260312d"></script>
+<script src="js/games/tarot.js?v=20260312"></script>
+<script src="js/ai.js?v=20260312d"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>
 </html>

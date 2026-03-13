@@ -11,7 +11,7 @@
   const BOUNCE = 0.25;
   const FRICTION = 0.92;
   const DROP_HEIGHT = 4;
-  const GHOST_Y_OFFSET = 1.2;
+  const GHOST_Y_OFFSET = 0.35;
   const PARTICLE_COUNT = 20;
   const MAX_PARTICLES = 60;
   const INTRO_SCATTER_R = 1.8;
@@ -51,6 +51,20 @@
 
   // Danger system
   let dangerActive = false;
+
+  // Team mode
+  let teamModeActive = false;
+  let myTeamSide = 'A';
+  let coinMeshesA = [];
+  let coinMeshesB = [];
+  let cameraBaseX = 0;
+  let cameraTargetX = 0;
+  let peekingOpponent = false;
+  let _activeDropTeam = null;
+  let _ghostTeam = 'A';
+  const TEAM_OFFSET = 4.5;
+  let teamCenters = { A: -TEAM_OFFSET, B: TEAM_OFFSET };
+  let teamTableObjects = [];
 
   // ===== PROCEDURAL TEXTURES =====
   function createWoodTexture(size) {
@@ -328,6 +342,128 @@
     }
   }
 
+  // ===== BUILD TABLE AT OFFSET =====
+  function _buildTableAt(offsetX) {
+    var objs = [];
+    var woodTex = createWoodTexture(512);
+    woodTex.repeat.set(2, 2);
+    var tableGeo = new THREE.CylinderGeometry(TABLE_R, TABLE_R + 0.1, TABLE_H, 64);
+    var tableMat = new THREE.MeshStandardMaterial({
+      map: woodTex, color: 0xffffff, roughness: 0.75, metalness: 0.05,
+    });
+    var t = new THREE.Mesh(tableGeo, tableMat);
+    t.position.set(offsetX, -TABLE_H / 2, 0);
+    t.receiveShadow = true;
+    scene.add(t);
+    objs.push(t);
+
+    var rimGeo = new THREE.TorusGeometry(TABLE_R, 0.05, 8, 64);
+    var rimMat = new THREE.MeshStandardMaterial({ color: 0x6688aa, roughness: 0.3, metalness: 0.8, envMap: envMap });
+    var rim = new THREE.Mesh(rimGeo, rimMat);
+    rim.rotation.x = Math.PI / 2;
+    rim.position.set(offsetX, 0.01, 0);
+    scene.add(rim);
+    objs.push(rim);
+
+    var feltTex = createFeltTexture(512);
+    var feltGeo = new THREE.CircleGeometry(TABLE_R - 0.05, 64);
+    var feltMat = new THREE.MeshStandardMaterial({ map: feltTex, roughness: 0.95, metalness: 0 });
+    var felt = new THREE.Mesh(feltGeo, feltMat);
+    felt.rotation.x = -Math.PI / 2;
+    felt.position.set(offsetX, 0.006, 0);
+    felt.receiveShadow = true;
+    scene.add(felt);
+    objs.push(felt);
+
+    // Scattered decoration coins
+    for (var i = 0; i < 5; i++) {
+      var angle = (i / 5) * Math.PI * 2 + Math.random() * 0.5;
+      var dist = TABLE_R + 0.4 + Math.random() * 1.0;
+      var decoCoin = createCoinMesh(false);
+      decoCoin.position.set(offsetX + Math.cos(angle) * dist, -TABLE_H + COIN_H/2, Math.sin(angle) * dist);
+      decoCoin.rotation.x = Math.PI / 2 + (Math.random() - 0.5) * 0.3;
+      decoCoin.rotation.z = Math.random() * Math.PI * 2;
+      decoCoin.scale.setScalar(0.5 + Math.random() * 0.3);
+      scene.add(decoCoin);
+      objs.push(decoCoin);
+    }
+
+    return objs;
+  }
+
+  // ===== TEAM MODE SETUP =====
+  window.swThreeSetupTeamMode = function(myTeam) {
+    teamModeActive = true;
+    myTeamSide = myTeam;
+    coinMeshesA = [];
+    coinMeshesB = [];
+
+    // Hide original center table
+    if (tableMesh) { tableMesh.visible = false; }
+    // Hide center felt/rim (children of scene near y=0)
+    scene.children.forEach(function(obj) {
+      if (obj === tableMesh) return;
+      if (obj.position && Math.abs(obj.position.x) < 0.1 && Math.abs(obj.position.z) < 0.1) {
+        if (obj.geometry && (obj.geometry.type === 'TorusGeometry' || obj.geometry.type === 'CircleGeometry')) {
+          obj.visible = false;
+        }
+      }
+    });
+
+    // Build two tables
+    var objsA = _buildTableAt(teamCenters.A);
+    var objsB = _buildTableAt(teamCenters.B);
+    teamTableObjects = objsA.concat(objsB);
+
+    // Add team labels above tables
+    _addTeamLabel('A팀', teamCenters.A, 0x4488ff);
+    _addTeamLabel('B팀', teamCenters.B, 0xff4488);
+
+    // Set camera to my team
+    var myCenterX = teamCenters[myTeam];
+    cameraTargetX = myCenterX;
+    cameraBaseX = myCenterX;
+    camera.position.x = myCenterX;
+    camera.position.set(myCenterX, 1.8, 4.5);
+    camera.lookAt(myCenterX, 0.4, 0);
+  };
+
+  function _addTeamLabel(text, centerX, color) {
+    var canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'rgba(0,0,0,0)';
+    ctx.fillRect(0, 0, 256, 64);
+    ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
+    ctx.font = 'bold 40px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 128, 32);
+    var tex = new THREE.CanvasTexture(canvas);
+    var mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.8 });
+    var sprite = new THREE.Sprite(mat);
+    sprite.position.set(centerX, 0.6, 2.5);
+    sprite.scale.set(1.6, 0.4, 1);
+    scene.add(sprite);
+    teamTableObjects.push(sprite);
+  }
+
+  // ===== TEAM HELPERS =====
+  function _getTeamCoins(team) {
+    if (!teamModeActive) return coinMeshes;
+    return team === 'A' ? coinMeshesA : coinMeshesB;
+  }
+
+  function _getMyTeamCoins() {
+    return _getTeamCoins(myTeamSide);
+  }
+
+  function _getActiveCoins() {
+    if (!teamModeActive) return coinMeshes;
+    return _activeDropTeam ? _getTeamCoins(_activeDropTeam) : _getMyTeamCoins();
+  }
+
   // ===== INIT =====
   window.initCoinSwingThree = function(containerId) {
     if (isInitialized) return;
@@ -430,10 +566,13 @@
     }
     scene = null; camera = null; renderer = null;
     coinMeshes = []; coinBodies = []; particles = [];
+    coinMeshesA = []; coinMeshesB = [];
     ghostMesh = null; tableMesh = null; spotLight = null;
-    introScatteredCoins = [];
+    introScatteredCoins = []; teamTableObjects = [];
     wobbleIntensity = 0; wobbleTarget = 0; wobbleTime = 0;
-    dangerActive = false;
+    dangerActive = false; teamModeActive = false;
+    cameraBaseX = 0; cameraTargetX = 0; peekingOpponent = false;
+    _activeDropTeam = null; _ghostTeam = 'A'; myTeamSide = 'A';
     isInitialized = false; introPlaying = false;
     dropAnimating = false; collapseAnimating = false;
     containerEl = null;
@@ -457,10 +596,17 @@
     _updateGhostPosition();
   };
 
+  window.swThreeSetGhostTeam = function(team) {
+    _ghostTeam = team;
+    _updateGhostPosition();
+  };
+
   function _updateGhostPosition() {
     if (!ghostMesh) return;
-    const stackH = coinMeshes.length * COIN_H;
-    ghostMesh.position.x = ghostX;
+    var coins = teamModeActive ? _getTeamCoins(_ghostTeam) : coinMeshes;
+    var stackH = coins.length * COIN_H;
+    var centerX = teamModeActive ? teamCenters[_ghostTeam] : 0;
+    ghostMesh.position.x = centerX + ghostX;
     ghostMesh.position.y = stackH + COIN_H / 2 + GHOST_Y_OFFSET;
     ghostMesh.position.z = 0;
   }
@@ -525,12 +671,15 @@
     if (!isInitialized || dropAnimating) return;
     dropAnimating = true;
     dropCallback = callback;
+    _activeDropTeam = null;
 
     // Hide ghost during drop
     if (ghostMesh) ghostMesh.visible = false;
 
     const mesh = createCoinMesh(false);
-    const startY = targetY + DROP_HEIGHT;
+    // Drop from ghost position (just above the stack) instead of high above
+    const stackH = coinMeshes.length * COIN_H;
+    const startY = stackH + COIN_H / 2 + GHOST_Y_OFFSET;
     mesh.position.set(x, startY, 0);
     mesh.rotation.y = Math.random() * Math.PI * 2;
     scene.add(mesh);
@@ -541,19 +690,57 @@
     };
   };
 
+  // Team mode drop
+  window.swThreeDropCoinTeam = function(team, x, targetY, callback) {
+    if (!isInitialized || dropAnimating) return;
+    dropAnimating = true;
+    dropCallback = callback;
+    _activeDropTeam = team;
+
+    if (ghostMesh) ghostMesh.visible = false;
+
+    var coins = _getTeamCoins(team);
+    var centerX = teamCenters[team];
+    var mesh = createCoinMesh(false);
+    var stackH = coins.length * COIN_H;
+    var startY = stackH + COIN_H / 2 + GHOST_Y_OFFSET;
+    mesh.position.set(centerX + x, startY, 0);
+    mesh.rotation.y = Math.random() * Math.PI * 2;
+    scene.add(mesh);
+
+    dropBody = {
+      mesh: mesh, x: centerX + x, y: startY, vy: 0,
+      targetY: targetY, settled: false, bounceCount: 0,
+    };
+  };
+
   function _settleDroppedCoin() {
     if (!dropBody) return;
     const mesh = dropBody.mesh;
     mesh.position.y = dropBody.targetY;
-    coinMeshes.push(mesh);
+
+    // Push to correct coin array
+    if (teamModeActive && _activeDropTeam) {
+      var teamCoins = _getTeamCoins(_activeDropTeam);
+      teamCoins.push(mesh);
+      var stackH = teamCoins.length * COIN_H;
+      shakeIntensity = 0.03 + teamCoins.length * 0.002;
+      // Only update camera height if this is my team's stack
+      if (_activeDropTeam === myTeamSide && !peekingOpponent) {
+        cameraTargetY = Math.max(1.8, stackH * 0.5 + GHOST_Y_OFFSET * 0.4 + 1.5);
+      }
+    } else {
+      coinMeshes.push(mesh);
+      shakeIntensity = 0.03 + coinMeshes.length * 0.002;
+      var stackH = coinMeshes.length * COIN_H;
+      cameraTargetY = Math.max(1.8, stackH * 0.5 + GHOST_Y_OFFSET * 0.4 + 1.5);
+    }
+
     dropBody = null;
     dropAnimating = false;
+    _activeDropTeam = null;
 
     _spawnImpactParticles(mesh.position.x, mesh.position.y, mesh.position.z);
-    shakeIntensity = 0.03 + coinMeshes.length * 0.002;
-    // Camera follows stack height so ghost coin stays visible
-    var stackH = coinMeshes.length * COIN_H;
-    cameraTargetY = Math.max(1.8, stackH * 0.5 + GHOST_Y_OFFSET * 0.4 + 1.5);
 
     if (dropCallback) {
       var cb = dropCallback;
@@ -623,6 +810,52 @@
     for (var j = 0; j < 30; j++) {
       _spawnImpactParticles(
         (Math.random() - 0.5) * 2, level * COIN_H, (Math.random() - 0.5) * 1
+      );
+    }
+  };
+
+  // Team mode collapse
+  window.swThreeCollapseTeam = function(team, collapseLevel, dirX, callback) {
+    if (collapseAnimating) return;
+    collapseAnimating = true;
+    collapseCallback = callback;
+
+    if (ghostMesh) ghostMesh.visible = false;
+
+    var teamCoins = _getTeamCoins(team);
+    var centerX = teamCenters[team];
+    coinBodies = [];
+    var level = Math.max(0, collapseLevel);
+
+    for (var i = level; i < teamCoins.length; i++) {
+      var mesh = teamCoins[i];
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach(function(m) { if (m.emissive) m.emissive.setRGB(0, 0, 0); });
+      }
+      var pushX = (dirX || 0) * (2 + Math.random() * 3);
+      var pushZ = (Math.random() - 0.5) * 4;
+      coinBodies.push({
+        mesh: mesh,
+        x: mesh.position.x, y: mesh.position.y, z: mesh.position.z,
+        vx: pushX + (Math.random() - 0.5) * 2,
+        vy: 2 + Math.random() * 4,
+        vz: pushZ,
+        rvx: (Math.random() - 0.5) * 10,
+        rvy: (Math.random() - 0.5) * 10,
+        rvz: (Math.random() - 0.5) * 10,
+        settled: false,
+      });
+    }
+
+    if (team === 'A') coinMeshesA = coinMeshesA.slice(0, level);
+    else coinMeshesB = coinMeshesB.slice(0, level);
+    shakeIntensity = 0.15;
+
+    // Move camera to see the collapse
+    cameraTargetX = centerX;
+    for (var j = 0; j < 30; j++) {
+      _spawnImpactParticles(
+        centerX + (Math.random() - 0.5) * 2, level * COIN_H, (Math.random() - 0.5) * 1
       );
     }
   };
@@ -924,6 +1157,72 @@
     cameraTargetY = Math.max(1.8, stackH * 0.5 + GHOST_Y_OFFSET * 0.4 + 1.5);
   };
 
+  // Team mode set coins
+  window.swThreeSetCoinsTeam = function(team, positions) {
+    var teamCoins = _getTeamCoins(team);
+    var centerX = teamCenters[team];
+    // Clear existing
+    for (var i = 0; i < teamCoins.length; i++) {
+      scene.remove(teamCoins[i]);
+      teamCoins[i].geometry.dispose();
+    }
+    var newCoins = [];
+    for (var j = 0; j < positions.length; j++) {
+      var p = positions[j];
+      var mesh = createCoinMesh(false);
+      mesh.position.set(centerX + p.x, p.y, p.z || 0);
+      mesh.rotation.y = p.ry || 0;
+      scene.add(mesh);
+      newCoins.push(mesh);
+    }
+    if (team === 'A') coinMeshesA = newCoins;
+    else coinMeshesB = newCoins;
+
+    // Update camera height based on my team's stack
+    if (team === myTeamSide && !peekingOpponent) {
+      var stackH = positions.length * COIN_H;
+      cameraTargetY = Math.max(1.8, stackH * 0.5 + GHOST_Y_OFFSET * 0.4 + 1.5);
+    }
+  };
+
+  // Team mode clear
+  window.swThreeClearTeam = function() {
+    [coinMeshesA, coinMeshesB].forEach(function(arr) {
+      for (var i = 0; i < arr.length; i++) {
+        scene.remove(arr[i]);
+        arr[i].geometry.dispose();
+      }
+    });
+    coinMeshesA = [];
+    coinMeshesB = [];
+    coinBodies = [];
+    cameraTargetY = 1.8;
+  };
+
+  // ===== PEEK OPPONENT =====
+  window.swThreePeekTeam = function(team, duration) {
+    if (!teamModeActive) return;
+    peekingOpponent = true;
+    var targetX = teamCenters[team];
+    cameraTargetX = targetX;
+    var teamCoins = _getTeamCoins(team);
+    var stackH = teamCoins.length * COIN_H;
+    cameraTargetY = Math.max(1.8, stackH * 0.5 + GHOST_Y_OFFSET * 0.4 + 1.5);
+  };
+
+  window.swThreeReturnToMyTeam = function() {
+    if (!teamModeActive) return;
+    peekingOpponent = false;
+    cameraTargetX = teamCenters[myTeamSide];
+    var myCoins = _getMyTeamCoins();
+    var stackH = myCoins.length * COIN_H;
+    cameraTargetY = Math.max(1.8, stackH * 0.5 + GHOST_Y_OFFSET * 0.4 + 1.5);
+  };
+
+  window.swThreeGetTeamCoinCount = function(team) {
+    return _getTeamCoins(team).length;
+  };
+
   // ===== PARTICLES =====
   function _spawnImpactParticles(x, y, z) {
     if (particles.length > MAX_PARTICLES) return;
@@ -1008,6 +1307,12 @@
     cameraBaseY += (cameraTargetY - cameraBaseY) * dt * 3;
     camera.position.y = cameraBaseY;
 
+    // X axis for team mode
+    if (teamModeActive) {
+      cameraBaseX += (cameraTargetX - cameraBaseX) * dt * 2.5;
+      camera.position.x = cameraBaseX;
+    }
+
     if (shakeIntensity > 0.001) {
       camera.position.x += (Math.random() - 0.5) * shakeIntensity;
       camera.position.y += (Math.random() - 0.5) * shakeIntensity * 0.5;
@@ -1015,13 +1320,16 @@
     }
 
     // Look at the middle of the stack so both base and ghost are visible
-    var stackH = coinMeshes.length * COIN_H;
+    var lookX = teamModeActive ? cameraBaseX : 0;
+    var activeCoins = teamModeActive ? (peekingOpponent ? _getTeamCoins(myTeamSide === 'A' ? 'B' : 'A') : _getMyTeamCoins()) : coinMeshes;
+    var stackH = activeCoins.length * COIN_H;
     var lookY = Math.max(0.4, stackH * 0.5);
-    camera.lookAt(0, lookY, 0);
+    camera.lookAt(lookX, lookY, 0);
 
     if (spotLight) {
+      spotLight.position.x = lookX;
       spotLight.position.y = cameraBaseY + 6;
-      spotLight.target.position.set(0, lookY, 0);
+      spotLight.target.position.set(lookX, lookY, 0);
     }
   }
 
@@ -1034,9 +1342,11 @@
   function _animateGhost(dt) {
     if (!ghostMesh || !ghostVisible) return;
     _ghostTime += dt;
-    var stackH = coinMeshes.length * COIN_H;
+    var coins = teamModeActive ? _getTeamCoins(_ghostTeam) : coinMeshes;
+    var stackH = coins.length * COIN_H;
+    var centerX = teamModeActive ? teamCenters[_ghostTeam] : 0;
     var ghostY = stackH + COIN_H / 2 + GHOST_Y_OFFSET + Math.sin(_ghostTime * 3) * 0.03;
-    ghostMesh.position.x = ghostX;
+    ghostMesh.position.x = centerX + ghostX;
     ghostMesh.position.y = ghostY;
     ghostMesh.rotation.y += dt * 0.8;
 

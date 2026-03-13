@@ -56,8 +56,8 @@ function loadPeerJS() {
 }
 
 // ===== CONSTANTS & STATE =====
-const SOLO_GAMES = ['jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil', 'tamagotchi', 'blackjack', 'idol', 'kingstagram', 'updown', 'coinstack', 'coinswing'];
-const SOLO_ONLY_GAMES = ['pupil', 'tamagotchi']; // 1인 전용 (다인 시 비활성화)
+const SOLO_GAMES = ['jewel', 'colorchain', 'lottery', 'yahtzee', 'slinkystairs', 'pupil', 'tamagotchi', 'blackjack', 'idol', 'kingstagram', 'updown', 'coinstack', 'coinswing', 'tarot'];
+const SOLO_ONLY_GAMES = ['pupil', 'tamagotchi', 'tarot']; // 1인 전용 (다인 시 비활성화)
 const AVATARS = ['😎','🤠','👻','🦊','🐱','🐼','🦁','🐸','🎃','🤖','👽','🦄'];
 const SUITS = ['♠','♥','♦','♣'];
 const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
@@ -313,6 +313,10 @@ function showScreen(id) {
     // Cleanup tamagotchi tick/save when leaving
     if(prevId === 'tamagotchiGame' && id !== 'tamagotchiGame') {
       if(typeof tamaCleanup === 'function') tamaCleanup();
+    }
+    // Cleanup tarot Three.js scene when leaving
+    if(prevId === 'tarotGame' && id !== 'tarotGame') {
+      if(typeof tarotCleanup === 'function') tarotCleanup();
     }
     // Orientation cleanup is handled below by entering the new mode
   }
@@ -1123,6 +1127,7 @@ function returnToLobby() {
   if(typeof cleanupAI === 'function') cleanupAI();
   if(typeof rrCleanup === 'function') rrCleanup();
   if(typeof lotteryCleanup === 'function') lotteryCleanup();
+  if(typeof tarotCleanup === 'function') tarotCleanup();
   showScreen('lobby');
   updateLobbyUI();
 }
@@ -1155,6 +1160,7 @@ function restartCurrentGame() {
   else if(g === 'kingstagram') { if(typeof closeKingstagramCleanup==='function') closeKingstagramCleanup(); startKingstagram(); }
   else if(g === 'coinstack') { if(typeof closeCoinStackCleanup==='function') closeCoinStackCleanup(); startCoinStack(); }
   else if(g === 'coinswing') { if(typeof closeCoinSwingCleanup==='function') closeCoinSwingCleanup(); startCoinSwing(); }
+  else if(g === 'tarot') { if(typeof tarotCleanup==='function') tarotCleanup(); startTarot(); }
   else { showToast('이 게임은 자동 재시작됩니다'); }
 }
 
@@ -1534,7 +1540,8 @@ const GAME_INFO = {
   drinkpoker:{ emoji:'🍶', name:'술피하기 포커', desc:'바퀴벌레 포커 변형! 술 카드를 상대에게 보내고, 거짓말로 속여라. 같은 종류 5장이 모이면 패배!', players:'2~6명', time:'10~20분', type:'블러프' },
   kingstagram:{ emoji:'👑', name:'킹스타그램', desc:'주사위를 굴려 6개 땅에 배치하고, 팔로워 카드를 획득하라! 4라운드 후 최다 팔로워가 승리.', players:'1~6명', time:'15~25분', type:'주사위' },
   coinstack:{ emoji:'🪙', name:'코인 드롭', desc:'3D 동전을 원하는 위치에 떨어뜨려 쌓아올려라! 무너뜨리면 패배. 바람과 이벤트를 극복하는 밸런스 게임.', players:'1~4명', time:'5~10분', type:'밸런스' },
-  coinswing:{ emoji:'🎯', name:'코인 스윙', desc:'좌우로 흔들리는 동전! 타이밍에 맞춰 떨어뜨려 쌓아올려라. 점점 빨라지는 스윙 속도에 집중력이 시험받는 아케이드 게임.', players:'1~4명', time:'5~10분', type:'아케이드' }
+  coinswing:{ emoji:'🎯', name:'코인 스윙', desc:'좌우로 흔들리는 동전! 타이밍에 맞춰 떨어뜨려 쌓아올려라. 점점 빨라지는 스윙 속도에 집중력이 시험받는 아케이드 게임.', players:'1~4명', time:'5~10분', type:'아케이드' },
+  tarot:{ emoji:'🔮', name:'별빛 타로', desc:'신비로운 바텐더 또는 토끼 점술사가 3D 공간에서 타로 카드를 읽어줍니다. 연애, 진로, 재물 등 고민에 대한 타로 리딩!', players:'1명 전용', time:'5~10분', type:'점술' }
 };
 
 function updateGameInfoPanel(game) {
@@ -1582,6 +1589,7 @@ function startGame() {
   else if(g === 'kingstagram') startKingstagram();
   else if(g === 'coinstack') startCoinStack();
   else if(g === 'coinswing') startCoinSwing();
+  else if(g === 'tarot') { if(state.players.length > 1) { showToast('🔮 별빛 타로는 1인 전용입니다'); return; } startTarot(); }
   else showToast('준비 중인 게임입니다');
 }
 
@@ -1684,6 +1692,9 @@ function handleGameStart(msg) {
   else if(msg.game === 'coinswing') {
     showScreen('coinswingGame');
     if(msg.state) renderCoinSwingView(msg.state);
+  }
+  else if(msg.game === 'tarot') {
+    startTarot();
   }
 }
 

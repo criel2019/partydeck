@@ -56,7 +56,7 @@ const AI_COUNTS = {
   drinkpoker: 2,
   kingstagram: 3,
   coinstack: 1,
-  coinswing: 0,
+  coinswing: 1,
 };
 
 // ========== ENTRY / EXIT ==========
@@ -510,6 +510,7 @@ function executeAIAction() {
     case 'drinkpoker': aiDrinkPoker(); break;
     case 'kingstagram': aiKingstagram(); break;
     case 'coinstack': aiCoinStack(); break;
+    case 'coinswing': aiCoinSwing(); break;
     // lottery: no AI needed
   }
 }
@@ -1803,5 +1804,47 @@ function aiCoinStack() {
     if (csState.currentPlayer !== currentId) return;
     csProcessDrop(currentId, x);
   }, 800 + Math.random() * 1000);
+  _aiTimers.push(t);
+}
+
+// ========== COINSWING AI ==========
+
+function aiCoinSwing() {
+  if (!swState || swState.phase !== 'playing') return;
+  if (!state.isHost) return;
+
+  var currentId = swState.currentPlayer;
+  if (!currentId || !currentId.startsWith('ai-')) return;
+
+  var coinCount = swState.coins.length;
+
+  // AI simulates swing timing — picks a position with some randomness
+  // Better AI aims closer to center as stack grows (higher risk awareness)
+  var spread = SW_MAX_X * 0.8;
+  if (coinCount > 5) spread *= 0.6;
+  if (coinCount > 10) spread *= 0.5;
+  if (coinCount > 15) spread *= 0.35;
+  if (coinCount > 20) spread *= 0.25;
+
+  var x;
+  if (coinCount > 0) {
+    // AI tries to place near center or near last coin
+    var lastX = swState.coins[coinCount - 1].x;
+    var centerBias = Math.random() < 0.6 ? 0 : lastX * 0.3;
+    x = centerBias + (Math.random() - 0.5) * spread;
+  } else {
+    x = (Math.random() - 0.5) * spread * 0.3;
+  }
+
+  x = Math.max(-SW_MAX_X, Math.min(SW_MAX_X, x));
+
+  // Random delay to simulate "timing" the swing
+  var delay = 1000 + Math.random() * 1500;
+
+  var t = setTimeout(function() {
+    if (!isAIActive() || !swState || swState.phase !== 'playing') return;
+    if (swState.currentPlayer !== currentId) return;
+    swProcessDrop(currentId, x);
+  }, delay);
   _aiTimers.push(t);
 }
