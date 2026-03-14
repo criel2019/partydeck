@@ -408,53 +408,86 @@ function updateArms() {
 }
 
 /* ═══════ RABBIT LOADER ═══════ */
+
 function loadRabbit() {
   if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
   new THREE.GLTFLoader().load('Models/rabbit.glb', function(gltf) {
     if (!isSceneReady) return;
     rabbitModel = gltf.scene;
-    // r155+: skinning is automatic, keep original materials intact
     rabbitModel.traverse(function(c) {
       if (c.isMesh) c.castShadow = true;
     });
+
+    // ── 1단계: 스케일 계산 ──
+    // 원본 모델 크기 측정 후 0.45 단위에 맞춤
     var box = new THREE.Box3().setFromObject(rabbitModel);
     var sz = new THREE.Vector3(); box.getSize(sz);
     var maxDim = Math.max(sz.x, sz.y, sz.z);
     rabbitScale = 0.45 / maxDim;
     rabbitModel.scale.set(rabbitScale, rabbitScale, rabbitScale);
-    box.setFromObject(rabbitModel);
-    var center = new THREE.Vector3(); box.getCenter(center);
-    var scaledHeight = box.max.y - box.min.y;
-    rabbitModel.position.x = RB_X - center.x;
-    rabbitModel.position.y = TABLE_Y + 0.04 + scaledHeight / 2 - center.y;
-    rabbitModel.position.z = RB_Z - center.z;
-    rabbitBaseY = rabbitModel.position.y;
-    // Face toward camera (camera is at z=3, rabbit at z~-0.3)
-    rabbitModel.rotation.y = 0;
-    scene.add(rabbitModel);
+    console.log('[Tarot] 토끼 원본 크기:', sz.x.toFixed(3), sz.y.toFixed(3), sz.z.toFixed(3), 'scale:', rabbitScale.toFixed(4));
 
-    // Play Idle animation if available
-    console.log('[Tarot] 토끼 모델 로드 성공. 애니메이션 수:', gltf.animations ? gltf.animations.length : 0);
+    // ── 2단계: 애니메이션을 위치 계산 전에 먼저 설정 ──
+    // SkinnedMesh는 본 애니메이션이 정점 위치를 변경하므로,
+    // 애니메이션 첫 프레임을 적용해야 정확한 바운딩 박스를 얻을 수 있음
     if (gltf.animations && gltf.animations.length > 0) {
       console.log('[Tarot] 애니메이션 목록:', gltf.animations.map(function(a){ return a.name; }));
       rabbitMixer = new THREE.AnimationMixer(rabbitModel);
       var idleClip = null;
       for (var i = 0; i < gltf.animations.length; i++) {
-        var clip = gltf.animations[i];
-        if (/idle/i.test(clip.name)) { idleClip = clip; break; }
+        if (/idle/i.test(gltf.animations[i].name)) { idleClip = gltf.animations[i]; break; }
       }
       if (!idleClip) idleClip = gltf.animations[0];
       var action = rabbitMixer.clipAction(idleClip);
       action.timeScale = 0.6;
       action.play();
-      console.log('[Tarot] 토끼 Idle 애니메이션 재생:', idleClip.name, 'duration:', idleClip.duration);
-      // Debug: count skinned meshes
-      var skinnedCount = 0;
-      rabbitModel.traverse(function(c) { if (c.isSkinnedMesh) skinnedCount++; });
-      console.log('[Tarot] SkinnedMesh 수:', skinnedCount);
+      // 첫 프레임 적용 → 본 position/rotation 업데이트
+      rabbitMixer.update(0);
+      console.log('[Tarot] 토끼 Idle 애니메이션 적용:', idleClip.name, 'duration:', idleClip.duration);
     } else {
       console.warn('[Tarot] 토끼 모델에 애니메이션 없음');
     }
+
+    // ── 3단계: 씬에 임시 추가 → 월드 행렬 완전 갱신 ──
+    // 씬 트리에 들어가야 모든 본/메시의 matrixWorld가 정확하게 계산됨
+    rabbitModel.position.set(0, 0, 0);
+    rabbitModel.rotation.set(0, 0, 0);
+    scene.add(rabbitModel);
+    rabbitModel.updateMatrixWorld(true);
+
+    // ── 4단계: 애니메이션 포즈 반영된 정확한 바운딩 박스 계산 ──
+    // Three.js r155+: setFromObject()가 SkinnedMesh.computeBoundingBox()를 호출하며,
+    // 이 메서드는 getVertexPosition()을 통해 본 변환이 적용된 실제 정점 위치를 사용함
+    box = new THREE.Box3().setFromObject(rabbitModel);
+    var scaledSz = new THREE.Vector3(); box.getSize(scaledSz);
+    console.log('[Tarot] 토끼 애니메이션 포즈 크기:', scaledSz.x.toFixed(4), scaledSz.y.toFixed(4), scaledSz.z.toFixed(4));
+    console.log('[Tarot] 토끼 바운딩 Y: min=' + box.min.y.toFixed(4), 'max=' + box.max.y.toFixed(4));
+
+    // ── 5단계: 테이블 윗면에 정확히 배치 ──
+    // 테이블: CylinderGeometry(r=1.5, h=0.08) at y=TABLE_Y
+    //   → 실린더 중심 y=0.4, 높이 0.08 → 윗면 = 0.4 + 0.04 = 0.44
+    var tableTop = TABLE_Y + 0.04;
+
+    // XZ: 모델 수평 중심을 목표 좌표에 맞춤
+    var centerX = (box.min.x + box.max.x) * 0.5;
+    var centerZ = (box.min.z + box.max.z) * 0.5;
+
+    // Y: position.y를 P로 설정하면 월드 바닥 = box.min.y + P
+    //    목표: box.min.y + P = tableTop → P = tableTop - box.min.y
+    rabbitModel.position.set(
+      RB_X - centerX,
+      tableTop - box.min.y,
+      RB_Z - centerZ
+    );
+    rabbitBaseY = rabbitModel.position.y;
+    rabbitModel.rotation.y = 0;
+
+    console.log('[Tarot] 토끼 최종 위치 y=' + rabbitBaseY.toFixed(4),
+      '(테이블 윗면=' + tableTop.toFixed(4) + ', box.min.y=' + box.min.y.toFixed(4) + ')');
+
+    var skinnedCount = 0;
+    rabbitModel.traverse(function(c) { if (c.isSkinnedMesh) skinnedCount++; });
+    console.log('[Tarot] SkinnedMesh 수:', skinnedCount);
   }, undefined, function(err) {
     console.warn('[Tarot] 토끼 모델 로드 실패:', err && err.message ? err.message : err);
   });
