@@ -108,6 +108,7 @@
       #dcHeader .dc-close{color:#f55}
       #dcHeader .dc-copy{color:#5af}
       #dcHeader .dc-clear{color:#fa5}
+      #dcHeader .dc-reload{color:#5f5}
       #dcFps{color:#0f0;font-weight:bold;margin-right:4px}
       #dcList{flex:1;overflow-y:auto;padding:6px 10px;-webkit-overflow-scrolling:touch}
       .dc-entry{padding:2px 0;border-bottom:1px solid #1a1a1a;word-break:break-all;white-space:pre-wrap}
@@ -134,6 +135,7 @@
       <div id="dcHeader">
         <span class="dc-title">Dev Console</span>
         <span id="dcFps">-- FPS</span>
+        <button class="dc-reload" id="dcReloadBtn">⟳ Hard</button>
         <button class="dc-clear" id="dcClearBtn">Clear</button>
         <button class="dc-copy" id="dcCopyBtn">Copy</button>
         <button class="dc-close" id="dcCloseBtn">✕</button>
@@ -154,6 +156,7 @@
     document.getElementById('dcCloseBtn').addEventListener('click', hideConsole);
     document.getElementById('dcCopyBtn').addEventListener('click', copyLogs);
     document.getElementById('dcClearBtn').addEventListener('click', clearLogs);
+    document.getElementById('dcReloadBtn').addEventListener('click', hardReload);
 
     // Filter buttons
     document.getElementById('dcFilters').addEventListener('click', function(e) {
@@ -222,6 +225,19 @@
   function clearLogs() {
     _logs.length = 0;
     if (_listEl) _listEl.innerHTML = '';
+  }
+
+  function hardReload() {
+    // 서비스 워커 캐시 + 브라우저 캐시 모두 무효화 후 새로고침
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        return Promise.all(names.map(function(n) { return caches.delete(n); }));
+      }).then(function() {
+        location.reload(true);
+      });
+    } else {
+      location.reload(true);
+    }
   }
 
   // Auto-create UI when DOM is ready
