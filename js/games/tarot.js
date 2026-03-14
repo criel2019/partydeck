@@ -21,8 +21,6 @@ var btShoulderL, btShoulderR;
 // Rabbit
 var rabbitModel = null, rabbitBaseY = 0, rabbitScale = 1;
 var rabbitMixer = null;
-var rabbitDebugInfo = {}; // 디버그 슬라이더용 진단 데이터
-var rabbitYOffset = 0;    // 슬라이더로 조절하는 Y 오프셋
 
 // Character selection
 var selectedChar = null;
@@ -476,32 +474,21 @@ function loadRabbit() {
 
     // Y: position.y를 P로 설정하면 월드 바닥 = box.min.y + P
     //    목표: box.min.y + P = tableTop → P = tableTop - box.min.y
+    // +0.21 보정: SkinnedMesh 바운딩 박스의 min.y가 본 애니메이션 포즈에서
+    //   실제 시각적 바닥(앉은 자세 엉덩이)보다 아래를 잡기 때문에 보정 필요
+    //   (모델 Z축 길이 6.184가 최대 → 0.45/6.184 스케일 → 수직 높이 부족)
+    var RABBIT_Y_OFFSET = 0.21;
     rabbitModel.position.set(
       RB_X - centerX,
-      tableTop - box.min.y,
+      tableTop - box.min.y + RABBIT_Y_OFFSET,
       RB_Z - centerZ
     );
     rabbitBaseY = rabbitModel.position.y;
     rabbitModel.rotation.y = 0;
 
     console.log('[Tarot] 토끼 최종 위치 y=' + rabbitBaseY.toFixed(4),
-      '(테이블 윗면=' + tableTop.toFixed(4) + ', box.min.y=' + box.min.y.toFixed(4) + ')');
-
-    var skinnedCount = 0;
-    rabbitModel.traverse(function(c) { if (c.isSkinnedMesh) skinnedCount++; });
-    console.log('[Tarot] SkinnedMesh 수:', skinnedCount);
-
-    // 디버그 슬라이더용 정보 저장
-    rabbitDebugInfo = {
-      tableTop: tableTop,
-      boxMinY: box.min.y,
-      boxMaxY: box.max.y,
-      baseY: rabbitBaseY,
-      scale: rabbitScale,
-      origSize: sz.x.toFixed(3) + ' × ' + sz.y.toFixed(3) + ' × ' + sz.z.toFixed(3),
-      scaledSize: scaledSz.x.toFixed(4) + ' × ' + scaledSz.y.toFixed(4) + ' × ' + scaledSz.z.toFixed(4)
-    };
-    updateRabbitDebugUI();
+      '(테이블 윗면=' + tableTop.toFixed(4) + ', box.min.y=' + box.min.y.toFixed(4) +
+      ', offset=' + RABBIT_Y_OFFSET + ')');
   }, undefined, function(err) {
     console.warn('[Tarot] 토끼 모델 로드 실패:', err && err.message ? err.message : err);
   });
@@ -644,9 +631,6 @@ function animRabbit(dt) {
     var bsc = s*(1+Math.sin(animTime*1.5)*0.01);
     rabbitModel.scale.set(s, bsc, s);
   }
-  // 디버그 UI 실시간 현재 Y 표시
-  var cyEl = document.getElementById('rdbgCurY');
-  if (cyEl) cyEl.textContent = rabbitModel.position.y.toFixed(4);
 }
 
 function animScene(dt) {
@@ -1563,14 +1547,6 @@ function tarotCleanup() {
   el = $t('tarotReadingPanel'); if(el) el.classList.remove('show');
   el = $t('tarotRestartBtn'); if(el) el.classList.remove('show');
 
-  // 디버그 슬라이더 초기화
-  rabbitYOffset = 0;
-  rabbitDebugInfo = {};
-  var rdbgSlider = document.getElementById('rdbgSlider');
-  if (rdbgSlider) rdbgSlider.value = 0;
-  var rdbgLabel = document.getElementById('rdbgOffsetVal');
-  if (rdbgLabel) rdbgLabel.textContent = '0.000';
-
   // Restore old THREE (r128) for other games
   if (_tarotOldTHREE) {
     window.THREE = _tarotOldTHREE;
@@ -1578,80 +1554,6 @@ function tarotCleanup() {
   }
 }
 window.tarotCleanup = tarotCleanup;
-
-/* ═══════ 토끼 높이 디버그 슬라이더 ═══════ */
-
-function updateRabbitDebugUI() {
-  var el = function(id){ return document.getElementById(id); };
-  if (!rabbitDebugInfo.tableTop && rabbitDebugInfo.tableTop !== 0) return;
-  var tt = el('rdbgTableTop'); if(tt) tt.textContent = rabbitDebugInfo.tableTop.toFixed(4);
-  var bm = el('rdbgBoxMinY'); if(bm) bm.textContent = rabbitDebugInfo.boxMinY.toFixed(4);
-  var by = el('rdbgBaseY'); if(by) by.textContent = rabbitDebugInfo.baseY.toFixed(4);
-  var sc = el('rdbgScale'); if(sc) sc.textContent = rabbitDebugInfo.scale.toFixed(4);
-  var os = el('rdbgOrigSize'); if(os) os.textContent = rabbitDebugInfo.origSize;
-  var cy = el('rdbgCurY');
-  if(cy && rabbitModel) cy.textContent = rabbitModel.position.y.toFixed(4);
-}
-
-function onRabbitSliderInput() {
-  var slider = document.getElementById('rdbgSlider');
-  if (!slider || !rabbitModel) return;
-  rabbitYOffset = parseFloat(slider.value);
-  var label = document.getElementById('rdbgOffsetVal');
-  if (label) label.textContent = rabbitYOffset.toFixed(3);
-  // baseY에 오프셋 적용
-  rabbitBaseY = rabbitDebugInfo.baseY + rabbitYOffset;
-  rabbitModel.position.y = rabbitBaseY;
-  updateRabbitDebugUI();
-}
-
-function toggleRabbitDebug() {
-  var body = document.getElementById('rdbgBody');
-  var btn = document.getElementById('rdbgToggleBtn');
-  if (!body) return;
-  var hidden = body.style.display === 'none';
-  body.style.display = hidden ? 'block' : 'none';
-  if (btn) btn.textContent = hidden ? '▼' : '▶';
-}
-window.toggleRabbitDebug = toggleRabbitDebug;
-
-function applyRabbitDebugY() {
-  var finalY = rabbitBaseY;
-  var offset = rabbitYOffset;
-  var msg = [
-    '═══ 토끼 높이 디버그 결과 ═══',
-    'Y 오프셋: ' + offset.toFixed(4),
-    '원래 baseY: ' + rabbitDebugInfo.baseY.toFixed(4),
-    '최종 baseY: ' + finalY.toFixed(4),
-    'tableTop: ' + rabbitDebugInfo.tableTop.toFixed(4),
-    'box.min.y: ' + rabbitDebugInfo.boxMinY.toFixed(4),
-    'box.max.y: ' + rabbitDebugInfo.boxMaxY.toFixed(4),
-    'scale: ' + rabbitDebugInfo.scale.toFixed(4),
-    '원본 크기: ' + rabbitDebugInfo.origSize,
-    '',
-    '→ 코드에 적용하려면:',
-    '  var tableTop = TABLE_Y + 0.04;',
-    '  rabbitModel.position.y = tableTop - box.min.y + ' + offset.toFixed(4) + ';',
-    '═══════════════════════════'
-  ];
-  console.log(msg.join('\n'));
-  alert('콘솔에 결과를 출력했습니다.\nY 오프셋: ' + offset.toFixed(4));
-}
-window.applyRabbitDebugY = applyRabbitDebugY;
-
-// 슬라이더 이벤트 바인딩 (DOM 준비 후)
-(function bindRabbitSlider() {
-  var slider = document.getElementById('rdbgSlider');
-  if (slider) {
-    slider.addEventListener('input', onRabbitSliderInput);
-  } else {
-    // DOM 아직 준비 안 됨 → 지연 바인딩
-    document.addEventListener('DOMContentLoaded', function() {
-      var s = document.getElementById('rdbgSlider');
-      if (s) s.addEventListener('input', onRabbitSliderInput);
-    });
-  }
-})();
 
 /* ═══════ ENTRY POINT (called by core.js) ═══════ */
 window.startTarot = function() {
