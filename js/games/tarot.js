@@ -425,7 +425,7 @@ function loadRabbit() {
     box.setFromObject(rabbitModel);
     var center = new THREE.Vector3(); box.getCenter(center);
     rabbitModel.position.x = RB_X - center.x;
-    rabbitModel.position.y = TABLE_Y + 0.12 - box.min.y;
+    rabbitModel.position.y = TABLE_Y + 0.30 - box.min.y;
     rabbitModel.position.z = RB_Z - center.z;
     rabbitBaseY = rabbitModel.position.y;
     // Face toward camera (camera is at z=3, rabbit at z~-0.3)
