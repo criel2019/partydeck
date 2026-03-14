@@ -1,0 +1,28 @@
+name: Deploy Notification
+
+on:
+  page_build:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    if: github.event.build.status == 'built'
+    steps:
+      - name: Discord 배포 완료 알림
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          PAGES_URL: https://criel2019.github.io/partydeck/
+        run: |
+          COMMIT_MSG=$(echo '${{ github.event.build.commit }}' | head -c 7)
+          curl -s -H "Content-Type: application/json" -d "{
+            \"embeds\": [{
+              \"title\": \"PartyDeck 배포 완료\",
+              \"description\": \"GitHub Pages 배포가 완료되었습니다.\",
+              \"color\": 3066993,
+              \"fields\": [
+                {\"name\": \"페이지\", \"value\": \"${PAGES_URL}\", \"inline\": false},
+                {\"name\": \"커밋\", \"value\": \"${COMMIT_MSG}\", \"inline\": true}
+              ],
+              \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+            }]
+          }" "$DISCORD_WEBHOOK"
