@@ -104,23 +104,31 @@ function initThree(onReady) {
     window.THREE = undefined;
   }
 
-  var s1 = document.createElement('script');
-  s1.src = 'https://cdn.jsdelivr.net/npm/three@' + TAROT_THREE_VER + '/build/three.min.js';
-  s1.onload = function() {
+  // r152+ removed examples/js/ from npm — use ES modules with import map
+  var cdnBase = 'https://cdn.jsdelivr.net/npm/three@' + TAROT_THREE_VER;
+  if (!document.querySelector('script[type="importmap"]')) {
+    var im = document.createElement('script');
+    im.type = 'importmap';
+    im.textContent = JSON.stringify({
+      imports: { 'three': cdnBase + '/build/three.module.js' }
+    });
+    document.head.appendChild(im);
+  }
+
+  Promise.all([
+    import(cdnBase + '/build/three.module.js'),
+    import(cdnBase + '/examples/jsm/loaders/GLTFLoader.js')
+  ]).then(function(mods) {
+    // Module namespace is sealed — copy to mutable object for GLTFLoader assignment
+    window.THREE = Object.assign({}, mods[0]);
+    THREE.GLTFLoader = mods[1].GLTFLoader;
     threeLoadedByTarot = true;
-    var s2 = document.createElement('script');
-    s2.src = 'https://cdn.jsdelivr.net/npm/three@' + TAROT_THREE_VER + '/examples/js/loaders/GLTFLoader.js';
-    s2.onload = function() { onReady(); };
-    s2.onerror = function() { console.error('[Tarot] GLTFLoader 로드 실패'); onReady(); };
-    document.head.appendChild(s2);
-  };
-  s1.onerror = function() {
-    console.error('[Tarot] Three.js 로드 실패');
-    // Fallback: restore old THREE if available
+    onReady();
+  }).catch(function(e) {
+    console.error('[Tarot] Three.js/GLTFLoader 로드 실패', e);
     if (_tarotOldTHREE) { window.THREE = _tarotOldTHREE; _tarotOldTHREE = null; }
     onReady();
-  };
-  document.head.appendChild(s1);
+  });
 }
 
 function setupScene() {
