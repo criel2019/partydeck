@@ -564,29 +564,35 @@ function btAnim_surprised(dt) {
 function animRabbit(dt) {
   if (!rabbitModel) return;
   var s = rabbitScale;
-  // No Y/Z rotation — side textures break when rotated
+  // No Y-axis rotation — side textures break when rotated around height axis
   if (rabbitMixer) {
     if (rbAnimState==='talking') {
+      rabbitModel.rotation.z = Math.sin(animTime*6.5)*0.06;
       rabbitModel.position.y = rabbitBaseY+Math.abs(Math.sin(animTime*7))*0.02;
     } else if (rbAnimState==='excited') {
       rabbitModel.position.y = rabbitBaseY+Math.abs(Math.sin(animTime*6))*0.06;
+      rabbitModel.rotation.z = Math.sin(animTime*5)*0.1;
     } else {
       rabbitModel.position.y = rabbitBaseY+Math.sin(animTime*1.5)*0.005;
+      rabbitModel.rotation.z = Math.sin(animTime*0.6)*0.015;
     }
     return;
   }
-  // Fallback: no mixer (manual animation) — only Y bounce + scale squash
+  // Fallback: no mixer (manual animation)
   if (rbAnimState==='talking') {
     var sq = 1+Math.sin(animTime*8)*0.06;
     var st = 1+Math.sin(animTime*8+Math.PI)*0.04;
     rabbitModel.scale.set(s*st, s*sq, s*st);
+    rabbitModel.rotation.z = Math.sin(animTime*6.5)*0.06;
     rabbitModel.position.y = rabbitBaseY+Math.abs(Math.sin(animTime*7))*0.02;
   } else if (rbAnimState==='excited') {
     rabbitModel.position.y = rabbitBaseY+Math.abs(Math.sin(animTime*6))*0.06;
+    rabbitModel.rotation.z = Math.sin(animTime*5)*0.1;
     rabbitModel.scale.set(s,s,s);
   } else {
     var bob = Math.sin(animTime*1.5)*0.008;
     rabbitModel.position.y = rabbitBaseY+bob;
+    rabbitModel.rotation.z = Math.sin(animTime*0.6)*0.015;
     var bsc = s*(1+Math.sin(animTime*1.5)*0.01);
     rabbitModel.scale.set(s, bsc, s);
   }
