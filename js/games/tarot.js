@@ -420,7 +420,7 @@ function loadRabbit() {
     var box = new THREE.Box3().setFromObject(rabbitModel);
     var sz = new THREE.Vector3(); box.getSize(sz);
     var maxDim = Math.max(sz.x, sz.y, sz.z);
-    rabbitScale = 0.9 / maxDim;
+    rabbitScale = 0.45 / maxDim;
     rabbitModel.scale.set(rabbitScale, rabbitScale, rabbitScale);
     box.setFromObject(rabbitModel);
     var center = new THREE.Vector3(); box.getCenter(center);
@@ -428,7 +428,8 @@ function loadRabbit() {
     rabbitModel.position.y = TABLE_Y + 0.04 - box.min.y;
     rabbitModel.position.z = RB_Z - center.z;
     rabbitBaseY = rabbitModel.position.y;
-    rabbitModel.rotation.y = -0.3;
+    // Face toward camera (camera is at z=3, rabbit at z~-0.3)
+    rabbitModel.rotation.y = 0;
     scene.add(rabbitModel);
 
     // Play Idle animation if available
@@ -566,17 +567,17 @@ function animRabbit(dt) {
   // When mixer handles skeletal Idle, only apply gentle root motion
   if (rabbitMixer) {
     if (rbAnimState==='talking') {
-      rabbitModel.rotation.y = -0.3+Math.sin(animTime*5)*0.08;
+      rabbitModel.rotation.y = Math.sin(animTime*5)*0.08;
       rabbitModel.rotation.z = Math.sin(animTime*6.5)*0.06;
       rabbitModel.position.y = rabbitBaseY+Math.abs(Math.sin(animTime*7))*0.02;
     } else if (rbAnimState==='excited') {
       var bounce = Math.abs(Math.sin(animTime*6))*0.06;
       rabbitModel.position.y = rabbitBaseY+bounce;
-      rabbitModel.rotation.y = -0.3+Math.sin(animTime*4)*0.15;
+      rabbitModel.rotation.y = Math.sin(animTime*4)*0.15;
     } else {
       // idle: let mixer handle it, only subtle root sway
       rabbitModel.position.y = rabbitBaseY+Math.sin(animTime*1.5)*0.005;
-      rabbitModel.rotation.y = -0.3+Math.sin(animTime*0.4)*0.03;
+      rabbitModel.rotation.y = Math.sin(animTime*0.4)*0.03;
     }
     return;
   }
@@ -585,19 +586,19 @@ function animRabbit(dt) {
     var sq = 1+Math.sin(animTime*8)*0.06;
     var st = 1+Math.sin(animTime*8+Math.PI)*0.04;
     rabbitModel.scale.set(s*st, s*sq, s*st);
-    rabbitModel.rotation.y = -0.3+Math.sin(animTime*5)*0.08;
+    rabbitModel.rotation.y = Math.sin(animTime*5)*0.08;
     rabbitModel.rotation.z = Math.sin(animTime*6.5)*0.06;
     rabbitModel.position.y = rabbitBaseY+Math.abs(Math.sin(animTime*7))*0.02;
   } else if (rbAnimState==='excited') {
     var bounce = Math.abs(Math.sin(animTime*6))*0.06;
     rabbitModel.position.y = rabbitBaseY+bounce;
-    rabbitModel.rotation.y = -0.3+Math.sin(animTime*4)*0.15;
+    rabbitModel.rotation.y = Math.sin(animTime*4)*0.15;
     rabbitModel.rotation.z = Math.sin(animTime*5)*0.1;
     rabbitModel.scale.set(s,s,s);
   } else {
     var bob = Math.sin(animTime*1.5)*0.008;
     rabbitModel.position.y = rabbitBaseY+bob;
-    rabbitModel.rotation.y = -0.3+Math.sin(animTime*0.4)*0.03;
+    rabbitModel.rotation.y = Math.sin(animTime*0.4)*0.03;
     rabbitModel.rotation.z = Math.sin(animTime*0.6)*0.015;
     var bsc = s*(1+Math.sin(animTime*1.5)*0.01);
     rabbitModel.scale.set(s, bsc, s);
