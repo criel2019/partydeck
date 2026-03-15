@@ -228,16 +228,28 @@
   }
 
   function hardReload() {
-    // 서비스 워커 캐시 + 브라우저 캐시 모두 무효화 후 새로고침
+    // 서비스 워커 + CacheStorage + CDN 캐시 모두 무효화 후 새로고침
+    var tasks = [];
     if ('caches' in window) {
-      caches.keys().then(function(names) {
+      tasks.push(caches.keys().then(function(names) {
         return Promise.all(names.map(function(n) { return caches.delete(n); }));
-      }).then(function() {
-        location.reload(true);
-      });
-    } else {
-      location.reload(true);
+      }));
     }
+    if (navigator.serviceWorker) {
+      tasks.push(navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(r) { r.unregister(); });
+      }));
+    }
+    // 모든 script/css를 cache:'reload'로 브라우저 캐시 갱신
+    document.querySelectorAll('script[src], link[rel="stylesheet"][href]').forEach(function(el) {
+      var url = el.src || el.href;
+      if (url) tasks.push(fetch(url, { cache: 'reload' }).catch(function() {}));
+    });
+    Promise.all(tasks).finally(function() {
+      // 타임스탬프 쿼리로 HTML CDN 캐시도 우회
+      var base = location.href.replace(/[?#].*/, '');
+      location.replace(base + '?_cb=' + Date.now());
+    });
   }
 
   // Auto-create UI when DOM is ready
