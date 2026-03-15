@@ -7,7 +7,22 @@ const IDOL_BG_IMAGES = [
   'img/games/idol/bg-3.jpg',
   'img/games/idol/bg-4.png',
   'img/games/idol/bg-5.png',
+  'img/games/idol/bg-6.jpg',   // 레코딩 스튜디오
+  'img/games/idol/bg-7.jpg',   // 연습실
+  'img/games/idol/bg-8.jpg',   // 기획사 사무실
+  'img/games/idol/bg-9.jpg',   // MV 세트장
+  'img/games/idol/bg-10.jpg',  // 야외 페스티벌
 ];
+
+// 특수 칸 타입별 전용 배경 이미지
+const IDOL_CELL_BG = {
+  start:  'img/games/idol/bg-start.jpg',   // 출발
+  police: 'img/games/idol/bg-police.jpg',  // 경찰서
+  free:   'img/games/idol/bg-free.jpg',    // 무료주차
+  stage:  'img/games/idol/bg-stage.jpg',   // 무대 뒤
+  tax:    'img/games/idol/bg-tax.jpg',     // 세금
+};
+
 let _idolBgIndex = -1;
 let _idolBgEl    = null; // 페이드 오버레이 div
 
@@ -83,6 +98,47 @@ function idolBgInit() {
   const top = document.getElementById('idolBgTop');
   if (top) { top.style.opacity = '0'; top.style.backgroundImage = 'none'; }
   setTimeout(idolBgNext, 150);
+}
+
+// URL 직접 지정으로 크로스페이드 (칸별 전용 배경용)
+function idolBgSetUrl(url) {
+  const base = _idolBgGetEl();
+  if (!base) return;
+  const game = document.getElementById('idolGame');
+  if (!game) return;
+
+  let top = document.getElementById('idolBgTop');
+  if (!top) {
+    top = document.createElement('div');
+    top.id = 'idolBgTop';
+    top.style.cssText = [
+      'position:absolute', 'inset:0', 'z-index:0',
+      'background-size:cover', 'background-position:center',
+      'opacity:0', 'transition:opacity 0.8s ease',
+      'pointer-events:none',
+    ].join(';');
+    base.after(top);
+  }
+
+  top.style.backgroundImage = `url('${url}')`;
+  top.style.opacity = '0';
+  void top.offsetWidth;
+  top.style.opacity = '1';
+
+  setTimeout(() => {
+    base.style.backgroundImage = `url('${url}')`;
+    top.style.opacity = '0';
+  }, 850);
+}
+
+// 착지한 칸에 맞는 배경 설정 (전용 배경 있으면 사용, 없으면 순환)
+function idolBgForCell(pos) {
+  const cell = BOARD_CELLS[pos];
+  if (cell && IDOL_CELL_BG[cell.type]) {
+    idolBgSetUrl(IDOL_CELL_BG[cell.type]);
+  } else {
+    idolBgNext();
+  }
 }
 
 // ─── FX 티어 시스템 (모바일 퍼포먼스 최적화) ───
@@ -825,7 +881,7 @@ function idolMovePlayer(p, steps, isDouble) {
       idolShowFavorToast(p.id, null, `출발 통과! 월급 +${IDOL_SALARY}만`);
     }
     p.pos = newPos;
-    idolBgNext(); // 이동 완료 → 배경 전환
+    idolBgForCell(newPos); // 이동 완료 → 칸에 맞는 배경 크로스페이드
     idolState.pendingAction = { type: 'landed', dice: idolState.pendingAction?.dice, pos: newPos, isDouble };
     broadcastIdolState();
     idolRenderAll();
