@@ -2358,98 +2358,83 @@
 
 </div>
 
-<!-- Game Catalog Overlay -->
-<div id="gameCatalogOverlay" class="game-catalog-overlay" style="display:none;" onclick="closeGameCatalog()">
-  <div class="game-catalog-container" onclick="event.stopPropagation()">
-    <div class="game-catalog-header">
-      <div style="font-size:18px;font-weight:900;color:#fff;">🎮 게임 목록</div>
-      <button onclick="closeGameCatalog()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;">✕</button>
+<!-- Game Carousel Overlay -->
+<div id="gameCatalogOverlay" class="gc-overlay" style="display:none;">
+  <div class="gc-backdrop" onclick="closeGameCatalog()"></div>
+  <div class="gc-panel" onclick="event.stopPropagation()">
+    <!-- Header -->
+    <div class="gc-header">
+      <button class="gc-close-btn" onclick="closeGameCatalog()">✕</button>
+      <div class="gc-title">게임 선택</div>
+      <button class="gc-grid-btn" onclick="gcToggleGridView()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="11" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+      </button>
     </div>
-    <div class="game-options" id="catalogGameOptions">
-      <div class="game-option selected" data-game="poker" onclick="selectGame(this)">
-        <span class="game-emoji">🃏</span>홀덤
+
+    <!-- Carousel Section -->
+    <div class="gc-carousel-area">
+      <!-- Navigation arrows (desktop) -->
+      <button class="gc-arrow gc-arrow-left" onclick="gcNavigate(-1)">&#8249;</button>
+      <button class="gc-arrow gc-arrow-right" onclick="gcNavigate(1)">&#8250;</button>
+
+      <!-- Carousel Track -->
+      <div class="gc-track-wrapper">
+        <div class="gc-track" id="gcTrack">
+          <!-- Cards are generated dynamically by JS -->
+        </div>
       </div>
-      <div class="game-option" data-game="mafia" onclick="selectGame(this)">
-        <span class="game-emoji">🕵️</span>마피아
+
+      <!-- Dot Indicators -->
+      <div class="gc-dots" id="gcDots"></div>
+    </div>
+
+    <!-- Video Preview -->
+    <div class="gc-video-area" id="gcVideoArea">
+      <video class="gc-video" id="gcVideo" muted playsinline loop preload="none"></video>
+      <div class="gc-video-placeholder" id="gcVideoPlaceholder">
+        <div class="gc-video-ph-icon">&#9654;</div>
+        <div class="gc-video-ph-text">게임을 선택하면 소개 영상이 재생됩니다</div>
       </div>
-      <div class="game-option" data-game="sutda" onclick="selectGame(this)">
-        <span class="game-emoji">🎴</span>섯다
-      </div>
-      <div class="game-option" data-game="quickdraw" onclick="selectGame(this)">
-        <span class="game-emoji">🤠</span>총잡이
-      </div>
-      <div class="game-option" data-game="roulette" onclick="selectGame(this)">
-        <span class="game-emoji">🔫</span>룰렛
-      </div>
-      <div class="game-option" data-game="lottery" onclick="selectGame(this)">
-        <span class="game-emoji">🎰</span>뽑기
-      </div>
-      <div class="game-option" data-game="ecard" onclick="selectGame(this)">
-        <span class="game-emoji">🕵️</span>형사와 강도
-      </div>
-      <div class="game-option" data-game="yahtzee" onclick="selectGame(this)">
-        <span class="game-emoji">🎲</span>야추
-      </div>
-      <div class="game-option" data-game="updown" onclick="selectGame(this)">
-        <span class="game-emoji">🃏</span>업다운
-      </div>
-      <div class="game-option" data-game="truth" onclick="selectGame(this)">
-        <span class="game-emoji">⭕</span>진실게임
-      </div>
-      <div class="game-option" data-game="fortress" onclick="selectGame(this)">
-        <span class="game-emoji">🏰</span>펫 대전
-      </div>
-      <div class="game-option" data-game="bombshot" onclick="selectGame(this)">
-        <span class="game-emoji">🍺</span>폭탄주
-      </div>
-      <div class="game-option" data-game="blackjack" onclick="selectGame(this)">
-        <span class="game-emoji">🃏</span>블랙잭
-      </div>
-      <div class="game-option" data-game="jewel" onclick="selectGame(this)">
-        <span class="game-emoji">💎</span>보석맞추기
-      </div>
-      <div class="game-option" data-game="colorchain" onclick="selectGame(this)">
-        <span class="game-emoji">🔗</span>컬러체인
-      </div>
-      <div class="game-option" data-game="slinkystairs" onclick="selectGame(this)">
-        <span class="game-emoji">🌀</span>슬링키
-      </div>
-      <div class="game-option" data-game="pupil" onclick="selectGame(this)">
-        <span class="game-emoji">👁</span>거짓말탐지기
-      </div>
-      <div class="game-option" data-game="idol" onclick="selectGame(this)">
-        <span class="game-emoji">🎤</span>아이돌
-      </div>
-      <div class="game-option" data-game="drinkpoker" onclick="selectGame(this)">
-        <span class="game-emoji">🍶</span>술피하기
-      </div>
-      <div class="game-option" data-game="kingstagram" onclick="selectGame(this)">
-        <span class="game-emoji">👑</span>킹스타그램
-      </div>
-      <div class="game-option" data-game="coinstack" onclick="selectGame(this)">
-        <span class="game-emoji">🪙</span>코인 드롭
-      </div>
-      <div class="game-option" data-game="coinswing" onclick="selectGame(this)">
-        <span class="game-emoji">🎯</span>코인 스윙
-      </div>
-      <div class="game-option" data-game="tarot" onclick="selectGame(this)">
-        <span class="game-emoji">🔮</span>별빛 타로
+      <div class="gc-video-loading" id="gcVideoLoading" style="display:none;">
+        <div class="gc-video-spinner"></div>
       </div>
     </div>
-    <div class="game-info-panel" id="gameInfoPanel" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <span id="gameInfoEmoji" style="font-size:24px;"></span>
-        <span id="gameInfoName" style="font-size:16px;font-weight:700;color:#fff;"></span>
+
+    <!-- Game Info -->
+    <div class="gc-info" id="gcInfo">
+      <div class="gc-info-top">
+        <span class="gc-info-emoji" id="gcInfoEmoji"></span>
+        <div class="gc-info-meta">
+          <div class="gc-info-name" id="gcInfoName"></div>
+          <div class="gc-info-tags">
+            <span class="gc-tag" id="gcInfoType"></span>
+            <span class="gc-tag" id="gcInfoPlayers"></span>
+            <span class="gc-tag" id="gcInfoTime"></span>
+          </div>
+        </div>
       </div>
-      <div id="gameInfoDesc" style="font-size:12px;color:#aaa;line-height:1.5;margin-bottom:6px;"></div>
-      <div style="display:flex;gap:12px;font-size:11px;color:#888;">
-        <span id="gameInfoPlayers"></span>
-        <span id="gameInfoTime"></span>
-        <span id="gameInfoType"></span>
+      <div class="gc-info-desc" id="gcInfoDesc"></div>
+    </div>
+
+    <!-- Action -->
+    <div class="gc-action">
+      <button class="btn btn-primary gc-select-btn" id="catalogSelectBtn" style="display:none;" onclick="confirmGameFromCatalog()">이 게임 선택</button>
+      <div id="catalogReadOnlyMsg" style="display:none;text-align:center;font-size:12px;color:#888;">호스트만 게임을 선택할 수 있습니다</div>
+    </div>
+  </div>
+
+  <!-- Grid View (All Games) -->
+  <div class="gc-grid-overlay" id="gcGridOverlay" style="display:none;" onclick="gcToggleGridView()">
+    <div class="gc-grid-container" onclick="event.stopPropagation()">
+      <div class="gc-grid-header">
+        <button class="gc-close-btn" onclick="gcToggleGridView()">&#8249; 돌아가기</button>
+        <div class="gc-title">전체 게임</div>
+        <div style="width:80px;"></div>
+      </div>
+      <div class="gc-grid" id="gcGrid">
+        <!-- Generated dynamically -->
       </div>
     </div>
-    <button class="btn btn-primary" id="catalogSelectBtn" style="display:none;width:100%;margin-top:12px;" onclick="confirmGameFromCatalog()">이 게임 선택</button>
-    <div id="catalogReadOnlyMsg" style="display:none;text-align:center;font-size:12px;color:#888;margin-top:10px;">호스트만 게임을 선택할 수 있습니다</div>
   </div>
 </div>
 
@@ -2819,6 +2804,7 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="js/dev-console.js?v=20260308a"></script>
 <script src="js/core.js?v=20260312c"></script>
+<script src="js/game-carousel.js?v=20260316"></script>
 <script src="js/games/poker.js?v=20260306b"></script>
 <script src="js/games/mafia.js?v=20260305b"></script>
 <script src="js/games/truth.js?v=20260305b"></script>

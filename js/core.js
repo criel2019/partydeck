@@ -1401,71 +1401,39 @@ function removeCPU() {
 }
 
 function selectGame(el) {
+  // Legacy compatibility - redirect to carousel if available
+  if (typeof gcGoTo === 'function' && el.dataset && el.dataset.index) {
+    gcGoTo(parseInt(el.dataset.index, 10));
+    return;
+  }
   if(el.classList.contains('disabled') || el.classList.contains('solo-only-disabled')) return;
-  document.querySelectorAll('#catalogGameOptions .game-option').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
-
   var game = el.dataset.game;
-
-  // Update game info panel (both host and non-host can see info)
-  updateGameInfoPanel(game);
-
   if (state.isHost) {
-    // 호스트: "이 게임 선택" 버튼 표시
-    var selectBtn = document.getElementById('catalogSelectBtn');
-    if (selectBtn) selectBtn.style.display = 'block';
-    var readOnlyMsg = document.getElementById('catalogReadOnlyMsg');
-    if (readOnlyMsg) readOnlyMsg.style.display = 'none';
-    // 카탈로그 내에서 임시 선택 저장 (확정은 confirmGameFromCatalog에서)
     state._catalogPendingGame = game;
-  } else {
-    // 비호스트: 읽기 전용 브라우징
-    var readOnlyMsg2 = document.getElementById('catalogReadOnlyMsg');
-    if (readOnlyMsg2) readOnlyMsg2.style.display = 'block';
-    var selectBtn2 = document.getElementById('catalogSelectBtn');
-    if (selectBtn2) selectBtn2.style.display = 'none';
   }
 }
 
 function openGameCatalog() {
   var ovl = document.getElementById('gameCatalogOverlay');
   if (!ovl) return;
+  ovl.style.display = '';
 
-  // 현재 선택된 게임 하이라이트
-  document.querySelectorAll('#catalogGameOptions .game-option').forEach(function(o) {
-    o.classList.toggle('selected', o.dataset.game === state.selectedGame);
-  });
-
-  // Solo-only 비활성화 처리
-  document.querySelectorAll('#catalogGameOptions .game-option').forEach(function(el) {
-    if (SOLO_ONLY_GAMES.includes(el.dataset.game)) {
-      if (state.players.length > 1) {
-        el.classList.add('solo-only-disabled');
-      } else {
-        el.classList.remove('solo-only-disabled');
-      }
-    }
-  });
-
-  // 호스트/비호스트 구분
-  var selectBtn = document.getElementById('catalogSelectBtn');
-  var readOnlyMsg = document.getElementById('catalogReadOnlyMsg');
-  if (state.isHost) {
-    if (selectBtn) selectBtn.style.display = 'block';
-    if (readOnlyMsg) readOnlyMsg.style.display = 'none';
-    state._catalogPendingGame = state.selectedGame;
-  } else {
-    if (selectBtn) selectBtn.style.display = 'none';
-    if (readOnlyMsg) readOnlyMsg.style.display = 'block';
+  // Initialize the carousel
+  if (typeof gcInitCarousel === 'function') {
+    gcInitCarousel();
   }
-
-  updateGameInfoPanel(state.selectedGame);
-  ovl.style.display = 'block';
 }
 
 function closeGameCatalog() {
   var ovl = document.getElementById('gameCatalogOverlay');
   if (ovl) ovl.style.display = 'none';
+  // Clean up carousel video
+  if (typeof gcDestroyCarousel === 'function') {
+    gcDestroyCarousel();
+  }
+  // Close grid view if open
+  var grid = document.getElementById('gcGridOverlay');
+  if (grid) grid.style.display = 'none';
 }
 
 function confirmGameFromCatalog() {
