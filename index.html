@@ -1711,16 +1711,24 @@
 
   <!-- Touch controls (mobile) -->
   <div class="cc-controls">
-    <div class="cc-ctrl-row">
-      <div class="cc-btn" data-action="left">&#9664;</div>
-      <div class="cc-btn" data-action="rotL">&#8634;</div>
-      <div class="cc-btn" data-action="down">&#9660;</div>
-      <div class="cc-btn" data-action="rotR">&#8635;</div>
-      <div class="cc-btn" data-action="right">&#9654;</div>
-    </div>
-    <div class="cc-ctrl-row">
-      <div class="cc-btn cc-btn-wide" data-action="drop">DROP</div>
-      <div class="cc-btn cc-btn-wide" data-action="hold">HOLD</div>
+    <div class="cc-ctrl-split">
+      <div class="cc-ctrl-zone cc-ctrl-left">
+        <div class="cc-ctrl-row">
+          <div class="cc-btn cc-btn-lg" data-action="left">&#9664;</div>
+          <div class="cc-btn cc-btn-lg" data-action="down">&#9660;</div>
+          <div class="cc-btn cc-btn-lg" data-action="right">&#9654;</div>
+        </div>
+      </div>
+      <div class="cc-ctrl-zone cc-ctrl-right">
+        <div class="cc-ctrl-row">
+          <div class="cc-btn cc-btn-lg" data-action="rotL">&#8634;</div>
+          <div class="cc-btn cc-btn-lg" data-action="rotR">&#8635;</div>
+        </div>
+        <div class="cc-ctrl-row">
+          <div class="cc-btn cc-btn-action" data-action="drop">DROP</div>
+          <div class="cc-btn cc-btn-action" data-action="hold">HOLD</div>
+        </div>
+      </div>
     </div>
   </div>
 

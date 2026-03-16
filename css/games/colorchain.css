@@ -200,43 +200,66 @@
   display: none;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px 12px;
+  padding: 4px 8px max(8px, env(safe-area-inset-bottom));
   width: 100%;
-  max-width: 400px;
   flex-shrink: 0;
+}
+.cc-ctrl-split {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+  gap: 12px;
+}
+.cc-ctrl-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cc-ctrl-left {
+  align-items: flex-start;
+}
+.cc-ctrl-right {
+  align-items: flex-end;
 }
 .cc-ctrl-row {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   justify-content: center;
 }
 .cc-btn {
-  width: 52px;
-  height: 52px;
   background: #1a1a2e;
   border: 1px solid #2a2a4e;
-  border-radius: 10px;
+  border-radius: 12px;
   color: #888;
-  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-  transition: background .1s;
+  transition: background .1s, transform .08s;
+  touch-action: manipulation;
 }
 .cc-btn:active {
   background: #2a2a4e;
   color: #ccc;
+  transform: scale(0.93);
 }
-.cc-btn-wide {
-  width: 90px;
+/* Large square buttons for directional & rotation */
+.cc-btn-lg {
+  width: 60px;
+  height: 60px;
+  font-size: 22px;
+}
+/* Action buttons (DROP / HOLD) */
+.cc-btn-action {
+  width: 60px;
+  height: 48px;
   font-family: 'Outfit', 'Oswald', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
 }
 
 .cc-controls-hint {
@@ -253,6 +276,11 @@
 @media (pointer: coarse) {
   .cc-controls { display: flex; }
   .cc-controls-hint { display: none; }
+}
+/* Larger phones – bigger buttons */
+@media (pointer: coarse) and (min-width: 380px) {
+  .cc-btn-lg { width: 68px; height: 68px; font-size: 24px; }
+  .cc-btn-action { width: 68px; height: 52px; font-size: 12px; }
 }
 
 /* ===== Countdown Overlay ===== */
@@ -540,13 +568,17 @@
   .cc-hud { padding: 4px 12px 2px; }
   .cc-hud-value { font-size: 18px; }
   .cc-play-area { padding: 2px 8px; gap: 6px; }
-  .cc-btn { width: 46px; height: 46px; font-size: 16px; }
-  .cc-btn-wide { width: 76px; font-size: 11px; }
+  .cc-btn-lg { width: 52px; height: 52px; font-size: 18px; }
+  .cc-btn-action { width: 52px; height: 42px; font-size: 10px; }
+  .cc-ctrl-row { gap: 6px; }
+  .cc-ctrl-split { gap: 8px; }
+  .cc-ctrl-zone { gap: 5px; }
 }
 
 @media (max-width: 340px) {
   .cc-side { width: 50px; }
   .cc-side-canvas { width: 50px; height: 50px; }
-  .cc-btn { width: 44px; height: 44px; }
-  .cc-btn-wide { width: 70px; }
+  .cc-btn-lg { width: 48px; height: 48px; font-size: 17px; }
+  .cc-btn-action { width: 48px; height: 40px; font-size: 10px; }
+  .cc-ctrl-row { gap: 5px; }
 }

@@ -709,8 +709,8 @@ function ccComputeSize() {
   var vw = window.innerWidth, vh = window.innerHeight;
   // Available width: viewport minus side panels (60*2), gaps (8*2), padding
   var aw = vw - 152;
-  // Available height: viewport minus HUD (~46), players bar (~30), controls (~130), padding
-  var ah = vh - 220;
+  // Available height: viewport minus HUD (~46), players bar (~30), controls (~150), padding
+  var ah = vh - 240;
   var cellW = Math.floor(aw / CC_COLS);
   var cellH = Math.floor(ah / CC_ROWS);
   CC_CELL = Math.max(28, Math.min(52, Math.min(cellW, cellH)));
