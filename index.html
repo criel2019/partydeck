@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#0a0a12">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="pd-build-id" content="20260312">
+<meta name="pd-build-id" content="20260324">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-F1KTJX3Z74"></script>
 <script>
@@ -20,7 +20,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&family=Oswald:wght@500;600;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/common.css?v=20260312d">
+<link rel="stylesheet" href="css/common.css?v=20260324b">
 <link rel="stylesheet" href="css/games/mafia.css?v=20260305b">
 <link rel="stylesheet" href="css/games/truth.css?v=20260305b">
 <link rel="stylesheet" href="css/games/quickdraw.css?v=20260305b">
@@ -71,6 +71,36 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="auth-gate-overlay" id="authGateOverlay" hidden>
+  <div class="auth-gate-panel" role="dialog" aria-modal="true" aria-labelledby="authGateTitle">
+    <div class="auth-gate-eyebrow" id="authGateEyebrow">LOGIN REQUIRED</div>
+    <div class="auth-gate-title" id="authGateTitle">팟플에 입장하려면 로그인해 주세요</div>
+    <div class="auth-gate-message" id="authGateMessage">방 만들기, 친구 방 참가, 펫 키우기, 상점 이용은 로그인 후에 안전하게 이어집니다.</div>
+
+    <div class="auth-gate-points">
+      <div class="auth-gate-point">
+        <strong>한 번 로그인</strong>
+        <span>같은 브라우저 세션에서 토큰을 자동 복구합니다.</span>
+      </div>
+      <div class="auth-gate-point">
+        <strong>바로 이어서 플레이</strong>
+        <span>누른 버튼이나 방 링크를 기억했다가 로그인 후 이어갑니다.</span>
+      </div>
+      <div class="auth-gate-point">
+        <strong>계정 기반 UX</strong>
+        <span>닉네임, 펫, 상점 같은 계정 상태를 로그인 기준으로 확장할 수 있습니다.</span>
+      </div>
+    </div>
+
+    <div class="auth-gate-actions">
+      <button class="btn btn-primary" id="authGateLoginBtn" type="button">로그인하고 시작하기</button>
+      <button class="btn btn-secondary" id="authGateDismissBtn" type="button">메인 로비 먼저 보기</button>
+    </div>
+
+    <div class="auth-gate-foot" id="authGateFoot">로그인 창을 닫아도 메인 로비에서 다시 시도할 수 있어요.</div>
+  </div>
+</div>
+
 <!-- LOADING -->
 <div class="screen active" id="loadingScreen">
   <div class="logo-icon">🎲</div>
@@ -99,8 +129,33 @@
     <div class="economy-bar">
       <div class="eco-item eco-gold"><span class="eco-icon">🪙</span><span class="eco-value" id="mmGold">0</span></div>
       <div class="eco-item eco-energy"><span class="eco-icon">⚡</span><span class="eco-value" id="mmEnergy">0/10</span><span class="eco-countdown" id="energyCountdown">MAX</span></div>
-      <div class="eco-item eco-diamond" onclick="openDiamondShop()" style="cursor:pointer;"><span class="eco-icon">💎</span><span class="eco-value" id="mmDiamond">0</span></div>
+      <div class="eco-item eco-diamond" id="diamondShopEntry" onclick="openDiamondShop()" style="cursor:pointer;"><span class="eco-icon">💎</span><span class="eco-value" id="mmDiamond">0</span></div>
     </div>
+  </div>
+
+  <div class="menu-card auth-card" id="authCard" data-auth-state="loading">
+    <div class="auth-card-header">
+      <div class="auth-chip" id="authChip">확인 중</div>
+      <div class="auth-copy">
+        <div class="auth-title">팟플 계정</div>
+        <div class="auth-subtitle" id="authSubtitle">멀티플레이, 상점, 계정 연동은 로그인 후 사용할 수 있어요.</div>
+      </div>
+    </div>
+
+    <div class="auth-account">
+      <div class="auth-avatar" id="authAvatar" aria-hidden="true">PD</div>
+      <div class="auth-account-copy">
+        <div class="auth-account-name" id="authName">로그인 상태를 확인하는 중이에요</div>
+        <div class="auth-account-meta" id="authMeta" role="status" aria-live="polite">세션이 있으면 자동으로 복구하고, 로그인 뒤에는 방 생성이나 입장을 이어서 진행합니다.</div>
+      </div>
+    </div>
+
+    <div class="auth-actions">
+      <button class="btn btn-primary auth-login-btn" id="authLoginBtn" type="button">로그인하고 시작하기</button>
+      <button class="btn btn-secondary auth-logout-btn" id="authLogoutBtn" type="button" hidden>로그아웃</button>
+    </div>
+
+    <div class="auth-note" id="authNote">로그인하지 않아도 로비는 볼 수 있지만, 실제 플레이와 상점 진입은 로그인 후에 이어집니다.</div>
   </div>
 
   <!-- PWA Install Banner -->
@@ -123,17 +178,17 @@
     </div>
   </div>
 
-  <button class="btn btn-primary" onclick="createRoom()">🏠 방 만들기</button>
+  <button class="btn btn-primary" id="createRoomBtn" onclick="createRoom()">🏠 방 만들기</button>
 
   <div class="join-row">
     <input class="input-field" id="joinCodeInput" placeholder="방 코드 입력" maxlength="6" style="text-transform:uppercase; text-align:center; letter-spacing:4px; font-weight:700; flex:1;">
-    <button class="btn btn-accent2 btn-small" onclick="joinRoom()" style="width:auto; padding:14px 20px;">참가</button>
+    <button class="btn btn-accent2 btn-small" id="joinRoomBtn" onclick="joinRoom()" style="width:auto; padding:14px 20px;">참가</button>
   </div>
 
   <button class="tama-menu-btn" id="tamaMenuBtn" onclick="tamaQuickAccess()">🥚 내 펫 키우기</button>
 
-  <button class="btn btn-accent2" onclick="startPracticeMode()" style="max-width:380px;">🤖 연습 모드 (AI 대전)</button>
-  <button class="btn" onclick="startFortressPvE()" style="max-width:380px;background:linear-gradient(135deg,#ff6b35,#ff2d78);color:#fff;border:none;font-weight:700;">⚔️ 펫 대전 원정 (PvE)</button>
+  <button class="btn btn-accent2" id="practiceModeBtn" onclick="startPracticeMode()" style="max-width:380px;">🤖 연습 모드 (AI 대전)</button>
+  <button class="btn" id="fortressPveBtn" onclick="startFortressPvE()" style="max-width:380px;background:linear-gradient(135deg,#ff6b35,#ff2d78);color:#fff;border:none;font-weight:700;">⚔️ 펫 대전 원정 (PvE)</button>
 
   <button class="btn btn-secondary" onclick="shareApp()" style="max-width:380px;">📱 앱 공유 (QR 코드)</button>
 
@@ -2874,7 +2929,8 @@
 <script src="js/games/coinswing.js?v=20260312d"></script>
 <script src="js/games/tarot.js?v=20260312"></script>
 <script src="js/ai.js?v=20260312d"></script>
+<script src="js/auth-client.js?v=20260324b"></script>
+<script src="js/auth.js?v=20260324b"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>
 </html>
-
