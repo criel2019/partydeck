@@ -9,20 +9,101 @@
   var PENDING_ACTION_KEY = 'partydeck.auth.pending-action.' + CLIENT_ID;
   var PENDING_ACTION_TTL_MS = 10 * 60 * 1000;
   var READY_TIMEOUT_MS = 15000;
+  var PUBLIC_AUTH_BASE_URL = 'https://118.219.60.216:3000';
+  var LAN_AUTH_BASE_URL = 'https://192.168.45.100:3000';
+  var AUTH_BASE_URL = PUBLIC_AUTH_BASE_URL;
 
-  function resolveAuthBaseUrl() {
-    if (
-      window.location.protocol === 'file:' ||
-      window.location.hostname === '127.0.0.1' ||
-      window.location.hostname === 'localhost'
-    ) {
-      return 'https://127.0.0.1:3000';
+  function isPrivateHostname(hostname) {
+    var value = String(hostname || '').trim().toLowerCase();
+    if (!value) {
+      return false;
     }
 
-    return 'https://118.219.60.216:3000';
+    return (
+      value === 'localhost' ||
+      value === '127.0.0.1' ||
+      value === '[::1]' ||
+      value === '::1' ||
+      /^10\./.test(value) ||
+      /^192\.168\./.test(value) ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(value) ||
+      /\.local$/.test(value)
+    );
   }
 
-  var AUTH_BASE_URL = resolveAuthBaseUrl();
+  function uniqueBaseUrls(values) {
+    return values.filter(function (value, index, items) {
+      return value && items.indexOf(value) === index;
+    });
+  }
+
+  function buildAuthBaseCandidates() {
+    var hostname = String(window.location.hostname || '').trim();
+
+    if (
+      window.location.protocol === 'file:' ||
+      hostname === '127.0.0.1' ||
+      hostname === 'localhost'
+    ) {
+      return ['https://127.0.0.1:3000'];
+    }
+
+    if (isPrivateHostname(hostname)) {
+      return uniqueBaseUrls([
+        'https://' + hostname + ':3000',
+        'https://127.0.0.1:3000',
+        LAN_AUTH_BASE_URL,
+        PUBLIC_AUTH_BASE_URL
+      ]);
+    }
+
+    return uniqueBaseUrls([
+      LAN_AUTH_BASE_URL,
+      PUBLIC_AUTH_BASE_URL
+    ]);
+  }
+
+  async function canReachAuthBaseUrl(baseUrl) {
+    if (typeof window.fetch !== 'function') {
+      return baseUrl === PUBLIC_AUTH_BASE_URL;
+    }
+
+    var abortController = typeof window.AbortController === 'function'
+      ? new window.AbortController()
+      : null;
+    var timeoutId = window.setTimeout(function () {
+      if (abortController) {
+        abortController.abort();
+      }
+    }, 1200);
+
+    try {
+      var response = await window.fetch(baseUrl + '/health/live', {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+        cache: 'no-store',
+        signal: abortController ? abortController.signal : undefined
+      });
+      return !!(response && response.ok);
+    } catch (_error) {
+      return false;
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
+
+  async function resolveAuthBaseUrl() {
+    var candidates = buildAuthBaseCandidates();
+
+    for (var i = 0; i < candidates.length; i += 1) {
+      if (await canReachAuthBaseUrl(candidates[i])) {
+        return candidates[i];
+      }
+    }
+
+    return candidates[0] || PUBLIC_AUTH_BASE_URL;
+  }
 
   var controller = {
     client: null,
@@ -841,6 +922,7 @@
 
     controller.launchIntent = detectLaunchIntent();
     controller.currentScreen = getActiveScreenId();
+    AUTH_BASE_URL = await resolveAuthBaseUrl();
     controller.client = window.PartyDeckAuth.createClient({
       authBaseUrl: AUTH_BASE_URL,
       clientId: CLIENT_ID,

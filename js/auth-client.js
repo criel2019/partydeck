@@ -25,6 +25,36 @@
     );
   }
 
+  function shouldPreferRedirectFlow() {
+    var ua = (window.navigator && window.navigator.userAgent) || '';
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua)) {
+      return true;
+    }
+
+    if (window.navigator && window.navigator.standalone) {
+      return true;
+    }
+
+    if (typeof window.matchMedia === 'function') {
+      try {
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+          return true;
+        }
+
+        if (
+          window.matchMedia('(pointer: coarse)').matches &&
+          Math.min(window.innerWidth || 0, window.innerHeight || 0) < 1025
+        ) {
+          return true;
+        }
+      } catch (_error) {
+        // Falling back to popup is safer than breaking login detection.
+      }
+    }
+
+    return false;
+  }
+
   function decodeJwtPayload(token) {
     var parts = String(token || '').split('.');
     if (parts.length !== 3) {
@@ -348,6 +378,10 @@
     async function login(options) {
       var provider = options && options.provider ? options.provider : null;
       var preferRedirect = options && options.redirect === true;
+
+      if (!preferRedirect && (!options || options.redirect !== false)) {
+        preferRedirect = shouldPreferRedirectFlow();
+      }
 
       if (!preferRedirect) {
         var popupTarget = buildAuthorizeUrl('web_message', provider);
