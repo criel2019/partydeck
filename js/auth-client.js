@@ -215,6 +215,7 @@
         tokenType: payload.token_type,
         expiresAt: accessPayload && accessPayload.exp ? accessPayload.exp : null,
         refreshExpiresIn: payload.refresh_expires_in,
+        isNewUser: !!payload.is_new_user,
         user: payload.user || null
       };
 

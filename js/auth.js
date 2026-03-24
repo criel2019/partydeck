@@ -242,6 +242,20 @@
     }
   }
 
+  function showAccountCreationFeedback(session, source) {
+    if (!session || !session.isNewUser || !session.user || !window.sessionStorage) {
+      return;
+    }
+
+    var welcomeKey = 'partydeck.auth.welcomed.' + (session.user.id || 'unknown');
+    if (window.sessionStorage.getItem(welcomeKey)) {
+      return;
+    }
+
+    window.sessionStorage.setItem(welcomeKey, String(Date.now()));
+    showToastSafe(source === 'overlay' ? '회원가입이 완료됐어요. 바로 시작해 볼게요.' : '첫 로그인과 회원가입이 완료됐어요.');
+  }
+
   function getIntentDescriptor(intent, screenId) {
     if (intent && intent.action === 'join-room' && intent.payload && intent.payload.joinCode) {
       var roomCode = intent.payload.joinCode;
@@ -249,11 +263,11 @@
         cardSubtitle: '친구가 보낸 방 링크를 확인했어요. 로그인하면 바로 해당 방으로 이어집니다.',
         cardName: roomCode + ' 방에 입장하려면 로그인해 주세요',
         cardMeta: '로그인 후 ' + roomCode + ' 방 참가를 자동으로 다시 시도합니다.',
-        cardNote: '방 코드 링크에서 들어왔기 때문에 로그인 뒤에는 바로 방 참가 흐름으로 이어집니다.',
-        buttonText: '로그인하고 ' + roomCode + ' 방 입장',
+        cardNote: '회원가입 버튼 없이 첫 로그인에서 바로 가입됩니다. 방 코드 링크에서 들어왔기 때문에 로그인 뒤에는 바로 방 참가 흐름으로 이어집니다.',
+        buttonText: '로그인 / 회원가입하고 ' + roomCode + ' 방 입장',
         gateEyebrow: 'ROOM LINK',
         gateTitle: roomCode + ' 방에 입장하려면 로그인해 주세요',
-        gateMessage: '친구가 보낸 링크를 확인했어요. 로그인 확인이 끝나면 ' + roomCode + ' 방 참가를 자동으로 이어갑니다.',
+        gateMessage: '친구가 보낸 링크를 확인했어요. 회원가입 버튼은 따로 없고, 첫 로그인에서 계정이 자동 생성됩니다. 로그인 확인이 끝나면 ' + roomCode + ' 방 참가를 자동으로 이어갑니다.',
         gateFoot: '로그인 후에는 방 참가를 다시 누를 필요 없이 바로 연결을 시도합니다.'
       };
     }
@@ -263,24 +277,24 @@
         cardSubtitle: '이 화면은 로그인 후 이용할 수 있어요.',
         cardName: '로그인 후 현재 화면으로 돌아갈 수 있어요',
         cardMeta: '방, 게임, 상점 같은 보호된 화면은 로그인 상태를 기준으로 열립니다.',
-        cardNote: '로그인 뒤에는 현재 보려던 화면 흐름을 다시 이어갈 수 있어요.',
-        buttonText: '로그인하고 계속하기',
+        cardNote: '회원가입 버튼 없이 첫 로그인에서 바로 계정이 만들어지고, 로그인 뒤에는 현재 보려던 화면 흐름을 다시 이어갈 수 있어요.',
+        buttonText: '로그인 / 회원가입하고 계속하기',
         gateEyebrow: 'KEEP GOING',
         gateTitle: '이 화면을 계속 이용하려면 로그인해 주세요',
-        gateMessage: '세션을 확인한 뒤 지금 보려던 흐름으로 이어서 돌아옵니다.',
+        gateMessage: '회원가입 버튼은 따로 없고, 첫 로그인에서 계정이 자동 생성됩니다. 세션을 확인한 뒤 지금 보려던 흐름으로 이어서 돌아옵니다.',
         gateFoot: '로그인 후에는 방 생성, 참가, 펫, 상점 흐름을 자동으로 다시 이어갑니다.'
       };
     }
 
     return {
-      cardSubtitle: '멀티플레이, 상점, 계정 연동은 로그인 후 사용할 수 있어요.',
-      cardName: '로그인하고 팟플을 시작하세요',
+      cardSubtitle: '멀티플레이, 상점, 계정 연동은 로그인 후 사용할 수 있어요. 회원가입은 첫 로그인에서 자동으로 완료됩니다.',
+      cardName: '로그인 / 회원가입하고 팟플을 시작하세요',
       cardMeta: '방 만들기, 방 참가, 펫, 상점 이용을 로그인 기준으로 안전하게 이어갑니다.',
-      cardNote: '메인 로비는 둘러볼 수 있지만 실제 플레이와 상점 진입은 로그인 후에 이어집니다.',
-      buttonText: '로그인하고 시작하기',
-      gateEyebrow: 'LOGIN REQUIRED',
+      cardNote: '회원가입 버튼은 따로 없고, 처음 로그인할 때 계정이 자동 생성됩니다. 메인 로비는 둘러볼 수 있지만 실제 플레이와 상점 진입은 로그인 후에 이어집니다.',
+      buttonText: '로그인 / 회원가입하고 시작하기',
+      gateEyebrow: 'LOGIN / SIGN UP',
       gateTitle: '팟플에 입장하려면 로그인해 주세요',
-      gateMessage: '방 만들기, 친구 방 참가, 펫 키우기, 상점 이용은 로그인 후에 안전하게 이어집니다.',
+      gateMessage: '회원가입 버튼은 따로 없고, 첫 로그인에서 계정이 자동 생성됩니다. 방 만들기, 친구 방 참가, 펫 키우기, 상점 이용은 로그인 후에 안전하게 이어집니다.',
       gateFoot: '로그인 창을 닫아도 메인 로비에서 다시 시도할 수 있어요.'
     };
   }
@@ -357,19 +371,25 @@
 
     if (name) {
       name.textContent = user
-        ? (user.display_name || user.email || '로그인된 사용자')
+        ? (session && session.isNewUser
+          ? ((user.display_name || user.email || '새 사용자') + '님, 가입이 완료됐어요')
+          : (user.display_name || user.email || '로그인된 사용자'))
         : (options && options.name ? options.name : copy.cardName);
     }
 
     if (meta) {
       meta.textContent = user
-        ? [user.email || '', lastLogin ? '최근 로그인 ' + lastLogin : ''].filter(Boolean).join(' · ')
+        ? ((session && session.isNewUser)
+          ? '첫 로그인과 회원가입이 완료됐어요. 지금부터 방 만들기, 참가, 상점을 바로 이용할 수 있어요.'
+          : [user.email || '', lastLogin ? '최근 로그인 ' + lastLogin : ''].filter(Boolean).join(' · '))
         : (options && options.meta ? options.meta : copy.cardMeta);
     }
 
     if (note) {
       note.textContent = user
-        ? '현재 브라우저 세션에만 토큰을 저장하고, 만료 시 자동 갱신합니다.'
+        ? ((session && session.isNewUser)
+          ? '다음부터는 같은 소셜 로그인 버튼으로 바로 들어올 수 있어요.'
+          : '현재 브라우저 세션에만 토큰을 저장하고, 만료 시 자동 갱신합니다.')
         : (options && options.note ? options.note : copy.cardNote);
     }
 
@@ -406,19 +426,25 @@
 
     if (gateTitle) {
       gateTitle.textContent = user
-        ? (user.display_name || user.email || '로그인됨')
+        ? ((session && session.isNewUser)
+          ? '회원가입이 완료됐어요'
+          : (user.display_name || user.email || '로그인됨'))
         : (options && options.gateTitle ? options.gateTitle : copy.gateTitle);
     }
 
     if (gateMessage) {
       gateMessage.textContent = user
-        ? '이미 로그인된 상태입니다. 이제 원하는 기능을 바로 이용할 수 있어요.'
+        ? ((session && session.isNewUser)
+          ? '첫 로그인과 동시에 계정 생성이 끝났어요. 이제 원하는 기능을 바로 이용할 수 있어요.'
+          : '이미 로그인된 상태입니다. 이제 원하는 기능을 바로 이용할 수 있어요.')
         : (options && options.gateMessage ? options.gateMessage : copy.gateMessage);
     }
 
     if (gateFoot) {
       gateFoot.textContent = user
-        ? '로그아웃 전까지는 같은 브라우저 세션에서 상태를 유지합니다.'
+        ? ((session && session.isNewUser)
+          ? '다음부터는 회원가입 없이 같은 소셜 버튼으로 바로 로그인됩니다.'
+          : '로그아웃 전까지는 같은 브라우저 세션에서 상태를 유지합니다.')
         : (options && options.gateFoot ? options.gateFoot : copy.gateFoot);
     }
 
@@ -477,6 +503,7 @@
       }
 
       render(controller.session);
+      showAccountCreationFeedback(controller.session, 'hydrate');
       return controller.session;
     } catch (error) {
       controller.session = null;
@@ -627,6 +654,7 @@
       }
 
       render(controller.session);
+      showAccountCreationFeedback(controller.session, 'overlay');
 
       if (readPendingAction()) {
         await resumePendingAction();
