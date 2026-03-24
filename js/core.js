@@ -515,6 +515,10 @@ function updateGoldCheatUI() {
 }
 
 function openDiamondShop() {
+  if (window.PartyDeckPayments && typeof window.PartyDeckPayments.openShop === 'function') {
+    window.PartyDeckPayments.openShop();
+    return;
+  }
   const ovl = document.getElementById('diamondShopOverlay');
   if (!ovl) return;
   ensureDiamondShopCheatUI();
@@ -532,6 +536,10 @@ function closeDiamondShop() {
 }
 
 function buyDiamond(amount) {
+  if (window.PartyDeckPayments && typeof window.PartyDeckPayments.purchaseByGrantAmount === 'function') {
+    window.PartyDeckPayments.purchaseByGrantAmount(amount);
+    return;
+  }
   addDiamond(amount);
   showToast('💎 다이아 ' + amount + '개 획득!');
   const bal = document.getElementById('diamondShopBalance');
