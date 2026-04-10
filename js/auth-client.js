@@ -20,12 +20,25 @@
   function openPopup(url) {
     return window.open(
       url,
-      'partydeck-auth',
+      'partyplay-auth',
       'popup=yes,width=520,height=720,menubar=no,toolbar=no,location=yes,resizable=yes,scrollbars=yes,status=no'
     );
   }
 
+  function isCapacitorNative() {
+    var cap = window.Capacitor;
+    if (!cap || typeof cap.getPlatform !== 'function') {
+      return false;
+    }
+    var platform = cap.getPlatform();
+    return platform === 'android' || platform === 'ios';
+  }
+
   function shouldPreferRedirectFlow() {
+    if (isCapacitorNative()) {
+      return true;
+    }
+
     var ua = (window.navigator && window.navigator.userAgent) || '';
     if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua)) {
       return true;
@@ -75,7 +88,7 @@
     var config = Object.assign(
       {
         authBaseUrl: window.location.origin,
-        clientId: 'partydeck',
+        clientId: 'partyplay',
         storage: 'session',
         returnTo: window.location.origin + window.location.pathname + window.location.search,
         popupTimeoutMs: 5 * 60 * 1000
@@ -87,8 +100,8 @@
 
     var authOrigin = new URL(config.authBaseUrl).origin;
     var storage = config.storage === 'local' ? window.localStorage : window.sessionStorage;
-    var tokenStorageKey = 'partydeck.auth.tokens.' + config.clientId;
-    var stateStorageKey = 'partydeck.auth.state.' + config.clientId;
+    var tokenStorageKey = 'partyplay.auth.tokens.' + config.clientId;
+    var stateStorageKey = 'partyplay.auth.state.' + config.clientId;
     var cachedSession = null;
 
     function readStoredSession() {
@@ -343,13 +356,13 @@
             return;
           }
 
-          if (data.type === 'partydeck-auth:error') {
+          if (data.type === 'partyplay-auth:error') {
             clearPendingState();
             settle(reject, new Error(data.error || 'Authentication failed'));
             return;
           }
 
-          if (data.type === 'partydeck-auth:code' && data.code) {
+          if (data.type === 'partyplay-auth:code' && data.code) {
             exchangeCode(data.code).then(
               function (session) {
                 settle(resolve, session);
@@ -478,7 +491,7 @@
     };
   }
 
-  window.PartyDeckAuth = {
+  window.PartyPlayAuth = {
     createClient: createClient
   };
 })(window, document);
