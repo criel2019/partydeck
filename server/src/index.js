@@ -28,6 +28,7 @@ app.use(function (err, _req, res, _next) {
 
 // Start
 async function start() {
+  console.log('[server] process.env.PORT =', process.env.PORT);
   try {
     await migrate();
   } catch (err) {
