@@ -1,17 +1,100 @@
 (function (window, document) {
   'use strict';
 
-  if (!window.PartyDeckAuth || typeof window.PartyDeckAuth.createClient !== 'function') {
+  if (!window.PartyPlayAuth || typeof window.PartyPlayAuth.createClient !== 'function') {
     return;
   }
 
-  var CLIENT_ID = 'partydeck';
-  var PENDING_ACTION_KEY = 'partydeck.auth.pending-action.' + CLIENT_ID;
+  var CLIENT_ID = 'partyplay';
+  var PENDING_ACTION_KEY = 'partyplay.auth.pending-action.' + CLIENT_ID;
   var PENDING_ACTION_TTL_MS = 10 * 60 * 1000;
   var READY_TIMEOUT_MS = 15000;
-  var PUBLIC_AUTH_BASE_URL = 'https://118.219.60.216:3000';
-  var LAN_AUTH_BASE_URL = 'https://192.168.45.100:3000';
+  var PUBLIC_AUTH_BASE_URL = 'https://partyplay-server.up.railway.app';
+  var LAN_AUTH_BASE_URL = 'https://partyplay-server.up.railway.app';
   var AUTH_BASE_URL = PUBLIC_AUTH_BASE_URL;
+
+  function cloneJson(value) {
+    return value == null ? value : JSON.parse(JSON.stringify(value));
+  }
+
+  function getRuntimeConfig() {
+    return window.PartyPlayRuntimeConfig || {};
+  }
+
+  function getSuperAccountConfig() {
+    var authConfig = getRuntimeConfig().auth || {};
+    var superAccount = authConfig.superAccount || null;
+    return superAccount && superAccount.enabled ? superAccount : null;
+  }
+
+  function isSuperAccountSession(session) {
+    return !!(session && session.isSuperAccount);
+  }
+
+  function buildSuperSession(superAccount) {
+    var now = new Date();
+    var user = Object.assign({
+      id: 'partyplay-super',
+      display_name: 'SUPER ADMIN',
+      email: 'super@partyplay.local',
+      profile_image: '',
+      last_login_at: now.toISOString()
+    }, cloneJson(superAccount && superAccount.user ? superAccount.user : {}) || {});
+    var nowSec = Math.floor(now.getTime() / 1000);
+
+    return {
+      accessToken: 'partyplay-super-access-token',
+      refreshToken: 'partyplay-super-refresh-token',
+      tokenType: 'Bearer',
+      expiresAt: nowSec + (60 * 60 * 24 * 365 * 10),
+      refreshExpiresIn: 60 * 60 * 24 * 365 * 10,
+      isNewUser: false,
+      isSuperAccount: true,
+      user: user
+    };
+  }
+
+  function createSuperAuthClient(superAccount) {
+    var session = buildSuperSession(superAccount);
+
+    return {
+      config: {
+        authBaseUrl: AUTH_BASE_URL,
+        clientId: CLIENT_ID,
+        storage: 'memory',
+        returnTo: window.location.origin + window.location.pathname + window.location.search
+      },
+      ensureSession: function () {
+        return Promise.resolve(session);
+      },
+      fetchCurrentUser: function () {
+        return Promise.resolve(session.user);
+      },
+      fetchWithAuth: function (input, init) {
+        var requestInit = Object.assign({}, init || {});
+        requestInit.headers = Object.assign({}, requestInit.headers || {}, {
+          Authorization: 'Bearer ' + session.accessToken,
+          'X-PartyPlay-Super-Account': 'true'
+        });
+        return window.fetch(input, requestInit);
+      },
+      getSession: function () {
+        return session;
+      },
+      loadProviders: function () {
+        return Promise.resolve([]);
+      },
+      login: function () {
+        return Promise.resolve(session);
+      },
+      logout: function () {
+        return Promise.resolve(session);
+      },
+      refresh: function () {
+        return Promise.resolve(session);
+      }
+    };
+  }
 
   function isPrivateHostname(hostname) {
     var value = String(hostname || '').trim().toLowerCase();
@@ -37,14 +120,31 @@
     });
   }
 
+  function getCapacitorPlatform() {
+    var cap = window.Capacitor;
+    return cap && typeof cap.getPlatform === 'function' ? cap.getPlatform() : '';
+  }
+
+  function isCapacitorNativeRuntime() {
+    var platform = getCapacitorPlatform();
+    return platform === 'android' || platform === 'ios';
+  }
+
   function buildAuthBaseCandidates() {
     var hostname = String(window.location.hostname || '').trim();
 
-    if (
-      window.location.protocol === 'file:' ||
-      hostname === '127.0.0.1' ||
-      hostname === 'localhost'
-    ) {
+    if (isCapacitorNativeRuntime()) {
+      return uniqueBaseUrls([
+        LAN_AUTH_BASE_URL,
+        PUBLIC_AUTH_BASE_URL
+      ]);
+    }
+
+    if (window.location.protocol === 'file:') {
+      return ['https://127.0.0.1:3000'];
+    }
+
+    if (hostname === '127.0.0.1' || hostname === 'localhost') {
       return ['https://127.0.0.1:3000'];
     }
 
@@ -291,33 +391,35 @@
   }
 
   function syncPaymentBridge() {
-    if (!window.PartyDeckPayments) {
+    if (!window.PartyPlayPayments) {
       return;
     }
 
-    window.PartyDeckPayments.fetchWithAuth = function (input, init) {
+    window.PartyPlayPayments.fetchWithAuth = function (input, init) {
       return controller.client.fetchWithAuth(input, init);
     };
 
-    window.PartyDeckPayments.getAuthState = function () {
+    window.PartyPlayPayments.getAuthState = function () {
       return {
         authenticated: isAuthenticated(),
-        user: isAuthenticated() ? controller.session.user : null
+        user: isAuthenticated() ? controller.session.user : null,
+        superAccount: isSuperAccountSession(controller.session)
       };
     };
   }
 
   function emitAuthState() {
-    window.partydeckAuthController = controller;
-    window.partydeckAuthFetch = function (input, init) {
+    window.partyplayAuthController = controller;
+    window.partyplayAuthFetch = function (input, init) {
       return controller.client.fetchWithAuth(input, init);
     };
 
     if (typeof window.CustomEvent === 'function') {
-      window.dispatchEvent(new window.CustomEvent('partydeck-auth:state', {
+      window.dispatchEvent(new window.CustomEvent('partyplay-auth:state', {
         detail: {
           authenticated: isAuthenticated(),
-          user: isAuthenticated() ? controller.session.user : null
+          user: isAuthenticated() ? controller.session.user : null,
+          superAccount: isSuperAccountSession(controller.session)
         }
       }));
     }
@@ -328,7 +430,7 @@
       return;
     }
 
-    var welcomeKey = 'partydeck.auth.welcomed.' + (session.user.id || 'unknown');
+    var welcomeKey = 'partyplay.auth.welcomed.' + (session.user.id || 'unknown');
     if (window.sessionStorage.getItem(welcomeKey)) {
       return;
     }
@@ -493,7 +595,7 @@
     }
 
     if (logoutButton) {
-      logoutButton.hidden = !user;
+      logoutButton.hidden = !user || isSuperAccountSession(session);
       logoutButton.disabled = busy;
     }
 
@@ -622,7 +724,7 @@
 
         if (Date.now() - startedAt > READY_TIMEOUT_MS) {
           window.clearInterval(timer);
-          reject(new Error('PartyDeck did not finish booting in time.'));
+          reject(new Error('PartyPlay did not finish booting in time.'));
         }
       }, 150);
     });
@@ -922,13 +1024,19 @@
 
     controller.launchIntent = detectLaunchIntent();
     controller.currentScreen = getActiveScreenId();
-    AUTH_BASE_URL = await resolveAuthBaseUrl();
-    controller.client = window.PartyDeckAuth.createClient({
-      authBaseUrl: AUTH_BASE_URL,
-      clientId: CLIENT_ID,
-      storage: 'session',
-      returnTo: window.location.origin + window.location.pathname + window.location.search
-    });
+    var superAccount = getSuperAccountConfig();
+    if (superAccount) {
+      AUTH_BASE_URL = String(superAccount.authBaseUrl || LAN_AUTH_BASE_URL);
+      controller.client = createSuperAuthClient(superAccount);
+    } else {
+      AUTH_BASE_URL = await resolveAuthBaseUrl();
+      controller.client = window.PartyPlayAuth.createClient({
+        authBaseUrl: AUTH_BASE_URL,
+        clientId: CLIENT_ID,
+        storage: isCapacitorNativeRuntime() ? 'local' : 'session',
+        returnTo: window.location.origin + window.location.pathname + window.location.search
+      });
+    }
 
     wrapShowScreen();
     wrapProtectedActions();
