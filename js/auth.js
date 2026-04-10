@@ -9,8 +9,8 @@
   var PENDING_ACTION_KEY = 'partyplay.auth.pending-action.' + CLIENT_ID;
   var PENDING_ACTION_TTL_MS = 10 * 60 * 1000;
   var READY_TIMEOUT_MS = 15000;
-  var PUBLIC_AUTH_BASE_URL = 'https://partyplay-server.up.railway.app';
-  var LAN_AUTH_BASE_URL = 'https://partyplay-server.up.railway.app';
+  var PUBLIC_AUTH_BASE_URL = 'https://partyplay-production.up.railway.app';
+  var LAN_AUTH_BASE_URL = 'https://partyplay-production.up.railway.app';
   var AUTH_BASE_URL = PUBLIC_AUTH_BASE_URL;
 
   function cloneJson(value) {
