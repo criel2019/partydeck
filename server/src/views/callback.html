@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PartyPlay</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0a0a12;color:#e8e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.msg{text-align:center;font-size:15px;color:#7a7a9a}
+</style>
+</head>
+<body>
+<div class="msg">{{message}}</div>
+<script>
+(function() {
+  var mode = '{{mode}}';
+  var code = '{{code}}';
+  var state = '{{state}}';
+  var error = '{{error}}';
+  var origin = '{{origin}}';
+  var returnTo = '{{returnTo}}';
+
+  if (mode === 'web_message') {
+    if (window.opener) {
+      if (error) {
+        window.opener.postMessage({ type: 'partyplay-auth:error', error: error, state: state }, origin);
+      } else {
+        window.opener.postMessage({ type: 'partyplay-auth:code', code: code, state: state }, origin);
+      }
+      setTimeout(function() { window.close(); }, 300);
+    }
+  } else {
+    if (error) {
+      window.location.replace(returnTo + '#auth_error=' + encodeURIComponent(error) + '&state=' + encodeURIComponent(state));
+    } else {
+      window.location.replace(returnTo + '#auth_code=' + encodeURIComponent(code) + '&state=' + encodeURIComponent(state));
+    }
+  }
+})();
+</script>
+</body>
+</html>
