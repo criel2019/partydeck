@@ -384,6 +384,14 @@ body {
   max-width: none;
 }
 
+.auth-card[data-auth-state="signed-in"] .auth-login-btn {
+  display: none !important;
+}
+
+.auth-card:not([data-auth-state="signed-in"]) .auth-logout-btn {
+  display: none !important;
+}
+
 .auth-note {
   margin-top: 12px;
   color: var(--text-dim);

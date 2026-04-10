@@ -563,16 +563,14 @@
     if (meta) {
       meta.textContent = user
         ? ((session && session.isNewUser)
-          ? '첫 로그인과 회원가입이 완료됐어요. 지금부터 방 만들기, 참가, 상점을 바로 이용할 수 있어요.'
-          : [user.email || '', lastLogin ? '최근 로그인 ' + lastLogin : ''].filter(Boolean).join(' · '))
+          ? '가입이 완료됐어요. 지금부터 방 만들기, 참가, 상점을 바로 이용할 수 있어요.'
+          : '로그인되어 있어요.')
         : (options && options.meta ? options.meta : copy.cardMeta);
     }
 
     if (note) {
       note.textContent = user
-        ? ((session && session.isNewUser)
-          ? '다음부터는 같은 소셜 로그인 버튼으로 바로 들어올 수 있어요.'
-          : '현재 브라우저 세션에만 토큰을 저장하고, 만료 시 자동 갱신합니다.')
+        ? ''
         : (options && options.note ? options.note : copy.cardNote);
     }
 
