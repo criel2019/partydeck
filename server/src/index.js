@@ -35,7 +35,7 @@ async function start() {
     process.exit(1);
   }
 
-  app.listen(config.port, function () {
+  app.listen(config.port, '0.0.0.0', function () {
     console.log('[server] PartyPlay server listening on port ' + config.port);
   });
 }
