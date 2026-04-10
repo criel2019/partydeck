@@ -14,6 +14,11 @@
   --radius-sm: 10px;
 }
 
+/* Prevent iOS WebView rubber-band overscroll */
+html, body {
+  overscroll-behavior: none;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body {
@@ -270,7 +275,6 @@ body {
 
 .auth-card {
   position: relative;
-  overflow: hidden;
   background:
     radial-gradient(circle at top right, rgba(255,255,255,0.1) 0%, transparent 40%),
     linear-gradient(135deg, rgba(255,107,53,0.14), rgba(0,229,255,0.08)),
@@ -1580,7 +1584,7 @@ body[data-auth-gate-open="true"] #practiceSelect {
 
 /* ===== TOAST ===== */
 .toast {
-  position: fixed; top: 20px; left: 50%;
+  position: fixed; top: calc(20px + env(safe-area-inset-top, 0px)); left: 50%;
   transform: translateX(-50%) translateY(-100px);
   background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.1);
   padding: 12px 24px; border-radius: var(--radius-sm);
@@ -1809,4 +1813,24 @@ body[data-auth-gate-open="true"] #practiceSelect {
     padding-top: env(safe-area-inset-top);
   }
 
+  .gc-panel {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .result-overlay {
+    padding:
+      max(24px, env(safe-area-inset-top))
+      24px
+      max(24px, env(safe-area-inset-bottom));
+  }
+
+  #landscapeOverlay,
+  #portraitOverlay {
+    padding:
+      env(safe-area-inset-top)
+      env(safe-area-inset-right)
+      env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+  }
 }
