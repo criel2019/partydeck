@@ -65,7 +65,7 @@
       }
     }
 
-    return false;
+    return true;
   }
 
   function decodeJwtPayload(token) {
