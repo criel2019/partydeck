@@ -507,7 +507,7 @@
       return true;
     }
 
-    return !controller.overlayDismissed;
+    return true;
   }
 
   function render(session, options) {

@@ -446,7 +446,7 @@ body {
 body[data-auth-gate-open="true"] #mainMenu,
 body[data-auth-gate-open="true"] #lobby,
 body[data-auth-gate-open="true"] #practiceSelect {
-  filter: saturate(0.94);
+  visibility: hidden;
 }
 
 /* ===== 게임 목록 버튼 (블링블링) ===== */
