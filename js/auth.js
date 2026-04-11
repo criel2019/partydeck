@@ -635,10 +635,7 @@
     }
 
     if (gateDismissButton) {
-      gateDismissButton.hidden =
-        busy ||
-        !!controller.launchIntent ||
-        (screenId && screenId !== 'mainMenu');
+      gateDismissButton.hidden = true;
     }
 
     document.body.setAttribute('data-auth-gate-open', gateVisible ? 'true' : 'false');
