@@ -94,7 +94,7 @@
 
     <div class="auth-gate-actions">
       <button class="btn btn-primary" id="authGateLoginBtn" type="button">소셜로 시작하기</button>
-      <button class="btn btn-secondary" id="authGateDismissBtn" type="button">메인 로비 먼저 보기</button>
+      <button class="btn btn-secondary" id="authGateDismissBtn" type="button" hidden>메인 로비 먼저 보기</button>
     </div>
 
     <div class="auth-gate-foot" id="authGateFoot">편한 계정으로 가볍게 시작해 보세요.</div>
@@ -2522,7 +2522,7 @@
       Loading payment options...
     </div>
     <div id="diamondShopProductList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;"></div>
-    <button id="diamondShopRestoreBtn" class="btn btn-secondary" onclick="PartyDeckPayments.restorePurchases()" style="width:100%;display:none;margin-bottom:10px;">Restore purchases</button>
+    <button id="diamondShopRestoreBtn" class="btn btn-secondary" onclick="PartyPlayPayments.restorePurchases()" style="width:100%;display:none;margin-bottom:10px;">Restore purchases</button>
     <div style="display:flex;flex-direction:column;gap:10px;">
       <button class="btn btn-primary" onclick="buyDiamond(1)" style="width:100%;">💎 1개 획득 (테스트)</button>
       <button class="btn btn-primary" onclick="buyDiamond(5)" style="width:100%;">💎 5개 획득 (테스트)</button>
@@ -2882,7 +2882,7 @@
 <script src="js/core.js?v=20260312c"></script>
 <script src="js/payments/payment-core.js?v=20260324"></script>
 <script src="js/payments/payment-config.js?v=20260324"></script>
-<script src="js/payments/partydeck-payments.js?v=20260324"></script>
+<script src="js/payments/partyplay-payments.js?v=20260324"></script>
 <script src="js/game-carousel.js?v=20260316"></script>
 <script src="js/games/poker.js?v=20260306b"></script>
 <script src="js/games/mafia.js?v=20260305b"></script>
@@ -2929,8 +2929,9 @@
 <script src="js/games/coinswing.js?v=20260312d"></script>
 <script src="js/games/tarot.js?v=20260312"></script>
 <script src="js/ai.js?v=20260312d"></script>
+<script src="js/runtime-config.js?v=20260404a"></script>
 <script src="js/auth-client.js?v=20260324b"></script>
-<script src="js/auth.js?v=20260324b"></script>
+<script src="js/auth.js?v=20260404a"></script>
 <!-- Three.js + yahtzee-three.js: 야추 게임 시작 시 동적 로딩 (loadYahtzeeThree) -->
 </body>
 </html>
