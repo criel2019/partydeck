@@ -2468,6 +2468,15 @@
       <div class="gc-video-loading" id="gcVideoLoading" style="display:none;">
         <div class="gc-video-spinner"></div>
       </div>
+      <!-- Comic Strip (shows when no video available) -->
+      <div class="gc-comic-strip" id="gcComicStrip" style="display:none;">
+        <img class="gc-comic-img" id="gcComicImg" src="" alt="게임 소개 만화">
+        <div class="gc-comic-nav" id="gcComicNav">
+          <button class="gc-comic-btn" id="gcComicPrev" onclick="gcComicNav(-1)">&#8249;</button>
+          <div class="gc-comic-dots" id="gcComicDots"></div>
+          <button class="gc-comic-btn" id="gcComicNext" onclick="gcComicNav(1)">&#8250;</button>
+        </div>
+      </div>
     </div>
 
     <!-- Game Info -->

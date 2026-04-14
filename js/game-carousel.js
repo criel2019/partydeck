@@ -19,6 +19,36 @@
   var _gcDragOffset = 0;
   var _gcBound = false;       // Prevent double-binding event listeners
 
+  // --- Comic Strip Data ---
+  var COMIC_DATA = {
+    poker:       { prefix:'홀덤',                 count:3 },
+    mafia:       { prefix:'마피아',               count:3 },
+    sutda:       { prefix:'섯다',                 count:2 },
+    quickdraw:   { prefix:'총잡이',               count:3 },
+    roulette:    { prefix:'러시안룰렛',            count:1 },
+    lottery:     { prefix:'뽑기',                 count:2 },
+    ecard:       { prefix:'형사와_강도',           count:3 },
+    yahtzee:     { prefix:'야추',                 count:4 },
+    updown:      { prefix:'업다운',               count:3 },
+    truth:       { prefix:'진실게임',             count:2 },
+    fortress:    { prefix:'요새',                 count:3 },
+    bombshot:    { prefix:'폭탄주',               count:3 },
+    blackjack:   { prefix:'블랙잭',               count:2 },
+    jewel:       { prefix:'보석맞추기',           count:1 },
+    colorchain:  { prefix:'컬러체인',             count:2 },
+    slinkystairs:{ prefix:'슬링키_스테어즈',      count:1 },
+    pupil:       { prefix:'거짓말탐지기',          count:3 },
+    idol:        { prefix:'아이돌_매니저먼트',     count:3 },
+    drinkpoker:  { prefix:'술피하기_포커',         count:3 },
+    kingstagram: { prefix:'킹스타그램',           count:2 },
+    coinstack:   { prefix:'코인_드롭__코인_스윙', count:2 },
+    coinswing:   { prefix:'코인_드롭__코인_스윙', count:2 },
+    tarot:       { prefix:'별빛_타로',            count:2 },
+  };
+  var _gcComicGame = null;    // game ID currently displayed
+  var _gcComicIdx  = 0;       // current panel index
+  var _gcComicTimer = null;   // auto-advance timer
+
   // Build game list from GAME_INFO (defined in core.js)
   function _gcBuildGameList() {
     // Ordered list matching the original catalog order
@@ -160,68 +190,98 @@
     }
   }
 
-  // --- Video Preview ---
+  // --- Comic Strip ---
+  function _gcComicPanelUrl(prefix, idx) {
+    return 'tutorial/comics/' + prefix + '_p' + ('0' + idx).slice(-2) + '.png';
+  }
+
+  function _gcShowComic(gameId) {
+    var data = COMIC_DATA[gameId];
+    var strip = document.getElementById('gcComicStrip');
+    var placeholder = document.getElementById('gcVideoPlaceholder');
+    var videoEl = document.getElementById('gcVideo');
+    if (!strip || !data) {
+      // No comic → show placeholder
+      if (strip) strip.style.display = 'none';
+      if (placeholder) placeholder.style.display = '';
+      return;
+    }
+
+    // Hide video/placeholder, show comic
+    if (videoEl) { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.classList.remove('playing'); }
+    if (placeholder) placeholder.style.display = 'none';
+    strip.style.display = '';
+
+    if (_gcComicGame === gameId) return; // already showing this game
+    _gcComicGame = gameId;
+    _gcComicIdx = 0;
+    _gcComicRender();
+    _gcComicAutoStart(data.count);
+  }
+
+  function _gcComicRender() {
+    var data = COMIC_DATA[_gcComicGame];
+    if (!data) return;
+    var img = document.getElementById('gcComicImg');
+    var dotsEl = document.getElementById('gcComicDots');
+    var prevBtn = document.getElementById('gcComicPrev');
+    var nextBtn = document.getElementById('gcComicNext');
+    if (!img) return;
+
+    img.src = _gcComicPanelUrl(data.prefix, _gcComicIdx);
+
+    if (dotsEl) {
+      dotsEl.innerHTML = '';
+      for (var i = 0; i < data.count; i++) {
+        var d = document.createElement('span');
+        d.className = 'gc-comic-dot' + (i === _gcComicIdx ? ' active' : '');
+        (function(ii){ d.onclick = function(){ _gcComicIdx = ii; _gcComicRender(); _gcComicAutoStart(data.count); }; })(i);
+        dotsEl.appendChild(d);
+      }
+    }
+    if (prevBtn) prevBtn.style.visibility = _gcComicIdx > 0 ? '' : 'hidden';
+    if (nextBtn) nextBtn.style.visibility = _gcComicIdx < data.count - 1 ? '' : 'hidden';
+  }
+
+  function _gcComicAutoStart(count) {
+    if (_gcComicTimer) clearInterval(_gcComicTimer);
+    if (count <= 1) return;
+    _gcComicTimer = setInterval(function() {
+      var data = COMIC_DATA[_gcComicGame];
+      if (!data) return;
+      _gcComicIdx = (_gcComicIdx + 1) % data.count;
+      _gcComicRender();
+    }, 3000);
+  }
+
+  function _gcCancelComic() {
+    if (_gcComicTimer) { clearInterval(_gcComicTimer); _gcComicTimer = null; }
+    _gcComicGame = null;
+    var strip = document.getElementById('gcComicStrip');
+    if (strip) strip.style.display = 'none';
+  }
+
+  window.gcComicNav = function(dir) {
+    var data = COMIC_DATA[_gcComicGame];
+    if (!data) return;
+    _gcComicIdx = Math.max(0, Math.min(data.count - 1, _gcComicIdx + dir));
+    _gcComicRender();
+    _gcComicAutoStart(data.count);
+  };
+
+  // --- Video Preview (no videos — show comic directly) ---
   function _gcScheduleVideo() {
     _gcCancelVideo();
+    _gcCancelComic();
 
     var id = _gcGames[_gcIndex];
-    var videoEl = document.getElementById('gcVideo');
-    var placeholder = document.getElementById('gcVideoPlaceholder');
-    var loading = document.getElementById('gcVideoLoading');
-    if (!videoEl) return;
-
-    // Reset video state
-    videoEl.pause();
-    videoEl.removeAttribute('src');
-    videoEl.classList.remove('playing');
-    if (placeholder) placeholder.style.display = '';
-    if (loading) loading.style.display = 'none';
-
-    // Schedule video playback after delay
     _gcVideoTimer = setTimeout(function() {
-      var videoSrc = 'videos/' + id + '.mp4';
-
-      // Check if video file exists by attempting to load
-      if (loading) loading.style.display = '';
-
-      videoEl.src = videoSrc;
-      videoEl.load();
-
-      videoEl.oncanplay = function() {
-        videoEl.oncanplay = null;
-        videoEl.onerror = null;
-        if (loading) loading.style.display = 'none';
-        if (placeholder) placeholder.style.display = 'none';
-        videoEl.classList.add('playing');
-        videoEl.play().catch(function() {});
-      };
-
-      videoEl.onerror = function() {
-        videoEl.onerror = null;
-        videoEl.oncanplay = null;
-        if (loading) loading.style.display = 'none';
-        // Keep placeholder visible - no video available
-        videoEl.classList.remove('playing');
-        if (placeholder) {
-          placeholder.style.display = '';
-          var phText = placeholder.querySelector('.gc-video-ph-text');
-          if (phText) phText.textContent = '소개 영상 준비 중...';
-        }
-      };
+      _gcShowComic(id);
     }, _gcVideoDelay);
   }
 
   function _gcCancelVideo() {
-    if (_gcVideoTimer) {
-      clearTimeout(_gcVideoTimer);
-      _gcVideoTimer = null;
-    }
-    var videoEl = document.getElementById('gcVideo');
-    if (videoEl) {
-      videoEl.pause();
-      videoEl.oncanplay = null;
-      videoEl.onerror = null;
-    }
+    if (_gcVideoTimer) { clearTimeout(_gcVideoTimer); _gcVideoTimer = null; }
   }
 
   // --- Navigation ---
